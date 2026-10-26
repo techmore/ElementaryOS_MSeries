@@ -1,3 +1,20 @@
+## SDK standalone app generation and core reconciliation — 2026-10-26
+
+Added `msdk gen` for checked descriptions: independent Cargo project, inspectable
+Rust records/State/Message/event bridges, embedded document/service manifests,
+real GTK executable and initial-state test. No custom backend or Rust logic is
+silently invented. All six generated models compile; keyword/collision cases
+and >2^53 integers round-trip exactly. Starter escaping remains covered.
+Reconciled two stale core tests with the current T3 SDK identity and Usage
+start page while preserving permission/page-visibility assertions.
+
+Core tests and strict clippy pass in the isolated macOS core workspace. New
+Linux native generation/build/launch screenshot CI is pending; target desktop,
+package/install, lifecycle, model usability and owner acceptance remain open.
+`SDK-COMPLETION.md` preserves the full requested completion contract and next
+gates; mandatory SDK/authoring and CLI docs describe the new command accurately.
+No desktop installation, live account reads, kernel or panel changes.
+
 ## SDK starter literal-name repair — 2026-10-26
 
 `msdk new` now JSON-escapes supplied identity/name strings and substitutes original

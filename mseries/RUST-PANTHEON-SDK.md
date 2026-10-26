@@ -30,10 +30,17 @@ SDK parity. Source inventory: [SDK audit](SDK-AUDIT-2026-10-23.md#2026-10-25-t3-
 | `FixtureServices` | Isolated UI/data scenarios, not proof of live integration. |
 | Native kit | Separately consumed GTK/Granite, scaling, accessibility, polling/badge helpers; lifecycle must still be qualified by the app. |
 
-`msdk gen`, `msdk pack`, `msdk parity` and a live introspection registry remain
-proposals, not commands to give an LLM as existing tools. The implemented
-description generator is real; complete standalone app/package generation is
-not established. Follow the [T3 priority-slice gates](APP-BUILDING-GUIDE.md#t3-priority-slice-and-sdk-qualification-gates):
+`msdk gen <description> <new-directory> --sdk-root <checkout>/rust` now
+creates a standalone Cargo project with typed records, State/Message bridges,
+the embedded description and a real GTK Host executable. Neighboring
+`*.services.json` manifests are embedded, but application-specific service/feed
+implementations still require an app-local adapter. Custom Rust logic is rejected
+with a LogicFactory instruction rather than replaced with a no-op. Generation
+never installs or executes application services. See the [CLI guide](../rust/msdk/README.md).
+
+`msdk pack`, `msdk parity` and a live introspection registry remain proposals.
+Native build/run, packaging and full SDK readiness are tracked separately in
+[SDK-COMPLETION.md](SDK-COMPLETION.md). Follow the [T3 priority-slice gates](APP-BUILDING-GUIDE.md#t3-priority-slice-and-sdk-qualification-gates):
 token monitoring and RepoBar-derived GitHub overview first (#596), with
 Shiplog (#595) building on that data. Whole-chat parity is a separate contract.
 

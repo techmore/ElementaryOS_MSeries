@@ -10,6 +10,7 @@ pub mod agent;
 mod check;
 pub mod contrast;
 pub mod gate;
+pub mod generate;
 pub mod inspect;
 pub mod intents;
 pub mod logic;

@@ -80,9 +80,10 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Some("new") if args.len() > 2 => run_new(&args[1..]),
+        Some("gen") if args.len() > 2 => run_gen(&args[1..]),
         _ => {
             eprintln!(
-                "usage: msdk check [--json] <file.ui.json>...\n       msdk describe [Name] | explain <code> | complete <file> <json-pointer>\n       msdk gate <file.ui.json> [gates.json]\n       msdk agent-manifest <file> [--mcp] [--services f.json]\n       msdk render <file> [--surface NAME] [--state JSON] [--json]\n       msdk fmt [--check|--stdout] <file.msdk>... | text <file.ui.json> | json <file.msdk>\n       msdk templates | new <template> <dir> [--text] [--id ID] [--name NAME]\n       msdk schema | components | contrast [--json] | tokens [--json]"
+                "usage: msdk check [--json] <file.ui.json>...\n       msdk describe [Name] | explain <code> | complete <file> <json-pointer>\n       msdk gate <file.ui.json> [gates.json]\n       msdk agent-manifest <file> [--mcp] [--services f.json]\n       msdk render <file> [--surface NAME] [--state JSON] [--json]\n       msdk fmt [--check|--stdout] <file.msdk>... | text <file.ui.json> | json <file.msdk>\n       msdk templates | new <template> <dir> [--text] [--id ID] [--name NAME]\n       msdk gen <description> <new-dir> [--sdk-root <rust-dir>]\n       msdk schema | components | contrast [--json] | tokens [--json]"
             );
             ExitCode::from(2)
         }
@@ -92,6 +93,56 @@ fn main() -> ExitCode {
 fn print_json(v: &serde_json::Value) -> ExitCode {
     println!("{}", serde_json::to_string_pretty(v).unwrap_or_default());
     ExitCode::SUCCESS
+}
+
+fn run_gen(args: &[String]) -> ExitCode {
+    let root = match args.iter().position(|a| a == "--sdk-root") {
+        Some(i) => match args.get(i + 1) {
+            Some(path) => std::path::PathBuf::from(path),
+            None => {
+                eprintln!("gen: --sdk-root requires the directory containing msdk and msdk-gtk");
+                return ExitCode::from(2);
+            }
+        },
+        None => std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_path_buf(),
+    };
+    let result = (|| {
+        let parent = std::path::Path::new(&args[0]).parent().unwrap_or(std::path::Path::new("."));
+        let mut paths: Vec<_> =
+            std::fs::read_dir(if parent.as_os_str().is_empty() { std::path::Path::new(".") } else { parent })
+                .map_err(|e| e.to_string())?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| e.to_string())?
+                .into_iter()
+                .map(|entry| entry.path())
+                .filter(|path| path.to_string_lossy().ends_with(".services.json"))
+                .collect();
+        paths.sort();
+        let manifests = paths
+            .iter()
+            .map(|path| {
+                let text = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+                serde_json::from_str::<serde_json::Value>(&text).map_err(|e| e.to_string())
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        load(&args[0])
+            .map(|(doc, _)| doc)
+            .and_then(|doc| msdk::generate::project_with_manifests(&doc, &root, &manifests))
+            .and_then(|files| msdk::generate::write_project(std::path::Path::new(&args[1]), &files))
+    })();
+    match result {
+        Ok(()) => {
+            println!(
+                "created standalone Cargo application in {}; next: cargo run --manifest-path {}/Cargo.toml",
+                args[1], args[1]
+            );
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("{error}");
+            ExitCode::FAILURE
+        }
+    }
 }
 
 fn run_check(args: &[String]) -> ExitCode {

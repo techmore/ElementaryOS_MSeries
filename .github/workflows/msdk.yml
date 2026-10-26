@@ -1,0 +1,79 @@
+name: M-series SDK developer path
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "rust/msdk/**"
+      - "rust/msdk-gtk/**"
+      - "rust/claude-pantheon-rs/sdk/**"
+      - "rust/mseries-greeter/data/greeter.ui.json"
+      - "mseries/sdk-tests/**"
+      - ".github/workflows/msdk.yml"
+  push:
+    branches: [dev]
+    paths:
+      - "rust/msdk/**"
+      - "rust/msdk-gtk/**"
+      - "mseries/sdk-tests/**"
+      - ".github/workflows/msdk.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  qualify:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/work/sdk-target
+    steps:
+      - uses: actions/checkout@v7
+      - name: Provision native SDK test environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cargo rustc rustfmt rust-clippy \
+            build-essential pkg-config libgtk-4-dev libwayland-dev libwayland-bin \
+            xvfb xauth dbus-x11 at-spi2-core
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            work/sdk-target
+          key: msdk-native-${{ runner.arch }}-${{ hashFiles('rust/Cargo.lock') }}
+          restore-keys: msdk-native-${{ runner.arch }}-
+      - name: Prepare isolated SDK workspace
+        run: python3 mseries/sdk-tests/prepare.py "$RUNNER_TEMP/sdk"
+      - name: Core tests and strict lint
+        run: |
+          cargo fmt --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk --check
+          cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk
+          cargo clippy --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk --all-targets -- -D warnings
+      - name: Build and test generated native application
+        run: |
+          mkdir -p "$RUNNER_TEMP/sdk-evidence"
+          "$CARGO_TARGET_DIR/debug/msdk" new settings "$RUNNER_TEMP/starter" --name 'SDK Settings' --id io.github.techmore.SdkSettings
+          "$CARGO_TARGET_DIR/debug/msdk" gen "$RUNNER_TEMP/starter/app.ui.json" "$RUNNER_TEMP/generated" --sdk-root "$RUNNER_TEMP/sdk"
+          cargo fmt --manifest-path "$RUNNER_TEMP/generated/Cargo.toml"
+          cargo test --manifest-path "$RUNNER_TEMP/generated/Cargo.toml" --all-targets
+          cargo clippy --manifest-path "$RUNNER_TEMP/generated/Cargo.toml" --all-targets -- -D warnings
+          for mode in light dark; do
+            theme=Adwaita
+            if [ "$mode" = dark ]; then theme=Adwaita:dark; fi
+            GTK_THEME="$theme" GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
+              "$CARGO_TARGET_DIR/debug/msdk-sdksettings" --screenshot "$RUNNER_TEMP/sdk-evidence/settings-$mode.png"
+          done
+          cp "$RUNNER_TEMP/sdk/Cargo.lock" "$RUNNER_TEMP/sdk-evidence/sdk-Cargo.lock"
+          cp "$RUNNER_TEMP/generated/Cargo.lock" "$RUNNER_TEMP/sdk-evidence/generated-Cargo.lock"
+          git rev-parse HEAD > "$RUNNER_TEMP/sdk-evidence/source.txt"
+          sha256sum "$CARGO_TARGET_DIR/debug/msdk-sdksettings" > "$RUNNER_TEMP/sdk-evidence/binary.sha256"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: msdk-native-${{ github.run_id }}
+          path: ${{ runner.temp }}/sdk-evidence/
+          if-no-files-found: warn

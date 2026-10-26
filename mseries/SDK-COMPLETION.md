@@ -1,0 +1,42 @@
+# SDK completion and qualification ledger
+
+The requested outcome is a complete, tested and validated Rust Pantheon app SDK.
+The product contracts are issue #535, the current APP-BUILDING-GUIDE and
+RUST-PANTHEON-SDK, the sdk-bench specs/rubric, and the Dock standard proposed in
+PR #605. Existing Signal/Messages deferral remains in force: use synthetic
+messaging data for SDK checks; do not resume or replace those clients.
+
+A green compiler/test run is scoped evidence. SDK completion requires every
+applicable row below to have retained source-matched evidence; missing evidence
+is an open gate. No completion percentage is assigned.
+
+| Requirement | Authoritative evidence needed | Current state / next work |
+| --- | --- | --- |
+| Ownership/runtime/API support | Published graphics, shell, toolkit and app API versions/owners; stable/provisional/unsupported boundaries; compatibility and deprecation policy | Existing documents are partial; reconcile a v1 contract and supported-host matrix |
+| Description authoring/discovery | Checker, schema, discovery and rules agree; all six starters pass; valid user strings survive generation | Starter escaping repaired; core suite includes current T3 identity/page assertions |
+| Typed Rust and standalone app | `msdk gen` emits compiling records/State/Message plus a real GTK executable; original description/rules retained; custom backends explicit | Implementation under qualification; generated model crate compiles for all six starters and keyword/large-integer cases; native CI pending |
+| Clean developer path | Clean checkout to useful app, recoverable service error, typed diagnostic/source context, optional capability, build/package/run guide; coding <=30 min and provisioning/wall time separately measured | Generation removes manual Cargo setup; complete golden-path sample and measured novice/model trial still needed |
+| Services and errors | Version mismatch/unavailable/denied/malformed data through actual adapters; bounded async/cancel/retry behavior; privacy-safe structured diagnostics | Audit Host/Services, implement versioned error and cancellation contracts, then exercise adapters |
+| Optional lifecycle | Disabled/closed causes no extra reads, stale completions ignored, sources released; exact scope/account remains visible | Existing window watcher and Host ownership require lifecycle qualification |
+| Native toolkit/UI | Source-matched light/dark, regular/compact, default/larger text and supported scales; keyboard-only primary journey and live accessible names/roles | New isolated Linux generated-app checks pending; target Pantheon visual/interaction acceptance remains open |
+| Shell/status module | Discoverable reusable CodexBar-derived provider/account module; Windows bottom-right and elementary status hosts; all semantics and exact interaction gates from #605 | Native T3 integration is separate from reusable SDK capability; no parity claim |
+| Installation/distribution | Correct executable/desktop ID/icon/metainfo; package validation, fresh install/reinstall/remove and source-installed-loaded identity | `msdk pack` remains unimplemented; generated Cargo app is not an installable package |
+| Reference consumers | T3 monitoring/GitHub actions through actual SDK adapters; comparable native/SDK semantics; read-only authority and account freshness | T3 core fixtures exist; full reference/host/real-account qualification open; Messages remains deferred |
+| Performance | Same hardware/workload startup/RSS/idle CPU/wakeups/render metrics; explicit build/provision/queue timings | No new performance result claimed |
+| Model usability | Exact licensed model/runtime/weights/prompt/spec; clean isolated no-network trials, same rubric, failures/repairs/interventions retained; independent visual/behavior acceptance | Six fixed benchmark specs exist; controlled repeated runs and baseline comparisons remain open |
+| Release/API readiness | All above gates audited against final immutable artifacts, docs match shipped behavior, unsupported scope explicitly recorded | SDK v1 completion remains unproven |
+
+## Current verification environment
+
+This chat's Mac has Rust but no GTK development package. Core checks use an
+isolated copy of msdk and its external fixture files to avoid resolving the
+unrelated pinned Smithay Git dependency in the whole-OS workspace. Generated
+model compilation uses cached Cargo dependencies. This is not Linux GTK, target
+Pantheon, installation, hardware or owner visual acceptance evidence.
+
+`mseries/sdk-tests/prepare.py NEW_DIRECTORY` creates the reproducible SDK-only
+workspace, keeping the checked-in dependency lock as its starting point. The
+M-series SDK developer path workflow provisions Linux separately, tests/lints
+core, builds/tests/lints a generated GTK app and captures its actual executable
+in light/dark isolated desktops. Its resulting locks/source/hash/screenshots are
+retained. Runtime and target-host gates remain open until those are exercised.
