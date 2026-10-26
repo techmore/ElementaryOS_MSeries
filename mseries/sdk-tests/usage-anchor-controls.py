@@ -57,7 +57,7 @@ with tempfile.TemporaryDirectory(prefix='msdk-usage-anchor-') as directory:
                           + shlex.quote(json.dumps(snapshot)) + '\n')
     executable.chmod(0o700)
     env = dict(os.environ, XDG_DATA_HOME=str(root / 'data'), XDG_CONFIG_HOME=str(root / 'config'),
-               MSDK_ANCHOR_GEOMETRY=str(geometry), MSDK_POPUP_GEOMETRY=str(popup_geometry))
+               MSDK_ANCHOR_GEOMETRY=str(geometry), MSDK_POPUP_GEOMETRY=str(popup_geometry), MSDK_ANCHOR_TRACE="1")
     with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
         subprocess.run(['xdotool', 'mousemove', '--sync', '0', '0'], check=True)
         process = subprocess.Popen([str(args.binary.resolve()), str(executable)], env=env, stdout=stdout, stderr=stderr)

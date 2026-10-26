@@ -69,6 +69,13 @@ impl Inner {
         let source = gtk::glib::timeout_add_local_once(Duration::from_millis(450), move || {
             if let Some(inner) = weak.upgrade() {
                 inner.close_timer.borrow_mut().take();
+                if std::env::var_os("MSDK_ANCHOR_TRACE").is_some() {
+                    eprintln!(
+                        "anchor trace: close timer anchor={} popup={}",
+                        inner.anchor_motion.contains_pointer(),
+                        inner.popup_motion.contains_pointer()
+                    );
+                }
                 if !inner.anchor_motion.contains_pointer() && !inner.popup_motion.contains_pointer()
                 {
                     inner.popup.popdown();
@@ -78,6 +85,9 @@ impl Inner {
         *this.close_timer.borrow_mut() = Some(source);
     }
     fn closed(&self) {
+        if std::env::var_os("MSDK_ANCHOR_TRACE").is_some() {
+            eprintln!("anchor trace: popup closed");
+        }
         if self.changing_mode.get() {
             return;
         }
@@ -148,12 +158,18 @@ impl UsageAnchor {
         let motion = inner.anchor_motion.clone();
         let weak = Rc::downgrade(&inner);
         motion.connect_enter(move |_, _, _| {
+            if std::env::var_os("MSDK_ANCHOR_TRACE").is_some() {
+                eprintln!("anchor trace: anchor enter");
+            }
             if let Some(inner) = weak.upgrade() {
                 Inner::schedule_open(&inner);
             }
         });
         let weak = Rc::downgrade(&inner);
         motion.connect_leave(move |_| {
+            if std::env::var_os("MSDK_ANCHOR_TRACE").is_some() {
+                eprintln!("anchor trace: anchor leave");
+            }
             if let Some(inner) = weak.upgrade() {
                 Inner::schedule_close(&inner);
             }
@@ -162,12 +178,18 @@ impl UsageAnchor {
         let motion = inner.popup_motion.clone();
         let weak = Rc::downgrade(&inner);
         motion.connect_enter(move |_, _, _| {
+            if std::env::var_os("MSDK_ANCHOR_TRACE").is_some() {
+                eprintln!("anchor trace: popup enter");
+            }
             if let Some(inner) = weak.upgrade() {
                 Inner::cancel(&inner.close_timer);
             }
         });
         let weak = Rc::downgrade(&inner);
         motion.connect_leave(move |_| {
+            if std::env::var_os("MSDK_ANCHOR_TRACE").is_some() {
+                eprintln!("anchor trace: popup leave");
+            }
             if let Some(inner) = weak.upgrade() {
                 Inner::schedule_close(&inner);
             }
