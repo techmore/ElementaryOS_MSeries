@@ -73,7 +73,8 @@ bottom dock uses elementary's existing dock package and pinned launchers.
 minimize, maximize and close on the right (`:minimize,maximize,close`) so every window has a visible close button. **Keep my layout** changes
 nothing. The previous `org.gnome.desktop.wm.preferences button-layout` is snapshotted the first time the mode applies it and restored when
 the mode ends, when you switch to *Keep my layout* while active, or with `mseries-work-mode --restore`. New windows follow the setting; windows
-that were already open may need to be reopened to redraw their buttons.
+that were already open may need to be reopened to redraw their buttons. When the Work Mode plug is open, it also applies the selected
+layout directly to GTK in the System Settings process, so its own titlebar controls update immediately.
 
 ## Taskbar
 
