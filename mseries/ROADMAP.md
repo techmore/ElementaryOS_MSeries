@@ -7,6 +7,26 @@ The timer is active and enabled; full PR validation and the installer build
 passed. Restarted Settings and opened `settings://personal/work-mode` to load
 the plug. A live visual/click check still needs owner confirmation. See the
 latest OS9 handoff entry.
+## Taskbar alignment follow-up — 2026-10-26
+
+Corrected the geometry repair's omitted GTK shadow extent, which placed controls
+above the taskbar. Before/after nested Wayland screenshots reviewed; four mode
+transitions and open/close tracking still pass. Corrected build installed and
+dock alone reloaded. Owner visual acceptance remains open. See the latest handoff.
+
+## Work Mode / duplicate dock icons — 2026-10-26
+
+Fixed repeated dock initialization on widget remap and duplicate saved pins;
+startup now keeps one app object per desktop ID and normalizes pins in order.
+Repaired complete dock patch composition and made Exit Windows Work Mode apply
+immediately through the existing Desktop Mode helper. Production regression,
+full native build and light/dark launcher interaction checks pass. See
+[detailed evidence](dock-tests/receipts/2026-10-26-work-mode-duplicates.md).
+Also fixed negative Wayland geometry on taskbar -> floating transitions, which
+had triggered stock-dock fallback and lost running-app matching. Actual dock
+passes isolated Wayland open/close + four-transition lifecycle checks; final
+loaded dock reports nine running apps. Broader #593 acceptance and owner visual
+review remain open.
 
 ## Owner-priority SDK/T3 qualification queue — 2026-10-25
 

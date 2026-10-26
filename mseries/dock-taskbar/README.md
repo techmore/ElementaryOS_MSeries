@@ -136,3 +136,21 @@ the TaskbarNotifications linked type so partial taskbar builds are rejected.
 See `../desktop-notifications/README.md` for protocol, insets and history limits.
 
 GTK performance rules shared by every app here: [GTK-PERFORMANCE-ASAHI.md](../GTK-PERFORMANCE-ASAHI.md).
+
+## Duplicate launcher repair (2026-10-26)
+
+Canonical preparation applies `dock-unique-launchers.patch`. AppSystem loads
+once even if ItemManager maps again, keeps one object per desktop ID and saves
+only the completed restored pin list. Existing duplicate pins collapse to their
+first occurrence without reordering distinct apps. Both taskbar and floating
+layouts use this model. The Work Mode Exit action invokes the existing
+`mseries-desktop-mode elementary` helper for immediate restoration.
+
+See [regression and deployment evidence](../dock-tests/receipts/2026-10-26-work-mode-duplicates.md).
+
+`dock-mode-geometry.patch` couples new-layout measurement, requested surface
+size and shadow geometry so Wayland mode switches cannot reuse stale taskbar
+allocation as floating shadow extents. `dock-tests/test-wayland-transition.py`
+qualifies four transitions plus app open/close on a private nested compositor.
+`io.elementary.dock.items.ListRunningApps` returns tracked desktop IDs for
+read-only runtime verification independently of pins.
