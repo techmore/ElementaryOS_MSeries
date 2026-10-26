@@ -15,6 +15,7 @@ pub struct UsageControl {
     status: gtk::Label,
     monitor: Rc<CodexBarMonitor>,
     opened: Rc<Cell<bool>>,
+    preserve_unmap: Rc<Cell<bool>>,
 }
 
 impl UsageControl {
@@ -86,7 +87,12 @@ impl UsageControl {
         let opened = Rc::new(Cell::new(false));
         let weak_monitor = Rc::downgrade(&monitor);
         let opened_on_unmap = opened.clone();
+        let preserve_unmap = Rc::new(Cell::new(false));
+        let preserve_on_unmap = preserve_unmap.clone();
         root.connect_unmap(move |_| {
+            if preserve_on_unmap.get() {
+                return;
+            }
             opened_on_unmap.set(false);
             if let Some(monitor) = weak_monitor.upgrade() {
                 monitor.close();
@@ -98,9 +104,15 @@ impl UsageControl {
             status,
             monitor,
             opened,
+            preserve_unmap,
         })
     }
 
+    // Used only during a synchronous popup mode transition. Ordinary unmaps
+    // still close and cancel the monitor.
+    pub(crate) fn preserve_during_unmap(&self, preserve: bool) {
+        self.preserve_unmap.set(preserve);
+    }
     pub fn widget(&self) -> &gtk::Box {
         &self.root
     }

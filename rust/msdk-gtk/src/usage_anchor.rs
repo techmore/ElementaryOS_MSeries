@@ -32,11 +32,16 @@ impl Inner {
                 // GTK hides a visible popover when autohide changes. Close and
                 // reopen it while retaining the same control/read lifecycle.
                 self.changing_mode.set(true);
+                self.control.preserve_during_unmap(true);
                 self.popup.popdown();
                 self.popup.set_autohide(true);
                 self.pinned.set(true);
                 self.popup.popup();
+                self.control.preserve_during_unmap(false);
                 self.changing_mode.set(false);
+                if !self.popup.is_mapped() {
+                    self.closed();
+                }
             }
             return;
         }
