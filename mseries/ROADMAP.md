@@ -1,3 +1,31 @@
+## SDK model authoring discovery runner and offline preflight — 2026-10-26
+
+Added a bounded SDK JSON-action authoring controller for the frozen benchmark
+specs, plus a fixed project-only tool worker and external window/capture/quit
+probe. Four boundary tests pass. It pins qwen3.5:4b digest
+ d8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04,
+packaged Apache-2.0 license, runtime/options and prompt/spec/source identities.
+The model receives actual app frames; independent audit alone can establish the
+rubric done bar. `done` is a candidate, not a pass. No baseline/repeated-model or
+whole-SDK completion result is claimed by harness preparation.
+
+Prepared a separate ephemeral msdk-bench-20261026 clone with uid2000, zero
+capabilities, loopback-only networking for execution, no owner-data mounts and
+configured CPU/memory/process/disk bounds. Trusted GTK/SQLite/screenshot setup
+and cache warming occurred before the trial timer. Initial provisioning failed
+because networking was disabled too early; no model code/inference ran. Corrected
+order is provision first, disable and verify before generated code. No host
+model daemon was restarted, no second GPU worker launched, and no owner app,
+desktop, accounts or service data changed.
+
+Offline unprivileged native CLI/lifecycle/runtime preflight passes. Fixed
+settings new/gen/build/capture/Ctrl+Q succeeds through the actual tool bridge:
+generation ~0.021s, cold cache-completion build 82.12s, window mapped ~0.283s and
+capture ~0.927s. These are harness/provisioning facts, not model coding times or
+a general performance comparison. Archive/clear that owned smoke project before
+starting the unchanged s01 model cohort. Retain all failures/interventions and
+inspect produced code/GUI/SQLite/shortcuts before scoring. See sdk-bench/RUNNER.md.
+
 ## Owner SDK scope clarification: native is not mandatory for every app — 2026-10-26
 
 The owner explicitly said we do not need a native experience for all apps.
