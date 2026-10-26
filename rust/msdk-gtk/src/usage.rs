@@ -232,6 +232,17 @@ impl UsagePanel {
         Ok(())
     }
 
+    /// Invalidate the freshness of retained values without starting a read.
+    pub fn mark_stale(&self, now: i64) -> Result<(), SnapshotError> {
+        let mut stale = self.snapshot.borrow().clone();
+        for observation in &mut stale.observations {
+            if observation.state == State::Fresh {
+                observation.state = State::Stale;
+            }
+        }
+        self.update(&stale, now)
+    }
+
     /// Apply on the GTK/state-owner thread, after any cross-thread queue. An
     /// expired response is ignored. A failed read retains last-known data as
     /// stale and adds a visible failure notice without exposing private output.

@@ -179,6 +179,22 @@ pub enum SnapshotError {
 impl Snapshot {
     pub const VERSION: u32 = 1;
 
+    /// Re-evaluate source age on the state-owner thread immediately before
+    /// display. Never promote stale/failed observations to fresh.
+    pub fn refresh_freshness(&mut self, now: i64, max_age_seconds: u64) {
+        for observation in &mut self.observations {
+            if observation.state != State::Fresh {
+                continue;
+            }
+            observation.state = match observation.observed_at {
+                None => State::Unknown,
+                Some(time) if time > now => State::Unknown,
+                Some(time) if now.saturating_sub(time) as u64 > max_age_seconds => State::Stale,
+                Some(_) => State::Fresh,
+            };
+        }
+    }
+
     /// Validate structural facts only. This does not prove provider coverage,
     /// authorize an account, or deduplicate overlapping upstream measurements.
     pub fn validate(&self) -> Result<(), SnapshotError> {

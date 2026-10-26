@@ -88,3 +88,12 @@ observations stale, and shows a generic failure notice; a later successful
 snapshot replaces that state. This is opt-in: the caller still owns the
 process, context transitions, retry policy and lifetime. It does not install a
 status host or schedule reads.
+
+`msdk_gtk::codexbar_monitor::CodexBarMonitor` is an on-demand candidate
+controller for a `UsagePanel`. The host opens and closes it explicitly; opening
+alone does not read. `refresh` starts at most one bounded request and coalesces
+duplicates until the reply reaches the GTK thread. Closing cancels the owned
+process, invalidates queued results and marks retained fresh observations stale.
+The callback reports idle, refreshing, updated and failed states for a host to
+present. Source age is rechecked at final delivery; the controller does not
+schedule polling, install status controls, authenticate or enumerate accounts.

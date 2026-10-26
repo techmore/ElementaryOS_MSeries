@@ -1,3 +1,13 @@
+## On-demand usage refresh lifecycle — native validation pending, 2026-10-26
+
+A candidate CodexBarMonitor explicitly opens/closes a UsagePanel, starts one
+bounded read on request, coalesces duplicates, cancels/invalidate on close and
+reports state to its host. It rechecks source age at final GTK delivery; no
+polling is scheduled. Synthetic GTK tests cover closed/open no-read, duplicate
+refresh, age, cancellation and reopen. The 107-test core suite and clippy pass
+on macOS; source-matched GTK compilation and lifecycle execution are pending.
+This does not connect either actual desktop status host or real provider data.
+
 ## Scoped usage delivery validation — 2026-10-26
 
 Hosted ARM SDK developer-path run 40400566671 passed on 5a6a1e6. Its GTK

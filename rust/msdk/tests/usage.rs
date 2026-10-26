@@ -66,6 +66,14 @@ fn snapshots_retain_distinct_accounts_and_reject_duplicate_or_invalid_data() {
     let mut snapshot = Snapshot { coverage: Coverage::Partial, observations: vec![first.clone(), second] };
     assert_eq!(Snapshot::VERSION, 1);
     assert_eq!(snapshot.validate(), Ok(()));
+    let mut aged = snapshot.clone();
+    aged.refresh_freshness(401, 300);
+    assert_eq!(aged.observations[0].state, State::Stale);
+    aged.refresh_freshness(100, 300);
+    assert_eq!(aged.observations[0].state, State::Stale, "freshness checks never promote stale data");
+    let mut future = snapshot.clone();
+    future.refresh_freshness(99, 300);
+    assert_eq!(future.observations[0].state, State::Unknown);
     let grouped = snapshot.groups().unwrap();
     assert_eq!(grouped.len(), 1);
     assert_eq!(grouped[0].label, "Claude");

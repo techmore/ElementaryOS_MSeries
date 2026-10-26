@@ -313,7 +313,7 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
         let (tx, rx) = std::sync::mpsc::channel();
         let _task = msdk_gtk::codexbar::read_snapshot_scoped(
             context.token().unwrap(),
-            executable,
+            executable.clone(),
             u64::MAX,
             92,
             move |reply| tx.send(reply).unwrap(),
@@ -342,5 +342,86 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
                 .iter()
                 .any(|value| value.contains("synthetic-private-error"))
         );
+
+        use msdk_gtk::codexbar_monitor::{CodexBarMonitor, RefreshStart, RefreshState};
+        let marker = dir.join("reads");
+        let safe_marker = marker.to_str().unwrap().replace('\'', "'\\''");
+        let script = format!(
+            "#!/bin/sh\nprintf x >> '{safe_marker}'\nsleep 0.2\nprintf '%s' '{}'\n",
+            std::str::from_utf8(source).unwrap()
+        );
+        std::fs::write(&executable, &script).unwrap();
+        let panel =
+            std::rc::Rc::new(msdk_gtk::usage::UsagePanel::new(&snapshot, 1_767_225_600).unwrap());
+        let states = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+        let received = states.clone();
+        let monitor = CodexBarMonitor::new(panel.clone(), executable.clone(), 0, move |state| {
+            received.borrow_mut().push(state)
+        });
+        assert_eq!(monitor.refresh().unwrap(), RefreshStart::Closed);
+        assert!(!marker.exists(), "closed monitor must not start reads");
+        monitor.open();
+        assert!(!marker.exists(), "opening alone does not poll");
+        assert_eq!(monitor.refresh().unwrap(), RefreshStart::Started);
+        assert_eq!(monitor.refresh().unwrap(), RefreshStart::Coalesced);
+        let main = gtk::glib::MainContext::default();
+        let deadline = std::time::Instant::now() + Duration::from_secs(4);
+        while !states.borrow().contains(&RefreshState::Updated)
+            && std::time::Instant::now() < deadline
+        {
+            main.iteration(false);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert!(states.borrow().contains(&RefreshState::Updated));
+        assert!(!monitor.is_busy());
+        assert_eq!(std::fs::read_to_string(&marker).unwrap(), "x");
+        let mut aged = Vec::new();
+        labels(panel.widget().upcast_ref(), &mut aged);
+        assert!(
+            aged.iter().any(|value| value == "Stale"),
+            "source age is rechecked on final delivery"
+        );
+
+        std::fs::write(
+            &executable,
+            format!("#!/bin/sh\nprintf x >> '{safe_marker}'\nexec sleep 20\n"),
+        )
+        .unwrap();
+        assert_eq!(monitor.refresh().unwrap(), RefreshStart::Started);
+        let deadline = std::time::Instant::now() + Duration::from_secs(3);
+        while std::fs::read_to_string(&marker).unwrap().len() < 2
+            && std::time::Instant::now() < deadline
+        {
+            main.iteration(false);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert_eq!(std::fs::read_to_string(&marker).unwrap(), "xx");
+        monitor.close();
+        assert!(!monitor.is_busy());
+        assert_eq!(monitor.refresh().unwrap(), RefreshStart::Closed);
+        std::fs::write(&executable, &script).unwrap();
+        monitor.open();
+        assert_eq!(monitor.refresh().unwrap(), RefreshStart::Started);
+        let deadline = std::time::Instant::now() + Duration::from_secs(4);
+        while (monitor.is_busy() || std::fs::read_to_string(&marker).unwrap().len() < 3)
+            && std::time::Instant::now() < deadline
+        {
+            main.iteration(false);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert!(
+            !monitor.is_busy(),
+            "old completion must not clear or block the new read"
+        );
+        assert_eq!(std::fs::read_to_string(&marker).unwrap(), "xxx");
+        assert_eq!(
+            states
+                .borrow()
+                .iter()
+                .filter(|&&state| state == RefreshState::Updated)
+                .count(),
+            2
+        );
+        monitor.close();
     }
 }
