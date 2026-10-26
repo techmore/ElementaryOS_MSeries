@@ -1,11 +1,8 @@
 ## Monitor restore + WIP4 deployment gate — 2026-10-26
 
 The WD22TB4 picture returned on front-left after failing on rear-left. The profile watcher D-Bus tuple defects are fixed
-in PR #601; live profile application and repeated unplug/replug recovery remain unverified. Per owner sequencing, finish
-WIP4/upstream preparation before another cable test. Reviewed Aurora #186 (direct DP-alt pipeline reservation/takeover)
-and #163 (TIPD `-ENOSPC` handling): both are open/blocked and not direct fixes for this tunneled DPTX timeout; #186
-overlaps WIP4's local DCP patch. Keep them out until focused interaction review or upstream merge. Pinned #158 merged
-unchanged; #157 remains open. Exact ARM64 artifact 39944207967 is now checksum-audited and its private offline trial
+in PR #601; manual profile application succeeds, while automatic unplug/replug recovery remains unverified. Per owner sequencing, finish
+WIP4/upstream preparation before another cable test. The refreshed scan also covered #9, #154, #157, #170 and issue #130. No new narrow fix is ready to add: #186 overlaps the local DCP patch; #163 conflicts with #186 and preserves dock USB rather than recovering a tunneled display; #9 is a broad older tunnel implementation already represented in the pinned source; #154 concerns simultaneous tunnels; #157 is already included; #170 and #130 have different triggers. Keep the source pin unchanged. See [2026-10-26 upstream scan](aurora/unified72/upstream-review-2026-10-26.md). Pinned #158 merged unchanged. Exact ARM64 artifact 39944207967 is now checksum-audited and its private offline trial
 bundle is staged at `/home/sdolbec/aurora-wip4-trial-20261026-v2/`; candidate initrd/vmlinuz, proposed GRUB config,
 package/source/provenance and byte-exact shared-boot rollback are included. `.20` stays the proposed persistent default.
 No kernel package, live GRUB config or boot payload has been changed. Review rollback access/fallback compatibility,

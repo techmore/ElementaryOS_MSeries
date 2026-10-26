@@ -2,11 +2,7 @@
 
 ## wip4 candidate — upstream scan and deployment preparation, October 26, 2026
 
-Before any further dock cable test, the upstream scan reviewed Aurora #186 (direct DP-alt pipeline reservation/takeover)
-and #163 (TIPD handling when a pipeline is occupied). Both are open and blocked; neither directly fixes the WD22TB4
-tunneled DPTX timeout observed on this J314S, and #186 overlaps the local DCP-fabric timeout patch. They are excluded
-from this candidate until a focused rebase/interaction review or an upstream merge. The pinned #158 source commit has
-since merged unchanged; #157 remains open. See the [dated source audit](AURORA20-PORT-AUDIT-2026-10-22.md#upstream-displaytype-c-scan-before-j314s-testing--2026-10-26).
+Before any further dock cable test, the refreshed scan reviewed Aurora #186, #163, #9, #154, #157, #170 and issue #130. No new narrow fix is ready to add: #186 overlaps the local DCP-fabric timeout patch; #163 preserves dock USB and conflicts with #186; #9 is a broad older tunnel implementation already represented in the pinned source; #154 concerns simultaneous tunnels; #157 is already included; #170 and #130 have different triggers. Keep this WIP4 pin unchanged. See the [2026-10-26 source scan](upstream-review-2026-10-26.md).
 
 **Offline trial preparation is complete; deployment and qualification remain open.** Run 39944207967's exact WIP4
 package/source/provenance are checksum-audited and staged with the candidate vmlinuz/initrd, proposed GRUB config and

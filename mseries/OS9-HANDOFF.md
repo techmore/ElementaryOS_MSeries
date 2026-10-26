@@ -5,14 +5,9 @@ The WD22TB4 picture returned after the owner moved the cable from rear-left to f
 not same-port recovery or repeat plug/unplug reliability. The deployed display-profile watcher had two D-Bus tuple
 signature defects; both are fixed in [PR #601](https://github.com/techmore/ElementaryOS_MSeries/pull/601), the watcher
 was restarted without restarting Wingpanel/compositor, and the AOC profile now matches. Actual post-fix
-`ApplyMonitorsConfig` and unplug/replug behavior are still unverified. Keep the working front-left connection in place.
+`ApplyMonitorsConfig` was then applied manually and succeeded; the AOC profile matches and the live mode remains 1920×1080/60. The automatic physical unplug/replug restore path is still unverified. Keep the working front-left connection in place.
 
-Per owner's sequencing request, WIP4/upstream review is happening before another cable cycle. The dated audit reviewed
-Aurora #186 (direct DP-alt pipeline reservation/takeover) and #163 (TIPD `-ENOSPC` handling). Both remain open and
-blocked; they do not directly fix the WD22TB4 tunneled DPTX timeout, and #186 overlaps local patch 0002. Exclude both
-from this candidate for now; pinned #158 merged unchanged, while #157 remains open. The source branch is 163 commits
-behind moving `integration/aurora`, so do not roll the full branch forward. Details and sources are in
-`aurora/unified72/AURORA20-PORT-AUDIT-2026-10-22.md`.
+Per owner's sequencing request, WIP4/upstream review is happening before another cable cycle. The refreshed 2026-10-26 scan covers Aurora #186, #163, #9, #154, #157, #170, and issue #130. No new narrow fix is ready to add: #186 overlaps local patch 0002 in `dcp-fabric.c`; #163 is a TIPD USB-preservation fix and conflicts with #186; #9 is a broad older tunnel implementation while the pinned source already has tunnel support; #154 is for simultaneous tunnels; #157 is already patch 0001; #170 and #130 do not match this hotplug trigger. Keep the WIP4 source pin unchanged. Details: `aurora/unified72/upstream-review-2026-10-26.md`.
 
 WIP4 preparation is now concrete: the run 39944207967 package/source/provenance passed artifact/checksum review, and an
 offline trial bundle is staged privately at `/home/sdolbec/aurora-wip4-trial-20261026-v2/`. It includes candidate
