@@ -16,7 +16,7 @@ diff --git a/src/AppSystem/Launcher.vala b/src/AppSystem/Launcher.vala
 +        var app_id = app.app_info.get_id ();
 +        if (app_id == "io.github.techmore.ClaudePantheonRs.desktop" ||
 +            app_id == "io.github.techmore.ClaudePantheonRs") {
-+            t3r_popup = new TaskbarT3RPopover (this, app);
++            t3r_popup = new TaskbarT3RPopover (this, app.app_info, false, ItemManager.get_icon_size () * 7 / 12);
 +        }
 +
          update_tooltip ();

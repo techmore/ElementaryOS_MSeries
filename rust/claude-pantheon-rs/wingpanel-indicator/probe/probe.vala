@@ -26,17 +26,23 @@ int main (string[] args) {
     Gtk.init ();
     Granite.init ();
     var fixture = args.length > 1 ? args[1] : "probe/status-fixture.json";
-    var indicator = new ClaudePantheon.Indicator (fixture);
+    var metadata = new KeyFile ();
+    try {
+        metadata.load_from_file (Path.build_filename (Path.get_dirname (fixture), "..", "..", "data",
+            "io.github.techmore.ClaudePantheonRs.desktop"), KeyFileFlags.NONE);
+    } catch (Error e) {
+        stderr.printf ("Cannot load native desktop metadata: %s\n", e.message);
+        return 1;
+    }
+    var indicator = new ClaudePantheon.Indicator (fixture, new GLib.DesktopAppInfo.from_keyfile (metadata));
     var panel = indicator.get_display_widget ();
     var popover = indicator.get_widget ();
-    // Render the fixture at a fixed instant so the countdowns are deterministic.
-    var now = new DateTime.from_iso8601 ("2026-10-22T00:36:00Z", new TimeZone.utc ());
-    indicator.render (ClaudePantheon.Feed.load (fixture), now);
+    // The panel and Dock compile the same complete provider/account renderer.
 
     var texts = new Gee.ArrayList<string> ();
     collect (popover, texts);
     collect (panel, texts);
-    string[] expect = { "Claude session 59%", "resets in 1 h 24 min", "Codex · Weekly", "needs you", "next task", "2" };
+    string[] expect = { "claude · 111 tokens", "grok · 222 tokens", "opencode · 333 tokens", "Claude Work", "Grok Work", "OpenCode Work", "2" };
     foreach (var e in expect) {
         bool found = false;
         foreach (var t in texts) if (t.contains (e)) found = true;

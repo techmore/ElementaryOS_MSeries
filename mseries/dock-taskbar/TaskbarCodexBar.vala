@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0
- * CodexBar native quota menu, anchored in the Windows taskbar status area. */
+ * Native T3 provider/account monitor in the Dock's status area. */
 public class Dock.TaskbarCodexBar : Gtk.Box {
-    private MSeries.CodexBarIndicator? indicator;
+    private TaskbarT3RPopover? indicator;
+    private Gtk.Button button;
     private Gtk.Popover popup;
     private uint open_timer = 0;
     private uint close_timer = 0;
@@ -9,11 +10,11 @@ public class Dock.TaskbarCodexBar : Gtk.Box {
 
     construct {
         orientation = Gtk.Orientation.VERTICAL;
-        var button = new Gtk.Button () { valign = Gtk.Align.CENTER };
+        button = new Gtk.Button () { valign = Gtk.Align.CENTER };
         button.add_css_class ("flat");
         button.add_css_class ("taskbar-codexbar-button");
-        button.update_property (Gtk.AccessibleProperty.LABEL, "CodexBar", -1);
-        var image = new Gtk.Image.from_icon_name ("codexbar");
+        button.update_property (Gtk.AccessibleProperty.LABEL, "T3 provider usage and accounts", -1);
+        var image = new Gtk.Image.from_icon_name ("io.github.techmore.ClaudePantheonRs");
         image.pixel_size = 28;
         button.child = image;
         append (button);
@@ -55,7 +56,6 @@ public class Dock.TaskbarCodexBar : Gtk.Box {
         popup.closed.connect (() => {
             pinned = false;
             cancel_close ();
-            if (indicator != null) indicator.closed ();
         });
         var keys = new Gtk.EventControllerKey ();
         keys.key_pressed.connect ((key) => {
@@ -70,26 +70,22 @@ public class Dock.TaskbarCodexBar : Gtk.Box {
     private void show_popup (bool interactive) {
         cancel_close ();
         if (indicator == null) {
-            indicator = new MSeries.CodexBarIndicator ();
-            popup.child = indicator.get_widget ();
-            popup.child.width_request = 400;
-            expand_scroll_area (popup.child);
+            var desktop = new GLib.DesktopAppInfo ("io.github.techmore.ClaudePantheonRs.desktop");
+            if (desktop == null) {
+                popup.child = new Gtk.Label ("Install the native T3 client to read provider usage.") { wrap = true };
+            } else {
+                indicator = new TaskbarT3RPopover (button, desktop, true);
+                indicator.dismiss_requested.connect (() => popup.popdown ());
+                popup.child = indicator.get_widget ();
+            }
         }
         if (popup.visible && popup.autohide != interactive) popup.popdown ();
         pinned = interactive;
         // Hover opens without a grab or keyboard focus change. Click pins the
         // menu and enables the usual outside-click/Escape dismissal.
         popup.autohide = interactive;
-        indicator.opened ();
+        if (indicator != null) indicator.opened ();
         popup.popup ();
-    }
-    private void expand_scroll_area (Gtk.Widget widget) {
-        if (widget is Gtk.ScrolledWindow) {
-            ((Gtk.ScrolledWindow) widget).max_content_height = 480;
-        }
-        for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
-            expand_scroll_area (child);
-        }
     }
     private void cancel_open () {
         if (open_timer != 0) { Source.remove (open_timer); open_timer = 0; }

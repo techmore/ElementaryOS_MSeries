@@ -80,9 +80,9 @@ Live Wayland hover/placement acceptance remains distinct from fixture results.
 
 Running markers and identity matching: see [`../DOCK-APP-TRACKING.md`](../DOCK-APP-TRACKING.md).
 
-## T3 token dropdown
+## T3 status-area dropdown
 
-The existing T3 launcher dropdown displays provider-wide token history (total,
+The Dock's T3 status-area dropdown displays provider-wide token history (total,
 input, output, cached input, reasoning and available estimated cost), its date
 window and freshness. Provider totals include all accounts and are explicitly
 distinguished from the selected account's plan windows. Unknown or stale quota
@@ -92,6 +92,10 @@ The native T3 connection writes the local status snapshot; the Dock only watches
 that file and opens no second server connection. Native GTK/Granite controls
 follow the desktop theme. Hover, click pinning and launcher actions are retained
 in floating and taskbar layouts.
+The Windows-mode bottom-right button is `TaskbarCodexBar`; it now embeds the
+same T3 view rather than the separate Qt/CodexBar snapshot renderer. The native
+T3 Wingpanel indicator and optional app-launcher popup compile that same view,
+so account/provider coverage cannot diverge between these consumers.
 
 The updated native producer and private Dock were built, installed and loaded
 on 2026-10-26. A connected snapshot supplied nonzero token totals with its source

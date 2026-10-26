@@ -70,7 +70,7 @@ if provider in {"codex", "both", "custom"}:
         order = ["codex", *[item for item in order if item != "codex"]]
     elif provider == "both":
         order = ["codex", "claude", *[item for item in order if item not in {"codex", "claude"}]]
-    added = ["opencodego", *(["grok"] if grok_installed else [])]
+    added = ["claude", "opencodego", *(["grok"] if grok_installed else [])]
     config["providerOrder"] = list(dict.fromkeys([*order, *added]))
     config["provider"] = "custom"
 else:

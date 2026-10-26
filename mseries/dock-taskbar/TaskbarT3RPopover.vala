@@ -7,7 +7,9 @@ using Json;
 public class Dock.TaskbarT3RPopover : GLib.Object {
     private const string APP_ID = "io.github.techmore.ClaudePantheonRs";
     private Gtk.Popover popup;
-    private Dock.App app;
+    private GLib.DesktopAppInfo app;
+    private Gtk.Widget content;
+    public signal void dismiss_requested ();
     private string status_path;
     private FileMonitor? monitor;
     private uint app_watch_id = 0;
@@ -28,9 +30,10 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private Gtk.Label freshness;
     private Gtk.Label error_label;
 
-    public TaskbarT3RPopover (Gtk.Widget anchor, Dock.App app) {
+    public TaskbarT3RPopover (Gtk.Widget anchor, GLib.DesktopAppInfo app, bool embedded = false,
+                              int mark_size = 28, string? feed_path = null) {
         this.app = app;
-        status_path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "claude-pantheon-rs", "status.json");
+        status_path = feed_path ?? GLib.Path.build_filename (Environment.get_user_cache_dir (), "claude-pantheon-rs", "status.json");
         install_style ();
 
         popup = new Gtk.Popover () {
@@ -41,7 +44,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         popup.set_offset (0, -1);
         popup.add_css_class (Granite.STYLE_CLASS_MENU);
         popup.add_css_class ("taskbar-t3r-popup");
-        popup.set_parent (anchor);
+        if (!embedded) popup.set_parent (anchor);
 
         var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 10) {
             width_request = 380,
@@ -53,8 +56,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
 
         var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
         var mark = new Gtk.Image.from_icon_name ("io.github.techmore.ClaudePantheonRs") {
-            // Keep the existing 28 px size at the 48 px default, then follow the shared dock token.
-            pixel_size = ItemManager.get_icon_size () * 7 / 12
+            pixel_size = mark_size
         };
         var title_block = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) { hexpand = true };
         var title = new Gtk.Label ("T3-R Pantheon") { xalign = 0 };
@@ -143,13 +145,15 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         open_full.add_css_class ("suggested-action");
         open_full.clicked.connect (() => run_action ("open-full"));
         root.append (open_full);
-        popup.child = new Gtk.ScrolledWindow () {
+        content = new Gtk.ScrolledWindow () {
             child = root,
             hscrollbar_policy = Gtk.PolicyType.NEVER,
             vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
             propagate_natural_height = true,
             max_content_height = 640
         };
+        content.add_css_class ("taskbar-t3r-popup");
+        if (!embedded) popup.child = content;
 
         var motion = new Gtk.EventControllerMotion ();
         motion.enter.connect (() => {
@@ -166,7 +170,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             cancel_open ();
             schedule_close ();
         });
-        anchor.add_controller (motion);
+        if (!embedded) anchor.add_controller (motion);
 
         var popup_motion = new Gtk.EventControllerMotion ();
         popup_motion.enter.connect (cancel_close);
@@ -177,14 +181,15 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         keys.key_pressed.connect ((key) => {
             if (key != Gdk.Key.Escape) return false;
             popup.popdown ();
+            dismiss_requested ();
             return true;
         });
-        ((Gtk.Widget) popup).add_controller (keys);
+        (embedded ? content : (Gtk.Widget) popup).add_controller (keys);
         popup.closed.connect (() => {
             pinned = false;
             cancel_close ();
         });
-        anchor.unmap.connect (() => {
+        if (!embedded) anchor.unmap.connect (() => {
             cancel_open ();
             cancel_close ();
             popup.popdown ();
@@ -200,6 +205,13 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             });
         watch_status ();
         reload ();
+    }
+
+    public Gtk.Widget get_widget () { return content; }
+
+    public void opened () {
+        reload ();
+        refresh_local_accounts ();
     }
 
     public void toggle_from_icon () {
@@ -636,8 +648,9 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private void run_action (string action) {
         var context = Gdk.Display.get_default ().get_app_launch_context ();
         context.set_timestamp (Gdk.CURRENT_TIME);
-        app.launch (context, action);
+        app.launch_action (action, context);
         popup.popdown ();
+        dismiss_requested ();
     }
 
     private void open_thread (string id) {
@@ -650,6 +663,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             Process.spawn_async (null, { executable, "--thread", id }, null, SpawnFlags.SEARCH_PATH, null, out pid);
             if (pid <= 0) throw new IOError.FAILED ("The T3-R application did not start.");
             popup.popdown ();
+            dismiss_requested ();
         } catch (Error e) {
             error_label.label = "Could not open the thread: " + e.message;
             error_label.visible = true;
