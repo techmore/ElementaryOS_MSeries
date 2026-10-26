@@ -62,7 +62,10 @@ private bundle's `inputs/SHA256SUMS` verify. The staged `boot.bin.rollback`
 SHA-256 (`9c9c2d01…`) matches the live `/boot/m1n1/boot.bin` byte-for-byte;
 `uname -r` remains wip3, GRUB `next_entry` is empty, `.20` is still persistent
 default, and `/boot` has 102 MB free. WIP4 is not installed or armed. These checks
-confirm staging/fallback identity, not a WIP4 boot or recovery result.
+confirm staging/fallback identity, not a WIP4 boot or recovery result. The candidate
+kernel package declares 154,996 KB installed size and only `kmod` as a dependency;
+its control archive contains no maintainer scripts. Root has 21 GB free, and the
+staged 33 MB kernel plus 24 MB initramfs fit within current `/boot` headroom.
 
 ## Appearance integration qualification — 2026-10-26
 
