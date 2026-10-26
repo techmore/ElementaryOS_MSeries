@@ -1,3 +1,14 @@
+## Multi-provider usage fixture review — 2026-10-26
+
+Hosted ARM SDK run 40396405090 passed on 2111eb1. Native synthetic checks cover
+two Codex accounts, two Claude, Grok and OpenCode and a reachable programmatic
+scroll end; eight reviewed top/end light/dark Sans 10/15 frames are retained in
+sdk-tests/receipts/2026-10-26-usage-multiprovider. Existing CodexBar provider
+marks were staged only in the isolated fixture. At large text only two providers
+are visible on opening, so the provider-coverage presentation requirement is
+still unmet. Keyboard scrolling, actual hosts, real adapters and owner visual
+approval remain open.
+
 ## Usage provider marks and scrolling fixture — validation pending, 2026-10-26
 
 The candidate usage component can use existing CodexBar symbolic provider marks
