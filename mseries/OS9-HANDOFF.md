@@ -30,7 +30,7 @@ error: each logical-monitor tuple also lacked its own final properties
 dictionary. Both are corrected in source and the installed user-local watcher;
 only the watcher was restarted (no Wingpanel/compositor restart). Its XDG desktop
 autostart entry is enabled and its process is running under the user session. At
-11:33 EDT, `mseries-display-profiles apply aoc-dock` returned success; Gala reported
+07:33 EDT, `mseries-display-profiles apply aoc-dock` returned success; Gala reported
 the saved AOC layout at 1920x1080/60, x=2419, scale 1.0, while DP-2 stayed connected.
 This proves the repaired D-Bus call can apply the saved profile. The private profile
 store was backed up at
