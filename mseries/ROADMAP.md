@@ -1,10 +1,12 @@
-## Windows Work Mode exit action — 2026-10-26
+## Work Mode / duplicate dock icons — 2026-10-26
 
-The taskbar Start menu Power menu now includes **Exit Windows Work Mode**. It
-turns off the existing persistent master switch and lets the Work Mode service
-restore the ordinary desktop preferences. Source-only change; dock build, visual
-review, installation and live-session behavior remain unverified. See the latest
-OS9 handoff entry.
+Fixed repeated dock initialization on widget remap and duplicate saved pins;
+startup now keeps one app object per desktop ID and normalizes pins in order.
+Repaired complete dock patch composition and made Exit Windows Work Mode apply
+immediately through the existing Desktop Mode helper. Production regression,
+full native build and light/dark launcher interaction checks pass. See
+[detailed evidence](dock-tests/receipts/2026-10-26-work-mode-duplicates.md).
+Broader #593 acceptance and owner visual review remain open.
 
 ## Owner-priority SDK/T3 qualification queue — 2026-10-25
 

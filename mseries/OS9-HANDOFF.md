@@ -1,18 +1,28 @@
-## Windows Work Mode can now exit from the taskbar — 2026-10-26
+## Duplicate dock icons and immediate Work Mode exit — 2026-10-26
 
-Added **Exit Windows Work Mode** to the taskbar Start menu's Power menu in
-`mseries/patches/dock-taskbar.patch`. It sets the existing
-`io.elementary.mseries.work-mode enabled` GSettings master switch to false; the
-existing Work Mode service then restores the saved wallpaper and dock settings.
-This provides a direct way to leave the mode from its own desktop. The existing
-Desktop Mode launcher remains available.
+Owner clarified the icon defect as duplicates; Windows Work Mode here is the
+Windows-style desktop/taskbar. Live `io.elementary.dock launchers` contained
+22 entries for 11 unique desktop IDs, in the same order twice. Source inspection
+found `ItemManager.map` calls singleton `AppSystem.load` again on remap; loading
+appended duplicate objects and overwrote their hash entries. The new
+`dock-unique-launchers.patch` makes loading single-shot, owns hash keys, reuses
+existing app objects and persists pins only after the full restore. Existing
+duplicate preferences are normalized in first-occurrence order on startup.
 
-Source and README updated on `codex/work-mode-exit-action`, branched from current
-`origin/dev` `659e17ba`. No build, runtime interaction, install, or live mode
-switch was performed. The current checkout therefore does not establish that the
-action is installed or loaded on the j314s. Next: build the pinned dock source
-with the patch, review the Power menu action in both themes, then install through
-the owner's normal dock workflow if requested.
+Also repaired the exit-action patch composition: its Taskbar new-file hunk
+count dropped the final seven lines and the downstream power-buttons patch no
+longer applied. Exit now invokes `mseries-desktop-mode elementary`, applying the
+restore immediately instead of waiting up to the next timer tick.
+
+Verification: duplicate-pin regression fails before the fix (4 model entries
+instead of 2); the five production AppSystem/resolver tests pass afterward,
+including repeated load, pinning, grouping, close and reopen. All 13 isolated
+Work Mode helper tests pass. Complete pinned-source build and native launcher
+light/dark pointer/keyboard, marker, size-policy and hover checks pass.
+Deployment and final loaded-state evidence are recorded in
+[dock receipt](dock-tests/receipts/2026-10-26-work-mode-duplicates.md).
+Owner visual acceptance and broader #593 qualification remain open. No
+Wingpanel restart, kernel, bootloader or audio changes.
 
 ## Appearance integration qualification — 2026-10-26
 

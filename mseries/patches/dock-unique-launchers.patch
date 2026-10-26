@@ -1,0 +1,65 @@
+--- a/src/AppSystem/AppSystem.vala
++++ b/src/AppSystem/AppSystem.vala
+@@ -18,7 +18,9 @@
+     private ListStore apps_store;
+     public ListModel apps { get { return apps_store; } }
+
+-    private GLib.HashTable<unowned string, App> id_to_app;
++    private GLib.HashTable<string, App> id_to_app;
++    private bool loading = false;
++    private bool loaded = false;
+
+     private AppSystem () { }
+
+@@ -26,7 +28,7 @@
+         apps_store = new ListStore (typeof (App));
+         apps_store.items_changed.connect (save_pinned);
+
+-        id_to_app = new HashTable<unowned string, App> (str_hash, str_equal);
++        id_to_app = new HashTable<string, App> (str_hash, str_equal);
+     }
+
+     public App? get_app (string id) {
+@@ -34,6 +36,10 @@
+     }
+
+     public async void load () {
++        // ItemManager maps again during layout changes. Subscribe and restore once.
++        if (loaded) return;
++        loaded = true;
++        loading = true;
+         foreach (string app_id in settings.get_strv ("launchers")) {
+             var app_info = new GLib.DesktopAppInfo (app_id);
+             if (app_info != null) {
+@@ -41,11 +46,21 @@
+             }
+         }
+
++        loading = false;
++        save_pinned ();
++
+         yield sync_windows ();
+         WindowSystem.get_default ().notify["windows"].connect (sync_windows);
+     }
+
+     private App add_app (DesktopAppInfo app_info, bool pinned) {
++        // Old settings and repeated launch requests can contain the same desktop ID.
++        // Keep one model item: replacing the hash entry leaves an orphan launcher.
++        var existing = id_to_app[app_info.get_id ()];
++        if (existing != null) {
++            if (pinned) existing.pinned = true;
++            return existing;
++        }
+         var app = new App (app_info, pinned);
+         app.removed.connect (remove_app);
+         app.notify["pinned"].connect (save_pinned);
+@@ -75,6 +90,9 @@
+     }
+
+     private void save_pinned () {
++        // Appending emits items_changed synchronously. Persist only the complete
++        // restored list, never a partially loaded set of pins.
++        if (loading) return;
+         string[] new_pinned_ids = {};
+
+         for (uint i = 0; i < apps_store.get_n_items (); i++) {

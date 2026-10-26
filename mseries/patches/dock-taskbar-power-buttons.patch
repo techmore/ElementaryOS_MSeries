@@ -92,8 +92,14 @@ index ced842f..b0f8e01 100644
          if (action == "lock") {
              spawn ({ "loginctl", "lock-session" });
              return;
-@@ -298,26 +299,50 @@ public class Dock.TaskbarRow : Gtk.Widget {
+@@ -298,32 +299,56 @@ public class Dock.TaskbarRow : Gtk.Widget {
              spawn ({ "io.elementary.settings" });
+             return;
+         }
+         if (action == "elementary") {
+             // This is the same persistent master switch exposed by Switchboard.
+             // Apply immediately, using the same path as the Desktop Mode launcher.
+             spawn ({ "mseries-desktop-mode", "elementary" });
              return;
          }
 -        string method;
