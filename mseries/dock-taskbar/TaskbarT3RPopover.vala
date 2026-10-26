@@ -7,13 +7,19 @@ using Json;
 public class Dock.TaskbarT3RPopover : GLib.Object {
     private const string APP_ID = "io.github.techmore.ClaudePantheonRs";
     private Gtk.Popover popup;
-    private Dock.App app;
+    private Dock.App? app;
+    private Gtk.Stack pages;
+    private Gtk.Box github_page;
+    private Gtk.Box accounts_page;
+    private MSeries.CodexBarIndicator? accounts_indicator;
+    private MSeries.RepoBarIndicator? repositories_indicator;
     private string status_path;
     private FileMonitor? monitor;
     private uint app_watch_id = 0;
     private bool application_running = false;
     private uint open_timer = 0;
     private uint close_timer = 0;
+    private uint freshness_timer = 0;
     private bool pinned = false;
     private Gtk.Label account;
     private Gtk.Label connection;
@@ -28,7 +34,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private Gtk.Label freshness;
     private Gtk.Label error_label;
 
-    public TaskbarT3RPopover (Gtk.Widget anchor, Dock.App app) {
+    public TaskbarT3RPopover (Gtk.Widget anchor, Dock.App? app = null) {
         this.app = app;
         status_path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "claude-pantheon-rs", "status.json");
         install_style ();
@@ -50,6 +56,18 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             margin_start = 12,
             margin_end = 12
         };
+
+        pages = new Gtk.Stack () { hhomogeneous = false, vhomogeneous = false };
+        var switcher = new Gtk.StackSwitcher () { stack = pages, halign = Gtk.Align.FILL, margin_top = 8, margin_start = 8, margin_end = 8 };
+        var shell = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+        shell.append (switcher);
+        shell.append (pages);
+        accounts_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        pages.add_titled (accounts_page, "usage", "Usage");
+        pages.add_titled (root, "server", "T3 server");
+        github_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        pages.add_titled (github_page, "github", "GitHub");
+        pages.notify["visible-child-name"].connect (update_repository_page);
 
         var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
         var mark = new Gtk.Image.from_icon_name ("io.github.techmore.ClaudePantheonRs") {
@@ -128,15 +146,15 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         root.append (activity_scroll);
 
         var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
-        var new_chat = new Gtk.Button.with_label ("New chat") { hexpand = true };
-        new_chat.clicked.connect (() => run_action ("new-thread"));
         var usage = new Gtk.Button.with_label ("Usage");
         usage.clicked.connect (() => run_action ("usage"));
         var repositories = new Gtk.Button.with_label ("Repositories");
         repositories.clicked.connect (() => run_action ("repositories"));
         var settings = new Gtk.Button.with_label ("Settings");
         settings.clicked.connect (() => run_action ("settings"));
-        actions.append (new_chat);
+        var shiplog = new Gtk.Button.with_label ("Activity");
+        shiplog.tooltip_text = "Shiplog · today's commits, merged PRs and closed issues";
+        shiplog.clicked.connect (() => run_action ("activity"));
         actions.append (usage);
         actions.append (repositories);
         actions.append (settings);
@@ -149,13 +167,25 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
 
         error_label = new Gtk.Label ("") { xalign = 0, wrap = true, visible = false };
         error_label.add_css_class ("error");
-        root.append (error_label);
+        shell.append (error_label);
+        error_label.margin_start = 12;
+        error_label.margin_end = 12;
 
-        var open_full = new Gtk.Button.with_label ("Open full chat");
+        var open_full = new Gtk.Button.with_label ("Open T3");
         open_full.add_css_class ("suggested-action");
         open_full.clicked.connect (() => run_action ("open-full"));
-        root.append (open_full);
-        popup.child = root;
+        var footer = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
+            margin_start = 12, margin_end = 12, margin_bottom = 10
+        };
+        shiplog.hexpand = true;
+        open_full.hexpand = true;
+        footer.append (shiplog);
+        footer.append (open_full);
+        shell.append (footer);
+        popup.child = new Gtk.ScrolledWindow () {
+            child = shell, hscrollbar_policy = Gtk.PolicyType.NEVER,
+            propagate_natural_height = true, max_content_height = 640
+        };
 
         var motion = new Gtk.EventControllerMotion ();
         motion.enter.connect (() => {
@@ -189,6 +219,9 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         popup.closed.connect (() => {
             pinned = false;
             cancel_close ();
+            stop_freshness_timer ();
+            if (repositories_indicator != null) repositories_indicator.closed ();
+            if (accounts_indicator != null) accounts_indicator.closed ();
         });
         anchor.unmap.connect (() => {
             cancel_open ();
@@ -221,6 +254,33 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         popup.autohide = interactive;
         reload ();
         popup.popup ();
+        update_repository_page ();
+        if (freshness_timer == 0) freshness_timer = Timeout.add_seconds (30, () => {
+            reload ();
+            return Source.CONTINUE;
+        });
+    }
+
+    private void update_repository_page () {
+        if (popup.visible && pages.visible_child_name == "usage") {
+            if (accounts_indicator == null) {
+                accounts_indicator = new MSeries.CodexBarIndicator (true);
+                accounts_page.append (accounts_indicator.get_widget ());
+            }
+            accounts_indicator.opened ();
+        } else if (accounts_indicator != null) {
+            accounts_indicator.closed ();
+        }
+        if (!popup.visible || pages.visible_child_name != "github") {
+            if (repositories_indicator != null) repositories_indicator.closed ();
+            return;
+        }
+        if (repositories_indicator == null) {
+            repositories_indicator = new MSeries.RepoBarIndicator (true);
+            repositories_indicator.get_widget ().width_request = 460;
+            github_page.append (repositories_indicator.get_widget ());
+        }
+        repositories_indicator.opened ();
     }
 
     private void watch_status () {
@@ -239,6 +299,9 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         if (style_installed) return;
         var style = new Gtk.CssProvider ();
         style.load_from_string ("""
+            .taskbar-t3r-popup { font-size: 1.2em; }
+            .taskbar-t3r-popup .mseries-codexbar,
+            .taskbar-t3r-popup .mseries-repobar { font-size: 1em; }
             popover.taskbar-t3r-popup > contents {
                 padding: 0;
                 border-radius: 12px;
@@ -288,7 +351,12 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         }
         bool connected = MSeries.JsonBoundary.flag (feed, "connected");
         bool stale = MSeries.JsonBoundary.flag (feed, "stale", true);
-        bool live = application_running && connected && !stale;
+        string observed = MSeries.JsonBoundary.text (feed, "writtenAt");
+        var observed_at = new DateTime.from_iso8601 (observed, new TimeZone.utc ());
+        bool recent = observed_at != null &&
+            new DateTime.now_utc ().difference (observed_at) <= 15 * TimeSpan.MINUTE &&
+            observed_at.difference (new DateTime.now_utc ()) <= TimeSpan.MINUTE;
+        bool live = application_running && connected && !stale && recent;
         string server = MSeries.JsonBoundary.text (feed, "server");
         string selected_id = MSeries.JsonBoundary.text (feed, "selectedProviderId");
         string selected_provider = MSeries.JsonBoundary.text (feed, "selectedProvider");
@@ -520,7 +588,17 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private void run_action (string action) {
         var context = Gdk.Display.get_default ().get_app_launch_context ();
         context.set_timestamp (Gdk.CURRENT_TIME);
-        app.launch (context, action);
+        if (app != null) {
+            app.launch (context, action);
+        } else {
+            var info = new DesktopAppInfo (APP_ID + ".desktop");
+            if (info == null) {
+                error_label.label = "T3 is not installed. Install T3 to open this page.";
+                error_label.visible = true;
+                return;
+            }
+            info.launch_action (action, context);
+        }
         popup.popdown ();
     }
 
@@ -585,13 +663,20 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         });
     }
 
+    private void stop_freshness_timer () {
+        if (freshness_timer != 0) { Source.remove (freshness_timer); freshness_timer = 0; }
+    }
+
     private void cancel_timers () {
+        stop_freshness_timer ();
         cancel_open ();
         cancel_close ();
     }
 
     public override void dispose () {
         cancel_timers ();
+        if (accounts_indicator != null) accounts_indicator.closed ();
+        if (repositories_indicator != null) repositories_indicator.closed ();
         if (app_watch_id != 0) {
             GLib.Bus.unwatch_name (app_watch_id);
             app_watch_id = 0;

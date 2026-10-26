@@ -22,7 +22,16 @@ diff --git a/src/AppSystem/Launcher.vala b/src/AppSystem/Launcher.vala
          update_tooltip ();
          notify["current-pos"].connect (update_tooltip);
          keybinding_settings.changed.connect (update_tooltip);
-@@ -326,7 +333,11 @@
+@@ -290,4 +297,8 @@
+     ~Launcher () {
++        if (t3r_popup != null) {
++            t3r_popup.dispose ();
++            t3r_popup = null;
++        }
+         popover_menu.unparent ();
+         popover_menu.dispose ();
+     }
+@@ -326,7 +337,11 @@
  
          switch (gesture_click.get_current_button ()) {
              case Gdk.BUTTON_PRIMARY:

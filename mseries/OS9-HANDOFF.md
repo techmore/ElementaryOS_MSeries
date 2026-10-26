@@ -1,3 +1,37 @@
+## Unified T3 dock menu and Tstack workflows — 2026-10-26
+
+Replaced the separate taskbar CodexBar/RepoBar anchors with one native T3
+button: Usage, T3 server and GitHub, plus Activity/Open T3. Custom backend port,
+account helpers and caches remain authoritative. Embedded views are lazy and
+stop snapshot/refresh timers while closed; a longer fixture caught and fixed
+an automatic-refresh watcher leak. Explicit launcher-popover disposal prevents
+orphan popup children. Theme/text scale and bounded scrolling are shared.
+
+Installed and loaded the dock and T3 front end; preserved Wingpanel, T3 server,
+seven running apps, eleven unique pins and the current Work Mode. See the
+[delivery receipt](dock-tests/receipts/2026-10-26-t3-unified/README.md) for commands,
+checks, screenshots, hashes and limits. Full native dock build/launcher suites,
+light/dark interaction and launch routing, closed polling, nested Wayland
+transitions, 78 T3 model tests, clippy, native feature probes and app-only Debian
+packaging pass. Owner live visual/account acceptance remains open; whole-chat
+validation is deferred. Pre-existing dock startup criticals remain documented.
+
+Nine MIT tstack skills at `7de017b3fc9d50c03cf3ecb98fb71e0ca65a78bd` are
+vendored and installed for local Codex/Claude Code. Native T3 menu/palette has a
+request picker; no automatic send or workflow execution. Portable installer,
+package assets, source hashes and license retained. See
+[Tstack receipt](upstream-audits/apps/tstack-2026-10-26.md). Remote servers need
+their own skill installation; Council/Sol delegation is not claimed validated.
+CodexBar pin remains v0.78.0; custom-port check passes. Required post-push
+CodexBar deployment stages the module without restarting the panel or daemon.
+
+Owner clarified **Machine Lab has replaced Orchard**. Historical source names
+and app IDs do not reverse that direction. Fleet belongs inside T3 for remote
+machines/agents, separately from Machine Lab; upstream is read-only and no Fleet
+implementation is claimed yet. [Pinned source review and next
+flow](upstream-audits/apps/fleet-shepherd-2026-10-26.md). Next: dev integration
+and owner menu acceptance, followed by the native remote connector flow.
+
 ## Work Mode Settings close controls — 2026-10-26
 
 Merged PR #602 (`a788b487`) and follow-up PR #604 (`c13a67ca`). The Work Mode
