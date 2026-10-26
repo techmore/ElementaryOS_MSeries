@@ -50,6 +50,10 @@ def inside(binary, output):
             window = sp.Popen([sys.executable, __file__, '--fixture'], env=env)
             identity = 'org.techmore.DockTransitionFixture.desktop'
             waitfor(lambda: identity in (running() or ''))
+            if os.environ.get('MSERIES_DOCK_CAPTURE_DISPLAY'):
+                sp.run(['ffmpeg', '-loglevel', 'error', '-f', 'x11grab', '-video_size',
+                        '1920x1080', '-i', os.environ['MSERIES_DOCK_CAPTURE_DISPLAY'],
+                        '-frames:v', '1', '-update', '1', '-y', str(output / 'taskbar.png')], check=True)
             for mode in (False, True, False, True):
                 setting(mode)
                 for _ in range(15):
@@ -109,7 +113,8 @@ def main():
         command = ['dbus-run-session', '--config-file=' + str(bus), '--',
                    'sh', '-c', 'export DBUS_SYSTEM_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS"; exec "$@"',
                    'private-wayland', 'xvfb-run', '-a', '-s', '-screen 0 1920x1080x24',
-                   shutil.which('pantheon-compositor'), '--backend', 'nested', '--run',
+                   'sh', '-c', 'export MSERIES_DOCK_CAPTURE_DISPLAY="$DISPLAY"; exec "$@"',
+                   'capture-display', shutil.which('pantheon-compositor'), '--backend', 'nested', '--run',
                    sys.executable, str(Path(__file__).resolve()), '--inside', binary, str(output)]
         with (output / 'compositor.log').open('w') as log:
             process = sp.Popen(command, env=env, stdout=log, stderr=log, start_new_session=True)

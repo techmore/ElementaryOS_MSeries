@@ -92,3 +92,20 @@ screenshot review is claimed. Pre-existing startup `g_list_store_remove` and
 `g_object_ref` criticals remain untraced; this batch does not claim to fix them
 or close broader #593. No kernel, bootloader or audio change. Uncommitted Work
 Mode Settings control changes in the shared checkout were preserved separately.
+
+## Subsequent owner-reported vertical alignment regression
+
+The geometry fix initially omitted GTK's native CSD shadow from its explicit
+surface size. Widget measurement alone requested 1280×136 for the taskbar;
+GTK allocated its content after subtracting native shadow, raising the controls
+above the background. Including the native shadow gives a 1304×160 surface with
+window geometry `(12, 76, 1280, 72)` in the nested fixture. This restores the
+full-width 72 px bar at the bottom with controls inside it.
+
+Retained and visually reviewed [before](2026-10-26-taskbar-alignment/before.png)
+and [after](2026-10-26-taskbar-alignment/after.png). The production native dock
+rebuilt incrementally; `test-wayland-transition.py` again passes open/close
+tracking plus four layout transitions and now saves `taskbar.png`. Installed
+and dock alone reloaded without changing the owner's desktop mode.
+Final corrected binary SHA-256: `55b8df87e896b7703326bd5a96be2842a73b960a4be924656b4803973b965b3e`. This supersedes the earlier final
+binary hash above. Human visual acceptance remains open.

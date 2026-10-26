@@ -1,3 +1,22 @@
+## Taskbar vertical alignment correction — 2026-10-26
+
+Owner reported controls visibly above the taskbar after deployment. Reproduced
+in a private nested-compositor screenshot: the bar started 12 px too low and its
+controls overhung it. `Gtk.Window.measure` excludes native CSD shadow space;
+forcing that measurement as the surface size removed 24 px from its allocation.
+The geometry patch now includes the GTK native shadow extent (surface transform
+minus CSS margin) before setting the requested size and shadow together.
+
+Reviewed retained [before](dock-tests/receipts/2026-10-26-taskbar-alignment/before.png)
+and [after](dock-tests/receipts/2026-10-26-taskbar-alignment/after.png) screenshots:
+the full-width background is flush to the bottom; controls fit inside it. Nested
+Wayland open/close and four-transition qualification still passes. The fixture
+now captures a screenshot for future visual review. Installed the incremental
+build and reloaded the dock only; Windows Work Mode remained enabled and no live
+mode switching was performed. Installed SHA-256 `55b8df87e896b7703326bd5a96be2842a73b960a4be924656b4803973b965b3e`.
+Owner visual acceptance remains separate. Unrelated Work Mode Settings drafts
+are preserved uncommitted.
+
 ## Follow-up: running apps after Work Mode transitions — 2026-10-26
 
 The owner reported open windows disappearing after the duplicate-pin repair.

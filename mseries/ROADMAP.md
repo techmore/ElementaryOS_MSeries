@@ -1,3 +1,10 @@
+## Taskbar alignment follow-up — 2026-10-26
+
+Corrected the geometry repair's omitted GTK shadow extent, which placed controls
+above the taskbar. Before/after nested Wayland screenshots reviewed; four mode
+transitions and open/close tracking still pass. Corrected build installed and
+dock alone reloaded. Owner visual acceptance remains open. See the latest handoff.
+
 ## Work Mode / duplicate dock icons — 2026-10-26
 
 Fixed repeated dock initialization on widget remap and duplicate saved pins;

@@ -1,6 +1,6 @@
 --- a/src/MainWindow.vala
 +++ b/src/MainWindow.vala
-@@ -371,25 +371,22 @@
+@@ -371,25 +371,31 @@
          update_taskbar_width ();
 
          surface.compute_size.connect ((surface, size) => {
@@ -31,6 +31,15 @@
 +            width = int.max (1, width);
 +            measure (Gtk.Orientation.VERTICAL, width, out minimum, out height, null, null);
 +            height = int.max (1, height);
++            // Widget measurement excludes GTK's native CSD shadow. Keep that
++            // space in the surface size, otherwise allocations lose two shadow
++            // widths and the taskbar controls sit above their background.
++            double native_x, native_y;
++            get_surface_transform (out native_x, out native_y);
++            var margin = get_style_context ().get_margin ();
++            var native_shadow = int.max (0, (int) Math.ceil (native_x) - margin.left);
++            width += native_shadow * 2;
++            height += native_shadow * 2;
 +            size.set_size (width, height);
 +            var content_width = int.max (1, int.min (get_content_width (), width));
 +            var side = int.max (0, (width - content_width) / 2);
