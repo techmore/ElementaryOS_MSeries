@@ -134,6 +134,10 @@ pub enum Coverage {
 #[derive(Clone)]
 pub struct Observation {
     pub scope: Scope,
+    /// Display labels are provided by the adapter, never inferred from opaque IDs.
+    pub provider_label: String,
+    pub account_label: Option<String>,
+    pub selected: bool,
     pub state: State,
     pub observed_at: Option<i64>,
     pub windows: Vec<Window>,
@@ -143,6 +147,7 @@ pub struct Observation {
 #[derive(Clone)]
 pub struct Window {
     pub key: String,
+    pub label: String,
     pub quota: Option<Quota>,
 }
 
@@ -157,6 +162,8 @@ pub struct Snapshot {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SnapshotError {
     EmptyIdentity,
+    InvalidLabel,
+    InconsistentProviderLabel,
     DuplicateScope,
     DuplicateWindow,
     FreshWithoutTimestamp,
@@ -170,6 +177,7 @@ impl Snapshot {
     /// authorize an account, or deduplicate overlapping upstream measurements.
     pub fn validate(&self) -> Result<(), SnapshotError> {
         let mut scopes = std::collections::HashSet::new();
+        let mut labels = std::collections::HashMap::new();
         for observation in &self.observations {
             let scope = &observation.scope;
             if scope.provider.trim().is_empty()
@@ -180,6 +188,18 @@ impl Snapshot {
             }
             if !scopes.insert(scope) {
                 return Err(SnapshotError::DuplicateScope);
+            }
+            if observation.provider_label.trim().is_empty()
+                || observation.account_label.as_ref().is_some_and(|label| label.trim().is_empty())
+                || scope.account.is_some() != observation.account_label.is_some()
+            {
+                return Err(SnapshotError::InvalidLabel);
+            }
+            let group_key = (&scope.provider, &scope.source);
+            if let Some(previous) = labels.insert(group_key, &observation.provider_label)
+                && previous != &observation.provider_label
+            {
+                return Err(SnapshotError::InconsistentProviderLabel);
             }
             if observation.state == State::Fresh && observation.observed_at.is_none() {
                 return Err(SnapshotError::FreshWithoutTimestamp);
@@ -192,6 +212,9 @@ impl Snapshot {
                 if window.key.trim().is_empty() {
                     return Err(SnapshotError::EmptyIdentity);
                 }
+                if window.label.trim().is_empty() {
+                    return Err(SnapshotError::InvalidLabel);
+                }
                 if !windows.insert(&window.key) {
                     return Err(SnapshotError::DuplicateWindow);
                 }
@@ -199,4 +222,44 @@ impl Snapshot {
         }
         Ok(())
     }
+
+    /// Preserve first-seen provider/source order and account order; selected
+    /// accounts never filter out other observations. Aggregates stay separate.
+    pub fn groups(&self) -> Result<Vec<ProviderGroup<'_>>, SnapshotError> {
+        self.validate()?;
+        let mut groups: Vec<ProviderGroup<'_>> = Vec::new();
+        for observation in &self.observations {
+            let group_index = groups.iter().position(|group| {
+                group.provider == observation.scope.provider && group.source == &observation.scope.source
+            });
+            let group = if let Some(index) = group_index {
+                &mut groups[index]
+            } else {
+                groups.push(ProviderGroup {
+                    provider: &observation.scope.provider,
+                    source: &observation.scope.source,
+                    label: &observation.provider_label,
+                    aggregate: None,
+                    accounts: Vec::new(),
+                });
+                groups.last_mut().expect("just pushed")
+            };
+            if observation.scope.account.is_some() {
+                group.accounts.push(observation);
+            } else {
+                group.aggregate = Some(observation);
+            }
+        }
+        Ok(groups)
+    }
+}
+
+/// A presentation-ready grouping, borrowing the validated snapshot. This is
+/// not a widget, a host, or a claim of source deduplication.
+pub struct ProviderGroup<'a> {
+    pub provider: &'a str,
+    pub source: &'a Source,
+    pub label: &'a str,
+    pub aggregate: Option<&'a Observation>,
+    pub accounts: Vec<&'a Observation>,
 }

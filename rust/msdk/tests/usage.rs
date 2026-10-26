@@ -44,15 +44,39 @@ fn snapshots_retain_distinct_accounts_and_reject_duplicate_or_invalid_data() {
         Scope { provider: "claude".into(), source: Source::Server("paired".into()), account: Some("one".into()) };
     let first = Observation {
         scope: scope.clone(),
+        provider_label: "Claude".into(),
+        account_label: Some("Work account".into()),
+        selected: true,
         state: State::Fresh,
         observed_at: Some(100),
-        windows: vec![Window { key: "week".into(), quota: Some(Quota::new(0, QuotaUnit::Used, 100, None).unwrap()) }],
+        windows: vec![Window {
+            key: "week".into(),
+            label: "7 day".into(),
+            quota: Some(Quota::new(0, QuotaUnit::Used, 100, None).unwrap()),
+        }],
         tokens: None,
     };
-    let second = Observation { scope: Scope { account: Some("two".into()), ..scope }, ..first.clone() };
+    let second = Observation {
+        scope: Scope { account: Some("two".into()), ..scope },
+        account_label: Some("Personal account".into()),
+        selected: false,
+        ..first.clone()
+    };
     let mut snapshot = Snapshot { coverage: Coverage::Partial, observations: vec![first.clone(), second] };
     assert_eq!(Snapshot::VERSION, 1);
     assert_eq!(snapshot.validate(), Ok(()));
+    let grouped = snapshot.groups().unwrap();
+    assert_eq!(grouped.len(), 1);
+    assert_eq!(grouped[0].label, "Claude");
+    assert_eq!(grouped[0].accounts.len(), 2);
+    assert_eq!(grouped[0].accounts[1].account_label.as_deref(), Some("Personal account"));
+    assert!(!grouped[0].accounts[1].selected);
+    snapshot.observations[1].provider_label = "Other name".into();
+    assert_eq!(snapshot.validate(), Err(SnapshotError::InconsistentProviderLabel));
+    snapshot.observations[1].provider_label = "Claude".into();
+    snapshot.observations[0].account_label = None;
+    assert_eq!(snapshot.validate(), Err(SnapshotError::InvalidLabel));
+    snapshot.observations[0].account_label = Some("Work account".into());
     snapshot.observations.push(first.clone());
     assert_eq!(snapshot.validate(), Err(SnapshotError::DuplicateScope));
     snapshot.observations.pop();

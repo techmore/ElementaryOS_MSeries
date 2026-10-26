@@ -1,3 +1,13 @@
+## Usage presentation inputs — 2026-10-26
+
+The candidate usage snapshot now carries separate display labels and selected
+state, and can group validated observations by provider and source while
+preserving every account and separating aggregates. Four usage tests and all
+106 core tests plus strict clippy pass on macOS. This prepares inputs for a
+native control; it is not a widget, provider adapter or status host. The
+source-matched Linux run for the prior commit is still in progress, and this
+local change needs its own Linux, visual and interaction validation.
+
 ## Usage observation snapshots — 2026-10-26
 
 The candidate Rust usage data layer now supports explicit coverage and validates

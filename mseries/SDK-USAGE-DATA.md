@@ -34,3 +34,12 @@ observation time; it need not equal the containing observation's timestamp.
 Validation is explicit: callers must invoke it before presenting a snapshot.
 This versioned Rust structure is not a versioned wire protocol and cannot by
 itself prove that the collector actually covered all configured accounts.
+
+Each observation carries a human-readable provider label and, for account
+scope, an account label separate from opaque identity keys. `selected` is
+presentation context and does not filter other accounts. `Snapshot::groups()`
+validates first, then preserves first-seen provider/source and account order;
+provider aggregates remain separate from account observations. It does not
+merge overlapping sources or implement native widgets. Provider labels must
+agree within each provider/source group. Labels may contain private information;
+consumers must not log them indiscriminately.
