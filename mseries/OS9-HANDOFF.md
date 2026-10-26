@@ -1,3 +1,13 @@
+## SDK source-matched ARM and native validation — 2026-10-26
+
+Developer-path run 40391194892 passed for b7b3a99 on hosted ARM Linux:
+core tests/lint, schema checks, generated native build, keyboard/accessibility,
+render matrix, native host lifecycle (including the incompatible provider and
+built-in feed regression), and package install/reinstall/removal. SDK/System
+Monitor run 40391194847 also passed on that source. These are hosted CI checks,
+not physical M-series Pantheon or owner visual acceptance. The model trial and
+other release gates remain open.
+
 ## SDK built-in feed compatibility — 2026-10-26
 
 The local GTK host change keeps an incompatible optional service extension from
