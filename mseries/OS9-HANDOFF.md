@@ -28,18 +28,22 @@ properties dictionary. Prior unplug restores failed with that mismatch. After
 fixing the signature, the first AOC profile attempt exposed a second shape
 error: each logical-monitor tuple also lacked its own final properties
 dictionary. Both are corrected in source and the installed user-local watcher;
-only the watcher was restarted (no Wingpanel/compositor restart). The second
-watcher restart occurred at 07:18 EDT and applied no monitor mode. Its private
-profile store was backed up at
+only the watcher was restarted (no Wingpanel/compositor restart). Its XDG desktop
+autostart entry is enabled and its process is running under the user session. At
+11:33 EDT, `mseries-display-profiles apply aoc-dock` returned success; Gala reported
+the saved AOC layout at 1920x1080/60, x=2419, scale 1.0, while DP-2 stayed connected.
+This proves the repaired D-Bus call can apply the saved profile. The private profile
+store was backed up at
 `~/.cache/mseries-display-profiles-backup-20261026-071246`, then updated to
 preserve the current built-in 3024x1964/120 at scale 1.25, restore the AOC dock
 monitor at 1920x1080/60, and keep the Insignia profile separate.
 
 The owner can now see the picture and profile matching selects `aoc-dock`.
-**Not yet verified:** a successful live ApplyMonitorsConfig request, unplug
-restoration, or repeated recovery. Per owner direction, update/review wip4
-against relevant Aurora upstream display changes and prepare the deployment
-plan before hardware plug/unplug acceptance. No boot state changed.
+**Not yet verified:** automatic watcher response to physical disconnect/reconnect,
+laptop-only restoration after unplug, or repeated recovery. WIP4 and upstream review
+are complete; the offline candidate and rollback are staged on this machine. The next
+gate is an attended hardware trial after owner approval. Do not claim permanent
+recovery until that passes. No boot state changed. Per owner direction, update/review wip4
 
 ## Appearance integration qualification — 2026-10-26
 

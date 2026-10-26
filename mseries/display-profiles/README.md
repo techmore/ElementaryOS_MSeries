@@ -69,5 +69,9 @@ up locally. The current wip3 session lost its DP tunnel after five DCP
 target-validation timeouts. Moving the dock from rear-left to front-left brought
 the AOC back on DP-2 at 1920x1080/60, confirmed by the owner. The watcher then
 exposed the missing logical-monitor properties element. The installed copy now
-includes both corrections and has been restarted; the next live profile
-application and unplug/restoration cycle are still unqualified.
+includes both corrections and has been restarted. On October 26, an explicit
+`mseries-display-profiles apply aoc-dock` returned success and Gala reported the
+saved 1920x1080/60 layout at x=2419, scale 1.0. The desktop autostart entry is
+enabled and the watcher process is running. This verifies profile application,
+but automatic watcher handling of a physical unplug/replug and the laptop-only
+restore remain unqualified until a hardware cycle is observed.
