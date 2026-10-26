@@ -1,3 +1,13 @@
+## Scoped usage delivery validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40400566671 passed on 5a6a1e6. Its GTK
+regression executes a synthetic snapshot program, applies a successful result,
+rejects a queued result after a context switch, and checks that a later failure
+shows a generic notice with last-known data marked stale and no private stderr.
+The executable and data are synthetic; real collector/account integration,
+actual desktop host interactions and visual review of the new failure state
+remain open. No background polling or owner desktop service was started.
+
 ## Scoped usage delivery — native validation pending, 2026-10-26
 
 UsagePanel can consume the scoped CodexBar read on the GTK/state-owner thread:
