@@ -43,3 +43,12 @@ provider aggregates remain separate from account observations. It does not
 merge overlapping sources or implement native widgets. Provider labels must
 agree within each provider/source group. Labels may contain private information;
 consumers must not log them indiscriminately.
+
+`msdk_gtk::usage::render` is an initial read-only GTK presentation of a
+validated snapshot, grouping provider/source labels, separate account rows and
+quota windows. It marks stale and expired observations and does not collect or
+refresh data. Callers supply a human-readable source label separately from the
+opaque source key. This initial widget has not been visually reviewed against
+CodexBar and does not implement status-area placement, popup interactions,
+refresh, provider marks, localization, or focus/scroll preservation. It is not
+an accepted implementation of the complete status-area specification.

@@ -45,6 +45,7 @@ fn snapshots_retain_distinct_accounts_and_reject_duplicate_or_invalid_data() {
     let first = Observation {
         scope: scope.clone(),
         provider_label: "Claude".into(),
+        source_label: "Paired server".into(),
         account_label: Some("Work account".into()),
         selected: true,
         state: State::Fresh,

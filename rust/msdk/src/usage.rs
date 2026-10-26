@@ -87,6 +87,10 @@ impl Quota {
         self.observed_at
     }
 
+    pub fn reset_at(self) -> Option<i64> {
+        self.reset_at
+    }
+
     /// An expired reset is not current capacity, even when the last read was
     /// successful. The caller must obtain a fresh source observation.
     pub fn state_at(self, source_state: State, now: i64) -> State {
@@ -136,6 +140,7 @@ pub struct Observation {
     pub scope: Scope,
     /// Display labels are provided by the adapter, never inferred from opaque IDs.
     pub provider_label: String,
+    pub source_label: String,
     pub account_label: Option<String>,
     pub selected: bool,
     pub state: State,
@@ -190,14 +195,15 @@ impl Snapshot {
                 return Err(SnapshotError::DuplicateScope);
             }
             if observation.provider_label.trim().is_empty()
+                || observation.source_label.trim().is_empty()
                 || observation.account_label.as_ref().is_some_and(|label| label.trim().is_empty())
                 || scope.account.is_some() != observation.account_label.is_some()
             {
                 return Err(SnapshotError::InvalidLabel);
             }
             let group_key = (&scope.provider, &scope.source);
-            if let Some(previous) = labels.insert(group_key, &observation.provider_label)
-                && previous != &observation.provider_label
+            if let Some(previous) = labels.insert(group_key, (&observation.provider_label, &observation.source_label))
+                && previous != (&observation.provider_label, &observation.source_label)
             {
                 return Err(SnapshotError::InconsistentProviderLabel);
             }
@@ -239,6 +245,7 @@ impl Snapshot {
                     provider: &observation.scope.provider,
                     source: &observation.scope.source,
                     label: &observation.provider_label,
+                    source_label: &observation.source_label,
                     aggregate: None,
                     accounts: Vec::new(),
                 });
@@ -260,6 +267,7 @@ pub struct ProviderGroup<'a> {
     pub provider: &'a str,
     pub source: &'a Source,
     pub label: &'a str,
+    pub source_label: &'a str,
     pub aggregate: Option<&'a Observation>,
     pub accounts: Vec<&'a Observation>,
 }

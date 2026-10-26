@@ -1,3 +1,13 @@
+## Candidate usage GTK rows — validation pending, 2026-10-26
+
+`msdk_gtk::usage::render` builds read-only provider/source and account rows from
+validated snapshots with explicit unavailable, stale and expired states. A
+native widget-tree test covers separate accounts, unknown/expired quota and
+partial coverage. The data tests (4), complete macOS core suite (106) and strict
+clippy pass. GTK compilation, native execution, light/dark/large-text visual
+review and real status hosts remain open. This initial widget does not yet meet
+the full CodexBar-derived status standard or implement refresh and actions.
+
 ## Usage presentation inputs — 2026-10-26
 
 The candidate usage snapshot now carries separate display labels and selected
