@@ -1,3 +1,13 @@
+## SDK accessibility failure diagnosis — 2026-10-26
+
+The synthetic failure artifact from developer-path run 40392328090 attempt 1
+shows GTK failed to open the display before accessibility registration. The
+reason for the display failure remains unknown; attempt 2 passed. The original
+receipt is retained in sdk-tests/receipts/2026-10-26-accessibility-failure.
+The probe now reports a child exit immediately and preserves stderr, instead of
+waiting for an accessibility-root timeout after the app has already exited.
+Linux execution of this probe change remains to be verified.
+
 ## Golden-path fixture validation — 2026-10-26
 
 On dbf4eee, hosted ARM SDK/System Monitor run 40392327560 passed. SDK

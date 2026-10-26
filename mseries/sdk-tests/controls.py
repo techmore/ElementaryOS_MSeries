@@ -59,6 +59,9 @@ with tempfile.TemporaryDirectory(prefix='msdk-controls-') as directory:
     try:
         desktop = pyatspi.Registry.getDesktop(0)
         def application():
+            status = process.poll()
+            if status is not None:
+                raise RuntimeError(f'generated app exited before accessibility registration (exit {status}); see process_stderr')
             for app in desktop:
                 if app.get_process_id() == process.pid:
                     return app
