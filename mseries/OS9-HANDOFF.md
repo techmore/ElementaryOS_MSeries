@@ -57,6 +57,13 @@ review are complete, and the offline candidate and rollback are staged pending
 approval for an attended hardware trial. Do not claim permanent recovery yet. No
 boot state changed.
 
+Read-only WIP4 deployment audit after the display pass: all four entries in the
+private bundle's `inputs/SHA256SUMS` verify. The staged `boot.bin.rollback`
+SHA-256 (`9c9c2d01…`) matches the live `/boot/m1n1/boot.bin` byte-for-byte;
+`uname -r` remains wip3, GRUB `next_entry` is empty, `.20` is still persistent
+default, and `/boot` has 102 MB free. WIP4 is not installed or armed. These checks
+confirm staging/fallback identity, not a WIP4 boot or recovery result.
+
 ## Appearance integration qualification — 2026-10-26
 
 Reconciled the live-cutover branch with current `dev`: retained the shared
