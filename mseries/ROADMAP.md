@@ -1,3 +1,11 @@
+## Work Mode Settings window controls — 2026-10-26
+
+The Work Mode plug now applies the selected titlebar layout directly to GTK in
+the System Settings process, so the open Settings window receives close,
+minimize and maximize controls even when the GTK config overrides the global
+window-manager layout. Meson/Ninja build passed; visual review and installation
+remain open. See the latest OS9 handoff entry.
+
 ## Owner-priority SDK/T3 qualification queue — 2026-10-25
 
 - #596: first qualify native T3 token monitoring and RepoBar-derived GitHub

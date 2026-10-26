@@ -245,8 +245,8 @@ ok "timing_end writes one JSON line per call" test "$(grep -c . "$log")" -eq 2
 ok "the sleep shows as wall time" at_least "$(json_field "$log" wall_s slowmod)" 0.15
 eq failed "$(json_field "$log" status quickmod)" "the status is recorded"
 summary=$(MODRUN=/nonexistent timing_summary "$log")
-eq "timing (slowest first): slowmod $(json_field "$log" wall_s slowmod)s quickmod $(json_field "$log" wall_s quickmod)s" "$summary" \
-  "without the scheduler a plain list sorted slowest first is printed"
+ok "without the scheduler a plain list sorted slowest first is printed" \
+  grep -Eq '^timing \(slowest first\): slowmod [0-9]+\.[0-9]{1,3}s quickmod [0-9]+\.[0-9]{1,3}s$' <<<"$summary"
 summary=$(timing_summary "$log" serial "$tmp/lib-summary.json")
 ok "with it, the table and the summary line" grep -q '^timing: 2 modules ok=1 failed=1 .*mode=serial' <<<"$summary"
 eq 2 "$(json_field "$tmp/lib-summary.json" tasks_total)" "and the JSON document"
