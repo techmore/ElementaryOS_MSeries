@@ -311,7 +311,9 @@ pub fn explain(code: &str) -> Option<&'static str> {
     Some(match code {
         "bad-json" => "The file is not valid JSON. Check commas, quotes and brackets near the reported line.",
         "not-object" => "The document, a component or an action must be a JSON object { ... }.",
-        "unsupported-sdk-version" => "Add \"sdk\": 1 at the top of the document.",
+        "unsupported-sdk-version" => {
+            "Declare the supported sdk format for a new document. For an incompatible existing document, use a compatible SDK or migrate its content; do not just relabel the version."
+        }
         "unknown-property" => {
             "That key is not part of this component or section. The fix line suggests the nearest valid name; `msdk describe <Name>` lists them all."
         }

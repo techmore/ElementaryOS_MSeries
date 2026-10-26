@@ -1,3 +1,31 @@
+## Atomic versioned SDK manifests and compatibility boundaries — 2026-10-26
+
+Manifest loading now validates its complete input and conflicting registered
+service/feed shapes before publishing under one write lock. Invalid later
+entries cannot leave earlier entries registered; concurrent conflicting loaders
+have one winner, and the losing manifest publishes nothing. Identical reloads
+are idempotent, independent of argument/field object order. Explicit
+manifest_version 1 is supported; omitted version preserves legacy v1 manifests.
+Unsupported versions and malformed/unknown fields fail explicitly. Rejected and
+idempotent manifests no longer leak strings into the lifetime registry.
+
+SDK-COMPATIBILITY.md distinguishes package, app-description, manifest, extension,
+diagnostic, GTK and shell protocol versions; publishes candidate ownership,
+migration/deprecation rules and actual host evidence; and keeps real backend
+protocols and physical supported-host release qualification open. Runtime
+discovery derives package/app/manifest versions from actual constants. Version
+errors guide migration rather than blindly relabeling an incompatible document.
+
+Eight manifest checks cover rollback, conflicts, idempotency, feed shape,
+concurrency, malformed input/version and immutable document rejection. An initial
+full core run exposed simultaneous generator-test scratch directories with the
+same timestamp; an atomic serial and exclusive-create retry repair the collision.
+That failure is retained with final local receipts. No remote source transfer,
+owner desktop/service/account/kernel/panel mutation or whole-SDK completion claim.
+Linux final-source validation remains pending the previously requested explicit
+SER8 source-transfer authorization. Continue GTK streaming/context adapters and
+remaining completion-ledger gates after qualifying the final sources.
+
 ## Bounded Rust process streaming — 2026-10-26
 
 `msdk::process::spawn_streaming` now supplies private raw stdout/stderr chunks

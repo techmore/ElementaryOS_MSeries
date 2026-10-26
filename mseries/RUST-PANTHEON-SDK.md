@@ -15,6 +15,10 @@ product work and scope changes. Continue independent work while awaiting feedbac
 
 ## SDK and template direction
 
+Version identifiers, ownership and qualification boundaries are published in
+[SDK compatibility](SDK-COMPATIBILITY.md). These are candidate development
+contracts; whole-SDK v1 release readiness remains unproven.
+
 For a useful read-only service/retry example and explicit pending native gates,
 follow [Home Storage developer path](SDK-GOLDEN-PATH.md).
 

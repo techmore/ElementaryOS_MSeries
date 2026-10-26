@@ -136,7 +136,11 @@ pub fn check(doc: &Value) -> Vec<Diagnostic> {
             "/sdk",
             "unsupported-sdk-version",
             format!("`sdk` must be {}", crate::FORMAT_VERSION),
-            Some(format!("add \"sdk\": {}", crate::FORMAT_VERSION)),
+            Some(if root.contains_key("sdk") {
+                "use a compatible SDK or migrate the document; do not change only its version number".into()
+            } else {
+                format!("add \"sdk\": {}", crate::FORMAT_VERSION)
+            }),
         ),
     }
     cx.caps = root

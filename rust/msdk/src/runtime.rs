@@ -9,7 +9,9 @@ pub const MAX_HOST_PROCESSES: usize = 4;
 
 pub fn description() -> Value {
     let limits = crate::process::Limits::default();
-    json!({"runtime":"msdk", "extension_api_version":SERVICES_API_VERSION,
+    json!({"runtime":"msdk", "rust_package_version":env!("CARGO_PKG_VERSION"),
+        "app_description_format":crate::FORMAT_VERSION, "service_manifest_format":crate::vocab::SERVICE_MANIFEST_VERSION,
+        "extension_api_version":SERVICES_API_VERSION,
         "diagnostic_schema":"msdk.runtime.diagnostic.v1",
         "typed_failure":"msdk::runtime::ServiceFailure",
         "failure_codes":FailureKind::ALL.iter().map(|kind| json!({"code":kind.code(), "recovery":kind.message()})).collect::<Vec<_>>(),

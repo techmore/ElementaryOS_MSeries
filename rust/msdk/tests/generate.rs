@@ -7,10 +7,17 @@ use serde_json::{Value, json};
 struct Scratch(PathBuf);
 impl Scratch {
     fn new() -> Self {
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-        let path = std::env::temp_dir().join(format!("msdk-gen-{}-{stamp}", std::process::id()));
-        std::fs::create_dir(&path).unwrap();
-        Self(path)
+        loop {
+            let serial = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let path = std::env::temp_dir().join(format!("msdk-gen-{}-{stamp}-{serial}", std::process::id()));
+            match std::fs::create_dir(&path) {
+                Ok(()) => return Self(path),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) => panic!("cannot create test workspace: {error}"),
+            }
+        }
     }
 }
 impl Drop for Scratch {
