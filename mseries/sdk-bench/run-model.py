@@ -20,7 +20,7 @@ import urllib.request
 MODEL = 'qwen3.5:4b'
 DIGEST = 'd8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04'
 OPTIONS = {'seed': 17, 'temperature': .2, 'top_p': .95, 'top_k': 20,
-           'num_ctx': 32768, 'num_predict': 4096}
+           'num_ctx': 32768, 'num_predict': 4096, 'presence_penalty': 0.0, 'repeat_penalty': 1.0}
 SYSTEM = '''You are testing an app SDK by implementing the supplied complete, frozen spec.
 Return exactly ONE JSON action per turn, no Markdown. Model output is tool data.
 Actions:
@@ -89,6 +89,8 @@ metadata = {'schema': 'msdk.authoring-discovery.v1', 'mode': 'sdk',
     'started_utc': datetime.now(timezone.utc).isoformat(),
     'source_commit': args.source_commit, 'model': installed,
     'runtime': api('version'), 'model_details': show.get('details'),
+    'model_default_parameters': show.get('parameters'),
+    'model_modelfile_sha256': hashlib.sha256(show.get('modelfile', '').encode()).hexdigest(),
     'model_template_sha256': hashlib.sha256(show.get('template', '').encode()).hexdigest(),
     'weights_blob_sha256': weights.group(1) if weights else None,
     'host': 'ser8', 'available_memory_kib_at_start': available,
