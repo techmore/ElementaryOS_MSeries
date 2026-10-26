@@ -66,13 +66,13 @@ fn main() {
         let failed = outcome.clone();
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(8);
         gtk::glib::timeout_add_local(std::time::Duration::from_millis(50), move || {
-            if control.status_label().text() != "Couldn't refresh usage"
+            if control.status_label().text() != "Retry when ready"
                 && std::time::Instant::now() < deadline
             {
                 return gtk::glib::ControlFlow::Continue;
             }
             let result = (|| -> Result<(), String> {
-                if control.status_label().text() != "Couldn't refresh usage" {
+                if control.status_label().text() != "Retry when ready" {
                     return Err("fixture failure was not shown".into());
                 }
                 let (width, height) = (window.width(), window.height());

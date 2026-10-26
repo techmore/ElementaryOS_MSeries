@@ -65,7 +65,7 @@ impl UsageControl {
                     RefreshState::Idle => ("Usage not open", false, false),
                     RefreshState::Refreshing => ("Refreshing usage…", true, false),
                     RefreshState::Updated => ("Refresh complete", false, true),
-                    RefreshState::Failed => ("Couldn't refresh usage", false, true),
+                    RefreshState::Failed => ("Retry when ready", false, true),
                 };
                 status.set_text(text);
                 refresh.set_sensitive(enabled);

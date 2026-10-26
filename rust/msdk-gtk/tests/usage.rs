@@ -453,13 +453,13 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
         std::fs::write(&executable, format!("#!/bin/sh\nprintf x >> '{safe_marker}'\nprintf 'synthetic-private-error' >&2\nprintf 'not-json'\n")).unwrap();
         control.refresh_button().emit_clicked();
         let deadline = std::time::Instant::now() + Duration::from_secs(4);
-        while control.status_label().text() != "Couldn't refresh usage"
+        while control.status_label().text() != "Retry when ready"
             && std::time::Instant::now() < deadline
         {
             main.iteration(false);
             std::thread::sleep(Duration::from_millis(5));
         }
-        assert_eq!(control.status_label().text(), "Couldn't refresh usage");
+        assert_eq!(control.status_label().text(), "Retry when ready");
         assert!(control.refresh_button().is_sensitive());
         let mut failure_text = Vec::new();
         labels(control.widget().upcast_ref(), &mut failure_text);

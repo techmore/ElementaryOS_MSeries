@@ -1,3 +1,13 @@
+## Usage control initial validation — 2026-10-26
+
+Hosted ARM SDK run 40402684685 passed on a5b0ff2, including synthetic GTK
+success/failure/retry and failure-state captures. Initial review found the
+notice, stale data and refresh button readable, but the failure was repeated in
+both the panel and footer. Four frames and limits are retained under
+sdk-tests/receipts/2026-10-26-usage-control-first. The footer now says “Retry
+when ready”; that follow-up still needs source-matched GTK and visual review.
+Real collectors, keyboard/AT-SPI and actual desktop hosts remain open.
+
 ## Usage refresh control — native validation pending, 2026-10-26
 
 A candidate embeddable UsageControl exposes refresh, spinner and status around
