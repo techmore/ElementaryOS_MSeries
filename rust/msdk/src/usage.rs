@@ -159,6 +159,7 @@ pub struct Window {
 /// Versioned in-memory boundary, not a wire format or collector protocol.
 /// Consumers can distinguish an empty complete collection from incomplete
 /// coverage without deduplicating or summing overlapping sources implicitly.
+#[derive(Clone)]
 pub struct Snapshot {
     pub coverage: Coverage,
     pub observations: Vec<Observation>,

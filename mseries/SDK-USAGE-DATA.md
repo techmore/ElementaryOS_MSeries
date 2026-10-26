@@ -80,3 +80,11 @@ as time passes. The result carries partial aggregate-only coverage. Diagnostic
 errors omit executable paths, output and private payloads. Because the shared
 process API decodes output lossily, this adapter conservatively rejects a Unicode
 replacement character rather than accepting potentially corrupted JSON.
+
+`UsagePanel::update_scoped` consumes a `read_snapshot_scoped` reply on the
+GTK/state-owner thread. It ignores expired replies after any worker/UI queue.
+On a current read failure it retains the last snapshot, marks previously fresh
+observations stale, and shows a generic failure notice; a later successful
+snapshot replaces that state. This is opt-in: the caller still owns the
+process, context transitions, retry policy and lifetime. It does not install a
+status host or schedule reads.

@@ -1,3 +1,12 @@
+## Scoped usage delivery — native validation pending, 2026-10-26
+
+UsagePanel can consume the scoped CodexBar read on the GTK/state-owner thread:
+old queued replies are ignored, and current failures retain last-known data as
+stale with a generic notice. A synthetic executable-to-GTK regression covers
+success, a context switch after queueing, failure and private-stderr exclusion.
+Core usage tests and strict clippy pass on macOS; source-matched GTK execution
+is pending. The caller still owns refresh, cancellation and host lifecycle.
+
 ## Scoped CodexBar read validation — 2026-10-26
 
 Hosted ARM SDK developer-path run 40399879070 passed on 9e8fecc. Its five

@@ -232,4 +232,115 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
             "missing {expected}: {parsed_text:?}"
         );
     }
+    #[cfg(unix)]
+    {
+        use msdk::context::RequestContext;
+        use msdk_gtk::usage::ScopedUpdate;
+        use std::os::unix::fs::PermissionsExt;
+        use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+        let stamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir =
+            std::env::temp_dir().join(format!("msdk-usage-feed-{}-{stamp}", std::process::id()));
+        std::fs::create_dir(&dir).unwrap();
+        struct Cleanup(std::path::PathBuf);
+        impl Drop for Cleanup {
+            fn drop(&mut self) {
+                let _ = std::fs::remove_dir_all(&self.0);
+            }
+        }
+        let _cleanup = Cleanup(dir.clone());
+        let executable = dir.join("synthetic-snapshot");
+        std::fs::write(
+            &executable,
+            format!(
+                "#!/bin/sh\nprintf '%s' '{}'\n",
+                std::str::from_utf8(source).unwrap()
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let context = RequestContext::new();
+        let panel = msdk_gtk::usage::UsagePanel::new(&snapshot, 1_767_225_600).unwrap();
+        let (tx, rx) = std::sync::mpsc::channel();
+        let _task = msdk_gtk::codexbar::read_snapshot_scoped(
+            context.token().unwrap(),
+            executable.clone(),
+            u64::MAX,
+            90,
+            move |reply| tx.send(reply).unwrap(),
+        )
+        .unwrap();
+        let reply = rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        assert!(matches!(
+            panel.update_scoped(reply, 1_767_225_600).unwrap(),
+            ScopedUpdate::Applied
+        ));
+        let mut current = Vec::new();
+        labels(panel.widget().upcast_ref(), &mut current);
+        assert!(current.iter().any(|value| value == "7 day: 75% remaining"));
+
+        let (tx, rx) = std::sync::mpsc::channel();
+        let _task = msdk_gtk::codexbar::read_snapshot_scoped(
+            context.token().unwrap(),
+            executable.clone(),
+            u64::MAX,
+            91,
+            move |reply| tx.send(reply).unwrap(),
+        )
+        .unwrap();
+        let queued = rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        context.advance().unwrap();
+        assert!(matches!(
+            panel.update_scoped(queued, 1_767_225_600).unwrap(),
+            ScopedUpdate::Expired
+        ));
+        let mut after_old = Vec::new();
+        labels(panel.widget().upcast_ref(), &mut after_old);
+        assert_eq!(
+            after_old, current,
+            "expired queued replies must not mutate the view"
+        );
+
+        std::fs::write(
+            &executable,
+            "#!/bin/sh\nprintf 'synthetic-private-error' >&2\nprintf 'not-json'\n",
+        )
+        .unwrap();
+        let (tx, rx) = std::sync::mpsc::channel();
+        let _task = msdk_gtk::codexbar::read_snapshot_scoped(
+            context.token().unwrap(),
+            executable,
+            u64::MAX,
+            92,
+            move |reply| tx.send(reply).unwrap(),
+        )
+        .unwrap();
+        let failed = rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        assert!(matches!(
+            panel.update_scoped(failed, 1_767_225_600).unwrap(),
+            ScopedUpdate::ReadFailed(_)
+        ));
+        let mut after_failure = Vec::new();
+        labels(panel.widget().upcast_ref(), &mut after_failure);
+        assert!(
+            after_failure
+                .iter()
+                .any(|value| value.contains("Couldn't refresh usage"))
+        );
+        assert!(after_failure.iter().any(|value| value == "Stale"));
+        assert!(
+            after_failure
+                .iter()
+                .any(|value| value == "7 day: 75% remaining")
+        );
+        assert!(
+            !after_failure
+                .iter()
+                .any(|value| value.contains("synthetic-private-error"))
+        );
+    }
 }

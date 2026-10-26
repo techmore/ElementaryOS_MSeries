@@ -2,7 +2,7 @@
 //! focus/dismissal and provider collectors belong to separate adapters.
 use gtk::prelude::*;
 use msdk::usage::{Coverage, Observation, Snapshot, SnapshotError, State};
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 thread_local! { static STYLE_INSTALLED: Cell<bool> = const { Cell::new(false) }; }
@@ -191,6 +191,14 @@ pub struct UsagePanel {
     scroll: gtk::ScrolledWindow,
     generation: Rc<Cell<u64>>,
     pending_position: Rc<Cell<Option<f64>>>,
+    snapshot: RefCell<Snapshot>,
+}
+
+/// The final state-thread result of applying a context-bound read.
+pub enum ScopedUpdate {
+    Applied,
+    Expired,
+    ReadFailed(crate::codexbar::SnapshotReadError),
 }
 
 impl UsagePanel {
@@ -205,6 +213,7 @@ impl UsagePanel {
             scroll,
             generation: Rc::new(Cell::new(0)),
             pending_position: Rc::new(Cell::new(None)),
+            snapshot: RefCell::new(snapshot.clone()),
         })
     }
 
@@ -219,6 +228,42 @@ impl UsagePanel {
     /// interactive child; the current rows contain no interactive actions.
     pub fn update(&self, snapshot: &Snapshot, now: i64) -> Result<(), SnapshotError> {
         let content = render(snapshot, now)?;
+        self.replace(content, snapshot.clone());
+        Ok(())
+    }
+
+    /// Apply on the GTK/state-owner thread, after any cross-thread queue. An
+    /// expired response is ignored. A failed read retains last-known data as
+    /// stale and adds a visible failure notice without exposing private output.
+    pub fn update_scoped(
+        &self,
+        reply: msdk::context::Scoped<Result<Snapshot, crate::codexbar::SnapshotReadError>>,
+        now: i64,
+    ) -> Result<ScopedUpdate, SnapshotError> {
+        match reply.into_current() {
+            None => Ok(ScopedUpdate::Expired),
+            Some(Ok(snapshot)) => {
+                self.update(&snapshot, now)?;
+                Ok(ScopedUpdate::Applied)
+            }
+            Some(Err(error)) => {
+                let mut stale = self.snapshot.borrow().clone();
+                for observation in &mut stale.observations {
+                    if observation.state == State::Fresh {
+                        observation.state = State::Stale;
+                    }
+                }
+                let content = render(&stale, now)?;
+                content.prepend(&label(
+                    "Couldn't refresh usage. Showing last-known data where available.",
+                ));
+                self.replace(content, stale);
+                Ok(ScopedUpdate::ReadFailed(error))
+            }
+        }
+    }
+
+    fn replace(&self, content: gtk::Box, snapshot: Snapshot) {
         let adjustment = self.scroll.vadjustment();
         let position = self
             .pending_position
@@ -228,6 +273,7 @@ impl UsagePanel {
         let generation = self.generation.get().wrapping_add(1);
         self.generation.set(generation);
         self.scroll.set_child(Some(&content));
+        *self.snapshot.borrow_mut() = snapshot;
         let current = self.generation.clone();
         let pending = self.pending_position.clone();
         gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(50), move || {
@@ -238,6 +284,5 @@ impl UsagePanel {
                 pending.set(None);
             }
         });
-        Ok(())
     }
 }
