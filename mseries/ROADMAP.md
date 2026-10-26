@@ -41,7 +41,6 @@ Close issues on explicit acceptance criteria, not PR merge alone. Standardize
 implemented/verified/merged/installed/loaded/accepted states and component-owned
 removal so obsolete launchers, services and panel modules cannot survive cutover.
 
-
 ## Apple Dev toolchain status follows current upstream — 2026-10-25
 
 [Upstream refresh](upstream-audits/apps/apple-dev-2026-10-25.md) removes the old

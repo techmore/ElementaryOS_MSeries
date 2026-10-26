@@ -25,6 +25,12 @@ public class QuickSettings.Appearance : Gtk.Box {
         light_button = new Gtk.ToggleButton.with_label (_("Light")) { hexpand = true };
         dark_button = new Gtk.ToggleButton.with_label (_("Dark")) { hexpand = true, group = light_button };
         auto_button = new Gtk.ToggleButton.with_label (_("Automatic")) { hexpand = true, group = light_button };
+        light_button.tooltip_text = _("Use the light appearance");
+        dark_button.tooltip_text = _("Use the dark appearance");
+        auto_button.tooltip_text = _("Follow the appearance schedule");
+        light_button.update_property_value ({ Gtk.AccessibleProperty.LABEL }, { _("Light appearance") });
+        dark_button.update_property_value ({ Gtk.AccessibleProperty.LABEL }, { _("Dark appearance") });
+        auto_button.update_property_value ({ Gtk.AccessibleProperty.LABEL }, { _("Automatic appearance") });
         var choices = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
         choices.add_css_class ("linked");
         choices.append (light_button);

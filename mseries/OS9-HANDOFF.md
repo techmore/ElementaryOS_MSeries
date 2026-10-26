@@ -1,3 +1,18 @@
+## Appearance integration qualification — 2026-10-26
+
+Reconciled the live-cutover branch with current `dev`: retained the shared
+Light/Dark/Automatic backend, manual scheduling semantics, standalone-indicator
+retirement and stacked network rates. Preserved explicit accessible labels and
+tooltips for all three choices rather than reverting to direct setting writes
+that bypass schedule control. Kept the source audit and owner-priority queue;
+superseded source-only appearance notes do not replace loaded-runtime evidence.
+
+Verification: the complete prepared Quick Settings plugin rebuilt successfully.
+A mapped native-widget smoke read the installed backend, showed three enabled
+choices with exactly one selected and checked tooltips without changing the
+desktop's appearance. This integration pass did not reload the live panel or
+claim new owner visual acceptance.
+
 ## T3/SDK audit and owner-priority issue queue — 2026-10-25
 
 Audited native T3 versus its separate SDK-hosted executable; current findings
@@ -58,7 +73,6 @@ reference flows, visual/behavioral gates and model-built app evidence under #535
 do not substitute repository tidying or a broad rewrite for that outcome.
 Component lifecycle must distinguish merged, installed, loaded and accepted,
 with removal covering files, services, launchers, runtime state and reinstall paths.
-
 
 ## Apple Dev upstream compatibility refresh — 2026-10-25 (Codex)
 
