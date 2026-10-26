@@ -1,3 +1,13 @@
+## Usage viewport refresh — validation pending, 2026-10-26
+
+The candidate GTK UsagePanel provides a bounded read-only viewport and validates
+replacement snapshots before display. It restores a prior numeric scroll offset
+when refreshing and coalesces restoration after back-to-back updates. Native
+tests exercise invalid replacement, multiple updates and scroll retention; the
+synthetic preview now embeds this viewport. GTK compilation and execution on
+this exact source remain pending. Semantic row anchoring, focus in interactive
+children, provider refresh/teardown and actual status-host binding remain open.
+
 ## Usage provider overview review — 2026-10-26
 
 Hosted ARM SDK run 40397085739 passed on 0951bde, including the native widget

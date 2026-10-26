@@ -3,6 +3,7 @@
 use gtk::prelude::*;
 use msdk::usage::{Coverage, Observation, Snapshot, SnapshotError, State};
 use std::cell::Cell;
+use std::rc::Rc;
 
 thread_local! { static STYLE_INSTALLED: Cell<bool> = const { Cell::new(false) }; }
 
@@ -182,4 +183,61 @@ pub fn render(snapshot: &Snapshot, now: i64) -> Result<gtk::Box, SnapshotError> 
         root.append(&card);
     }
     Ok(root)
+}
+
+/// Read-only, bounded usage viewport for embedding in a host. Providers and
+/// hosts retain responsibility for refresh, context lifetime and actions.
+pub struct UsagePanel {
+    scroll: gtk::ScrolledWindow,
+    generation: Rc<Cell<u64>>,
+    pending_position: Rc<Cell<Option<f64>>>,
+}
+
+impl UsagePanel {
+    pub fn new(snapshot: &Snapshot, now: i64) -> Result<Self, SnapshotError> {
+        let content = render(snapshot, now)?;
+        let scroll = gtk::ScrolledWindow::builder()
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .vscrollbar_policy(gtk::PolicyType::Automatic)
+            .child(&content)
+            .build();
+        Ok(Self {
+            scroll,
+            generation: Rc::new(Cell::new(0)),
+            pending_position: Rc::new(Cell::new(None)),
+        })
+    }
+
+    pub fn widget(&self) -> &gtk::ScrolledWindow {
+        &self.scroll
+    }
+
+    /// Validate and build before replacing the current content. A rejected
+    /// snapshot leaves the current view intact. Restore the previous numeric
+    /// scroll offset after layout, clamped if the new content is shorter.
+    /// This does not promise semantic row anchoring or preserve focus in an
+    /// interactive child; the current rows contain no interactive actions.
+    pub fn update(&self, snapshot: &Snapshot, now: i64) -> Result<(), SnapshotError> {
+        let content = render(snapshot, now)?;
+        let adjustment = self.scroll.vadjustment();
+        let position = self
+            .pending_position
+            .get()
+            .unwrap_or_else(|| adjustment.value());
+        self.pending_position.set(Some(position));
+        let generation = self.generation.get().wrapping_add(1);
+        self.generation.set(generation);
+        self.scroll.set_child(Some(&content));
+        let current = self.generation.clone();
+        let pending = self.pending_position.clone();
+        gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(50), move || {
+            if current.get() == generation {
+                adjustment.set_value(
+                    position.min((adjustment.upper() - adjustment.page_size()).max(0.0)),
+                );
+                pending.set(None);
+            }
+        });
+        Ok(())
+    }
 }

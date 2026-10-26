@@ -100,16 +100,13 @@ fn main() {
             coverage: Coverage::Partial,
             observations: vec![base, other, codex, codex_other, grok, opencode],
         };
-        let content = msdk_gtk::usage::render(&snapshot, 150).expect("synthetic snapshot is valid");
-        content.set_margin_top(12);
-        content.set_margin_bottom(12);
-        content.set_margin_start(12);
-        content.set_margin_end(12);
-        let scroll = gtk::ScrolledWindow::builder()
-            .hscrollbar_policy(gtk::PolicyType::Never)
-            .vscrollbar_policy(gtk::PolicyType::Automatic)
-            .child(&content)
-            .build();
+        let panel =
+            msdk_gtk::usage::UsagePanel::new(&snapshot, 150).expect("synthetic snapshot is valid");
+        let scroll = panel.widget().clone();
+        scroll.set_margin_top(12);
+        scroll.set_margin_bottom(12);
+        scroll.set_margin_start(12);
+        scroll.set_margin_end(12);
         let window = gtk::ApplicationWindow::builder()
             .application(app)
             .title("Usage preview")

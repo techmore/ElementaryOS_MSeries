@@ -52,3 +52,10 @@ opaque source key. This initial widget has not been visually reviewed against
 CodexBar and does not implement status-area placement, popup interactions,
 refresh, provider marks, localization, or focus/scroll preservation. It is not
 an accepted implementation of the complete status-area specification.
+
+`msdk_gtk::usage::UsagePanel` is a candidate bounded read-only viewport. Its
+`update` builds and validates replacement content before changing the displayed
+snapshot, then restores the prior numeric vertical scroll offset after layout,
+clamped for shorter content. It does not preserve a semantic row anchor, focus
+in interactive children, or provide refresh, subscriptions or host placement.
+The caller must apply context freshness and stop its own reads.

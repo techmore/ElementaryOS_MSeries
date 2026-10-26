@@ -128,16 +128,14 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
             many.push(item);
         }
     }
-    let view = msdk_gtk::usage::render(
-        &Snapshot {
-            coverage: Coverage::Partial,
-            observations: many,
-        },
-        150,
-    )
-    .unwrap();
+    let mut many_snapshot = Snapshot {
+        coverage: Coverage::Partial,
+        observations: many,
+    };
+    let panel = msdk_gtk::usage::UsagePanel::new(&many_snapshot, 150).unwrap();
+    let scroll = panel.widget().clone();
     let mut all_text = Vec::new();
-    labels(view.upcast_ref(), &mut all_text);
+    labels(scroll.upcast_ref(), &mut all_text);
     assert_eq!(
         all_text.first().map(String::as_str),
         Some("Providers: Codex · Claude · Grok · OpenCode")
@@ -158,11 +156,6 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
                 .any(|value| value == expected || value == &format!("{expected} · Selected"))
         );
     }
-    let scroll = gtk::ScrolledWindow::builder()
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .vscrollbar_policy(gtk::PolicyType::Automatic)
-        .child(&view)
-        .build();
     let window = gtk::Window::builder()
         .default_width(360)
         .default_height(300)
@@ -186,6 +179,41 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
     assert!(
         adjustment.value() > 0.0,
         "the last provider must be reachable by scrolling"
+    );
+    let position = adjustment.value();
+    let invalid = Snapshot {
+        coverage: Coverage::Partial,
+        observations: vec![
+            many_snapshot.observations[0].clone(),
+            many_snapshot.observations[0].clone(),
+        ],
+    };
+    assert!(panel.update(&invalid, 150).is_err());
+    let mut before = Vec::new();
+    labels(scroll.upcast_ref(), &mut before);
+    assert!(
+        before
+            .iter()
+            .any(|value| value == "OpenCode account 0 · Selected")
+    );
+    many_snapshot.observations[0].account_label = Some("Updated account".into());
+    panel.update(&many_snapshot, 150).unwrap();
+    panel.update(&many_snapshot, 150).unwrap();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(500);
+    while std::time::Instant::now() < deadline {
+        context.iteration(false);
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    assert!(
+        (adjustment.value() - position).abs() < 1.0,
+        "refresh preserves the numeric scroll offset"
+    );
+    let mut updated = Vec::new();
+    labels(scroll.upcast_ref(), &mut updated);
+    assert!(
+        updated
+            .iter()
+            .any(|value| value == "Updated account · Selected")
     );
     window.close();
 }
