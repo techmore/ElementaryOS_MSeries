@@ -1,3 +1,13 @@
+## Context-bound feed validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40391629479 and SDK/System Monitor run
+40391629511 passed on bb90bf7. The native GTK lifecycle test confirms a
+current feed update reaches host state, an update from an advanced context is
+ignored, rebinding is rejected, and the provider stops on close. This is an
+explicitly bound test provider; legacy providers are unscoped, and cancelling
+backend reads/subscriptions and displaying account identity remain provider
+responsibilities. Physical Pantheon and model-trial gates remain open.
+
 ## SDK context-bound feeds — validation pending, 2026-10-26
 
 An opt-in typed feed endpoint carries an app-owned context to GTK delivery and
