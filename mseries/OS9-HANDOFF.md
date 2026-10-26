@@ -1,5 +1,7 @@
 ## Candidate anchor hover failure — 2026-10-26
 
+ARM run 40415797379 at 7fa281f passed the candidate usage anchor synthetic hover travel, pin, outside dismissal and keyboard interactions, and package lifecycle; see `sdk-tests/receipts/2026-10-26-usage-anchor-pass/`. This does not qualify an installed desktop host. An added explicit unpinned pointer-leave check is pending.
+
 ARM run 40412642984 at 98867b8 passed core, generated app, accessibility, lifecycle and usage-refresh steps. The candidate anchor opened and read once, but failed pointer travel; pinning and subsequent steps were not reached. See `sdk-tests/receipts/2026-10-26-usage-anchor-travel-fail/`. X11 surface diagnostics are being added; native interaction validation remains open.
 
 Candidate usage anchor: ARM run 40407270110 did not open on hover; diagnostics showed the test pointer on the X root and no synthetic read. The isolated fixture now exports GTK bounds for pointer placement. GTK documents that changing auto-hide hides a visible popover, so the candidate now closes and reopens on pinning without restarting its read; interaction validation remains pending. This is a reusable candidate, not an installed desktop host. See `sdk-tests/receipts/2026-10-26-usage-anchor-coordinates/`.

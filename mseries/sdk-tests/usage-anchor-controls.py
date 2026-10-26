@@ -151,21 +151,27 @@ with tempfile.TemporaryDirectory(prefix='msdk-usage-anchor-') as directory:
             time.sleep(.45)
             assert button('Refresh usage') is not None, 'pointer travel closed popup'
             report['checks'].append('hover opens without stealing focus and pointer travel stays open')
+            move_point(gtk_center(bounds['outside']))
+            wait(lambda: button('Refresh usage') is None, 'unpinned popup did not close after pointer left')
+            assert marker.read_text() == 'x', 'hover close must not duplicate the read'
+            report['checks'].append('unpinned popup closes after pointer leaves')
             move_point(gtk_center(bounds['anchor']))
+            wait(lambda: button('Refresh usage'), 'second hover did not reopen popup')
+            wait(lambda: marker.read_text() == 'xx', 'second hover did not issue one read')
             subprocess.run(['xdotool', 'click', '1'], check=True)
             move_point(gtk_center(bounds['outside']))
             time.sleep(.65)
             assert button('Refresh usage') is not None, 'hover-to-click did not pin popup'
-            assert marker.read_text() == 'x', 'pinning must not duplicate read'
+            assert marker.read_text() == 'xx', 'pinning must not duplicate read'
             subprocess.run(['xdotool', 'click', '1'], check=True)
             wait(lambda: button('Refresh usage') is None, 'outside click did not dismiss popup')
             time.sleep(.6)
-            assert marker.read_text() == 'x', 'closed popup must not poll'
+            assert marker.read_text() == 'xx', 'closed popup must not poll'
             report['checks'].append('hover-to-click pins; outside click dismisses; closed popup does not poll')
             reach(anchor)
             key('space')
             wait(lambda: button('Refresh usage'), 'keyboard activation did not open popup')
-            wait(lambda: marker.read_text() == 'xx', 'keyboard opening did not issue one read')
+            wait(lambda: marker.read_text() == 'xxx', 'keyboard opening did not issue one read')
             key('Escape')
             wait(lambda: button('Refresh usage') is None, 'Escape did not dismiss popup')
             wait(lambda: anchor.getState().contains(pyatspi.STATE_FOCUSED), 'Escape did not restore anchor focus')
