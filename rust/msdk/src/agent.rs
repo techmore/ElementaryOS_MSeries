@@ -310,6 +310,10 @@ pub fn explain(code: &str) -> Option<&'static str> {
     }
     Some(match code {
         "bad-json" => "The file is not valid JSON. Check commas, quotes and brackets near the reported line.",
+        "missing-input" => "Supply at least one app description to check.",
+        "service-manifest" => {
+            "A service manifest could not be read or validated. Fix its path, version or declarations, then retry; the command did not continue with an incomplete contract."
+        }
         "not-object" => "The document, a component or an action must be a JSON object { ... }.",
         "unsupported-sdk-version" => {
             "Declare the supported sdk format for a new document. For an incompatible existing document, use a compatible SDK or migrate its content; do not just relabel the version."

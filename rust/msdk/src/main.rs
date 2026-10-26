@@ -36,7 +36,10 @@ fn main() -> ExitCode {
             }
         },
         Some("complete") if args.len() > 2 => {
-            load_services(Some(&args[1]), &args);
+            if let Err(error) = load_services(Some(&args[1]), &args) {
+                eprintln!("{error}");
+                return ExitCode::FAILURE;
+            }
             let doc = match load(&args[1]) {
                 Ok((d, _)) => d,
                 Err(e) => {
@@ -176,8 +179,30 @@ fn run_check(args: &[String]) -> ExitCode {
     let json = args.iter().any(|a| a == "--json");
     let mut failed = false;
     let mut report = Vec::new();
-    for file in files_of(args) {
-        load_services(Some(file), args);
+    let files = files_of(args);
+    if files.is_empty() {
+        if json {
+            println!(
+                "{}",
+                serde_json::json!([{"severity":"error","code":"missing-input","message":"check requires at least one description"}])
+            );
+        } else {
+            eprintln!("check requires at least one description");
+        }
+        return ExitCode::from(2);
+    }
+    for file in files {
+        if let Err(error) = load_services(Some(file), args) {
+            failed = true;
+            if json {
+                report.push(
+                    serde_json::json!({"file":file,"severity":"error","code":"service-manifest","message":error}),
+                );
+            } else {
+                println!("{file}: error[service-manifest] {error}");
+            }
+            continue;
+        }
         let (doc, parsed) = match load(file) {
             Ok(v) => v,
             Err(e) => {
@@ -222,7 +247,10 @@ fn run_check(args: &[String]) -> ExitCode {
 
 /// `msdk agent-manifest <file> [--mcp] [--services f.json]`: what an agent may ask this app for, from its `agent` block.
 fn run_agent_manifest(args: &[String]) -> ExitCode {
-    load_services(args.first().map(String::as_str), args);
+    if let Err(error) = load_services(args.first().map(String::as_str), args) {
+        eprintln!("{error}");
+        return ExitCode::FAILURE;
+    }
     let doc = match load(&args[0]) {
         Ok((d, _)) => d,
         Err(e) => {
@@ -242,7 +270,10 @@ fn run_agent_manifest(args: &[String]) -> ExitCode {
 }
 
 fn run_gate(args: &[String]) -> ExitCode {
-    load_services(args.first().map(String::as_str), args);
+    if let Err(error) = load_services(args.first().map(String::as_str), args) {
+        eprintln!("{error}");
+        return ExitCode::FAILURE;
+    }
     let read = |p: &str| {
         std::fs::read_to_string(p)
             .map_err(|e| e.to_string())
@@ -255,10 +286,11 @@ fn run_gate(args: &[String]) -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    let gates = match args.get(1).map(|p| read(p)) {
+    let files = files_of(args);
+    let gates = match files.get(1).map(|p| read(p)) {
         Some(Ok(g)) => Some(g),
         Some(Err(e)) => {
-            eprintln!("{}: {e}", args[1]);
+            eprintln!("{}: {e}", files[1]);
             return ExitCode::FAILURE;
         }
         None => None,
@@ -395,31 +427,34 @@ fn run_fmt(args: &[String]) -> ExitCode {
 }
 
 /// Loads plug-in service manifests: every `*.services.json` next to `file`, plus any `--services path` flags.
-fn load_services(file: Option<&str>, args: &[String]) {
+fn load_services(file: Option<&str>, args: &[String]) -> Result<(), String> {
     let mut paths: Vec<std::path::PathBuf> = Vec::new();
     if let Some(dir) = file.and_then(|f| std::path::Path::new(f).parent()) {
         let dir = if dir.as_os_str().is_empty() { std::path::Path::new(".") } else { dir };
-        if let Ok(rd) = std::fs::read_dir(dir) {
-            paths.extend(rd.flatten().map(|e| e.path()).filter(|p| p.to_string_lossy().ends_with(".services.json")));
+        for entry in std::fs::read_dir(dir).map_err(|error| format!("{}: {error}", dir.display()))? {
+            let path = entry.map_err(|error| error.to_string())?.path();
+            if path.to_string_lossy().ends_with(".services.json") {
+                paths.push(path);
+            }
         }
     }
-    for (i, a) in args.iter().enumerate() {
-        if a == "--services"
-            && let Some(p) = args.get(i + 1)
-        {
-            paths.push(p.into());
+    for (i, arg) in args.iter().enumerate() {
+        if arg == "--services" {
+            let path =
+                args.get(i + 1).filter(|path| !path.starts_with("--")).ok_or("--services requires a manifest path")?;
+            paths.push(path.into());
         }
     }
-    for p in paths {
-        match std::fs::read_to_string(&p)
-            .map_err(|e| e.to_string())
-            .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))
-            .and_then(|v| msdk::vocab::load_manifest(&v))
-        {
-            Ok(_) => {}
-            Err(e) => eprintln!("{}: {e}", p.display()),
-        }
+    paths.sort();
+    paths.dedup();
+    for path in paths {
+        std::fs::read_to_string(&path)
+            .map_err(|error| error.to_string())
+            .and_then(|text| serde_json::from_str(&text).map_err(|error| error.to_string()))
+            .and_then(|manifest| msdk::vocab::load_manifest(&manifest))
+            .map_err(|error| format!("{}: {error}", path.display()))?;
     }
+    Ok(())
 }
 
 /// The positional arguments with flags (and the value after `--services`) removed.
@@ -441,7 +476,10 @@ fn files_of(args: &[String]) -> Vec<&String> {
 /// `msdk render app.msdk [--surface main] [--state '{"key":value}'] [--json]`: what the app shows, headless.
 fn run_render(args: &[String]) -> ExitCode {
     let file = args[0].as_str();
-    load_services(Some(file), args);
+    if let Err(error) = load_services(Some(file), args) {
+        eprintln!("{error}");
+        return ExitCode::FAILURE;
+    }
     let doc = match load(file) {
         Ok((d, _)) => d,
         Err(e) => {

@@ -1,3 +1,25 @@
+## SDK entry points stop on manifest and validation failures — 2026-10-26
+
+Core CLI `check`, `render`, `gate`, `complete` and `agent-manifest` previously
+printed service-manifest errors and continued with incomplete contracts. They
+now stop on unreadable/invalid/conflicting manifests; check emits structured
+service-manifest errors in JSON mode. Adjacent discovery is deterministic and
+reports directory errors. Missing explicit paths/flag values fail. A check with
+no descriptions no longer returns a false success. `gate --services PATH` no
+longer mistakes the flag for a gates filename. Generation/package already
+propagate loader errors; actual CLI tests verify generation creates no output
+when an adjacent manifest is invalid.
+
+GTK preview now stops on invalid manifests and missing --services values,
+reports discovery errors, and returns failure for rejected descriptions/surfaces
+or failed screenshots rather than quitting with success. A private-session native
+CLI test is added to the native workflow for those failure paths, but has NOT
+been compiled/run here: Linux source-transfer authorization remains pending.
+Core executable tests pass on macOS; final receipts distinguish that evidence
+from unqualified GTK code. No remote retry or owner desktop/service/account/
+shipping action was performed. Continue final native qualification, GTK
+streaming/context adapters and the full completion ledger.
+
 ## Atomic versioned SDK manifests and compatibility boundaries — 2026-10-26
 
 Manifest loading now validates its complete input and conflicting registered

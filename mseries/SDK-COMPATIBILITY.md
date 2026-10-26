@@ -30,7 +30,10 @@ are errors. Identical reloads are idempotent; argument/field object order does
 not change the contract. Conflict validation and publication share one registry
 write lock, so concurrent loaders cannot partially publish a losing contract.
 An error leaves earlier registered contracts intact and adds nothing from the
-rejected manifest. Successful registry declarations live for the process lifetime.
+rejected manifest. CLI check/headless tools and native preview must stop on
+manifest read/validation errors; they must not continue with an incomplete
+contract. `check --json` emits a service-manifest diagnostic. Native preview
+activation/screenshot failure is a nonzero exit, separate from owner acceptance. Successful registry declarations live for the process lifetime.
 
 Direct Rust `register_service`/`register_feed` are legacy one-declaration entry
 points; their silent duplicate behavior is not transactional manifest loading.
