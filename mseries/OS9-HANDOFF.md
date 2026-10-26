@@ -1,3 +1,12 @@
+## Usage accessibility name diagnosis — 2026-10-26
+
+SDK run 40405291097 failed its synthetic keyboard probe on 9dac12e. The
+retained AT-SPI tree shows a button named `Refresh` with role `button`, not the
+expected `Refresh usage`. See sdk-tests/receipts/2026-10-26-usage-accessibility-tree.
+The visible label has been changed to `Refresh usage` to match the intended
+accessible name; GTK, keyboard and visual revalidation remain pending. The
+previous X-display startup failure is separate and remains unexplained.
+
 ## Usage keyboard probe failures — 2026-10-26
 
 SDK run 40404146612 on 34a26fa failed twice: attempt 1 could not open the

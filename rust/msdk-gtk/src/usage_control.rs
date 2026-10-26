@@ -39,7 +39,7 @@ impl UsageControl {
         status.add_css_class("dim-label");
         let spinner = gtk::Spinner::new();
         spinner.set_visible(false);
-        let refresh = gtk::Button::with_label("Refresh");
+        let refresh = gtk::Button::with_label("Refresh usage");
         refresh.set_tooltip_text(Some("Refresh usage"));
         refresh.update_property(&[gtk::accessible::Property::Label("Refresh usage")]);
         refresh.set_sensitive(false);
