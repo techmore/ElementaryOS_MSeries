@@ -1,3 +1,29 @@
+## SDK authoring preflight retained; model admission deferred — 2026-10-26
+
+The full offline uid2000 tool preflight succeeds through generation, build,
+actual external capture and Ctrl+Q; the fixture screenshot has visible real
+settings content without clipped primary controls. Four tool-boundary tests
+and the three native suites pass. All 80 SDK source fingerprints match the
+production snapshot. Sanitized configuration, seed/generated source and locks,
+provisioning/prewarm logs and tool results are retained under
+sdk-bench/receipts/2026-10-26-preflight. Benchmark helper boundary tests now run
+in SDK CI; CI never launches the model controller.
+
+The s01 seed17 controller's admission attempt exited before inference because
+qwen3.5:2b was already resident in the existing Ollama service. Residency does
+not prove active inference; the conservative rule avoids replacing that worker.
+No prompts were dispatched, generated model code was run, or model-quality
+score claimed. No daemon or owner workload was stopped/switched. The synthetic
+smoke project/state was archived and cleared; the sandbox is empty for a future
+properly admitted cohort. Keep the admission receipt; do not count it as a
+failed or completed model trial. Full-spec/baseline/repeated-model qualification
+remains open.
+
+SDK ARM developer-path run 40378225258 succeeded on bd002fa, and matching
+SDK/System Monitor run 40378225297 passed. This covers the current production
+Rust context-binding code; newer changes here are benchmark tooling/docs only.
+Native app ports/product feature parity remain outside SDK completion scope.
+
 ## SDK model authoring discovery runner and offline preflight — 2026-10-26
 
 Added a bounded SDK JSON-action authoring controller for the frozen benchmark

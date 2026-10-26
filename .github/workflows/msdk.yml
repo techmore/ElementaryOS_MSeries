@@ -9,6 +9,7 @@ on:
       - "rust/claude-pantheon-rs/sdk/**"
       - "rust/mseries-greeter/data/greeter.ui.json"
       - "mseries/sdk-tests/**"
+      - "mseries/sdk-bench/**"
       - ".github/workflows/msdk.yml"
   push:
     branches: [dev]
@@ -16,6 +17,7 @@ on:
       - "rust/msdk/**"
       - "rust/msdk-gtk/**"
       - "mseries/sdk-tests/**"
+      - "mseries/sdk-bench/**"
       - ".github/workflows/msdk.yml"
 
 permissions:
@@ -59,6 +61,7 @@ jobs:
         run: python3 mseries/sdk-tests/prepare.py "$RUNNER_TEMP/sdk"
       - name: Core tests and strict lint
         run: |
+          python3 -m unittest discover -s mseries/sdk-bench -p 'test_*.py'
           cargo fmt --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk --check
           cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk
           cargo clippy --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk --all-targets -- -D warnings
