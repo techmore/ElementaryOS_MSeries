@@ -36,6 +36,10 @@ def parse_state(raw):
             if m[6].get("is-preferred"):
                 pref = m[0]
         mons[spec[0]] = {"key": monitor_key(spec), "builtin": spec[0].startswith("eDP"),
+                         "identity_missing": (not spec[0].startswith("eDP") and
+                                              spec[1] == "Apple" and
+                                              spec[2] == spec[0] and
+                                              spec[3] == "Unknown"),
                          "modes": ids, "current": cur, "preferred": pref}
     lms = [{"x": x, "y": y, "scale": scale, "transform": tr, "primary": bool(pri),
             "connectors": [m[0] for m in mons_]} for (x, y, scale, tr, pri, mons_, _pp) in logical]
@@ -50,15 +54,31 @@ def snapshot(mons, lms):
     """Current layout keyed by monitor identity."""
     out = []
     for lm in lms:
-        ms = [{"key": mons[c]["key"], "mode": mons[c]["current"]} for c in lm["connectors"]]
+        ms = [{"key": mons[c]["key"], "mode": mons[c]["current"], "connector": c}
+              for c in lm["connectors"]]
         out.append({k: lm[k] for k in ("x", "y", "scale", "transform", "primary")} | {"monitors": ms})
     return out
 
 
 def pick_profile(profiles, mons):
-    want = externals(mons)
     for name, p in profiles.items():
-        if sorted(p["match"]) == want:
+        expected = set(p["match"])
+        want = []
+        for connector, info in mons.items():
+            if info["builtin"]:
+                continue
+            key = info["key"]
+            if info["identity_missing"]:
+                # EDID can be absent after a tunnel comes back. Use the last
+                # connector recorded with this profile only for the generic
+                # Apple/connector/Unknown identity; normal monitor identities
+                # remain portable across ports and always take precedence.
+                prior = [m["key"] for lm in p["layout"] for m in lm["monitors"]
+                         if m.get("connector") == connector and m["key"] in expected]
+                if len(prior) == 1:
+                    key = prior[0]
+            want.append(key)
+        if sorted(want) == sorted(expected):
             return name
     return None
 
@@ -66,6 +86,13 @@ def pick_profile(profiles, mons):
 def build_config(profile, mons, mode_override=None):
     """Profile -> ApplyMonitorsConfig logical list; absent monitors are dropped, missing modes fall back to preferred."""
     by_key = {m["key"]: c for c, m in mons.items()}
+    for lm in profile["layout"]:
+        for saved in lm["monitors"]:
+            connector = saved.get("connector")
+            current = mons.get(connector) if connector else None
+            if (saved["key"] not in by_key and current and
+                    not current["builtin"] and current["identity_missing"]):
+                by_key[saved["key"]] = connector
     out = []
     for lm in profile["layout"]:
         ms = []
@@ -150,7 +177,7 @@ def cmd_apply(b, name=None, nudge=False):
     serial, mons, _lms = read_state(b)
     name = name or pick_profile(data, mons)
     if not name or name not in data:
-        print("no profile for the displays attached:", externals(mons) or "built-in only")
+        print("no profile for the displays attached:", externals(mons) or "built-in only", flush=True)
         return 1
     if nudge:
         step = build_config(data[name], mons, nudge_modes)
@@ -162,7 +189,7 @@ def cmd_apply(b, name=None, nudge=False):
             print("displays changed during the nudge; not applying", flush=True)
             return 1
     apply_config(b, serial, build_config(data[name], mons))
-    print(f"applied '{name}'")
+    print(f"applied '{name}'", flush=True)
     return 0
 
 
@@ -188,13 +215,20 @@ def cmd_watch(b):
     def log(msg):
         print(time.strftime("%H:%M:%S"), msg, flush=True)
 
-    def settle():
+    def settle(attempt=1):
         st["timer"] = 0
         try:
             if cmd_apply(b, nudge=True) == 0:
                 st["quiet_until"] = time.monotonic() + 6.0  # our own change fires the signal again
+            elif attempt < 6:
+                log(f"no matching profile yet; retry {attempt + 1}/6 in 2.5s")
+                st["timer"] = GLib.timeout_add(2500, lambda: settle(attempt + 1))
+            else:
+                log("no matching profile after 6 attempts")
         except Exception as e:  # keep watching whatever happens
             log(f"apply failed: {e}")
+            if attempt < 6:
+                st["timer"] = GLib.timeout_add(2500, lambda: settle(attempt + 1))
         return False
 
     def trigger(why):

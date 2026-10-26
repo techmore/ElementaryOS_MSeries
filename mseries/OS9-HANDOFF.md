@@ -38,12 +38,20 @@ store was backed up at
 preserve the current built-in 3024x1964/120 at scale 1.25, restore the AOC dock
 monitor at 1920x1080/60, and keep the Insignia profile separate.
 
-The owner can now see the picture and profile matching selects `aoc-dock`.
-**Not yet verified:** automatic watcher response to physical disconnect/reconnect,
-laptop-only restoration after unplug, or repeated recovery. WIP4 and upstream review
-are complete; the offline candidate and rollback are staged on this machine. The next
-gate is an attended hardware trial after owner approval. Do not claim permanent
-recovery until that passes. No boot state changed. Per owner direction, update/review wip4
+At 07:43 EDT the owner ran one same-front-left cable cycle. On unplug Gala dropped
+the external output in 0.3 s and the watcher applied `laptop-only` successfully.
+On reconnect, `289c00000` allocated PHY 1, routed the Thunderbolt DP tunnel through
+`dpin0`, and modeset 1920x1080/60 without the previous DPTX timeout; the owner
+confirmed a visible picture. However, the EDID sysfs node was empty and Gala
+identified the output as `Apple:DP-2:Unknown`, so the old watcher did not match
+`aoc-dock`. The owner profile now records the known AOC-to-DP-2 association as a
+fallback only for that connector when the monitor identity is missing. The matcher
+then selected `aoc-dock`; a manual apply restored its saved x=2419 layout. Up to
+six attempts with explicit retry/failure logging are now in the installed watcher.
+Eight profile tests pass. The revised automatic replug restore still needs another
+physical cycle. Rear-left recovery also remains unqualified; WIP4 and upstream review
+are complete, and the offline candidate and rollback are staged pending approval for
+an attended hardware trial. Do not claim permanent recovery yet. No boot state changed.
 
 ## Appearance integration qualification — 2026-10-26
 
