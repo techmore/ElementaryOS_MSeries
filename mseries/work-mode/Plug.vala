@@ -42,6 +42,22 @@ namespace MSeriesWorkMode {
                 settings.bind ("enabled", enabled, "active", GLib.SettingsBindFlags.DEFAULT);
                 mode_group.add (enabled);
 
+                var close_row = new Adw.ActionRow () {
+                    title = "Close Settings",
+                    subtitle = "Close this window"
+                };
+                var close_button = new Gtk.Button.with_label ("Close") {
+                    valign = Gtk.Align.CENTER
+                };
+                close_button.clicked.connect (() => {
+                    var window = page.get_root () as Gtk.Window;
+                    if (window != null) {
+                        window.close ();
+                    }
+                });
+                close_row.add_suffix (close_button);
+                mode_group.add (close_row);
+
                 var wallpaper = new Adw.ActionRow () {
                     title = "Work wallpaper",
                     subtitle = wallpaper_name ()
@@ -188,8 +204,7 @@ namespace MSeriesWorkMode {
             if (original_decoration_layout == null) {
                 original_decoration_layout = gtk_settings.gtk_decoration_layout;
             }
-            var use_windows_buttons = settings.get_boolean ("enabled") &&
-                settings.get_string ("window-buttons") == "windows";
+            var use_windows_buttons = settings.get_string ("window-buttons") == "windows";
             gtk_settings.gtk_decoration_layout = use_windows_buttons
                 ? ":minimize,maximize,close"
                 : original_decoration_layout;
