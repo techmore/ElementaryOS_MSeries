@@ -1,3 +1,13 @@
+## Usage viewport refresh validation — 2026-10-26
+
+Hosted ARM developer-path run 40397942393 passed on cc2dace. Its native widget
+regression rejects an invalid replacement, applies two valid updates and retains
+a numeric scroll offset with unchanged-height synthetic content. Preview images
+are retained in sdk-tests/receipts/2026-10-26-usage-viewport; reviewed frames
+keep provider overview visible at the top. Semantic anchoring, shorter/changed
+content behavior beyond clamping, keyboard/focus, real providers and both actual
+status-area hosts remain open. No owner desktop or real accounts were touched.
+
 ## Usage viewport refresh — validation pending, 2026-10-26
 
 The candidate GTK UsagePanel provides a bounded read-only viewport and validates
