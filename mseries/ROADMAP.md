@@ -1,3 +1,12 @@
+## Usage keyboard probe failures — 2026-10-26
+
+SDK run 40404146612 on 34a26fa failed twice: attempt 1 could not open the
+private X display; attempt 2 opened the app but the expected accessible refresh
+button was not found. Synthetic receipts are in
+sdk-tests/receipts/2026-10-26-usage-keyboard-failures. Causes are unproven and
+no keyboard acceptance is claimed. The follow-up records a bounded synthetic
+accessibility tree on failure so the actual role/name can be diagnosed.
+
 ## Usage keyboard and AT-SPI probe — validation pending, 2026-10-26
 
 A private-session synthetic app and probe exercise the actual UsageControl via

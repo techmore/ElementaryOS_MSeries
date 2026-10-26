@@ -50,6 +50,7 @@ with tempfile.TemporaryDirectory(prefix='msdk-usage-controls-') as directory:
     env = dict(os.environ, XDG_DATA_HOME=str(root / 'data'), XDG_CONFIG_HOME=str(root / 'config'))
     with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
         process = subprocess.Popen([str(args.binary.resolve()), str(executable)], env=env, stdout=stdout, stderr=stderr)
+        app = None
         try:
             def wait(predicate, message, timeout=8):
                 end = time.monotonic() + timeout
@@ -106,6 +107,14 @@ with tempfile.TemporaryDirectory(prefix='msdk-usage-controls-') as directory:
         except Exception as error:
             report['result'] = 'fail'
             report['failure'] = str(error)
+            if app is not None:
+                try:
+                    report['accessible_nodes'] = [
+                        {'name': (item.name or '')[:160], 'role': item.getRoleName()}
+                        for item in walk(app)
+                    ][:100]
+                except Exception as diagnostic_error:
+                    report['accessibility_diagnostic_error'] = type(diagnostic_error).__name__
             raise
         finally:
             if process.poll() is None:
