@@ -11,6 +11,7 @@ cp "$here/TaskbarNotifications.vala" "$source_dir/src/TaskbarNotifications.vala"
 cp "$here/TaskbarCodexBar.vala" "$source_dir/src/TaskbarCodexBar.vala"
 cp "$repo/mseries/quick-settings/AirDropPanel.vala" "$source_dir/src/AirDropPanel.vala"
 cp "$here/TaskbarAirDrop.vala" "$source_dir/src/TaskbarAirDrop.vala"
+cp "$here/TaskbarT3.vala" "$source_dir/src/TaskbarT3.vala"
 cp "$here/TaskbarT3RPopover.vala" "$source_dir/src/TaskbarT3RPopover.vala"
 mkdir -p "$source_dir/src/codexbar"
 for source in Indicator JsonBoundary HelperProcess AccountDialog PanelPreferences RefreshPolicy QuotaEta Presentation; do
@@ -31,9 +32,11 @@ PY
 sha256sum "$source_dir/src/Taskbar.vala" "$source_dir/src/StartMenu.vala" \
   "$source_dir/src/TaskbarCodexBar.vala" "$source_dir/src/TaskbarRepoBar.vala" \
   "$source_dir/src/TaskbarNotifications.vala" "$source_dir/src/TaskbarAirDrop.vala" \
-  "$source_dir/src/TaskbarT3RPopover.vala" "$source_dir/src/AirDropPanel.vala" \
+  "$source_dir/src/TaskbarT3RPopover.vala" "$source_dir/src/TaskbarT3.vala" "$source_dir/src/AirDropPanel.vala" \
   "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala > "$source_dir/.mseries-preserved.sha256"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/dock-unique-launchers.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/dock-mode-geometry.patch"
 git -C "$source_dir" apply --unidiff-zero "$repo/mseries/patches/dock-launcher-binding-lifecycle.patch"
 # Attach T3's existing local-feed dropdown to its launcher in both Dock layouts.
 git -C "$source_dir" apply "$repo/mseries/patches/dock-taskbar-t3r-popup.patch"
@@ -52,13 +55,27 @@ for token in ('private Binding current_count_binding;', 'current_count_binding.u
         raise SystemExit(f'Launcher retains the old binding lifecycle: {token}')
 PY
 sha256sum --check --status "$source_dir/.mseries-preserved.sha256"
+# Replace the two taskbar status entries with one native T3 menu. Keep their
+# sources linked for the shared JSON boundary and embedded repository view.
+python3 - "$source_dir" <<'PYUNIFIED'
+from pathlib import Path
+import sys
+root = Path(sys.argv[1])
+p = root / 'src/Taskbar.vala'
+s = p.read_text()
+old = '        codexbar_group.append (new TaskbarCodexBar ());\n        var repobar = new TaskbarRepoBar () { margin_start = 6 };\n        codexbar_group.append (repobar);'
+assert s.count(old) == 1, 'Unified T3 anchor replacement mismatch'
+p.write_text(s.replace(old, '        codexbar_group.append (new TaskbarT3 ());'))
+p = root / 'src/meson.build'
+p.write_text(p.read_text().replace("    'TaskbarT3RPopover.vala',", "    'TaskbarT3RPopover.vala',\n    'TaskbarT3.vala',"))
+PYUNIFIED
 # Refuse a partial/stock rebuild instead of silently losing the Windows taskbar.
 python3 - "$source_dir" <<'PY'
 import pathlib, sys
 root = pathlib.Path(sys.argv[1])
 for filename, required in {
     'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala', 'TaskbarT3RPopover.vala'],
-    'src/Taskbar.vala': ['new TaskbarCodexBar', 'new TaskbarRepoBar', 'new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)'],
+    'src/Taskbar.vala': ['new TaskbarT3', 'new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)'],
     'src/AppSystem/Launcher.vala': ['new TaskbarT3RPopover (this, app)', 't3r_popup.toggle_from_icon ()'],
     'src/TaskbarT3RPopover.vala': ['"tokenUsage"', '"usedPercent"', '"repositories"', 'Timeout.add (250', 'Timeout.add (450'],
     'src/TaskbarAirDrop.vala': ['new MSeries.AirDropPanel'],

@@ -1,3 +1,40 @@
+## Unified T3 dock menu and Tstack workflows — 2026-10-26
+
+Replaced the separate taskbar CodexBar/RepoBar anchors with one native T3
+button: Usage, T3 server and GitHub, plus Activity/Open T3. Custom backend port,
+account helpers and caches remain authoritative. Embedded views are lazy and
+stop snapshot/refresh timers while closed; a longer fixture caught and fixed
+an automatic-refresh watcher leak. Explicit launcher-popover disposal prevents
+orphan popup children. Theme/text scale and bounded scrolling are shared.
+
+Installed and loaded the dock and T3 front end; preserved Wingpanel, T3 server,
+seven running apps, eleven unique pins and the current Work Mode. See the
+[delivery receipt](dock-tests/receipts/2026-10-26-t3-unified/README.md) for commands,
+checks, screenshots, hashes and limits. Full native dock build/launcher suites,
+light/dark interaction and launch routing, closed polling, nested Wayland
+transitions, 78 T3 model tests, clippy, native feature probes and app-only Debian
+packaging pass. Owner live visual/account acceptance remains open; whole-chat
+validation is deferred. Pre-existing dock startup criticals remain documented.
+
+Nine MIT tstack skills at `7de017b3fc9d50c03cf3ecb98fb71e0ca65a78bd` are
+vendored and installed for local Codex/Claude Code. Native T3 menu/palette has a
+request picker; no automatic send or workflow execution. Portable installer,
+package assets, source hashes and license retained. See
+[Tstack receipt](upstream-audits/apps/tstack-2026-10-26.md). Remote servers need
+their own skill installation; Council/Sol delegation is not claimed validated.
+CodexBar pin remains v0.78.0; custom-port check passes. Required post-push
+CodexBar deployment passed 18/18 native suites and staged the module without
+restarting the panel or daemon; RepoBar deployment also succeeded. PR #606 is
+open against dev with CI running at this receipt. Panel modules remain staged
+until next login; the new dock and T3 application are loaded.
+
+Owner clarified **Machine Lab has replaced Orchard**. Historical source names
+and app IDs do not reverse that direction. Fleet belongs inside T3 for remote
+machines/agents, separately from Machine Lab; upstream is read-only and no Fleet
+implementation is claimed yet. [Pinned source review and next
+flow](upstream-audits/apps/fleet-shepherd-2026-10-26.md). Next: dev integration
+and owner menu acceptance, followed by the native remote connector flow.
+
 ## Work Mode Settings close controls — 2026-10-26
 
 Merged PR #602 (`a788b487`) and follow-up PR #604 (`c13a67ca`). The Work Mode
@@ -9,6 +46,67 @@ is active and enabled. Restarted the Settings service and opened
 `settings://personal/work-mode` so it loads the updated plug. A visual/click
 check of the rendered page is still unavailable from this session. Next: confirm
 the in-page Close action closes System Settings.
+## Taskbar vertical alignment correction — 2026-10-26
+
+Owner reported controls visibly above the taskbar after deployment. Reproduced
+in a private nested-compositor screenshot: the bar started 12 px too low and its
+controls overhung it. `Gtk.Window.measure` excludes native CSD shadow space;
+forcing that measurement as the surface size removed 24 px from its allocation.
+The geometry patch now includes the GTK native shadow extent (surface transform
+minus CSS margin) before setting the requested size and shadow together.
+
+Reviewed retained [before](dock-tests/receipts/2026-10-26-taskbar-alignment/before.png)
+and [after](dock-tests/receipts/2026-10-26-taskbar-alignment/after.png) screenshots:
+the full-width background is flush to the bottom; controls fit inside it. Nested
+Wayland open/close and four-transition qualification still passes. The fixture
+now captures a screenshot for future visual review. Installed the incremental
+build and reloaded the dock only; Windows Work Mode remained enabled and no live
+mode switching was performed. Installed SHA-256 `55b8df87e896b7703326bd5a96be2842a73b960a4be924656b4803973b965b3e`.
+Owner visual acceptance remains separate. Unrelated Work Mode Settings drafts
+are preserved uncommitted.
+
+## Follow-up: running apps after Work Mode transitions — 2026-10-26
+
+The owner reported open windows disappearing after the duplicate-pin repair.
+The initial live mode round trip had disconnected the dock and silently fallen
+back to stock; checking settings/pins alone had missed this. Protocol evidence
+identified negative window geometry during taskbar -> floating relayout.
+`dock-mode-geometry.patch` now measures and sets the new layout size and shadow
+together. The actual dock survives four isolated nested-Wayland transitions
+with a fixture app tracked throughout, then correctly removes it on close.
+
+Final native build installed and dock alone reloaded. Live read-only
+`io.elementary.dock.items.ListRunningApps` reports nine running apps; 11 unique
+pins remain, no fallback marker, Windows Work Mode active. See the updated
+[detailed receipt](dock-tests/receipts/2026-10-26-work-mode-duplicates.md) for
+loaded binary identity, commands and limits. Owner visual acceptance remains
+open. No further live mode switching after the owner's disruption report.
+
+## Duplicate dock icons and immediate Work Mode exit — 2026-10-26
+
+Owner clarified the icon defect as duplicates; Windows Work Mode here is the
+Windows-style desktop/taskbar. Live `io.elementary.dock launchers` contained
+22 entries for 11 unique desktop IDs, in the same order twice. Source inspection
+found `ItemManager.map` calls singleton `AppSystem.load` again on remap; loading
+appended duplicate objects and overwrote their hash entries. The new
+`dock-unique-launchers.patch` makes loading single-shot, owns hash keys, reuses
+existing app objects and persists pins only after the full restore. Existing
+duplicate preferences are normalized in first-occurrence order on startup.
+
+Also repaired the exit-action patch composition: its Taskbar new-file hunk
+count dropped the final seven lines and the downstream power-buttons patch no
+longer applied. Exit now invokes `mseries-desktop-mode elementary`, applying the
+restore immediately instead of waiting up to the next timer tick.
+
+Verification: duplicate-pin regression fails before the fix (4 model entries
+instead of 2); the five production AppSystem/resolver tests pass afterward,
+including repeated load, pinning, grouping, close and reopen. All 13 isolated
+Work Mode helper tests pass. Complete pinned-source build and native launcher
+light/dark pointer/keyboard, marker, size-policy and hover checks pass.
+Deployment and final loaded-state evidence are recorded in
+[dock receipt](dock-tests/receipts/2026-10-26-work-mode-duplicates.md).
+Owner visual acceptance and broader #593 qualification remain open. No
+Wingpanel restart, kernel, bootloader or audio changes.
 
 ## Appearance integration qualification — 2026-10-26
 

@@ -61,8 +61,11 @@ namespace MSeries {
         private bool panel_enabled = true;
         private uint settings_generation = 0;
 
-        public RepoBarIndicator () {
-            GLib.Object (code_name: "repobar");
+        public bool on_demand { get; construct; default = false; }
+        private bool opened_in_host = false;
+
+        public RepoBarIndicator (bool on_demand = false) {
+            GLib.Object (code_name: "repobar", on_demand: on_demand);
         }
 
         construct {
@@ -256,7 +259,7 @@ namespace MSeries {
 
         /* Applies the show-in-panel preference: hidden means no GitHub requests, timers or notifications until it is turned back on. */
         private void apply_panel_enabled () {
-            panel_enabled = read_panel_enabled ();
+            panel_enabled = on_demand ? opened_in_host : read_panel_enabled ();
             this.visible = panel_enabled;
             if (!panel_enabled) {
                 if (refresh_source != 0) Source.remove (refresh_source);
@@ -795,7 +798,7 @@ namespace MSeries {
                     if (pending != 0) Source.remove (pending);
                     pending = Timeout.add (200, () => {
                         pending = 0;
-                        if (read_panel_enabled () != panel_enabled) apply_panel_enabled ();
+                        if (!on_demand && read_panel_enabled () != panel_enabled) apply_panel_enabled ();
                         else if (panel_enabled) load_snapshot ();
                         return Source.REMOVE;
                     });
@@ -943,6 +946,7 @@ namespace MSeries {
         /* Desktop notification when default-branch CI starts failing or recovers. The first snapshot after login
          * only records states (persisted in the cache) so nothing old is announced again. */
         private void notify_ci_changes (Json.Array repos) {
+            if (on_demand) return;
             string path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "mseries", "repobar", "ci-states.json");
             var previous = new HashTable<string, string> (str_hash, str_equal);
             bool have_previous = false;
@@ -1005,6 +1009,7 @@ namespace MSeries {
         /* Desktop notification for each workflow run that finished since the last refresh, on any branch or pull
            request in recently active repositories. The first snapshot after login only records what was seen. */
         private void notify_workflow_runs (Json.Object snapshot) {
+            if (on_demand) return;
             if (!snapshot.has_member ("actions") || snapshot.get_member ("actions").get_node_type () != Json.NodeType.OBJECT) return;
             string path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "mseries", "repobar", "run-states.json");
             var notified = new HashTable<string, bool> (str_hash, str_equal);
@@ -1824,10 +1829,22 @@ namespace MSeries {
         }
 
         public override void opened () {
+            if (on_demand) {
+                if (!opened_in_host) {
+                    opened_in_host = true;
+                    apply_panel_enabled ();
+                }
+                return;
+            }
             load_snapshot ();
         }
 
         public override void closed () {
+            if (on_demand) {
+                opened_in_host = false;
+                settings_generation++;
+                apply_panel_enabled ();
+            }
         }
     }
 }

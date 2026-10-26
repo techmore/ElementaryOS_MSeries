@@ -1128,7 +1128,7 @@ new file mode 100644
 index 0000000..7e3a8a8
 --- /dev/null
 +++ b/src/Taskbar.vala
-@@ -0,0 +1,512 @@
+@@ -0,0 +1,519 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries contributors
@@ -1386,6 +1386,7 @@ index 0000000..7e3a8a8
 +            { "system-log-out-symbolic", _("Log Out…"), "logout" },
 +            { "system-reboot-symbolic", _("Restart…"), "reboot" },
 +            { "system-shutdown-symbolic", _("Shut Down…"), "shutdown" },
++            { "preferences-desktop-symbolic", _("Exit Windows Work Mode"), "elementary" },
 +            { "preferences-system-symbolic", _("System Settings"), "settings" }
 +        };
 +        for (int i = 0; i < items.length[0]; i++) {
@@ -1415,6 +1416,12 @@ index 0000000..7e3a8a8
 +        }
 +        if (action == "settings") {
 +            spawn ({ "io.elementary.settings" });
++            return;
++        }
++        if (action == "elementary") {
++            // This is the same persistent master switch exposed by Switchboard.
++            // Apply immediately, using the same path as the Desktop Mode launcher.
++            spawn ({ "mseries-desktop-mode", "elementary" });
 +            return;
 +        }
 +        string method;

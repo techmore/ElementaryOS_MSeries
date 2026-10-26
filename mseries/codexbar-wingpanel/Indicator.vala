@@ -68,8 +68,11 @@ namespace MSeries {
         private Json.Object hint_selection = new Json.Object ();
         private string hints_digest = "";
 
-        public CodexBarIndicator () {
-            GLib.Object (code_name: "codexbar");
+        public bool on_demand { get; construct; default = false; }
+        private uint snapshot_source = 0;
+
+        public CodexBarIndicator (bool on_demand = false) {
+            GLib.Object (code_name: "codexbar", on_demand: on_demand);
         }
 
         construct {
@@ -183,9 +186,12 @@ namespace MSeries {
                 subtitle_label.set_text ("Could not start CodexBar: " + e.message);
             }
 
-            // Read the snapshot every 5 s while the popover is open or a refresh runs; every 30 s otherwise,
-            // which is plenty for the panel-bar chip.
-            Timeout.add_seconds (5, () => {
+            if (!on_demand) watch_snapshots ();
+        }
+
+        private void watch_snapshots () {
+            if (snapshot_source != 0) return;
+            snapshot_source = Timeout.add_seconds (5, () => {
                 snapshot_tick++;
                 if (popover_open || snapshot_busy || refresh_poll_source != 0 || snapshot_tick % 6 == 0) {
                     read_snapshot.begin ();
@@ -326,6 +332,7 @@ namespace MSeries {
 
         // A click on Refresh bypasses the helpers' caches; the automatic refresh on open does not.
         private void refresh_usage (bool force = false) {
+            if (on_demand && !popover_open) return;
             refresh_claude.begin (force);
             refresh_codex_accounts.begin (force);
             refresh_opencode_accounts.begin (force);
@@ -377,6 +384,7 @@ namespace MSeries {
         // ---- Reading data -------------------------------------------------------------
 
         private async void read_snapshot (bool refresh_if_old = false) {
+            if (on_demand && !popover_open) return;
             // Poll fallback also covers replacing/deleting the monitored directory itself.
             reload_display_preferences ();
             if (preferences_monitor == null) watch_display_preferences ();
@@ -2513,6 +2521,7 @@ namespace MSeries {
 
         public override void opened () {
             popover_open = true;
+            if (on_demand) watch_snapshots ();
             snapshot_tick = 0;
             read_snapshot.begin (true);
             ensure_sessions (15);
@@ -2520,6 +2529,18 @@ namespace MSeries {
 
         public override void closed () {
             popover_open = false;
+            if (on_demand) {
+                refresh_after_snapshot = false;
+                if (refresh_poll_source != 0) {
+                    Source.remove (refresh_poll_source);
+                    refresh_poll_source = 0;
+                }
+                set_refreshing (false);
+            }
+            if (on_demand && snapshot_source != 0) {
+                Source.remove (snapshot_source);
+                snapshot_source = 0;
+            }
         }
     }
 }

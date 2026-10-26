@@ -113,4 +113,4 @@ is left alone.
 
 ## Desktop mode switch
 
-`mseries-desktop-mode windows|elementary|toggle|status` (also the "Desktop Mode" launcher and its right-click actions) flips Windows Work Mode on or off immediately, with no logout.
+`mseries-desktop-mode windows|elementary|toggle|status` (also the "Desktop Mode" launcher and its right-click actions) flips Windows Work Mode on or off immediately, with no logout. The taskbar Start menu's Power menu also has **Exit Windows Work Mode**, which calls the same desktop-mode helper to turn off the persistent mode switch and restore wallpaper and dock preferences immediately.

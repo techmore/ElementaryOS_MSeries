@@ -1,3 +1,37 @@
+## Unified T3 dock menu and Tstack workflows — 2026-10-26
+
+Replaced the separate taskbar CodexBar/RepoBar anchors with one native T3
+button: Usage, T3 server and GitHub, plus Activity/Open T3. Custom backend port,
+account helpers and caches remain authoritative. Embedded views are lazy and
+stop snapshot/refresh timers while closed; a longer fixture caught and fixed
+an automatic-refresh watcher leak. Explicit launcher-popover disposal prevents
+orphan popup children. Theme/text scale and bounded scrolling are shared.
+
+Installed and loaded the dock and T3 front end; preserved Wingpanel, T3 server,
+seven running apps, eleven unique pins and the current Work Mode. See the
+[delivery receipt](dock-tests/receipts/2026-10-26-t3-unified/README.md) for commands,
+checks, screenshots, hashes and limits. Full native dock build/launcher suites,
+light/dark interaction and launch routing, closed polling, nested Wayland
+transitions, 78 T3 model tests, clippy, native feature probes and app-only Debian
+packaging pass. Owner live visual/account acceptance remains open; whole-chat
+validation is deferred. Pre-existing dock startup criticals remain documented.
+
+Nine MIT tstack skills at `7de017b3fc9d50c03cf3ecb98fb71e0ca65a78bd` are
+vendored and installed for local Codex/Claude Code. Native T3 menu/palette has a
+request picker; no automatic send or workflow execution. Portable installer,
+package assets, source hashes and license retained. See
+[Tstack receipt](upstream-audits/apps/tstack-2026-10-26.md). Remote servers need
+their own skill installation; Council/Sol delegation is not claimed validated.
+CodexBar pin remains v0.78.0; custom-port check passes. Required post-push
+CodexBar deployment stages the module without restarting the panel or daemon.
+
+Owner clarified **Machine Lab has replaced Orchard**. Historical source names
+and app IDs do not reverse that direction. Fleet belongs inside T3 for remote
+machines/agents, separately from Machine Lab; upstream is read-only and no Fleet
+implementation is claimed yet. [Pinned source review and next
+flow](upstream-audits/apps/fleet-shepherd-2026-10-26.md). Next: dev integration
+and owner menu acceptance, followed by the native remote connector flow.
+
 ## Work Mode Settings window controls — 2026-10-26
 
 Merged as PR #602 (`a788b487`) and follow-up PR #604 (`c13a67ca`), then
@@ -7,6 +41,26 @@ The timer is active and enabled; full PR validation and the installer build
 passed. Restarted Settings and opened `settings://personal/work-mode` to load
 the plug. A live visual/click check still needs owner confirmation. See the
 latest OS9 handoff entry.
+## Taskbar alignment follow-up — 2026-10-26
+
+Corrected the geometry repair's omitted GTK shadow extent, which placed controls
+above the taskbar. Before/after nested Wayland screenshots reviewed; four mode
+transitions and open/close tracking still pass. Corrected build installed and
+dock alone reloaded. Owner visual acceptance remains open. See the latest handoff.
+
+## Work Mode / duplicate dock icons — 2026-10-26
+
+Fixed repeated dock initialization on widget remap and duplicate saved pins;
+startup now keeps one app object per desktop ID and normalizes pins in order.
+Repaired complete dock patch composition and made Exit Windows Work Mode apply
+immediately through the existing Desktop Mode helper. Production regression,
+full native build and light/dark launcher interaction checks pass. See
+[detailed evidence](dock-tests/receipts/2026-10-26-work-mode-duplicates.md).
+Also fixed negative Wayland geometry on taskbar -> floating transitions, which
+had triggered stock-dock fallback and lost running-app matching. Actual dock
+passes isolated Wayland open/close + four-transition lifecycle checks; final
+loaded dock reports nine running apps. Broader #593 acceptance and owner visual
+review remain open.
 
 ## Owner-priority SDK/T3 qualification queue — 2026-10-25
 

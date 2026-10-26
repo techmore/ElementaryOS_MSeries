@@ -1,0 +1,5 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+PASS unified T3: hover focus, click pin/toggle, delayed close, lazy GitHub helper, Usage/GitHub switching
+PASS closed embedded usage does not poll snapshots during the next 5-second interval
+PASS Activity and Open T3 launch the declared desktop actions
