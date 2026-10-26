@@ -6,8 +6,16 @@ use serde_json::{Value, json};
 use std::cell::Cell;
 use std::rc::Rc;
 
-struct Provider(Rc<Cell<u32>>);
+struct Provider {
+    stops: Rc<Cell<u32>>,
+    feeds: Rc<Cell<u32>>,
+}
 impl Services for Provider {
+    fn api_version(&self) -> u32 {
+        // An incompatible optional extension must not disable the host's own
+        // windows.list implementation.
+        msdk::runtime::SERVICES_API_VERSION + 1
+    }
     fn call(
         &self,
         _: &str,
@@ -19,10 +27,11 @@ impl Services for Provider {
         false
     }
     fn start_feed(&self, _: &str, _: Rc<dyn Fn(Value)>) -> bool {
+        self.feeds.set(self.feeds.get() + 1);
         false
     }
     fn stop(&self) {
-        self.0.set(self.0.get() + 1);
+        self.stops.set(self.stops.get() + 1);
     }
 }
 
@@ -100,12 +109,19 @@ fn closing_stops_owned_work_ignores_late_events_and_releases_the_host() {
     // This scenario has no persistent data and never invokes real services.
     doc["persist"] = json!([]);
     let disabled_doc = doc.clone();
-    doc["capabilities"] = json!(["windows"]);
+    msdk::vocab::load_manifest(&json!({"feeds":[{"name":"sdktest.lifecycle.feed","capability":"network","fields":{"id":"text"}}]})).unwrap();
+    doc["capabilities"] = json!(["windows", "network"]);
     doc["types"] = json!({"Win":{"id":"text","app_id":"text","title":"text","focused":"bool","attention":"bool"}});
+    doc["types"]["Other"] = json!({"id":"text"});
     doc["state"]["windows"] = json!("list<Win>");
-    doc["feeds"] = json!({"windows":"windows.list"});
+    doc["state"]["other"] = json!("list<Other>");
+    doc["feeds"] = json!({"windows":"windows.list", "other":"sdktest.lifecycle.feed"});
     let stops = Rc::new(Cell::new(0));
-    let provider = Rc::new(Provider(stops.clone()));
+    let feeds = Rc::new(Cell::new(0));
+    let provider = Rc::new(Provider {
+        stops: stops.clone(),
+        feeds: feeds.clone(),
+    });
     let host = Host::open_with(&app, doc, None, "main", None, Some(provider), false).unwrap();
     let weak = Rc::downgrade(&host);
     assert_eq!(host.get("enabled"), Some(json!(true)));
@@ -115,6 +131,11 @@ fn closing_stops_owned_work_ignores_late_events_and_releases_the_host() {
         "the enabled feed must execute a real D-Bus read"
     );
     assert_eq!(host.get("windows").unwrap()[0]["id"], "7");
+    assert_eq!(
+        feeds.get(),
+        0,
+        "an incompatible provider must not receive its own feed"
+    );
     let veto = host
         .window()
         .connect_close_request(|_| gtk::glib::Propagation::Stop);

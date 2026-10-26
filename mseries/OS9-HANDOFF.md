@@ -1,3 +1,15 @@
+## SDK built-in feed compatibility — 2026-10-26
+
+The local GTK host change keeps an incompatible optional service extension from
+blocking the host-owned `windows.list` feed; lifecycle test now exercises that
+combination and verifies the incompatible provider receives no external feed.
+The generated test document and manifest pass the SDK checker with zero warnings.
+This change has not been compiled or run on Linux GTK and is not
+ready to claim as verified. SDK developer-path run 40390669721 passed on prior commit 4909d91, including
+native lifecycle and package operations; SER8 is unreachable. Validate this
+changed source and retain the result before claiming it passes. The current core-only macOS
+suite, including the unread scoped-stream case, passes 102 tests and clippy.
+
 ## SDK authoring scenario tool — 2026-10-26
 
 The benchmark worker now accepts a confined scenario-file path for `gate`, so

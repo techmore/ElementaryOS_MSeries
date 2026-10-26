@@ -521,21 +521,19 @@ impl Host {
             .cloned()
             .unwrap_or_default();
         for (key, name) in feeds {
-            if let Some(provider) = &self.services
-                && let Err(failure) = msdk::runtime::negotiate_service(
-                    provider.api_version(),
-                    name.as_str().unwrap_or(""),
-                    &format!("/feeds/{key}"),
-                    self.next_operation(),
-                )
-            {
-                self.runtime_failure(failure, None);
-                continue;
-            }
             if let Some(feed) = name.as_str()
                 && feed != "windows.list"
                 && let Some(sv) = &self.services
             {
+                if let Err(failure) = msdk::runtime::negotiate_service(
+                    sv.api_version(),
+                    feed,
+                    &format!("/feeds/{key}"),
+                    self.next_operation(),
+                ) {
+                    self.runtime_failure(failure, None);
+                    continue;
+                }
                 let (weak, key) = (self.me.borrow().clone(), key.clone());
                 let started = sv.start_feed(
                     feed,
