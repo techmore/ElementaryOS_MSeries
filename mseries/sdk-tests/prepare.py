@@ -12,7 +12,7 @@ dest = args.destination.resolve()
 dest.mkdir(parents=True, exist_ok=False)
 for name in ('msdk', 'msdk-gtk'):
     shutil.copytree(root / 'rust' / name, dest / name,
-                    ignore=shutil.ignore_patterns('target'))
+                    ignore=shutil.ignore_patterns('target', '._*', '.DS_Store'))
 for relative in ('mseries-greeter/data/greeter.ui.json',
                  'claude-pantheon-rs/sdk',
                  'pantheon-compositor/protocol/pantheon-desktop-shell-v1.xml'):

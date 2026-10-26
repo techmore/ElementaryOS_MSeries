@@ -1,3 +1,35 @@
+## Source-matched SDK developer-path receipts retained — 2026-10-26
+
+The final isolated x86_64 pass covers exact SDK code `287886e3b4399c742bf286bbaf3905b36439467d`;
+all 67 source/fixture fingerprints match the checkout. Receipts, generated Cargo
+sources, dependency locks, raw synthetic test/install logs, eight reviewed PNGs
+and retained failures are under `sdk-tests/receipts/2026-10-26/summary.json`.
+
+65 core tests pass; strict core/runtime and generated-app lint pass on Rust
+1.93.1/GTK 4.22.4. Native private D-Bus lifecycle proves accepted/vetoed close,
+stop/read behavior, late-event rejection and Host release. Live keyboard and
+AT-SPI checks prove Switch/ComboBox/Button names/roles, saved values, reset and
+Ctrl+Q. All eight light/dark, 480/900-wide, asserted Sans 10/15-point captures
+were visually inspected without clipped actions/labels. This is isolated GTK
+rendering, not owner visual or physical-scale/Wayland acceptance.
+
+Actual `.deb` metadata/dependencies, fresh install, reinstall, byte equality,
+installed launch and all five owned artifact classes' removal pass. Final app
+SHA256 is `e68aefa505ea9f16eeb8d475d6997f4340cd10e3cfe31b9d504ed92e78c91feb`;
+package SHA256 is `ebc6015c44c2adc4ebe394ef3f0561edfab0ab5900b3230130e95a0feb69f317`.
+Unmodified SDK/app lock files and generated sources are retained. No owner's
+services, desktop or accounts were changed. The completion ledger retains all
+remaining gates: versioned service/errors/process cancellation, shared status
+module/T3 host semantics, model usability, performance and supported target
+architecture/distro/owner qualification. The full SDK goal remains active.
+
+A final schema-probe interruption came from AppleDouble files in an early Mac
+archive; preparation/filtering now ignore that metadata. Completed core/lint/
+lifecycle work was reused, and only unfinished phases resumed. ARM CI still
+needs the official-ports provisioning correction qualified; source merge is
+not a claim of complete SDK acceptance. Next: inspect that new CI handle, then
+implement the service/error/cancellation contract and its useful golden-path app.
+
 ## SDK native validation and authoring repairs — 2026-10-26
 
 The SDK now has standalone typed Cargo generation and explicit ELF-to-Debian
@@ -10,7 +42,7 @@ acceptance. The owner's containers, desktop, panel, accounts and kernel remain
 unchanged. The temporary msdk-validation-20261026 container is scoped to this
 SDK goal; retain its build cache while work continues.
 
-Concrete repairs: weak Host dispatch/event ownership; cancelable/coalesced
+Concrete repairs: weak Host dispatch/event ownership; cancelable/serialized
 window polling with an owned handle; provider teardown hook and late-event
 rejection; accepted-close disposal (a vetoed close stays usable). Independent
 native D-Bus reads prove enabled/closed/disabled behavior and Host release.

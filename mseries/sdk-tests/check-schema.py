@@ -21,6 +21,7 @@ inputs = sorted((rust / 'msdk/templates').glob('*/app.ui.json'))
 inputs += sorted((rust / 'msdk/examples').glob('*.ui.json'))
 inputs += sorted((rust / 'msdk/examples').glob('*.msdk'))
 inputs += [rust / 'mseries-greeter/data/greeter.ui.json', rust / 'claude-pantheon-rs/sdk/t3.msdk']
+inputs = [path for path in inputs if not path.name.startswith('._')]
 for path in inputs:
     if path.suffix == '.msdk':
         doc = json.loads(subprocess.check_output([cli, 'json', str(path)], text=True))
