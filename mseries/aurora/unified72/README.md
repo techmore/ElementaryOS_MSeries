@@ -1,5 +1,21 @@
 # Unified Aurora 7.2.11 build candidate
 
+## wip4 candidate — upstream scan and deployment preparation, October 26, 2026
+
+Before any further dock cable test, the upstream scan reviewed Aurora #186 (direct DP-alt pipeline reservation/takeover)
+and #163 (TIPD handling when a pipeline is occupied). Both are open and blocked; neither directly fixes the WD22TB4
+tunneled DPTX timeout observed on this J314S, and #186 overlaps the local DCP-fabric timeout patch. They are excluded
+from this candidate until a focused rebase/interaction review or an upstream merge. The pinned #158 source commit has
+since merged unchanged; #157 remains open. See the [dated source audit](AURORA20-PORT-AUDIT-2026-10-22.md#upstream-displaytype-c-scan-before-j314s-testing--2026-10-26).
+
+**Offline trial preparation is complete; deployment and qualification remain open.** Run 39944207967's exact WIP4
+package/source/provenance are checksum-audited and staged with the candidate vmlinuz/initrd, proposed GRUB config and
+byte-exact rollback under `/home/sdolbec/aurora-wip4-trial-20261026-v2/`. The preparation receipt confirms original
+root-unlock/module dependencies and keeps `.20` as persistent default. Nothing was installed, added to live GRUB,
+armed or booted; the existing shared 7.1 DTB/m1n1 payload remains in place. Review rollback accessibility and fallback
+compatibility before an attended trial. The monitor currently works on front-left; that is a workaround result, not
+proof of persistent plug/unplug recovery.
+
 ## wip4 candidate — October 22, 2026 (built, not booted)
 
 **Revision 6 pins `7.2.11-elementary-aurora72-wip4`:** unmerged upstream #158 plus #157, the local J314S dock

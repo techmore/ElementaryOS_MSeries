@@ -1,3 +1,28 @@
+## Monitor restore and wip4 deployment gate — 2026-10-26
+
+The WD22TB4 picture returned after the owner moved the cable from rear-left to front-left. The live AOC is DP-2,
+1920×1080/60, and current kernel output shows a successful modeset on the alternate DCP. This confirms the workaround,
+not same-port recovery or repeat plug/unplug reliability. The deployed display-profile watcher had two D-Bus tuple
+signature defects; both are fixed in [PR #601](https://github.com/techmore/ElementaryOS_MSeries/pull/601), the watcher
+was restarted without restarting Wingpanel/compositor, and the AOC profile now matches. Actual post-fix
+`ApplyMonitorsConfig` and unplug/replug behavior are still unverified. Keep the working front-left connection in place.
+
+Per owner's sequencing request, WIP4/upstream review is happening before another cable cycle. The dated audit reviewed
+Aurora #186 (direct DP-alt pipeline reservation/takeover) and #163 (TIPD `-ENOSPC` handling). Both remain open and
+blocked; they do not directly fix the WD22TB4 tunneled DPTX timeout, and #186 overlaps local patch 0002. Exclude both
+from this candidate for now; pinned #158 merged unchanged, while #157 remains open. The source branch is 163 commits
+behind moving `integration/aurora`, so do not roll the full branch forward. Details and sources are in
+`aurora/unified72/AURORA20-PORT-AUDIT-2026-10-22.md`.
+
+WIP4 preparation is now concrete: the run 39944207967 package/source/provenance passed artifact/checksum review, and an
+offline trial bundle is staged privately at `/home/sdolbec/aurora-wip4-trial-20261026-v2/`. It includes candidate
+vmlinuz/initrd, the proposed GRUB entry, current `boot.bin` as byte-exact rollback, package/source inputs and provenance.
+The proposed config retains `.20` as persistent default; `grub-script-check` and the initramfs root-unlock/module audit
+passed. Receipt: `aurora/unified72/boot-preflight-wip4-2026-10-26/preparation.json`. No kernel package, bootloader,
+live GRUB config or shared boot payload was changed. Next: review rollback accessibility/fallback compatibility and,
+for a hardware trial, obtain explicit owner approval for the attended boot. Then qualify dock retry/restore with the
+watcher fix. Do not claim permanent recovery from the current picture alone.
+
 ## wip4 finalized with Aurora20 ports — 2026-10-22 (Codex)
 
 Owner requested the six Aurora20 enhancements be ported into wip4 and asked for an upstream audit relative to the

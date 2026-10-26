@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Prepare the pinned unified72 J314S trial offline; never install, arm or reboot.
 
-The release identity, trial slug and native-build receipt come from series.json, so the
-same script prepares wip2 (revision 3) or wip3 (revision 4)."""
+The release identity and trial slug come from series.json. Use the newest matching
+dated native-build receipt when present; wip2 retains its historical date-only receipt."""
 import argparse
 import gzip
 import hashlib
@@ -23,10 +23,8 @@ SERIES = json.loads((HERE / "series.json").read_text())
 NEW = SERIES["kernel_release"]["unified72"]
 SLUG = NEW.split("elementary-", 1)[1]          # e.g. aurora72-wip3
 TRIAL_ENTRY = f"elementary-{SLUG}-trial"
-# The audited-build receipt is named for the trial (wip3 onward); wip2 kept the date-only name.
-NATIVE_RECEIPT = next((path for path in (HERE / f"native-build-{SLUG.split('-')[1]}-2026-10-21.json",
-                                         HERE / "native-build-2026-10-21.json") if path.exists()),
-                      HERE / f"native-build-{SLUG.split('-')[1]}-2026-10-21.json")
+RECEIPTS = sorted(HERE.glob(f"native-build-{SLUG.split('-')[1]}-*.json"))
+NATIVE_RECEIPT = RECEIPTS[-1] if RECEIPTS else HERE / "native-build-2026-10-21.json"
 BASE_SHA = "06a885396f5613154b2fbb6774744efde95a9d25512698d297b3f14da0d4f3aa"
 BOOT_SHA = "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f"
 TRANSITIONS = {

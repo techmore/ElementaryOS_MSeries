@@ -30,3 +30,45 @@ GitHub state was read directly on 2026-10-22: #158 is still open at the pinned s
 - **Passed in CI:** ARM64 candidate, normal wip4 and opt-in eGPU Image/modules/DTB builds and package inspection ([run 39854228647](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39854228647)). **Still open:** DCP KUnit, an attended wip4 boot, WD22TB4 HDMI retry/recovery, camera/SMC hardware checks on matching devices, eGPU hardware checks, suspend/recovery and 64-fix semantic parity.
 
 The matching DT/m1n1, initramfs, boot entry and rollback have not been reviewed or staged for this revision. The existing wip3 trial and `.20` default are untouched.
+
+## Upstream display/Type-C scan before J314S testing — 2026-10-26
+
+The upstream `integration/aurora` head is 163 commits ahead of pinned #158, so wip4 stays on its immutable
+7.2.11 base rather than moving wholesale to a changing branch. #158 has since merged at the same pinned commit;
+#157 (the external-display color patch already carried as `0001`) remains open.
+
+Reviewed [#186](https://github.com/omacom/linux-aurora/pull/186) and [#163](https://github.com/omacom/linux-aurora/pull/163).
+Both remain open and `BLOCKED` as of this scan. #186 is a three-file DCP-fabric/TIPD change for direct DP-alt ports
+that reserve display pipelines without HPD, including takeover when another direct port asserts HPD. Its author reports
+a 7.2.10 J314S multi-display setup, and reports that a handover can leave DPTX timing out until reboot. #163 adjusts
+TIPD's `-ENOSPC` handling so docks keep their USB path when a display pipeline is occupied; its hardware result is on
+an M2 Air/T8112. Neither change directly addresses this J314S WD22TB4 tunneled-display timeout. #186's DCP changes
+and wip4's local timeout/route-release patch touch the same subsystem, so combining them before a focused rebase and
+interaction review would be unsafe. #163 is coupled to #186's standardized `-ENOSPC` semantics and lacks matching
+J314S coverage. **Decision: do not add either open PR to this deploy candidate yet.** Revisit if they merge, if the
+WD22TB4 failure evidence shows idle direct-port pipeline reservation is causal, or if an isolated source/KUnit review
+shows a minimal safe subset. The local wip4 DCP patch remains required for the observed `-ETIMEDOUT` route wedge.
+
+Other scanned display work: [#154](https://github.com/omacom/linux-aurora/pull/154) targets simultaneous DP tunnels
+for a tiled 5K Studio Display and is outside this single 1080p HDMI target. No additional merged Aurora release
+supersedes the pinned 7.2.11 base as of this scan.
+
+## Deployment readiness
+
+Wip4's CI package is now downloaded and audited from run 39944207967: GitHub's artifact digest and all four
+`SHA256SUMS` entries match; 17 provenance-recorded modified source files match; package identity is
+`linux-image-elementary-aurora72-wip4_7.2.11+elementary.aurora72.wip4-1_arm64.deb`, with 1,876 modules, 115 Apple DTBs
+and the J314S DTB present. The package has no boot hooks. An offline J314S trial bundle is staged privately at
+`/home/sdolbec/aurora-wip4-trial-20261026-v2/`: candidate vmlinuz/initrd, proposed GRUB config, byte-exact
+`boot.bin.rollback`, package, matching source archive and provenance. Candidate initrd SHA-256 is
+`07daaa0ef934b4a9e7a905e9d7d6f9bffe2a23ea59316a6f7d22602defe6349a`; rollback SHA-256 matches current shared
+`boot.bin` (`9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f`). GRUB syntax and the original-unlock/
+module-package audit passed; the proposal retains `.20` as persistent default. Nothing was installed, copied into `/boot`,
+added to the live GRUB config, armed or booted. This keeps the existing shared DTB/m1n1 payload, which is already the
+current chain, rather than swapping it for a new payload.
+
+Deployment is **staged but not yet approved/qualified**: review the private bundle and rollback accessibility, then
+perform an attended owner-approved trial. The source archive's base tree was not independently reconstructed from the
+pinned codeload archive, and fallback boot after a wip4 trial is unqualified. After boot, qualify one-shot dock recovery
+and repeated plug/unplug using the monitor-restore watcher fix; do not infer permanent recovery from the current
+front-left picture.

@@ -1,0 +1,180 @@
+{
+  "schema": 1,
+  "kind": "native-arm64-build-artifact-audit",
+  "audited_at": "2026-10-26T11:27:56+00:00",
+  "tested_repository_commit": "266d54af49ca6dede2492f11b4fe830cafa7228a",
+  "artifact_id": 12499308513,
+  "artifact_name": "elementary-aurora-enhancements-unified72-39944207967",
+  "artifact_zip_sha256": "51d994c59ddb228f8dbb22819eb49e2e49f9ba9fc817ea49bf18a718b9ef2cd2",
+  "github_artifact_digest_matched": true,
+  "ci_run": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39944207967",
+  "artifact_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39944207967/artifacts/12499308513",
+  "checksums_verified": {
+    "build.config": "01bec2b49d984b1f74b7fbd254aed02e97eb0ce47ecc46fd463ce02727796ece",
+    "linux-7.2.11-elementary-aurora72-wip4-source.tar.gz": "04432ad6cabd84eb9c65522bfd90e46998fab07401c25c085da8f99825b8b5ec",
+    "linux-image-elementary-aurora72-wip4_7.2.11+elementary.aurora72.wip4-1_arm64.deb": "7811064c1e5987f969b2f2c72ff06c44fea25d429e286917f844e457bcc7d8d9",
+    "provenance.json": "e7dd652405cbd3482c59ba4bdff70b06cccf3009c29d3236276717a483bcf55f"
+  },
+  "source_files_verified": 17,
+  "not_done": [
+    "base source archive was not independently reconstructed from the pinned codeload archive",
+    "initramfs and trial boot entry are prepared separately; no kernel install, boot payload change or hardware boot"
+  ],
+  "package": {
+    "control": "Package: linux-image-elementary-aurora72-wip4\nVersion: 7.2.11+elementary.aurora72.wip4-1\nArchitecture: arm64\nMaintainer: ElementaryOS MSeries contributors <builder@localhost>\nInstalled-Size: 154996\nSection: kernel\nPriority: optional\nDepends: kmod\nDescription: Experimental Aurora enhancement kernel payload\n Distinct modules directory, no boot hooks; requires explicit boot-chain staging.\n",
+    "module_files": 1876,
+    "apple_dtbs": 115,
+    "image_sha256": "25e6f772200147cd843ef8aa46ffc4a44a14f5e123a41cb28ebe5e10aad0a3bb",
+    "j314s_dtb": "dtbs/t6000-j314s.dtb present"
+  },
+  "provenance": {
+    "profile": "unified72",
+    "kernel_release": "7.2.11-elementary-aurora72-wip4",
+    "base_pins": {
+      "repository": "omacom/linux-aurora",
+      "release": "aurora-2026.10.17.20",
+      "kernel_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+      "kernel_release": "7.1.12-2-20261017.20-sep-ARCH",
+      "debian_package": "linux-image-elementary-aurora20",
+      "debian_version": "7.1.12+aurora.20261017.20-1",
+      "recipe_config_sha256": "c811698c5242d42850bef6669f29cd7b485e997d3ac1a423e2d3cbbb3fdc19b8",
+      "m1n1_source": "https://github.com/omacom/m1n1/tree/d05ba17dfb771871d608225be42968bbb1e75a18",
+      "assets": {
+        "kernel": {
+          "name": "linux-aurora-7.1.12.aurora2-20261017.20-aarch64.pkg.tar.zst",
+          "sha256": "49efa0ec088059aaae6c1fc7fef49521171abbab2c21a3d62bf670148dc0c7d8"
+        },
+        "recipe": {
+          "name": "linux-aurora-recipe-20261017.20.tar.gz",
+          "sha256": "6e5ff423f0ef07d6e478c39c8c9c0739a2cc12050afa8c9f90ec49e5bd0ddcc3"
+        },
+        "source": {
+          "name": "aurora-linux-c46d7dcdb8712ea9aeb0ce47b439ffae76371e55.tar.gz",
+          "sha256": "493ed9fb4a9e245fd59a92a2396d3c968516be932749b8059757a29380652509"
+        },
+        "m1n1": {
+          "name": "m1n1-aurora-1.6.1.aurora17-5-aarch64.pkg.tar.zst",
+          "sha256": "fd72ec6c7ff514a2fb17141ccd8ff94268e4412fc5660fb0db62564a036e30ca"
+        },
+        "m1n1_source": {
+          "name": "m1n1-d05ba17dfb771871d608225be42968bbb1e75a18.tar.gz",
+          "url": "https://codeload.github.com/omacom/m1n1/tar.gz/d05ba17dfb771871d608225be42968bbb1e75a18",
+          "sha256": "45ecb3c3efa13409b148c1b76397ec0c5cb747d3fc5f049455601b4c65295fe8"
+        },
+        "touchid": {
+          "name": "aurora-touchid-20261003-2-any.pkg.tar.zst",
+          "sha256": "84243a96fcabed344460c1dc67309730f03de34b9f1955faccbedc10c619c7c4"
+        },
+        "libfprint": {
+          "name": "libfprint-1.94.100-1.1-aarch64.pkg.tar.zst",
+          "sha256": "bc7d9762db6644f2cfb58ddb209602c1d513845eb1498c098e01f12600fcbdf9"
+        }
+      }
+    },
+    "series_sha256": "9b7c2283e7f407e6d930b297f2a29b4070376331c9a0532ed6b373dea3fa1158",
+    "patches": [
+      {
+        "file": "0001-drm-apple-srgb-external-display-colour.patch",
+        "sha256": "9cd617e413c69006349e8ffa914ee0c16d1d7ba246d5afd9e1031aafbbf09573",
+        "upstream": "https://github.com/omacom/linux-aurora/pull/157",
+        "head": "9d3aeb24cb864d5f99a7172e9004884bf3c1a9a0",
+        "profile": "candidate",
+        "note": "drm/apple: sRGB surfaces and an sRGB link colorimetry for external displays (unmerged upstream PR #157, 5 files, +73/-6). Applies to the #158 head with small offsets; must be re-checked if #158 moves."
+      },
+      {
+        "file": "0002-drm-apple-free-dp-tunnel-route-from-silent-dcpext.patch",
+        "sha256": "fdd6f9cd13ca90b4500130d289182eb69728e25afe5a5ed3f0c92571aa54fd1a",
+        "upstream": null,
+        "head": null,
+        "profile": "candidate",
+        "note": "drm/apple: local, not upstream. A DCP whose DPTX RemotePort times out is passed over for 300 s, and a timed-out release no longer pins the port's DP tunnel route to it. Applies after 0001 to the #158 source (checked against the exact files; full-tree apply is checked by candidate.py prepare and CI). Never built or booted."
+      },
+      {
+        "file": "0003-udmabuf.patch",
+        "sha256": "980e441601ce890741a2bf9c741556e299e5c1ac8f05000991f333fcacbacc6e",
+        "upstream": "https://github.com/omacom/linux-aurora/pull/67",
+        "head": "6984b8c07e84b0cf528243db1838dade971ff513",
+        "profile": "candidate",
+        "note": "Unmodified upstream config patch; full recipe config is also checked by the build gate."
+      },
+      {
+        "file": "0004-m3-thermal-fallback.patch",
+        "sha256": "acbb4af3e55004c3695b673b2e324e3af3e0db6d58bf2f4be7a939ee3b3a515c",
+        "upstream": "https://github.com/omacom/linux-aurora/pull/135",
+        "head": "46b5a0981c4955cf33b7275c4001d820791b9f08",
+        "profile": "candidate",
+        "note": "Local 7.2.11 port of PR #135 policy/tests. Dormant: this source has a compile-only M3 backend and refuses runtime startup; no thermal behavior is enabled."
+      },
+      {
+        "file": "0005-j613-camera-147.patch",
+        "sha256": "5d868e19e9b0edbac4ce19d4954558f471800925937347bc902bd362a706ede0",
+        "upstream": "https://github.com/omacom/linux-aurora/pull/134",
+        "head": "06d77374e80cb1901fb2c283362abb242cd68c18",
+        "profile": "candidate",
+        "note": "Unmodified PR #134 patch; applies only to matching J613/T8122 firmware. Not relevant to the owner\u2019s J314S."
+      },
+      {
+        "file": "0006-t8122-camera-2662.patch",
+        "sha256": "d8938f63279a913640d7af6abf00932298828f8968eba8c97e1ed311d9e7e310",
+        "upstream": "https://github.com/omacom/linux-aurora/pull/119",
+        "head": "4cf3221edd6befc79489ff4e2636e0b01e002ac7",
+        "profile": "candidate",
+        "note": "Unmodified PR #119 patch; requires matching m1n1 ISP-heap support and compatible device firmware. Not qualified on the owner\u2019s J314S."
+      },
+      {
+        "file": "0007-macsmc-optional-properties.patch",
+        "sha256": "5b4f9ba92b99bf388be2c8a3ed11a8fb6caa760632e363aba3e53e5a6a66e5fe",
+        "upstream": "https://github.com/omacom/linux-aurora/commit/4676c48ecf1b1acaba7c442d33fe9aae0f037e77",
+        "head": "4676c48ecf1b1acaba7c442d33fe9aae0f037e77",
+        "profile": "candidate",
+        "note": "Upstream optional-property change, rebased for 7.2.11; retains charge and critical-battery behavior. Hardware telemetry remains unqualified here."
+      }
+    ],
+    "source_pin": {
+      "repository": "aurora-silicon/linux",
+      "commit": "bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+      "git_url": "https://github.com/omacom/linux-aurora.git",
+      "git_tree_sha1": "a305f231d9137847c7f0ececca98e214cc30e792",
+      "upstream_pr": "https://github.com/omacom/linux-aurora/pull/158",
+      "name": "linux-aurora-bd526b3c11ccf8e91d6240261beb3219d8f17f03.tar.gz",
+      "url": "https://codeload.github.com/omacom/linux-aurora/tar.gz/bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+      "archive_root": "linux-aurora-bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+      "sha256": "881d5a061efa212ed28489311cc97ab6d9bf52891a6c7a00b18f0bbaff131957"
+    },
+    "source_fetch_method": "pinned-archive-sha256",
+    "source_archive_sha256": "881d5a061efa212ed28489311cc97ab6d9bf52891a6c7a00b18f0bbaff131957",
+    "source_tree_sha256": "50e843dd4d99d3c0381959c23bae34a376108acee8f251c9748c13dfff7c93e9",
+    "modified_files": {
+      "arch/arm64/configs/asahi.config": "c87a3acbd59b1075dd704f62634a3f9df072c3bf8980ce57d154018c3ad14690",
+      "drivers/gpu/drm/apple/dcp-fabric-core.c": "39524b929f1b8db1cff77d795527d14b2ceacb10a6e572510c67dbf505ada150",
+      "drivers/gpu/drm/apple/dcp-fabric-core.h": "ed67bf386b0eee79be0f6c5b02a1e6c0503d1899c7faa2f4a0a23fb93d9f9496",
+      "drivers/gpu/drm/apple/dcp-fabric-test.c": "98a39f8d038182bdefdd69967fdcbd071db0e1f8ac64de2247ac29c2e43f7686",
+      "drivers/gpu/drm/apple/dcp-fabric.c": "2db503c77b7d1736e8b5189cb63024536729bf98bb27904225a363116fb9e22d",
+      "drivers/gpu/drm/apple/dcp-internal.h": "9b057bb150618f97ca40f8bf0ed714411cbc69f84c419b6796bed151b5437165",
+      "drivers/gpu/drm/apple/dcp.c": "a8631ad86e6c6c4d9fe1764688f819fe19edcbc816ce78956d0a50d9c46e69bd",
+      "drivers/gpu/drm/apple/iomfb_template.c": "c44bfaa534ad947b98d21f57ee82c42f17c6121b96cad915e39cfb15cd066808",
+      "drivers/gpu/drm/apple/parser.c": "9f75b92750c7b6faa53940918a3817153a8813f79f7546eeb1ced4c729b7b5d3",
+      "drivers/gpu/drm/apple/plane.c": "1150c28a458a469c5cd8effd754b59b6de9784d610426243cace2e7ff7052bff",
+      "drivers/gpu/drm/asahi/m3/m3_thermal_policy.rs": "53eeaf15c03646f89829b2ad7e7c95a3e944892018ce25a075c49a98b1eb690f",
+      "drivers/media/platform/apple/isp/isp-cam.c": "84693e8a69a370370367b4c84884f6e88b19c2b23eb9377985894a5f77da1f61",
+      "drivers/media/platform/apple/isp/isp-drv.c": "18de8ad86f8cf0120fa099ed02889b465882ffdad756e361d4242f36086536bb",
+      "drivers/media/platform/apple/isp/isp-drv.h": "d4d8a241e00f0224571797e95cf682daefef383f6cbc2a64728b25f2f05478f1",
+      "drivers/power/supply/macsmc-power.c": "b712fafdc4af1f1e47c68a15ca0140d410f9cd3f4b88e44593471bf49908eec2",
+      "localversion.elementary": "b04d4d92c4a89ec0f9ac08cc8f63a4f2bfa7612e0c09399136e85e6b2f7416cd",
+      "rust-toolchain.toml": "2a95563bb9f5b216cc3c170a17e9471448bc63a7084bdd67df23d074939b366c"
+    },
+    "prepared_config_sha256": "20efc4af999b142e5cac358b9567a00a24bf3b687b30d47cadccc194c888126d",
+    "status": "ARM64 Image/modules/DTBs built; no hardware boot",
+    "package": "linux-image-elementary-aurora72-wip4_7.2.11+elementary.aurora72.wip4-1_arm64.deb",
+    "package_sha256": "7811064c1e5987f969b2f2c72ff06c44fea25d429e286917f844e457bcc7d8d9",
+    "source_sha256": "04432ad6cabd84eb9c65522bfd90e46998fab07401c25c085da8f99825b8b5ec",
+    "resolved_config_sha256": "01bec2b49d984b1f74b7fbd254aed02e97eb0ce47ecc46fd463ce02727796ece",
+    "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11)",
+    "clang": "Ubuntu clang version 22.1.2 (1ubuntu1)",
+    "package_compression": {
+      "format": "zstd",
+      "level": 3,
+      "max_threads": 4
+    }
+  }
+}
