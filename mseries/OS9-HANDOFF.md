@@ -1,3 +1,13 @@
+## Usage card refinement review — 2026-10-26
+
+Hosted ARM SDK run 40395621853 passed on dd96c00, including native widget
+checks and four synthetic light/dark Sans 10/15 captures. Compared with the
+previous preview, the card and account headings improve hierarchy and avoid
+repeated stale text and awkward reset wrapping in the tested fixture. Evidence
+is in sdk-tests/receipts/2026-10-26-usage-cards. Provider marks, compact quota
+presentation, multi-provider/long-list review, host interactions, real adapters
+and owner approval remain open; this is not full status-module acceptance.
+
 ## Usage card hierarchy refinement — validation pending, 2026-10-26
 
 The candidate usage rows now use a scoped, theme-derived card treatment based on
