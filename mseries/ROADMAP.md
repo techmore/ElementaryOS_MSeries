@@ -1,3 +1,13 @@
+## Usage refresh control validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40403452026 passed on e1c91a8. Native
+synthetic tests cover open/busy/failure/retry and four failure-state light/dark
+Sans 10/15 frames were reviewed and retained under
+sdk-tests/receipts/2026-10-26-usage-control-final. Failure, stale data and the
+Refresh button are visible in the fixture; the footer no longer repeats the
+failure wording. Keyboard/AT-SPI, busy-state visual review, actual status hosts,
+real collectors/accounts and owner approval remain open.
+
 ## Usage control initial validation — 2026-10-26
 
 Hosted ARM SDK run 40402684685 passed on a5b0ff2, including synthetic GTK
