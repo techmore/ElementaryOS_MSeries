@@ -111,7 +111,11 @@ with tempfile.TemporaryDirectory(prefix='msdk-usage-anchor-') as directory:
             wait(popup_geometry.exists, 'fixture did not export popup geometry')
             popup_bounds = json.loads(popup_geometry.read_text())
             report['gtk_popup_bounds'] = popup_bounds
+            report['x11_windows_before_travel'] = subprocess.check_output(
+                ['xwininfo', '-root', '-tree'], text=True)
             move_point(gtk_center(popup_bounds))
+            report['pointer_after_travel'] = subprocess.check_output(
+                ['xdotool', 'getmouselocation', '--shell'], text=True).strip()
             time.sleep(.65)
             assert button('Refresh usage') is not None, 'pointer travel closed popup'
             report['checks'].append('hover opens without stealing focus and pointer travel stays open')
