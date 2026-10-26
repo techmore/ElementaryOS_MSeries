@@ -1,3 +1,12 @@
+## Candidate anchor hover failure — 2026-10-26
+
+SDK run 40406733431 compiled 5c7dcbc but failed the synthetic hover interaction:
+the Usage anchor was present while the popup was not observed. The failure is
+retained under sdk-tests/receipts/2026-10-26-usage-anchor-hover-fail; its cause
+is unproven. The follow-up checks actual popup mapping and adds pointer/read
+diagnostics. It needs source-matched native execution; no host acceptance is
+claimed and no owner desktop was changed.
+
 ## Candidate usage status anchor — native validation pending, 2026-10-26
 
 An embeddable GTK UsageAnchor is modeled on the existing taskbar hover/pin

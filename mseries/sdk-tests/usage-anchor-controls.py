@@ -89,7 +89,9 @@ with tempfile.TemporaryDirectory(prefix='msdk-usage-anchor-') as directory:
             reach(outside)
             time.sleep(.6)
             assert not marker.exists(), 'closed anchor must not read'
+            report['anchor_center'] = list(point(anchor))
             move(anchor)
+            report['pointer_after_hover'] = subprocess.check_output(['xdotool', 'getmouselocation', '--shell'], text=True).strip()
             refresh = wait(lambda: button('Refresh usage'), 'hover did not open usage popup')
             wait(lambda: marker.exists() and marker.read_text() == 'x', 'hover did not trigger one read')
             assert outside.getState().contains(pyatspi.STATE_FOCUSED), 'hover must not steal focus'
@@ -124,6 +126,7 @@ with tempfile.TemporaryDirectory(prefix='msdk-usage-anchor-') as directory:
         except Exception as error:
             report['result'] = 'fail'
             report['failure'] = str(error)
+            report['synthetic_read_count'] = len(marker.read_text()) if marker.exists() else 0
             if app is not None:
                 try:
                     report['accessible_nodes'] = [{'name': (item.name or '')[:160], 'role': item.getRoleName(),

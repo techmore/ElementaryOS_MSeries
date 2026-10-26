@@ -24,7 +24,7 @@ impl Inner {
     }
     fn show(&self, interactive: bool) {
         Self::cancel(&self.close_timer);
-        if self.popup.is_visible() {
+        if self.popup.is_mapped() {
             if interactive {
                 self.pinned.set(true);
                 self.popup.set_autohide(true);
@@ -38,7 +38,7 @@ impl Inner {
     }
     fn schedule_open(this: &Rc<Self>) {
         Self::cancel(&this.close_timer);
-        if this.open_timer.borrow().is_some() || this.popup.is_visible() {
+        if this.open_timer.borrow().is_some() || this.popup.is_mapped() {
             return;
         }
         let weak = Rc::downgrade(this);
@@ -120,7 +120,7 @@ impl UsageAnchor {
         inner.button.connect_clicked(move |_| {
             if let Some(inner) = weak.upgrade() {
                 Inner::cancel(&inner.open_timer);
-                if inner.popup.is_visible() && inner.pinned.get() {
+                if inner.popup.is_mapped() && inner.pinned.get() {
                     inner.popup.popdown();
                 } else {
                     inner.show(true);
