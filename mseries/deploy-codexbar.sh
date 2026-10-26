@@ -21,7 +21,9 @@ ninja -C "$build" >/dev/null
 meson test -C "$build" --print-errorlogs
 indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
 # install(1) replaces the file instead of overwriting it, so the loaded module is never truncated in place.
-sudo install -m 0755 "$build/libcodexbar.so" "$indicators_dir/libcodexbar.so"
+source "$repo/mseries/lib-t3-panel.sh"
+module_target=$(t3_panel_module_target "$indicators_dir" libcodexbar.so)
+sudo install -Dm 0755 "$build/libcodexbar.so" "$module_target"
 # Icon-theme invalidation affects the whole live panel. Do not rewrite unchanged marks
 # or refresh its icon cache on routine code/documentation deployments.
 icons_changed=false
@@ -39,6 +41,11 @@ fi
 install -m 0755 "$build/codexbar-settings" "$HOME/.local/bin/codexbar-settings.new"
 mv -f "$HOME/.local/bin/codexbar-settings.new" "$HOME/.local/bin/codexbar-settings"
 echo "Installed helpers, native settings, provider marks and $indicators_dir/libcodexbar.so"
+
+# Keep the selected shared presentation current too, without hot-loading it.
+if [[ -f "$indicators_dir/libmseries-t3.so" || -f "$indicators_dir/../mseries-pending-indicators/libmseries-t3.so" ]]; then
+  bash "$repo/mseries/install-t3-wingpanel.sh"
+fi
 
 if ! "$restart"; then
   echo 'Installed without restarting Wingpanel or CodexBar. The panel module loads at next login (or an explicit --restart).'

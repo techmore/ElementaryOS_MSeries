@@ -218,6 +218,9 @@ jobs:
           meson setup "$RUNNER_TEMP/codexbar" mseries/codexbar-wingpanel
           ninja -C "$RUNNER_TEMP/codexbar"
           meson test -C "$RUNNER_TEMP/codexbar" --print-errorlogs
+          meson setup "$RUNNER_TEMP/t3-panel" mseries/t3-wingpanel
+          ninja -C "$RUNNER_TEMP/t3-panel"
+          bash mseries/t3-wingpanel/test.sh "$RUNNER_TEMP/t3-panel" "$RUNNER_TEMP/t3-panel-receipts"
           bash mseries/dock-taskbar/test-build.sh
       - name: RepoBar resolved-account cache and private indicator race/error probes
         run: |

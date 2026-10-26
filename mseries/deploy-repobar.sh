@@ -21,7 +21,9 @@ ninja -C "$build" librepobar.so mseries-repobar-settings >/dev/null
 install -d -m 0755 "$HOME/.local/bin"
 install -m 0755 "$build/mseries-repobar-settings" "$HOME/.local/bin/mseries-repobar-settings"
 indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
-sudo install -m 0755 "$build/librepobar.so" "$indicators_dir/librepobar.so"
+source "$repo/mseries/lib-t3-panel.sh"
+module_target=$(t3_panel_module_target "$indicators_dir" librepobar.so)
+sudo install -Dm 0755 "$build/librepobar.so" "$module_target"
 for icon in github-symbolic mseries-repobar-globe-symbolic mseries-repobar-commit-symbolic \
   mseries-repobar-issue-symbolic mseries-repobar-pull-symbolic; do
   sudo install -m 0644 "$repo/mseries/repobar-wingpanel/icons/$icon.svg" "/usr/share/icons/hicolor/symbolic/apps/$icon.svg"
@@ -41,6 +43,11 @@ Terminal=false
 Categories=Settings;Development;
 StartupNotify=true
 DESKTOP
+
+# Keep the selected shared presentation current too, without hot-loading it.
+if [[ -f "$indicators_dir/libmseries-t3.so" || -f "$indicators_dir/../mseries-pending-indicators/libmseries-t3.so" ]]; then
+  bash "$repo/mseries/install-t3-wingpanel.sh"
+fi
 
 if ! "$restart"; then
   echo 'Installed without restarting Wingpanel. The RepoBar module loads at next login (or an explicit --restart).'

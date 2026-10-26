@@ -1,3 +1,28 @@
+## Unified native T3 panel staged — 2026-10-26
+
+Merged Fleet PR #607 at `04fe68e6`. Owner does not require particular remote
+SSH aliases; leave Fleet available with its existing local connector and no
+new remote configuration or probes. Machine Lab has replaced Orchard.
+
+The new `mseries/t3-wingpanel` module shares the dock's maintained GTK/Granite
+menu, replaces the three standalone indicators and retains one RepoBar background
+notification owner. Lazy embedded views stop collectors while closed; recent
+live T3 status drives the badge, including expiry without collector polling.
+Native settings and icon assets are packaged. Supported legacy installers and
+deploys preserve the unified selection instead of restoring separate icons.
+
+Full clean dock/launcher suites, light/dark native host interactions, launch
+routes and closed polling pass. Custom CodexBar v0.78.0 port/schema check passes;
+Debian module package builds. Source and lifecycle reviewed; no model turn or
+real SSH. See [installation and qualification boundaries](t3-wingpanel/README.md).
+Initial staging caused an unintended Wingpanel crash: its directory watcher
+hot-loaded `.so.new` against the legacy constructor ABI. Systemd recovered at
+09:19:05; the running process maps only the unified module. Installer/package
+now stage outside discovery and require explicit activation; no further panel
+reload was issued. Physical Wingpanel behavior/owner acceptance remain open. Whole-chat validation stays
+deferred. Next: confirm the loaded unified native menu without duplicating old
+modules, then owner visual/account acceptance. No factory boot qualification.
+
 ## Native Fleet in T3 and unified-menu dev integration — 2026-10-26
 
 PR #606 is merged into `dev` at `42180692` after all CI checks passed. The unified

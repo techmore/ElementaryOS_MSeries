@@ -7,7 +7,11 @@ using Json;
 public class Dock.TaskbarT3RPopover : GLib.Object {
     private const string APP_ID = "io.github.techmore.ClaudePantheonRs";
     private Gtk.Popover popup;
-    private Dock.App? app;
+    private Gtk.Widget content;
+    private bool hosted;
+    private bool host_open = false;
+    public signal void request_close ();
+    public signal void status_changed (bool live, int64 pending, int64 running);
     private Gtk.Stack pages;
     private Gtk.Box github_page;
     private Gtk.Box accounts_page;
@@ -20,6 +24,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private uint open_timer = 0;
     private uint close_timer = 0;
     private uint freshness_timer = 0;
+    private uint status_expiry = 0;
     private bool pinned = false;
     private Gtk.Label account;
     private Gtk.Label connection;
@@ -34,8 +39,8 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private Gtk.Label freshness;
     private Gtk.Label error_label;
 
-    public TaskbarT3RPopover (Gtk.Widget anchor, Dock.App? app = null) {
-        this.app = app;
+    public TaskbarT3RPopover (Gtk.Widget anchor, int header_icon_size = 28, bool hosted = false) {
+        this.hosted = hosted;
         status_path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "claude-pantheon-rs", "status.json");
         install_style ();
 
@@ -47,7 +52,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         popup.set_offset (0, -1);
         popup.add_css_class (Granite.STYLE_CLASS_MENU);
         popup.add_css_class ("taskbar-t3r-popup");
-        popup.set_parent (anchor);
+        if (!hosted) popup.set_parent (anchor);
 
         var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 10) {
             width_request = 380,
@@ -72,7 +77,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
         var mark = new Gtk.Image.from_icon_name ("io.github.techmore.ClaudePantheonRs") {
             // Keep the existing 28 px size at the 48 px default, then follow the shared dock token.
-            pixel_size = ItemManager.get_icon_size () * 7 / 12
+            pixel_size = header_icon_size
         };
         var title_block = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) { hexpand = true };
         var title = new Gtk.Label ("T3-R Pantheon") { xalign = 0 };
@@ -186,52 +191,58 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         footer.append (machines);
         footer.append (open_full);
         shell.append (footer);
-        popup.child = new Gtk.ScrolledWindow () {
+        content = new Gtk.ScrolledWindow () {
             child = shell, hscrollbar_policy = Gtk.PolicyType.NEVER,
-            propagate_natural_height = true, max_content_height = 640
+            propagate_natural_height = true, min_content_height = hosted ? 420 : -1, max_content_height = 640
         };
 
-        var motion = new Gtk.EventControllerMotion ();
-        motion.enter.connect (() => {
-            cancel_close ();
-            if (open_timer == 0 && !popup.visible) {
-                open_timer = Timeout.add (250, () => {
-                    open_timer = 0;
-                    show_popup (false);
-                    return Source.REMOVE;
-                });
-            }
-        });
-        motion.leave.connect (() => {
-            cancel_open ();
-            schedule_close ();
-        });
-        anchor.add_controller (motion);
+        if (hosted) content.add_css_class ("taskbar-t3r-popup");
+        else popup.child = content;
 
-        var popup_motion = new Gtk.EventControllerMotion ();
-        popup_motion.enter.connect (cancel_close);
-        popup_motion.leave.connect (schedule_close);
-        ((Gtk.Widget) popup).add_controller (popup_motion);
+        if (!hosted) {
+            var motion = new Gtk.EventControllerMotion ();
+            motion.enter.connect (() => {
+                cancel_close ();
+                if (open_timer == 0 && !popup.visible) {
+                    open_timer = Timeout.add (250, () => {
+                        open_timer = 0;
+                        show_popup (false);
+                        return Source.REMOVE;
+                    });
+                }
+            });
+            motion.leave.connect (() => {
+                cancel_open ();
+                schedule_close ();
+            });
+            anchor.add_controller (motion);
 
-        var keys = new Gtk.EventControllerKey ();
-        keys.key_pressed.connect ((key) => {
-            if (key != Gdk.Key.Escape) return false;
-            popup.popdown ();
-            return true;
-        });
-        ((Gtk.Widget) popup).add_controller (keys);
-        popup.closed.connect (() => {
-            pinned = false;
-            cancel_close ();
-            stop_freshness_timer ();
-            if (repositories_indicator != null) repositories_indicator.closed ();
-            if (accounts_indicator != null) accounts_indicator.closed ();
-        });
-        anchor.unmap.connect (() => {
-            cancel_open ();
-            cancel_close ();
-            popup.popdown ();
-        });
+            var popup_motion = new Gtk.EventControllerMotion ();
+            popup_motion.enter.connect (cancel_close);
+            popup_motion.leave.connect (schedule_close);
+            ((Gtk.Widget) popup).add_controller (popup_motion);
+
+            var keys = new Gtk.EventControllerKey ();
+            keys.key_pressed.connect ((key) => {
+                if (key != Gdk.Key.Escape) return false;
+                popup.popdown ();
+                return true;
+            });
+            ((Gtk.Widget) popup).add_controller (keys);
+            popup.closed.connect (() => {
+                pinned = false;
+                cancel_close ();
+                stop_freshness_timer ();
+                if (repositories_indicator != null) repositories_indicator.closed ();
+                if (accounts_indicator != null) accounts_indicator.closed ();
+            });
+            anchor.unmap.connect (() => {
+                cancel_open ();
+                cancel_close ();
+                popup.popdown ();
+            });
+        }
+        content.unmap.connect (close_host);
         app_watch_id = GLib.Bus.watch_name (GLib.BusType.SESSION, APP_ID, GLib.BusNameWatcherFlags.NONE,
             (connection, name, owner) => {
                 application_running = true;
@@ -243,6 +254,30 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             });
         watch_status ();
         reload ();
+    }
+
+    public Gtk.Widget get_host_widget () { return content; }
+
+    public void open_host () {
+        if (!hosted) return;
+        host_open = true;
+        reload ();
+        update_repository_page ();
+        start_freshness_timer ();
+    }
+
+    public void close_host () {
+        host_open = false;
+        stop_freshness_timer ();
+        if (accounts_indicator != null) accounts_indicator.closed ();
+        if (repositories_indicator != null) repositories_indicator.closed ();
+    }
+
+    private bool menu_visible () { return hosted ? host_open : popup.visible; }
+
+    private void dismiss () {
+        if (hosted) { close_host (); request_close (); }
+        else popup.popdown ();
     }
 
     public void toggle_from_icon () {
@@ -259,6 +294,10 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         reload ();
         popup.popup ();
         update_repository_page ();
+        start_freshness_timer ();
+    }
+
+    private void start_freshness_timer () {
         if (freshness_timer == 0) freshness_timer = Timeout.add_seconds (30, () => {
             reload ();
             return Source.CONTINUE;
@@ -266,7 +305,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     }
 
     private void update_repository_page () {
-        if (popup.visible && pages.visible_child_name == "usage") {
+        if (menu_visible () && pages.visible_child_name == "usage") {
             if (accounts_indicator == null) {
                 accounts_indicator = new MSeries.CodexBarIndicator (true);
                 accounts_page.append (accounts_indicator.get_widget ());
@@ -275,7 +314,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         } else if (accounts_indicator != null) {
             accounts_indicator.closed ();
         }
-        if (!popup.visible || pages.visible_child_name != "github") {
+        if (!menu_visible () || pages.visible_child_name != "github") {
             if (repositories_indicator != null) repositories_indicator.closed ();
             return;
         }
@@ -330,11 +369,12 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             }
         """);
         Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), style,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
         style_installed = true;
     }
 
     private void reload () {
+        if (status_expiry != 0) { Source.remove (status_expiry); status_expiry = 0; }
         error_label.visible = false;
         var parser = new Json.Parser ();
         try {
@@ -361,6 +401,15 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             new DateTime.now_utc ().difference (observed_at) <= 15 * TimeSpan.MINUTE &&
             observed_at.difference (new DateTime.now_utc ()) <= TimeSpan.MINUTE;
         bool live = application_running && connected && !stale && recent;
+        // An idle panel still expires its badge; this one-shot never polls collectors.
+        if (hosted && live) {
+            var remaining = 15 * 60 - new DateTime.now_utc ().difference (observed_at) / TimeSpan.SECOND;
+            status_expiry = Timeout.add_seconds ((uint) int64.max (remaining + 1, 1), () => {
+                status_expiry = 0;
+                reload ();
+                return Source.REMOVE;
+            });
+        }
         string server = MSeries.JsonBoundary.text (feed, "server");
         string selected_id = MSeries.JsonBoundary.text (feed, "selectedProviderId");
         string selected_provider = MSeries.JsonBoundary.text (feed, "selectedProvider");
@@ -382,6 +431,10 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         connection.remove_css_class ("connected");
         connection.remove_css_class ("stale");
         connection.add_css_class (live ? "connected" : "stale");
+        var pending = array_member (feed, "pendingPrompts");
+        var running = array_member (feed, "running");
+        status_changed (live, pending != null ? pending.get_length () : 0,
+            running != null ? running.get_length () : 0);
         render_tokens (feed, selected_id, live);
         render_usage (feed, selected_id, live);
         render_activity (feed, live);
@@ -389,6 +442,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     }
 
     private void render_unavailable () {
+        status_changed (false, 0, 0);
         account.label = "No T3 account";
         connection.label = "Pair with a T3 server in Settings";
         token_total.label = "Token history unavailable";
@@ -592,18 +646,14 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private void run_action (string action) {
         var context = Gdk.Display.get_default ().get_app_launch_context ();
         context.set_timestamp (Gdk.CURRENT_TIME);
-        if (app != null) {
-            app.launch (context, action);
-        } else {
-            var info = new DesktopAppInfo (APP_ID + ".desktop");
-            if (info == null) {
-                error_label.label = "T3 is not installed. Install T3 to open this page.";
-                error_label.visible = true;
-                return;
-            }
-            info.launch_action (action, context);
+        var info = new DesktopAppInfo (APP_ID + ".desktop");
+        if (info == null) {
+            error_label.label = "T3 is not installed. Install T3 to open this page.";
+            error_label.visible = true;
+            return;
         }
-        popup.popdown ();
+        info.launch_action (action, context);
+        dismiss ();
     }
 
     private void open_thread (string id) {
@@ -615,7 +665,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             Pid pid;
             Process.spawn_async (null, { executable, "--thread", id }, null, SpawnFlags.SEARCH_PATH, null, out pid);
             if (pid <= 0) throw new IOError.FAILED ("The T3-R application did not start.");
-            popup.popdown ();
+            dismiss ();
         } catch (Error e) {
             error_label.label = "Could not open the thread: " + e.message;
             error_label.visible = true;
@@ -678,6 +728,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     }
 
     public override void dispose () {
+        if (status_expiry != 0) { Source.remove (status_expiry); status_expiry = 0; }
         cancel_timers ();
         if (accounts_indicator != null) accounts_indicator.closed ();
         if (repositories_indicator != null) repositories_indicator.closed ();

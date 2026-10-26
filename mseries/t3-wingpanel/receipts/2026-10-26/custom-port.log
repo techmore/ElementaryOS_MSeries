@@ -1,0 +1,24 @@
+ok    upstream CLI 0.78.0 (pin v0.78.0)
+ok    CLI supports --all-accounts
+ok    CLI supports --account
+ok    codex usage runs
+ok    CODEX_HOME is honored
+ok    CLI lists the grok provider
+ok    grok is signed in (plan has no credits window; the card says so)
+ok    grok is in the panel's provider order
+ok    tests: codexbar-cache
+ok    tests: codexbar-accounts
+ok    tests: codexbar-claude
+ok    tests: codexbar-claude-history
+ok    tests: codexbar-claude-handoff
+ok    tests: codexbar-opencode-local
+ok    tests: codexbar-opencode-login
+ok    tests: codexbar-sessions
+ok    tests: performance/watch
+ok    tests: wrapper
+ok    tests: deploy/payload
+ok    Wingpanel module builds, tests pass
+missing: [] [] []
+ok    live --snapshot keys match the panel fixture
+
+Port check passed (human look still needed for any "check" lines)
