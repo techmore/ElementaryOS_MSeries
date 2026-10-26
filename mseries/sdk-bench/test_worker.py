@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('sdk_bench_worker', Path(__file__).with_name('worker.py'))
 worker = importlib.util.module_from_spec(spec)
@@ -53,6 +54,15 @@ class WorkerBoundaryTests(unittest.TestCase):
             worker.execute({'action': 'run', 'command': 'sh -c dangerous'})
         with self.assertRaises(ValueError):
             worker.execute({'action': 'write', 'files': {'src/main.rs': 'x' * 100001}})
+
+    def test_gate_passes_scenario_file_and_rejects_escaping_paths(self):
+        with patch.object(worker, 'run', return_value={'code': 0}) as run:
+            worker.execute({'action': 'run', 'command': 'gate', 'path': 'app.ui.json', 'gates': 'app.gates.json'})
+            self.assertEqual(run.call_args.args[0], ['/work/target/debug/msdk', 'gate',
+                str((worker.ROOT / 'app.ui.json').resolve()), str((worker.ROOT / 'app.gates.json').resolve())])
+            with self.assertRaises(ValueError):
+                worker.execute({'action': 'run', 'command': 'gate', 'gates': '../outside.json'})
+            self.assertEqual(run.call_count, 1)
 
 if __name__ == '__main__':
     unittest.main()

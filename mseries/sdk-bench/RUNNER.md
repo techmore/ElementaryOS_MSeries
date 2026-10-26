@@ -26,6 +26,8 @@ The model can write bounded project source files, read its project/public SDK,
 and invoke a fixed command surface. No arbitrary host command tool is exposed.
 Builds are offline. The SDK-mode `pack` command packages a built Cargo binary
 into the owned evidence directory; it does not install or remove the package.
+The `gate` command accepts an optional `gates` path for acceptance scenarios;
+without it, only the description's built-in gates are run.
 Installation, removal and the remaining acceptance criteria require independent
 verification. `worker.py` rejects parent/absolute/hidden paths, writes to
 runner evidence/build output, oversized files and unknown commands. Code-level

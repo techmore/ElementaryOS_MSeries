@@ -30,7 +30,8 @@ Actions:
 {"action":"run","command":"templates|describe|new|check|render|gate|gen|build|test|clippy|fmt|launch|pack", ...}
 {"action":"done","reason":"what is implemented and any remaining limitations"}
 run options: describe has topic; new has template and path (new directory);
-check/render/gate has path; gen has path and output (new directory);
+check/render/gate has path; gate optionally has gates (scenario file path);
+gen has path and output (new directory);
 build/test/clippy/fmt/launch/pack has project directory, default ".".
 launch can select binary if there is more than one. launch captures the real app
 and tests Ctrl+Q externally; your app need not implement a screenshot flag.

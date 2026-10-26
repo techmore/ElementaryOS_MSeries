@@ -145,7 +145,10 @@ def execute(request):
         return run([cli, 'describe'] + ([str(topic)] if topic else []))
     if command in ('check', 'render', 'gate'):
         path = project_path(request.get('path', 'app.ui.json'))
-        return run([cli, command, str(path)])
+        args = [cli, command, str(path)]
+        if command == 'gate' and 'gates' in request:
+            args.append(str(project_path(request['gates'])))
+        return run(args)
     if command == 'new':
         return run([cli, 'new', str(request.get('template', 'list-detail')),
                     str(project_path(request.get('path', 'starter')))])

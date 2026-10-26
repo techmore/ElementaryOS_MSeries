@@ -1,3 +1,12 @@
+## SDK authoring scenario tool — 2026-10-26
+
+The benchmark worker now accepts a confined scenario-file path for `gate`, so
+model authors can run the same acceptance scenarios supplied by SDK starters.
+Five boundary tests pass; a local worker-to-CLI smoke passed all seven settings
+gates, including four named scenarios. This is not a model trial or isolated
+Linux benchmark preflight; the changed worker/controller still need staging and
+validation on SER8 before admission. Source-matched ARM runs remain pending.
+
 ## SDK context-bound process streaming — 2026-10-26
 
 The Rust SDK now offers `spawn_streaming_scoped`: context expiry cancels the
