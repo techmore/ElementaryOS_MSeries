@@ -1,3 +1,19 @@
+## Windows Work Mode can now exit from the taskbar — 2026-10-26
+
+Added **Exit Windows Work Mode** to the taskbar Start menu's Power menu in
+`mseries/patches/dock-taskbar.patch`. It sets the existing
+`io.elementary.mseries.work-mode enabled` GSettings master switch to false; the
+existing Work Mode service then restores the saved wallpaper and dock settings.
+This provides a direct way to leave the mode from its own desktop. The existing
+Desktop Mode launcher remains available.
+
+Source and README updated on `codex/work-mode-exit-action`, branched from current
+`origin/dev` `659e17ba`. No build, runtime interaction, install, or live mode
+switch was performed. The current checkout therefore does not establish that the
+action is installed or loaded on the j314s. Next: build the pinned dock source
+with the patch, review the Power menu action in both themes, then install through
+the owner's normal dock workflow if requested.
+
 ## Appearance integration qualification — 2026-10-26
 
 Reconciled the live-cutover branch with current `dev`: retained the shared

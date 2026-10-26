@@ -1,3 +1,11 @@
+## Windows Work Mode exit action — 2026-10-26
+
+The taskbar Start menu Power menu now includes **Exit Windows Work Mode**. It
+turns off the existing persistent master switch and lets the Work Mode service
+restore the ordinary desktop preferences. Source-only change; dock build, visual
+review, installation and live-session behavior remain unverified. See the latest
+OS9 handoff entry.
+
 ## Owner-priority SDK/T3 qualification queue — 2026-10-25
 
 - #596: first qualify native T3 token monitoring and RepoBar-derived GitHub

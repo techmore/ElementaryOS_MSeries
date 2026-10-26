@@ -1386,6 +1386,7 @@ index 0000000..7e3a8a8
 +            { "system-log-out-symbolic", _("Log Out…"), "logout" },
 +            { "system-reboot-symbolic", _("Restart…"), "reboot" },
 +            { "system-shutdown-symbolic", _("Shut Down…"), "shutdown" },
++            { "preferences-desktop-symbolic", _("Exit Windows Work Mode"), "elementary" },
 +            { "preferences-system-symbolic", _("System Settings"), "settings" }
 +        };
 +        for (int i = 0; i < items.length[0]; i++) {
@@ -1415,6 +1416,12 @@ index 0000000..7e3a8a8
 +        }
 +        if (action == "settings") {
 +            spawn ({ "io.elementary.settings" });
++            return;
++        }
++        if (action == "elementary") {
++            // This is the same persistent master switch exposed by Switchboard.
++            // The Work Mode service restores the saved wallpaper and dock settings.
++            spawn ({ "gsettings", "set", "io.elementary.mseries.work-mode", "enabled", "false" });
 +            return;
 +        }
 +        string method;
