@@ -24,5 +24,6 @@ git -C "$src" apply "$root/mseries/patches/quick-settings-bluetooth.patch"
 install -m 0644 "$root/mseries/quick-settings/Bluetooth.vala" "$widgets/Bluetooth.vala"
 git -C "$src" apply "$root/mseries/patches/quick-settings-layout.patch"
 install -m 0644 "$root/mseries/quick-settings/Controls.vala" "$widgets/Controls.vala"
+install -m 0644 "$root/mseries/quick-settings/Appearance.vala" "$widgets/Appearance.vala"
 # Text size steps along the size-system ladder (mseries/ui-scale/size-system.json).
 install -m 0644 "$root/mseries/quick-settings/TextScale.vala" "$widgets/TextScale.vala"

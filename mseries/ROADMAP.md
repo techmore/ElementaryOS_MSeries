@@ -1,3 +1,11 @@
+## Quick Settings light/dark control — 2026-10-25
+
+The top toggle-grid dark-mode tile is now an explicit Light/Dark choice in a
+dedicated Appearance card in Quick Settings. The card follows Elementary's
+shared color-scheme setting and is included by the desktop, package and factory
+source-preparation paths. Pinned plugin build and isolated state/write/sync
+probe pass. Source only; install, next-login load and visual acceptance remain.
+
 ## Apple Dev toolchain status follows current upstream — 2026-10-25
 
 [Upstream refresh](upstream-audits/apps/apple-dev-2026-10-25.md) removes the old

@@ -2,10 +2,14 @@ diff --git a/src/PopoverWidget.vala b/src/PopoverWidget.vala
 index 5ba266c..884f153 100644
 --- a/src/PopoverWidget.vala
 +++ b/src/PopoverWidget.vala
-@@ -77,11 +77,24 @@ public class QuickSettings.PopoverWidget : Gtk.Box {
+@@ -77,11 +77,28 @@ public class QuickSettings.PopoverWidget : Gtk.Box {
          main_box = new Gtk.Box (VERTICAL, 0);
          main_box.append (toggle_box);
          if (server_type == SESSION) {
++            var appearance = new Card ();
++            appearance.add_row (new Appearance ());
++            main_box.append (appearance);
++
 -            main_box.append (new KeyboardBrightness ());
 -            main_box.append (new ScreenBrightness ());
 -            main_box.append (new ChargeLimit ());
@@ -32,15 +36,26 @@ index 5ba266c..884f153 100644
          }
          main_box.append (scale_box);
          main_box.append (new Gtk.Separator (HORIZONTAL));
+@@ -100,9 +117,3 @@ public class QuickSettings.PopoverWidget : Gtk.Box {
+             bottom_box.remove (current_user_button);
+         }
+-
+-        if (server_type != GREETER) {
+-            var darkmode_button = new DarkModeToggle ();
+-            toggle_box.append (darkmode_button);
+-        }
+-
+         setup_sensor_proxy.begin ((obj, res) => {
 diff --git a/src/meson.build b/src/meson.build
 index 5ffbaf4..9671882 100644
 --- a/src/meson.build
 +++ b/src/meson.build
-@@ -26,6 +26,7 @@ sources = [
+@@ -26,6 +26,8 @@ sources = [
      'Widgets' / 'SettingsToggle.vala',
      'Widgets' / 'SessionBox.vala',
      'Widgets' / 'TextScale.vala',
 +    'Widgets' / 'Controls.vala',
++    'Widgets' / 'Appearance.vala',
      'Widgets' / 'ScreenBrightness.vala',
      'Widgets' / 'KeyboardBrightness.vala',
      'Widgets' / 'ChargeLimit.vala',
