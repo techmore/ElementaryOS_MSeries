@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install the universal dark-mode switch for the current user, plus an optional schedule timer.
-#   install-dark-mode.sh              install the tool (manual: mseries-dark-mode on|off|toggle)
-#   install-dark-mode.sh --schedule   also run `mseries-dark-mode auto` at login and every 15 minutes (a one-shot timer also fires at each sunrise and sunset)
+#   install-dark-mode.sh              install the tool (mseries-dark-mode appearance light|dark|auto)
+#   install-dark-mode.sh --schedule   apply Automatic at login and every 15 minutes (a one-shot timer also fires at each sunrise and sunset)
 #   install-dark-mode.sh --uninstall  remove the tool and the timer (the current theme is left as is)
 set -euo pipefail
 
@@ -18,10 +18,13 @@ if [[ ${1:-} == --uninstall ]]; then
 fi
 
 install -Dm0755 "$here/dark-mode/mseries-dark-mode" "$bin"
-if [[ ${1:-} == --schedule ]]; then
+systemctl --user stop mseries-dark-mode-next.timer 2>/dev/null || true
+if [[ ${1:-} == --schedule || -e "$unit_dir/mseries-dark-mode.service" || -e "$unit_dir/mseries-dark-mode.timer" ]]; then
   install -Dm0644 "$here/dark-mode/mseries-dark-mode.service" "$unit_dir/mseries-dark-mode.service"
   install -Dm0644 "$here/dark-mode/mseries-dark-mode.timer" "$unit_dir/mseries-dark-mode.timer"
   systemctl --user daemon-reload
+fi
+if [[ ${1:-} == --schedule ]]; then
   systemctl --user enable --now mseries-dark-mode.timer
 fi
 "$bin" status

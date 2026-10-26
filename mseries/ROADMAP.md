@@ -1,10 +1,26 @@
-## Quick Settings light/dark control — 2026-10-25
+## Quick Settings appearance and stacked network rates — 2026-10-25
 
-The top toggle-grid dark-mode tile is now an explicit Light/Dark choice in a
-dedicated Appearance card in Quick Settings. The card follows Elementary's
-shared color-scheme setting and is included by the desktop, package and factory
-source-preparation paths. Pinned plugin build and isolated state/write/sync
-probe pass. Source only; install, next-login load and visual acceptance remain.
+Light/Dark/Automatic now live in the Quick Settings Appearance card, backed
+by the existing appearance helper and its manual-versus-scheduled mode.
+The installer retires the old standalone menu-bar module. Native Quick Settings
+and network builds installed; owner-requested Wingpanel reload activated the
+replacement. Download/upload rates are stacked vertically. The production
+appearance widget passed Automatic → Dark → Automatic against the installed
+backend under Xvfb. Owner visual acceptance remains open.
+
+## Next organization priority: SDK/spec completion — 2026-10-25
+
+Use #535 as the central acceptance track: a moderate LLM must be able to use
+the authoritative SDK/spec alone to build a complete, polished native app.
+Consolidate existing contracts and runnable reference flows; define behavioral
+and visual gates and retain evidence from an actual model-built app without
+expert rescue. SDK completeness, not directory tidiness, is the outcome.
+Keep per-component migration in the candidate lane until parity is proven.
+Integrate qualified batches into `dev`; promote a tested release to `main`.
+Close issues on explicit acceptance criteria, not PR merge alone. Standardize
+implemented/verified/merged/installed/loaded/accepted states and component-owned
+removal so obsolete launchers, services and panel modules cannot survive cutover.
+
 
 ## Apple Dev toolchain status follows current upstream — 2026-10-25
 

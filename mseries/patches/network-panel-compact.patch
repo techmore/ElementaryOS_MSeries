@@ -68,7 +68,7 @@
 +        }
 +        double down_capacity, up_capacity;
 +        ThroughputWidget.get_capacity (out down_capacity, out up_capacity);
-+        speed_label.label = "↓ %s  ↑ %s".printf (
++        speed_label.label = "<span size=\"small\">↓ %s\n↑ %s</span>".printf (
 +            ThroughputWidget.tint (Markup.escape_text (format_panel_rate (down, show_exact)), ThroughputWidget.is_saturated (down, down_capacity)),
 +            ThroughputWidget.tint (Markup.escape_text (format_panel_rate (up, show_exact)), ThroughputWidget.is_saturated (up, up_capacity))
 +        );
@@ -79,7 +79,7 @@
              if (timeout_id == 0) {
                  have_baseline = false;
 +                have_rate = false;
-                 speed_label.label = "↓ … ↑ …";
+                 speed_label.label = "<span size=\"small\">↓ …\n↑ …</span>";
                  visible = true;
                  tick ();
 @@ -100,15 +159,10 @@

@@ -17,7 +17,7 @@ set -euo pipefail
 
 # Packaging revision: bump when the packaging itself changes (scripts,
 # control fields) so apt and dpkg see an upgrade, not a same-version reinstall.
-REVISION=0mseries3
+REVISION=0mseries4
 
 # Channel version suffix. The stamp is the commit time, not the build time, so a rebuild of
 # a commit gets the same version, and it is part of the sort key: the updater never installs
@@ -101,9 +101,10 @@ build_plugin() {
   rm -rf "$pkg"
   mkdir -p "$pkg/DEBIAN" "$pkg/usr/lib/aarch64-linux-gnu/wingpanel-9"
   install -m 0644 "$lib" "$pkg/usr/lib/aarch64-linux-gnu/wingpanel-9/$(basename "$plugin_path")"
-  local hook=${deb//-/_} recommends=""
+  local hook=${deb//-/_} recommends="" depends=""
   if declare -F "${hook}_files" >/dev/null; then "${hook}_files" "$ROOT" "$pkg"; fi
   if declare -F "${hook}_recommends" >/dev/null; then recommends="Recommends: $("${hook}_recommends")"$'\n'; fi
+  if declare -F "${hook}_depends" >/dev/null; then depends=", $("${hook}_depends")"; fi
   # The ~ on both bounds matters: elementary daily versions such as
   # 1.4.0~r556 sort below 1.4.0, and 1.4.1~r600 below 1.4.1. Without it the
   # package would reject its own base and accept the next minor's ABI.
@@ -112,7 +113,7 @@ Package: $deb
 Version: $gate-$REVISION$CHANNEL_SUFFIX
 Architecture: arm64
 Maintainer: techmore <sdolbec1@gmail.com>
-Depends: $base (>= $gate~), $base (<< ${gate%.*}.$((${gate##*.} + 1))~)
+Depends: $base (>= $gate~), $base (<< ${gate%.*}.$((${gate##*.} + 1))~)${depends}
 ${recommends}Description: M-series $(basename "$plugin_path" .so) plugin (see issue #52)
  Replaces the stock plugin via dpkg-divert; version-gated to the $gate.x ABI.
 EOF
@@ -161,6 +162,14 @@ mseries_wingpanel_datetime_files() { # ROOT PKGDIR
 }
 mseries_wingpanel_datetime_recommends() {
   echo 'evolution-data-server, gnome-online-accounts-gtk, io.elementary.tasks, python3, gh'
+}
+
+# Quick Settings uses the same appearance command as the desktop installer.
+mseries_quick_settings_files() {
+  install -D -m 0755 "$1/mseries/dark-mode/mseries-dark-mode" "$2/usr/bin/mseries-dark-mode"
+}
+mseries_quick_settings_depends() {
+  echo 'python3, libglib2.0-bin, systemd'
 }
 
 network_extra() { # ROOT SRC

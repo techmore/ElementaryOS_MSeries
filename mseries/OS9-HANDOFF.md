@@ -1,16 +1,31 @@
-## Quick Settings appearance choices — 2026-10-25 (Codex)
+## Live Quick Settings appearance cutover and stacked network rates — 2026-10-25
 
-Moved the dark-mode tile out of the top toggle grid and added explicit Light/Dark
-choices in a dedicated Appearance card. The selection follows changes to
-Elementary's shared color-scheme setting. Desktop, package and factory builds
-use the shared source-preparation path; the factory enhancement payload now
-includes the widget source.
+Quick Settings now owns Light/Dark/Automatic using the existing deployed
+`mseries-dark-mode appearance` backend, including schedule status. Reused the
+appearance worktree's backend/service/installer so manual selection pauses
+the timer rather than being overwritten. Status and changes run asynchronously;
+the status refresh timer runs only while the widget is mapped.
 
-Verified: source-preparation regression tests (5/5), full pinned Quick Settings
-Meson/Ninja build, and an isolated Xvfb probe covering initial selection,
-button writes and external setting changes. No plugin installed and Wingpanel
-was not reloaded, so the running desktop has not changed. Next: review and merge
-the PR after CI; then load at next login and get owner visual acceptance.
+The Quick Settings installer retires `libmseries-appearance.so` after building
+the replacement, retaining a rollback copy outside the indicator directory.
+Installed and explicitly reloaded `pantheon-wingpanel.service` at owner request;
+the new Quick Settings module was present and the standalone module absent
+from the running process maps. Network rates now use two compact lines,
+download above upload; the network installer handles the systemd-owned panel.
+
+Verification: full native Quick Settings and network builds/installations passed.
+The production Appearance widget was exercised under Xvfb against the installed
+backend: Automatic → Dark → Automatic, restoring the original mode.
+Desktop-wide Light/Brave/Flatpak follow-through and owner visual acceptance
+remain separate checks. No kernel, bootloader or audio changes.
+
+Owner's next organization priority: finish the authoritative SDK/spec path so a
+moderate LLM can build complete, high-quality apps. Track contracts, runnable
+reference flows, visual/behavioral gates and model-built app evidence under #535;
+do not substitute repository tidying or a broad rewrite for that outcome.
+Component lifecycle must distinguish merged, installed, loaded and accepted,
+with removal covering files, services, launchers, runtime state and reinstall paths.
+
 
 ## Apple Dev upstream compatibility refresh — 2026-10-25 (Codex)
 

@@ -76,7 +76,7 @@ index 0000000..c98d4de
 +}
 +
 +/**
-+ * "↓ 1.2 MB/s ↑ 40 kB/s" beside the panel icon, averaged over 10 seconds. The timer only runs
++ * Download above upload beside the panel icon, averaged over 10 seconds. The timer only runs
 + * while the readout is enabled.
 + */
 +public class Network.Widgets.PanelSpeed : Gtk.Box {
@@ -105,7 +105,7 @@ index 0000000..c98d4de
 +        if (PanelSpeedSettings.get_default ().enabled) {
 +            if (timeout_id == 0) {
 +                have_baseline = false;
-+                speed_label.label = "↓ … ↑ …";
++                speed_label.label = "<span size=\"small\">↓ …\n↑ …</span>";
 +                visible = true;
 +                tick ();
 +                timeout_id = Timeout.add_seconds (INTERVAL_SECONDS, tick);
