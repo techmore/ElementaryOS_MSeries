@@ -1,12 +1,12 @@
 ## Work Mode Settings window controls — 2026-10-26
 
-Merged as PR #602 (`a788b487`) and installed with
-`bash mseries/install-work-mode.sh`. The plug applies the selected titlebar
-layout directly to GTK in System Settings. The timer is active and enabled;
-full PR validation and the installer build passed. The Settings process was
-not running during install, so the next launch loads the new plug. Rendered
-button visibility still needs a live visual check. See the latest OS9 handoff
-entry.
+Merged as PR #602 (`a788b487`) and follow-up PR #604 (`c13a67ca`), then
+installed with `bash mseries/install-work-mode.sh`. The Work Mode page now has
+an in-page Close action and applies GTK window buttons while that page is open.
+The timer is active and enabled; full PR validation and the installer build
+passed. Restarted Settings and opened `settings://personal/work-mode` to load
+the plug. A live visual/click check still needs owner confirmation. See the
+latest OS9 handoff entry.
 
 ## Owner-priority SDK/T3 qualification queue — 2026-10-25
 
