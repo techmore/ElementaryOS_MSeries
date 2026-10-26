@@ -1,3 +1,26 @@
+## SDK request context ownership and stale reply delivery — 2026-10-26
+
+Added core RequestContext/ContextToken/Scoped<T> for app-owned account/page/
+selection generations. Advance invalidates old successes/errors, including
+already queued replies; close is permanent and last-owner drop invalidates
+without tokens retaining the owner. Freshness is checked at final delivery,
+with switches and application serialized on the state-owner thread. Tokens
+store no account data and Scoped Debug omits its value. Native UI must continue
+to show the actual identity and cannot treat the token as authority.
+
+`process::spawn_scoped` checks the token before starting and during bounded task
+work, cancels/reaps when its context expires and delivers a scoped completion.
+Core tests exercise stale queued success/error, independent/returning contexts,
+owner release/close, an already closed task that never executes, real sleeping
+process cancellation/reaping and a successful replacement request. Runtime
+discovery publishes the explicit core APIs and automatic-adapter limitations.
+
+GTK ServiceReply/streaming chunks/T3 network subscriptions are NOT automatically
+scoped yet. Core freshness is a snapshot, not an arbitrary cross-thread state
+transaction or rollback. These adapters and native final-source qualification
+remain open in SDK-COMPLETION.md. SER8 source-transfer approval is still pending;
+no transfer/retry/bypass or owner services/desktop/accounts/kernel/panel change.
+
 ## SDK entry points stop on manifest and validation failures — 2026-10-26
 
 Core CLI `check`, `render`, `gate`, `complete` and `agent-manifest` previously

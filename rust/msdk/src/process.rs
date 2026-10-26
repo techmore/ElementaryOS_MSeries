@@ -72,6 +72,13 @@ struct Control {
     cancelled: AtomicBool,
     finished: AtomicBool,
     group: Mutex<Option<i32>>,
+    context: Option<crate::context::ContextToken>,
+}
+
+impl Control {
+    fn is_cancelled(&self) -> bool {
+        self.cancelled.load(Ordering::SeqCst) || self.context.as_ref().is_some_and(|token| !token.is_current())
+    }
 }
 
 pub struct Process {
@@ -114,7 +121,7 @@ pub fn spawn(
     operation: u64,
     complete: impl FnOnce(Result<Output, ServiceFailure>) + Send + 'static,
 ) -> Result<Process, ServiceFailure> {
-    spawn_inner(command, limits, operation, None, complete)
+    spawn_inner(command, limits, operation, None, None, complete)
 }
 
 /// Bounded live output. Drain the receiver while retaining the Process handle.
@@ -130,9 +137,23 @@ pub fn spawn_streaming(
     complete: impl FnOnce(Result<Output, ServiceFailure>) + Send + 'static,
 ) -> Result<(Process, OutputStream), ServiceFailure> {
     let (tx, rx) = mpsc::sync_channel(STREAM_QUEUE_CHUNKS);
-    let process = spawn_inner(command, limits, operation, Some(tx), complete)?;
+    let process = spawn_inner(command, limits, operation, Some(tx), None, complete)?;
     let subscription = OutputStream { receiver: rx, _process: Process { control: process.control.clone() } };
     Ok((process, subscription))
+}
+
+/// Bind a task to the current account/page generation. Switching/closing the
+/// context cancels it. Forward the Scoped completion to the state owner's queue
+/// and call into_current there; stale results never need to enter app state.
+pub fn spawn_scoped(
+    context: crate::context::ContextToken,
+    command: String,
+    limits: Limits,
+    operation: u64,
+    complete: impl FnOnce(crate::context::Scoped<Result<Output, ServiceFailure>>) + Send + 'static,
+) -> Result<Process, ServiceFailure> {
+    let reply = context.clone();
+    spawn_inner(command, limits, operation, None, Some(context), move |result| complete(reply.wrap(result)))
 }
 
 fn spawn_inner(
@@ -140,12 +161,14 @@ fn spawn_inner(
     limits: Limits,
     operation: u64,
     stream: Option<SyncSender<Chunk>>,
+    context: Option<crate::context::ContextToken>,
     complete: impl FnOnce(Result<Output, ServiceFailure>) + Send + 'static,
 ) -> Result<Process, ServiceFailure> {
     let control = Arc::new(Control {
         cancelled: AtomicBool::new(false),
         finished: AtomicBool::new(false),
         group: Mutex::new(None),
+        context,
     });
     let worker = control.clone();
     std::thread::Builder::new()
@@ -192,7 +215,7 @@ fn run(
     if limits.timeout.is_zero() || limits.output_bytes == 0 || limits.output_bytes > 16 * 1024 * 1024 {
         return Err(failure(FailureKind::InvalidInput, operation));
     }
-    if control.cancelled.load(Ordering::SeqCst) {
+    if control.is_cancelled() {
         return Err(failure(FailureKind::Cancelled, operation));
     }
     let mut child = Command::new("/bin/sh")
@@ -231,7 +254,7 @@ fn run(
         let mut err = Vec::new();
         let mut total = 0usize;
         loop {
-            if control.cancelled.load(Ordering::SeqCst) {
+            if control.is_cancelled() {
                 return Err(failure(FailureKind::Cancelled, operation));
             }
             if start.elapsed() >= limits.timeout {
@@ -243,7 +266,7 @@ fn run(
                 (&mut stderr as &mut dyn Read, &mut err, Stream::Stderr),
             ] {
                 loop {
-                    if control.cancelled.load(Ordering::SeqCst) {
+                    if control.is_cancelled() {
                         return Err(failure(FailureKind::Cancelled, operation));
                     }
                     if start.elapsed() >= limits.timeout {

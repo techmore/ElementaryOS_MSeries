@@ -8,6 +8,7 @@
 
 pub mod agent;
 mod check;
+pub mod context;
 pub mod contrast;
 pub mod gate;
 pub mod generate;

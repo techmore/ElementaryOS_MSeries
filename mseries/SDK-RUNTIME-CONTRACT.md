@@ -65,6 +65,49 @@ is rejected. Fixture tracing records the service identifier, not its arguments.
 
 ## Owned process work
 
+### App-owned request contexts
+
+`msdk::context::RequestContext` represents one app-owned account/page/selection
+lifetime. Create one for the domain whose pending results must expire together.
+Keep its owner on the UI/state thread and give workers only a `ContextToken`.
+The app still owns and displays the actual account/scope identity; the SDK token
+contains no account information or credentials and grants no authority.
+
+On an account/page/selection change, call `advance()` before issuing replacement
+work. It invalidates all old tokens and returns a new token. Returning to a
+previous account cannot revive its original token. `close()` permanently retires
+the context; it cannot reopen. Dropping the last cloned owner also invalidates
+tokens, while tokens and queued replies do not keep that owner alive.
+
+Use `token.wrap(value)` for asynchronous replies. Forward the resulting
+`Scoped<T>` through the app's queue intact, then call `into_current()` on the
+state-owner thread immediately before applying. Both old successes and old
+errors return None. Checking freshness only on the worker is insufficient: a
+previously completed reply may wait in a queue until after the account changes.
+Debug omits the private value, without requiring T to implement Debug.
+
+Context changes and consuming/applying replies must be serialized on the same
+state-owner thread. `into_current()` is a freshness snapshot, not a transaction
+locking arbitrary app mutations on other threads. Never unwrap a reply on the
+worker and enqueue the raw value as if it remained current indefinitely.
+
+`msdk::process::spawn_scoped(token, command, limits, operation, complete)` binds
+completed-output work to that token. It checks freshness before starting and
+alongside the runner's normal cancellation/deadline checks. Advancing, closing
+or dropping the owning context causes owned task cleanup and leader reaping.
+Its callback receives `Scoped<Result<Output, ServiceFailure>>`; forward that
+envelope to the state owner for final delivery. This cancels task work; it is
+not rollback for effects already performed by a command.
+
+Core tests cover queued/out-of-order success and error, independent contexts,
+return-to-account invalidation, last-owner drop, permanent close, an already
+closed request that never executes its command, and actual process cancellation/
+reaping followed by a successful new request. GTK typed ServiceReply dispatch,
+streaming chunks and app-specific T3/network subscriptions are not automatically
+scoped by this API. Their adapters must carry tokens through final delivery and
+retire their own reads/resources; native context-switch qualification remains
+open. Do not treat this core result as that broader lifecycle acceptance.
+
 The GUI-independent Rust API is `msdk::process::{spawn, Limits}`. Hold the returned
 `Process` for the lifetime of the operation. `cancel()` or dropping an unfinished
 handle requests cancellation of its dedicated process group. The worker reaps

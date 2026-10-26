@@ -27,6 +27,8 @@ fn diagnostic_and_debug_never_serialize_private_backend_details() {
 fn runtime_discovery_and_explanations_match_actual_limits_and_failures() {
     let discovery = msdk::agent::describe("runtime").unwrap();
     assert_eq!(discovery["extension_api_version"], 1);
+    assert_eq!(discovery["request_context"]["gtk_adapter_automatic"], false);
+    assert_eq!(discovery["request_context"]["process_api"], "msdk::process::spawn_scoped");
     assert_eq!(discovery["app_description_format"], msdk::FORMAT_VERSION);
     assert_eq!(discovery["service_manifest_format"], msdk::vocab::SERVICE_MANIFEST_VERSION);
     assert_eq!(discovery["rust_package_version"], env!("CARGO_PKG_VERSION"));
