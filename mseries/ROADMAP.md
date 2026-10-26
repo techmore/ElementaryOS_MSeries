@@ -879,6 +879,14 @@ now stage outside discovery and require explicit activation; no further panel
 reload was issued. Physical Wingpanel behavior/owner acceptance remain open. Whole-chat validation stays
 deferred. Next: confirm the loaded unified native menu without duplicating old
 modules, then owner visual/account acceptance. No factory boot qualification.
+## Separate Intel kiosk project — 2026-10-26
+
+Owner selected a standalone `elementaryos-i3-kiosk` repository for a minimal
+shell/Chromium kiosk. Hardware reliability is the first gate; no M-series
+installer, kernel or desktop app bundle is being ported wholesale. Initial
+read-only inventory, candidate boundaries and preview tools live in that private
+repository. Production kiosk unchanged; shell implementation and hardware
+qualification remain open. No public machine details or credentials retained here.
 
 ## Native Fleet in T3 and unified-menu dev integration — 2026-10-26
 
