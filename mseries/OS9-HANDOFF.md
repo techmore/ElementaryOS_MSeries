@@ -1,3 +1,14 @@
+## Usage control keyboard validation — 2026-10-26
+
+Hosted ARM developer-path run 40405964283 passed on 477234a. A private synthetic
+AT-SPI/keyboard probe found `Refresh usage` as a button, used Tab and Space to
+exercise failure and retry, checked stale data and private-stderr exclusion,
+and closed with Ctrl+Q. Four reviewed failure-state frames and the probe
+receipt are in sdk-tests/receipts/2026-10-26-usage-keyboard-pass. Earlier
+private-display and accessible-name failures remain retained. This does not
+qualify keyboard scrolling, actual desktop status-host interactions, real
+accounts or owner visual acceptance.
+
 ## Usage accessibility name diagnosis — 2026-10-26
 
 SDK run 40405291097 failed its synthetic keyboard probe on 9dac12e. The
