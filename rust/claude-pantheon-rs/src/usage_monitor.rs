@@ -130,6 +130,7 @@ fn project_history(summary: &UsageSummary, now: Option<i64>) -> Vec<Value> {
             "since_day": summary.since_day, "until_day": summary.until_day,
             "tokens": if has_data { Some(h.totals.total()) } else { None },
             "input_tokens": if has_data { Some(h.totals.input()) } else { None },
+            "cached_input_tokens": if has_data { Some(h.totals.cached_input) } else { None },
             "output_tokens": if has_data { Some(h.totals.output) } else { None },
             "reasoning_tokens": if has_data { Some(h.totals.reasoning) } else { None },
             "api_equivalent_cost_usd": if has_data && !h.unpriced { Some(h.cost) } else { None },

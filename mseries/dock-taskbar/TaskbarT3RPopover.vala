@@ -17,12 +17,12 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private bool pinned = false;
     private Gtk.Label account;
     private Gtk.Label connection;
-    private Gtk.Label token_total;
-    private Gtk.Label token_counts;
-    private Gtk.Label token_scope;
-    private Gtk.Label token_period;
-    private Gtk.Label token_source;
-    private Gtk.Label token_cost;
+    private Gtk.Box token_history;
+    private Gtk.Box local_accounts;
+    private Json.Object local_reports = new Json.Object ();
+    private Json.Object local_errors = new Json.Object ();
+    private uint local_pending = 0;
+    private int64 local_read_at = 0;
     private Gtk.Box usage_windows;
     private Gtk.Box activity;
     private Gtk.Label freshness;
@@ -80,52 +80,40 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         connection.add_css_class ("caption");
         root.append (connection);
 
-        var token_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
-        token_card.add_css_class ("taskbar-t3r-card");
-        var token_heading = new Gtk.Label ("Tokens · provider total") { xalign = 0 };
-        token_heading.add_css_class ("heading");
-        token_total = new Gtk.Label ("Token history unavailable") { xalign = 0 };
-        token_total.add_css_class ("title-3");
-        token_counts = detail_label ("Input — · Output —\nCached input — · Reasoning —");
-        token_scope = detail_label ("Provider total across all accounts; not selected-account usage.");
-        token_period = detail_label ("Date window unavailable · Unknown");
-        token_source = detail_label ("T3 server token history · not read yet");
-        token_cost = detail_label ("");
-        token_cost.visible = false;
-        token_card.append (token_heading);
-        token_card.append (token_total);
-        token_card.append (token_counts);
-        token_card.append (token_cost);
-        token_card.append (token_scope);
-        token_card.append (token_period);
-        token_card.append (token_source);
-        root.append (token_card);
+        var refresh = new Gtk.Button.with_label ("Refresh saved-account usage");
+        refresh.clicked.connect (() => refresh_local_accounts (true));
+        root.append (refresh);
+        var pages = new Gtk.Stack () { vhomogeneous = false };
+        root.append (new Gtk.StackSwitcher () { stack = pages, halign = Gtk.Align.FILL, hexpand = true });
+        root.append (pages);
+        token_history = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+        pages.add_titled (new Gtk.ScrolledWindow () {
+            child = token_history, hscrollbar_policy = Gtk.PolicyType.NEVER,
+            propagate_natural_height = true, max_content_height = 350
+        }, "tokens", "Tokens");
 
-        var usage_heading = new Gtk.Label ("Plan windows · selected account") { xalign = 0 };
+        var accounts_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
+        var local_heading = new Gtk.Label ("Saved accounts · this computer") { xalign = 0 };
+        local_heading.add_css_class ("heading");
+        accounts_page.append (local_heading);
+        local_accounts = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+        local_accounts.append (detail_label ("Open to read saved Codex, Claude and OpenCode accounts."));
+        accounts_page.append (local_accounts);
+        var usage_heading = new Gtk.Label ("T3 server · all enabled accounts") { xalign = 0 };
         usage_heading.add_css_class ("heading");
-        root.append (usage_heading);
+        accounts_page.append (usage_heading);
         usage_windows = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
-        root.append (new Gtk.ScrolledWindow () {
-            child = usage_windows,
-            hscrollbar_policy = Gtk.PolicyType.NEVER,
-            vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
-            propagate_natural_height = true,
-            max_content_height = 210
-        });
+        accounts_page.append (usage_windows);
+        pages.add_titled (new Gtk.ScrolledWindow () {
+            child = accounts_page, hscrollbar_policy = Gtk.PolicyType.NEVER,
+            propagate_natural_height = true, max_content_height = 350
+        }, "accounts", "Accounts");
 
-        var activity_title = new Gtk.Label ("Activity") { xalign = 0 };
-        activity_title.add_css_class ("heading");
-        root.append (activity_title);
         activity = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
-        var activity_scroll = new Gtk.ScrolledWindow () {
-            child = activity,
-            hscrollbar_policy = Gtk.PolicyType.NEVER,
-            vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
-            propagate_natural_height = true,
-            min_content_height = 32,
-            max_content_height = 180
-        };
-        root.append (activity_scroll);
+        pages.add_titled (new Gtk.ScrolledWindow () {
+            child = activity, hscrollbar_policy = Gtk.PolicyType.NEVER,
+            propagate_natural_height = true, min_content_height = 32, max_content_height = 180
+        }, "activity", "Activity");
 
         var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
         var new_chat = new Gtk.Button.with_label ("New chat") { hexpand = true };
@@ -155,7 +143,13 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         open_full.add_css_class ("suggested-action");
         open_full.clicked.connect (() => run_action ("open-full"));
         root.append (open_full);
-        popup.child = root;
+        popup.child = new Gtk.ScrolledWindow () {
+            child = root,
+            hscrollbar_policy = Gtk.PolicyType.NEVER,
+            vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
+            propagate_natural_height = true,
+            max_content_height = 640
+        };
 
         var motion = new Gtk.EventControllerMotion ();
         motion.enter.connect (() => {
@@ -220,6 +214,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         pinned = interactive;
         popup.autohide = interactive;
         reload ();
+        refresh_local_accounts ();
         popup.popup ();
     }
 
@@ -297,7 +292,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         string account_name = selected_id.length > 0
             ? selected_provider.length > 0 ? selected_provider : selected_id
             : "";
-        account.label = account_name.length > 0 ? account_name : "No provider selected";
+        account.label = account_name.length > 0 ? "Selected for chat: " + account_name : "No chat provider selected";
         string connection_status;
         if (live) {
             connection_status = server.length > 0 ? "Connected to %s · live status".printf (server) : "Connected · live status";
@@ -310,8 +305,8 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         connection.remove_css_class ("connected");
         connection.remove_css_class ("stale");
         connection.add_css_class (live ? "connected" : "stale");
-        render_tokens (feed, selected_id, live);
-        render_usage (feed, selected_id, live);
+        render_tokens (feed, live);
+        render_usage (feed, live);
         render_activity (feed, live);
         freshness.label = freshness_text (updated);
     }
@@ -319,12 +314,8 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private void render_unavailable () {
         account.label = "No T3 account";
         connection.label = "Pair with a T3 server in Settings";
-        token_total.label = "Token history unavailable";
-        token_counts.label = "Input — · Output —\nCached input — · Reasoning —";
-        token_scope.label = "Provider total across all accounts; not selected-account usage.";
-        token_period.label = "Date window unavailable · Unavailable";
-        token_source.label = "T3 server token history · not read yet";
-        token_cost.visible = false;
+        clear_box (token_history);
+        token_history.append (detail_label ("T3 token history unavailable; no token counts are assumed."));
         clear_box (usage_windows);
         usage_windows.append (detail_label ("No usage windows reported."));
         clear_activity ();
@@ -346,90 +337,215 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         return node.get_int ().to_string ();
     }
 
-    private void render_tokens (Json.Object feed, string selected_id, bool live) {
-        var usage = MSeries.JsonBoundary.object_member (feed, "tokenUsage");
-        token_cost.visible = false;
-        if (usage == null || selected_id.length == 0) {
-            token_total.label = "Token history unavailable";
-            token_counts.label = "Input — · Output —\nCached input — · Reasoning —";
-            token_scope.label = "Provider total across all accounts; not selected-account usage.";
-            token_period.label = "Date window unavailable · Unavailable";
-            token_source.label = "T3 server token history · not read yet";
+    private void render_tokens (Json.Object feed, bool live) {
+        clear_box (token_history);
+        token_history.append (new Gtk.Label ("Token history · all providers") { xalign = 0 });
+        var rows = array_member (feed, "tokenHistory");
+        if (rows == null || rows.get_length () == 0) {
+            token_history.append (detail_label ("No provider history reported; token counts are unknown."));
             return;
         }
-        string state = MSeries.JsonBoundary.text (usage, "state", "unknown");
-        bool known = state == "fresh" || state == "stale";
-        string freshness = known ? (live && state == "fresh" ? "Fresh" : "Stale · last known") :
-            state == "unavailable" ? "Unavailable" : "Unknown";
-        token_total.label = known ? token_count (usage, "totalTokens") + " tokens" :
-            "Token history " + (state == "unavailable" ? "unavailable" : "unknown");
-        token_counts.label = known ? "Input %s · Output %s\nCached input %s · Reasoning %s".printf (
-            token_count (usage, "inputTokens"), token_count (usage, "outputTokens"),
-            token_count (usage, "cachedInputTokens"), token_count (usage, "reasoningTokens")) :
-            "Input — · Output —\nCached input — · Reasoning —";
-        string kind = MSeries.JsonBoundary.text (usage, "providerKind");
-        token_scope.label = (kind.length > 0 ? kind + " provider total" : "Provider total") +
-            " · all accounts\nNot selected-account usage.";
-        string since = MSeries.JsonBoundary.text (usage, "sinceDay");
-        string until = MSeries.JsonBoundary.text (usage, "untilDay");
-        token_period.label = (since.length > 0 && until.length > 0 ? since + " – " + until :
-            "Date window unavailable") + " · " + freshness;
-        string read_at = MSeries.JsonBoundary.text (usage, "readAt");
-        token_source.label = "T3 server token history · " +
-            (read_at.length > 0 ? "read " + read_at : "not read yet");
-        double cost = MSeries.JsonBoundary.number (usage, "estimatedCostUsd", -1);
-        if (known && cost.is_finite () && cost >= 0) {
-            token_cost.label = "Estimated cost · $%.4f USD".printf (cost);
-            token_cost.visible = true;
+        for (uint i = 0; i < rows.get_length (); i++) {
+            var node = rows.get_element (i);
+            if (node.get_node_type () != Json.NodeType.OBJECT) continue;
+            var row = node.get_object ();
+            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            card.add_css_class ("taskbar-t3r-card");
+            string provider = MSeries.JsonBoundary.text (row, "provider", "Unknown provider");
+            string state = MSeries.JsonBoundary.text (row, "state", "unknown");
+            if (!live && state == "fresh") state = "stale";
+            card.append (new Gtk.Label (provider + " · " + token_count (row, "tokens") + " tokens") { xalign = 0, wrap = true });
+            card.append (detail_label ("Input %s · Output %s\nCached %s · Reasoning %s".printf (
+                token_count (row, "input_tokens"), token_count (row, "output_tokens"),
+                token_count (row, "cached_input_tokens"), token_count (row, "reasoning_tokens"))));
+            card.append (detail_label (MSeries.JsonBoundary.text (row, "since_day") + " – " +
+                MSeries.JsonBoundary.text (row, "until_day") + " · " + state));
+            card.append (detail_label ("T3 provider total · all accounts; not account attribution or remaining quota."));
+            card.append (detail_label ("History observed: " + MSeries.JsonBoundary.text (row, "read_at", "unknown")));
+            double cost = MSeries.JsonBoundary.number (row, "api_equivalent_cost_usd", -1);
+            if (cost.is_finite () && cost >= 0) card.append (detail_label ("API-equivalent estimate · $%.4f USD".printf (cost)));
+            token_history.append (card);
         }
     }
 
-    private void render_usage (Json.Object feed, string selected_id, bool live) {
+    private void render_usage (Json.Object feed, bool live) {
         clear_box (usage_windows);
-        var windows = array_member (feed, "windows");
-        uint count = 0;
-        if (windows != null && selected_id.length > 0) {
-            for (uint i = 0; i < windows.get_length (); i++) {
-                var node = windows.get_element (i);
+        var rows = array_member (feed, "accounts");
+        if (rows == null || rows.get_length () == 0) {
+            usage_windows.append (detail_label ("T3 account observations unavailable; no quota is assumed."));
+            return;
+        }
+        for (uint i = 0; i < rows.get_length (); i++) {
+            var node = rows.get_element (i);
+            if (node.get_node_type () != Json.NodeType.OBJECT) continue;
+            var row = node.get_object ();
+            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            card.add_css_class ("taskbar-t3r-card");
+            card.append (new Gtk.Label (MSeries.JsonBoundary.text (row, "title") + " · " +
+                MSeries.JsonBoundary.text (row, "instance_id")) { xalign = 0, wrap = true });
+            var windows = array_member (row, "windows");
+            if (windows == null || windows.get_length () == 0) card.append (detail_label ("Quota not reported · unknown"));
+            for (uint j = 0; windows != null && j < windows.get_length (); j++) {
+                var wn = windows.get_element (j);
+                if (wn.get_node_type () != Json.NodeType.OBJECT) continue;
+                var w = wn.get_object ();
+                string state = MSeries.JsonBoundary.text (w, "state", "unknown");
+                if (!live && state == "fresh") state = "stale";
+                append_window (card, MSeries.JsonBoundary.text (w, "title", "Plan window"),
+                    MSeries.JsonBoundary.number (w, "used_percent", -1), "used", state,
+                    MSeries.JsonBoundary.text (w, "resets_at"),
+                    live && state == "fresh" && MSeries.JsonBoundary.flag (w, "live"));
+            }
+            card.append (detail_label ("T3 server observation: " + MSeries.JsonBoundary.text (row, "checked_at", "unknown")));
+            usage_windows.append (card);
+        }
+    }
+
+    private static void append_window (Gtk.Box card, string title, double value, string unit,
+                                       string state, string reset, bool live) {
+        var reset_at = new DateTime.from_iso8601 (reset, new TimeZone.utc ());
+        if (reset_at != null && reset_at.compare (new DateTime.now_utc ()) <= 0) {
+            state = "reset passed · refresh required";
+            live = false;
+        }
+        bool valid = value.is_finite () && value >= 0 && value <= 100;
+        string text = valid ? "%s · %.0f%% %s · %s".printf (title, value, unit, state) :
+            title + " · quota unknown · " + state;
+        card.append (detail_label (text));
+        if (valid && live) {
+            var bar = new Gtk.LevelBar () { min_value = 0, max_value = 100, value = unit == "left" ? 100 - value : value };
+            bar.add_css_class ("taskbar-t3r-gauge");
+            bar.update_property (Gtk.AccessibleProperty.LABEL, text, -1);
+            card.append (bar);
+        }
+        string reset_text = reset_summary (reset);
+        card.append (detail_label (reset_text.length > 0 ? reset_text : "Reset time not reported"));
+    }
+
+    private void refresh_local_accounts (bool force = false) {
+        if (local_pending > 0 || (!force && local_read_at > 0 &&
+            GLib.get_monotonic_time () - local_read_at < 60 * GLib.TimeSpan.SECOND)) return;
+        local_pending = 3;
+        read_local.begin ("Codex", "codexbar-accounts.py", "usage", force);
+        read_local.begin ("Claude", "codexbar-claude.py", "list", force);
+        read_local.begin ("OpenCode", "codexbar-opencode-local.py", "accounts", force);
+        render_local_accounts ();
+    }
+
+    private async void read_local (string provider, string helper, string command, bool force) {
+        try {
+            string path = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib", "codexbar-cli", helper);
+            if (!FileUtils.test (path, FileTest.IS_REGULAR)) path = GLib.Path.build_filename ("/usr/lib/codexbar-cli", helper);
+            string[] args = { "python3", path, command };
+            if (force) args += "--force";
+            string output = yield MSeries.HelperProcess.read (args, 120000);
+            var parser = new Json.Parser ();
+            parser.load_from_data (output);
+            MSeries.JsonBoundary.validate (parser.get_root ());
+            var report = parser.get_root ().get_object ();
+            if (array_member (report, "accounts") == null) throw new IOError.INVALID_DATA ("Missing account list");
+            if (provider == "Codex") yield attach_active_codex (report);
+            local_reports.set_object_member (provider, report.ref ());
+            if (local_errors.has_member (provider)) local_errors.remove_member (provider);
+        } catch (Error e) {
+            local_errors.set_string_member (provider, "Saved-account read failed; retained values are last-known.");
+        }
+        local_pending--;
+        if (local_pending == 0) local_read_at = GLib.get_monotonic_time ();
+        render_local_accounts ();
+    }
+
+    private async void attach_active_codex (Json.Object report) {
+        try {
+            string cli = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar");
+            string output = yield MSeries.HelperProcess.read ({ cli, "usage", "--provider", "codex", "--format", "json" }, 60000);
+            var parser = new Json.Parser ();
+            parser.load_from_data (output);
+            var root = parser.get_root ();
+            if (root == null || root.get_node_type () != Json.NodeType.ARRAY || root.get_array ().get_length () == 0) return;
+            var row_node = root.get_array ().get_element (0);
+            MSeries.JsonBoundary.validate (row_node);
+            var usage = MSeries.JsonBoundary.object_member (row_node.get_object (), "usage");
+            if (usage == null) return;
+            string email = MSeries.JsonBoundary.text (usage, "accountEmail");
+            var observed = new DateTime.from_iso8601 (MSeries.JsonBoundary.text (usage, "updatedAt"), new TimeZone.utc ());
+            if (email.length == 0 || observed == null) return;
+            var accounts = array_member (report, "accounts");
+            for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (!MSeries.JsonBoundary.flag (account, "active") ||
+                    MSeries.JsonBoundary.text (account, "email") != email) continue;
+                var windows = new Json.Array ();
+                foreach (string key in new string[] { "primary", "secondary", "tertiary" }) {
+                    var window = MSeries.JsonBoundary.object_member (usage, key);
+                    if (window == null) continue;
+                    double used = MSeries.JsonBoundary.number (window, "usedPercent", -1);
+                    if (!used.is_finite () || used < 0 || used > 100) continue;
+                    var normalized = new Json.Object ();
+                    int64 minutes = MSeries.JsonBoundary.integer (window, "windowMinutes");
+                    normalized.set_string_member ("label", minutes >= 1440 ? (minutes / 1440).to_string () + " day" :
+                        minutes >= 60 ? (minutes / 60).to_string () + " hour" :
+                        minutes > 0 ? minutes.to_string () + " min" : key);
+                    normalized.set_double_member ("remaining", 100 - used);
+                    normalized.set_string_member ("resetsAt", MSeries.JsonBoundary.text (window, "resetsAt"));
+                    windows.add_object_element (normalized);
+                }
+                account.set_array_member ("windows", windows);
+                account.set_int_member ("fetchedAt", observed.to_unix ());
+                account.set_boolean_member ("stale", false);
+            }
+        } catch (Error e) {
+            // The saved identity still renders; an unavailable active reading stays unknown.
+        }
+    }
+
+    private void render_local_accounts () {
+        clear_box (local_accounts);
+        foreach (string provider in new string[] { "Codex", "Claude", "OpenCode" }) {
+            var report = MSeries.JsonBoundary.object_member (local_reports, provider);
+            bool failed = local_errors.has_member (provider) || (report != null &&
+                (MSeries.JsonBoundary.flag (report, "failed") || MSeries.JsonBoundary.flag (report, "stale")));
+            var accounts = report != null ? array_member (report, "accounts") : null;
+            if (accounts == null || accounts.get_length () == 0) {
+                local_accounts.append (detail_label (provider + (failed ? " · account source unavailable" :
+                    local_pending > 0 ? " · reading saved accounts…" : " · no saved accounts reported")));
+                continue;
+            }
+            for (uint i = 0; i < accounts.get_length (); i++) {
+                var node = accounts.get_element (i);
                 if (node.get_node_type () != Json.NodeType.OBJECT) continue;
-                var window = node.get_object ();
-                if (MSeries.JsonBoundary.text (window, "instanceId") != selected_id) continue;
-                count++;
+                var account = node.get_object ();
                 var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
                 card.add_css_class ("taskbar-t3r-card");
-                string label = MSeries.JsonBoundary.text (window, "label", "Usage");
-                card.append (new Gtk.Label (label) { xalign = 0, wrap = true });
-                double used = MSeries.JsonBoundary.number (window, "usedPercent", -1);
-                bool valid = used.is_finite () && used >= 0 && used <= 100;
-                string state = MSeries.JsonBoundary.text (window, "state", "unknown");
-                bool fresh = live && state == "fresh" && MSeries.JsonBoundary.flag (window, "live", false);
-                string reset = MSeries.JsonBoundary.text (window, "resetsAt");
-                var reset_at = new DateTime.from_iso8601 (reset, new TimeZone.utc ());
-                if (reset_at != null && reset_at.compare (new DateTime.now_utc ()) <= 0) fresh = false;
-                string detail;
-                if (!valid || (state != "fresh" && state != "stale")) {
-                    detail = state == "unavailable" ? "Usage unavailable" : "Usage unknown";
-                } else {
-                    detail = fresh ? "%.0f%% used · Fresh".printf (used) :
-                        "%.0f%% used · Stale, last known".printf (used);
+                string name = MSeries.JsonBoundary.text (account, "email", "Saved account");
+                card.append (new Gtk.Label (provider + " · " + name +
+                    (MSeries.JsonBoundary.flag (account, "active") ? " · active" : "")) { xalign = 0, wrap = true });
+                string state = "observation time unknown";
+                double fetched = MSeries.JsonBoundary.number (account, "fetchedAt", -1);
+                int64 now = new DateTime.now_utc ().to_unix ();
+                if (fetched >= 0 && fetched <= now && now - fetched <= 900) state = "fresh";
+                if (failed || MSeries.JsonBoundary.flag (account, "stale") ||
+                    MSeries.JsonBoundary.text (account, "error").length > 0 ||
+                    (fetched >= 0 && now - fetched > 900)) state = "stale · last known";
+                var windows = array_member (account, "windows");
+                if (windows == null || windows.get_length () == 0)
+                    card.append (detail_label ("Quota unknown · this account has no reported windows"));
+                for (uint j = 0; windows != null && j < windows.get_length (); j++) {
+                    var wn = windows.get_element (j);
+                    if (wn.get_node_type () != Json.NodeType.OBJECT) continue;
+                    var w = wn.get_object ();
+                    append_window (card, MSeries.JsonBoundary.text (w, "label", "Plan window"),
+                        MSeries.JsonBoundary.number (w, "remaining", -1), "left", state,
+                        MSeries.JsonBoundary.text (w, "resetsAt"), state == "fresh");
                 }
-                card.append (detail_label (detail));
-                if (valid && fresh) {
-                    var bar = new Gtk.LevelBar () { min_value = 0, max_value = 100, value = used };
-                    bar.add_offset_value ("low", 60);
-                    bar.add_offset_value ("high", 90);
-                    bar.add_offset_value ("full", 100);
-                    bar.add_css_class ("taskbar-t3r-gauge");
-                    card.append (bar);
+                card.append (detail_label ("Computer-local saved account · " + MSeries.JsonBoundary.text (account, "plan")));
+                if (fetched >= 0 && fetched <= now) {
+                    var observed = new DateTime.from_unix_utc ((int64) fetched);
+                    card.append (detail_label ("Observed: " + observed.format ("%Y-%m-%d %H:%M UTC")));
                 }
-                string reset_text = reset_summary (reset);
-                card.append (detail_label (reset_text.length > 0 ? reset_text : "Reset time unavailable"));
-                usage_windows.append (card);
+                if (failed) card.append (detail_label (MSeries.JsonBoundary.text (local_errors, provider)));
+                local_accounts.append (card);
             }
-        }
-        if (count == 0) {
-            usage_windows.append (detail_label (live ? "T3 has not reported a plan window for this account." :
-                "No plan windows available. Reconnect to refresh."));
         }
     }
 
@@ -545,7 +661,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         var at = new DateTime.from_iso8601 (iso, new TimeZone.utc ());
         if (at == null) return "";
         var seconds = at.difference (new DateTime.now_utc ()) / TimeSpan.SECOND;
-        if (seconds <= 0) return "Resets now";
+        if (seconds <= 0) return "Reset passed · refresh required";
         if (seconds >= 86400) return "Resets in " + (seconds / 86400).to_string () + " d " + ((seconds % 86400) / 3600).to_string () + " h";
         if (seconds >= 3600) return "Resets in " + (seconds / 3600).to_string () + " h " + ((seconds % 3600) / 60).to_string () + " min";
         return "Resets in " + int64.max (seconds / 60, 1).to_string () + " min";

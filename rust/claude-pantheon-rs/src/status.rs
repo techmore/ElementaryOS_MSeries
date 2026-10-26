@@ -80,14 +80,54 @@ fn build_at(
             }
         }
     }
+    let mut accounts = crate::usage_monitor::account_rows(providers, now);
+    let mut token_history = history.summary.map(|s| crate::usage_monitor::history_rows_at(s, now)).unwrap_or_default();
+    for provider in providers.iter().filter(|p| p.enabled) {
+        let kind = provider_kind(&provider.driver);
+        if !token_history.iter().any(|row| row["provider"].as_str() == Some(kind)) {
+            token_history.push(json!({"provider":kind, "tokens":null, "state":"unavailable",
+                "source":"t3-server-token-history", "since_day":history.summary.map(|s| s.since_day.as_str()),
+                "until_day":history.summary.map(|s| s.until_day.as_str()),
+                "read_at":history.summary.map(|s| s.read_at.as_str())}));
+        }
+    }
+    token_history.sort_unstable_by(|a, b| {
+        a["tokens"]
+            .is_null()
+            .cmp(&b["tokens"].is_null())
+            .then_with(|| a["provider"].as_str().cmp(&b["provider"].as_str()))
+    });
+    if !connected {
+        stale_observations(&mut accounts);
+    }
+    if !connected || history.failed {
+        stale_observations(&mut token_history);
+    }
     json!({
         "schemaVersion": 1, "writtenAt": written, "updatedAt": written,
         "connected": connected, "stale": !connected, "server": label,
         "selectedProviderId": selected_provider_id,
         "selectedProvider": selected.map(Provider::name).unwrap_or_default(),
         "running": running, "pendingPrompts": pending, "windows": windows,
+        "accounts": accounts, "tokenHistory": token_history,
         "tokenUsage": token_usage(selected, history.summary, history.failed || !connected, now),
     })
+}
+
+fn stale_observations(rows: &mut [Value]) {
+    for row in rows {
+        if row["state"] == "fresh" {
+            row["state"] = json!("stale");
+        }
+        if let Some(windows) = row["windows"].as_array_mut() {
+            for window in windows {
+                window["live"] = json!(false);
+                if window["state"] == "fresh" {
+                    window["state"] = json!("stale");
+                }
+            }
+        }
+    }
 }
 
 fn provider_kind(driver: &str) -> &str {
@@ -199,6 +239,8 @@ fn preserve_last_known_at(previous: &Value, disconnected: &Value, now: &str) -> 
         "windows",
         "writtenAt",
         "tokenUsage",
+        "accounts",
+        "tokenHistory",
     ] {
         if let Some(value) = previous.get(key) {
             next[key] = value.clone();
@@ -225,6 +267,11 @@ fn preserve_last_known_at(previous: &Value, disconnected: &Value, now: &str) -> 
     }
     if next["tokenUsage"].is_object() && next["tokenUsage"]["state"] != "unavailable" {
         next["tokenUsage"]["state"] = json!("stale");
+    }
+    for key in ["accounts", "tokenHistory"] {
+        if let Some(rows) = next[key].as_array_mut() {
+            stale_observations(rows);
+        }
     }
     next["connected"] = json!(false);
     next["stale"] = json!(true);
@@ -286,8 +333,8 @@ mod tests {
                 {"provider": "codex", "totals": {"outputTokens": 999}}]})).unwrap()
     }
     #[test]
-    fn selected_account_privacy_preserves_activity_without_other_account_labels() {
-        let providers = [provider("work", "claudeAgent", "Work"), provider("private", "codex", "PRIVATE NAME")];
+    fn all_account_coverage_preserves_selected_thread_model_privacy() {
+        let providers = [provider("work", "claudeAgent", "Work"), provider("private", "codex", "Other account")];
         let threads = [
             ThreadShell {
                 id: "running".into(),
@@ -318,7 +365,8 @@ mod tests {
         assert_eq!(feed["windows"].as_array().unwrap().len(), 2);
         assert!(feed["windows"][1]["usedPercent"].is_null());
         assert_eq!(feed["windows"][1]["live"], false);
-        assert!(!feed.to_string().contains("PRIVATE NAME"));
+        assert_eq!(feed["accounts"][1]["title"], "Other account");
+        assert!(!feed["running"].to_string().contains("Other account"));
         assert!(feed.get("nextTask").is_none());
     }
     #[test]
@@ -357,15 +405,18 @@ mod tests {
     }
     #[test]
     fn disconnect_retains_selected_identity_and_stales_tokens_and_windows() {
+        let mut provider = provider("work", "claudeAgent", "Work");
+        provider.usage_limits.as_mut().unwrap().windows.truncate(1);
         let previous = build_at(
             true,
             "server",
             "work",
-            &[provider("work", "claudeAgent", "Work")],
+            std::slice::from_ref(&provider),
             &[],
             HistoryState { summary: Some(&history()), failed: false },
             now(),
         );
+        assert_eq!(previous["accounts"][0]["state"], "fresh");
         let stale = preserve_last_known_at(&previous, &json!({"schemaVersion": 1}), "later");
         assert_eq!(stale["selectedProviderId"], "work");
         assert_eq!(stale["writtenAt"], previous["writtenAt"]);
@@ -375,5 +426,52 @@ mod tests {
         assert_eq!(stale["tokenUsage"]["state"], "stale");
         assert_eq!(stale["tokenUsage"]["totalTokens"], 65);
         assert_eq!(stale["windows"][0]["live"], false);
+        assert_eq!(stale["accounts"][0]["state"], "stale");
+        assert_eq!(stale["accounts"][0]["windows"][0]["live"], false);
+        assert_eq!(stale["tokenHistory"][0]["state"], "stale");
+    }
+
+    #[test]
+    fn multiple_accounts_and_providers_are_not_filtered_to_selection_or_zeroed() {
+        let mut first = provider("codex-a", "codex", "Codex A");
+        first.usage_limits.as_mut().unwrap().windows[0].used_percent = 37.0;
+        let mut second = provider("codex-b", "codex", "Codex B");
+        second.usage_limits.as_mut().unwrap().windows[0].used_percent = 82.0;
+        let mut claude = provider("claude-a", "claudeAgent", "Claude");
+        claude.usage_limits.as_mut().unwrap().windows[0].used_percent = 95.0;
+        let providers = [first, second, claude];
+        let feed = build_at(
+            true,
+            "server",
+            "codex-a",
+            &providers,
+            &[],
+            HistoryState { summary: Some(&history()), failed: false },
+            now(),
+        );
+        let amounts: Vec<f64> = feed["accounts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a["windows"][0]["used_percent"].as_f64().unwrap())
+            .collect();
+        assert_eq!(amounts, [37.0, 82.0, 95.0]);
+        assert_eq!(feed["tokenHistory"][0]["provider"], "claude");
+        assert_eq!(feed["tokenHistory"][0]["tokens"], 65);
+        assert_eq!(feed["tokenHistory"][1]["provider"], "codex");
+        assert_eq!(feed["tokenHistory"][1]["tokens"], 999);
+        let offline = build_at(
+            false,
+            "server",
+            "codex-a",
+            &providers,
+            &[],
+            HistoryState { summary: Some(&history()), failed: false },
+            now(),
+        );
+        for account in offline["accounts"].as_array().unwrap() {
+            assert_ne!(account["state"], "fresh");
+            assert_eq!(account["windows"][0]["live"], false);
+        }
     }
 }

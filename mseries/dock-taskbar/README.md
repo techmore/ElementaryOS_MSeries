@@ -99,6 +99,31 @@ correctly marked stale. Native Rust tests passed (77), RepoBar tests passed (26)
 and the complete patched Dock linked successfully. Both-mode pointer acceptance
 and a physical reboot remain separate checks, not implied by these results.
 
+### Multi-account correction — 2026-10-26
+
+The selected-only dropdown was insufficient. Tokens now lists every observed
+provider, with explicit unknown rows for enabled providers without history.
+Accounts lists every saved Codex, Claude and OpenCode account from the shared
+read-only helpers, separately from all enabled T3 server instances. Native
+Tokens/Accounts/Activity tabs keep account rows reachable without a long combined
+menu. Percentages retain their source units (local percent left versus server
+percent used); missing observations are unknown, and expired resets require
+refresh instead of displaying zero hours.
+
+Saved-account helpers are installed with the native client and Debian payload.
+Provider API quota additionally requires the existing CodexBar CLI runtime;
+missing CLI or permissions leave explicit unavailable values, not fabricated
+quota. The local helper commands run on open/explicit refresh, not a new timer
+or second T3 connection. No account switching is performed.
+
+Real-data native-widget checks found six saved identities (three Codex, two
+Claude, one OpenCode), nonzero server limits and correctly labeled expired
+resets. Tab selection and Escape passed in dark/default-text and
+light/larger-text renders. Rust tests passed (78), strict release Clippy passed,
+and the actual Dock rebuilt and reloaded. These checks do not replace owner
+confirmation of the physical Dock click path; earlier approval is not a reason
+to dismiss subsequent reports of missing content.
+
 
 ## Reboot and update persistence
 

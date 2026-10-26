@@ -37,6 +37,10 @@ target_dir="$(cd "$here" && cargo metadata --format-version 1 --no-deps | python
 install -Dm755 "$target_dir/release/claude-pantheon-rs" "$stage/usr/bin/claude-pantheon-rs"
 install -Dm755 "$target_dir/release/claude-pantheon-sdk" "$stage/usr/bin/claude-pantheon-sdk"
 install -Dm755 "$repo_root/mseries/repobar.py" "$stage/usr/bin/mseries-repobar"
+source "$repo_root/mseries/lib-codexbar.sh"
+for helper in "${CODEXBAR_HELPERS[@]}"; do
+  install -Dm644 "$repo_root/mseries/$helper" "$stage/usr/lib/codexbar-cli/$helper"
+done
 install -Dm644 "$here/data/io.github.techmore.ClaudePantheonSdk.desktop" "$stage/usr/share/applications/io.github.techmore.ClaudePantheonSdk.desktop"
 install -Dm644 "$here/data/$id.desktop" "$stage/usr/share/applications/$id.desktop"
 install -Dm644 "$here/data/$id.metainfo.xml" "$stage/usr/share/metainfo/$id.metainfo.xml"

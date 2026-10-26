@@ -66,6 +66,11 @@ binary="$target_dir/release/claude-pantheon-rs"
 "${sudo[@]}" install -Dm644 "$here/data/io.github.techmore.ClaudePantheonSdk.desktop" "$apps/io.github.techmore.ClaudePantheonSdk.desktop"
 # Shared read-only dependency: also used by the optional RepoBar indicator.
 "${sudo[@]}" install -Dm755 "$here/../../mseries/repobar.py" "$bindir/mseries-repobar"
+# Shared saved-account readers; retain these on uninstall because CodexBar also owns them.
+source "$here/../../mseries/lib-codexbar.sh"
+for helper in "${CODEXBAR_HELPERS[@]}"; do
+    "${sudo[@]}" install -Dm644 "$here/../../mseries/$helper" "$prefix/lib/codexbar-cli/$helper"
+done
 "${sudo[@]}" install -Dm644 "$here/data/$id.desktop" "$apps/$id.desktop"
 "${sudo[@]}" install -Dm644 "$here/data/$id.metainfo.xml" "$datadir/metainfo/$id.metainfo.xml"
 "${sudo[@]}" install -d "$datadir/dbus-1/services"
