@@ -1,3 +1,24 @@
+## SDK starter literal-name repair — 2026-10-26
+
+`msdk new` now JSON-escapes supplied identity/name strings and substitutes original
+placeholders once. Quotes, backslashes, Unicode, newlines and names resembling
+placeholder text no longer corrupt or recursively rename generated descriptions.
+Five template tests pass; actual CLI settings generation in JSON and `.msdk`
+formats passes `check` and `gate` with a quoted/backslashed Unicode name.
+
+Verification used an isolated copy of the unchanged msdk crate plus its external
+fixture files, with cached Cargo dependencies on macOS. Workspace offline testing
+cannot resolve the uncached pinned Smithay Git dependency. The full isolated core
+suite has two failures: inspect expects the old T3 Chat default/usage heading,
+and intents expects absent tool `claudepantheonrs_send`. These are outside template
+rendering and remain open; no green whole-suite or GTK/runtime claim is made.
+
+Next SDK completion work: reconcile those T3 contract tests; provide a complete
+standalone app/build/package path; qualify versioned service errors and optional
+capability lifecycle; exercise native Dock conformance (#605), and retain actual
+visual/accessibility/installation and controlled model-authoring evidence (#535).
+Signal/Messages remain deferred. No desktop installation or panel restart.
+
 ## Unified native T3 panel integration — 2026-10-26
 
 Merged Fleet PR #607 at `04fe68e6`. Owner does not require particular remote
