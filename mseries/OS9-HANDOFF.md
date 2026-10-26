@@ -1,43 +1,45 @@
 ## J314S monitor restoration incident — 2026-10-26
 
-Owner reports the WD22TB4 monitor does not restore while connected. Live host
+Owner reported the WD22TB4 monitor did not restore while connected. Live host
 is `7.2.11-elementary-aurora72-wip3`; `boltctl` sees the WD22TB4 authorized at
-40 Gb/s, but Gala exposes only `eDP-1` and all external DRM connectors report
+40 Gb/s, but Gala exposed only `eDP-1` and all external DRM connectors were
 `disconnected`. The DP tunnel routed through `dpin0`, then DCP target `0:0`
 validation timed out five times (`-110`); the kernel tore down `0:5 <-> 1:14`
-and logged `display teardown failed: -110`. This is a kernel/tunnel failure,
-not a display layout that can currently be restored in userspace. Historical
-wip3 evidence says changing physical USB-C ports restored one prior incident;
-the owner confirms the current cable is in rear-left, near the hinge. Requested
+and logged `display teardown failed: -110`. This was a kernel/tunnel failure,
+not a display layout that userspace could restore. The cable was in rear-left,
+near the hinge. After moving to front-left, the owner reports the picture
+returned. DRM shows `card2-DP-2 connected/enabled`; Gala identifies AOC
+`24E2QA`, serial `RJLRCHA019923`, at 1920x1080/60, position (2420, 0), scale
+1.0. Kernel DCP `289c00000` (dcpext0), PHY 1, routed through dpin0. This is one
+successful alternate-port recovery, not a same-port or repeated-cycle pass.
 
-The open wip4 candidate PR #533 contains patch 0002 for this exact DCP failure
-class: a timed-out DPTX pipeline is held off and its stale tunnel ownership is
-released. Its retained wip3 incident report confirms that same-port replug can
-hit the pinned DCP again, while another physical port recovered. The patch is
-build-checked but not booted on hardware; it prevents pinning for a subsequent
-request but does not reroute the already-failed plug in place. A reboot/trial
-and repeat plug/unplug qualification remain necessary before calling the kernel
-path durable.
+The open wip4 candidate PR #533 contains patch 0002 for this DCP failure class:
+a timed-out DPTX pipeline is held off and stale tunnel ownership is released.
+The retained wip3 incident report confirms same-port replug can hit the pinned
+DCP again, while another physical port recovered. The patch is build-checked but
+not booted on hardware; it prevents pinning on a subsequent request but does not
+reroute the already-failed plug in place. A wip4 trial and repeated
+plug/unplug qualification remain necessary before calling the kernel path
+durable.
 
-The active `mseries-display-profiles` watcher also had an independent confirmed
-bug: its `ApplyMonitorsConfig` GVariant signature omitted the per-logical-monitor
-properties dictionary. The live API reported the expected signature and every
-prior unplug restoration failed with that mismatch. Corrected the repository
-and installed user-local watcher; restarted only that watcher (no Wingpanel or
-compositor restart). Its private profile store was backed up at
+The active `mseries-display-profiles` watcher had an independent confirmed bug:
+its `ApplyMonitorsConfig` GVariant signature omitted the per-logical-monitor
+properties dictionary. Prior unplug restores failed with that mismatch. After
+fixing the signature, the first AOC profile attempt exposed a second shape
+error: each logical-monitor tuple also lacked its own final properties
+dictionary. Both are corrected in source and the installed user-local watcher;
+only the watcher was restarted (no Wingpanel/compositor restart). The second
+watcher restart occurred at 07:18 EDT and applied no monitor mode. Its private
+profile store was backed up at
 `~/.cache/mseries-display-profiles-backup-20261026-071246`, then updated to
-preserve the observed built-in 3024x1964/120 at scale 1.25, restore the AOC
-24E2QA (`RJLRCHA019923`) dock monitor at 1920x1080/60, and keep the existing
-Insignia profile separate. This follows the saved profile identity schema and
-the prior owner-confirmed monitor evidence.
+preserve the current built-in 3024x1964/120 at scale 1.25, restore the AOC dock
+monitor at 1920x1080/60, and keep the Insignia profile separate.
 
-**Not yet verified:** a live ApplyMonitorsConfig request, visible picture,
-unplug restoration, or repeated recovery. The current DP tunnel is down; do not
-mark monitor restore fixed based on userspace configuration alone. The wip3
-boot selection and kernel were not changed. Next: recover the picture on an
-available physical USB-C port, confirm the owner sees the desktop, then exercise
-one plug/unplug/restore cycle and keep repeating only if it fails. A different
-kernel/boot payload decision is a separate owner-gated recovery.
+The owner can now see the picture and profile matching selects `aoc-dock`.
+**Not yet verified:** a successful live ApplyMonitorsConfig request, unplug
+restoration, or repeated recovery. Per owner direction, update/review wip4
+against relevant Aurora upstream display changes and prepare the deployment
+plan before hardware plug/unplug acceptance. No boot state changed.
 
 ## Appearance integration qualification — 2026-10-26
 

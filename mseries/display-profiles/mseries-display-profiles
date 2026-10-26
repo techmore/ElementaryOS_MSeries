@@ -79,7 +79,8 @@ def build_config(profile, mons, mode_override=None):
                 mode = mode_override(info, mode)
             ms.append((c, mode, {}))
         if ms:
-            out.append((lm["x"], lm["y"], lm["scale"], lm["transform"], lm["primary"], ms))
+            # DisplayConfig's logical-monitor struct ends with properties too.
+            out.append((lm["x"], lm["y"], lm["scale"], lm["transform"], lm["primary"], ms, {}))
     if out and not any(lm[4] for lm in out):
         out[0] = out[0][:4] + (True,) + out[0][5:]
     return out

@@ -57,15 +57,17 @@ re-applies it after an unplug. The watcher also logs how long Gala took to drop 
 The live J314S watcher had been sending `ApplyMonitorsConfig` with a malformed
 GVariant signature, so laptop-only restoration after unplug and saved layout
 application failed before Gala could apply anything. Each logical-monitor
-tuple needs its own properties dictionary, followed by the method-level
-dictionary. The repository source and the owner's installed copy now use that
-signature.
+tuple needs its own final properties dictionary, followed by the method-level
+dictionary; each logical-monitor entry also needs its own properties element.
+The repository source and the owner's installed copy now provide both.
 
 The owner's saved dock profile was for an Insignia TV, while the recorded dock
 monitor is an AOC 24E2QA. The private profile store now has a separate
 identity-matched AOC profile at 1920x1080/60, plus a laptop-only layout matching
 the current built-in 3024x1964/120 mode and 1.25 scale. The settings are backed
-up locally. The watcher is running the corrected code, but the current wip3
-kernel session lost its DP tunnel after five DCP target-validation timeouts, so
-the next cable/port recovery is still needed before a live layout application
-or unplug/restoration cycle can be qualified.
+up locally. The current wip3 session lost its DP tunnel after five DCP
+target-validation timeouts. Moving the dock from rear-left to front-left brought
+the AOC back on DP-2 at 1920x1080/60, confirmed by the owner. The watcher then
+exposed the missing logical-monitor properties element. The installed copy now
+includes both corrections and has been restarted; the next live profile
+application and unplug/restoration cycle are still unqualified.
