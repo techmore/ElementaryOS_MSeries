@@ -104,3 +104,11 @@ on-demand monitor with a refresh button, spinner and status. The host calls
 snapshot, repeated opens do not duplicate it, and unmapping or dropping the
 control cancels owned work. It does not install or select a desktop host,
 schedule background polling, manage accounts, or implement provider actions.
+
+`msdk_gtk::usage_anchor::UsageAnchor` is a candidate GTK anchor for embedding
+by a desktop status host. It opens on hover without an intentional focus grab,
+pins on activation, and owns a UsageControl and its scoped read lifecycle.
+The caller chooses popup position and must place the anchor in the appropriate
+profile-owned status area. It does not install a Wingpanel or Windows taskbar
+adapter, replace existing controls, or qualify either host. Hover-to-click,
+outside dismissal, Escape, keyboard focus and teardown require native testing.

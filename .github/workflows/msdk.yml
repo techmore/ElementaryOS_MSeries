@@ -132,6 +132,12 @@ jobs:
             python3 mseries/sdk-tests/usage-controls.py \
               --binary "$CARGO_TARGET_DIR/debug/examples/usage_control_interactive" \
               --output "$RUNNER_TEMP/sdk-evidence/usage-controls.json"
+      - name: Candidate usage anchor interactions
+        run: |
+          MSDK_PRIVATE_TEST_BUS=1 GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
+            python3 mseries/sdk-tests/usage-anchor-controls.py \
+              --binary "$CARGO_TARGET_DIR/debug/examples/usage_anchor_interactive" \
+              --output "$RUNNER_TEMP/sdk-evidence/usage-anchor-controls.json"
       - name: Package, install, reinstall and remove the generated app
         run: |
           "$CARGO_TARGET_DIR/debug/msdk" pack "$RUNNER_TEMP/generated" \

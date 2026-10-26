@@ -1,3 +1,13 @@
+## Candidate usage status anchor — native validation pending, 2026-10-26
+
+An embeddable GTK UsageAnchor is modeled on the existing taskbar hover/pin
+interaction and owns the UsageControl lifecycle without background polling. A
+private synthetic X11/AT-SPI probe exercises hover focus, pointer travel,
+hover-to-click pinning, outside dismissal, keyboard open/Escape and closed
+no-read behavior. Native compilation and interaction tests are pending. This
+widget is not installed in either real desktop profile; host adapters, real
+provider coverage and owner acceptance remain open. No panel was restarted.
+
 ## Usage control keyboard validation — 2026-10-26
 
 Hosted ARM developer-path run 40405964283 passed on 477234a. A private synthetic
