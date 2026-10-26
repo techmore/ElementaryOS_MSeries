@@ -15,6 +15,9 @@ product work and scope changes. Continue independent work while awaiting feedbac
 
 ## SDK and template direction
 
+For a useful read-only service/retry example and explicit pending native gates,
+follow [Home Storage developer path](SDK-GOLDEN-PATH.md).
+
 Use the implemented `.msdk`/JSON description, rules and declared-service path
 for SDK apps, with app-local Rust `Services`/`Logic` for documented gaps.
 Native Rust GTK/Granite helpers remain available in `mseries-pantheon-kit`.
@@ -60,6 +63,16 @@ appropriate; an app stylesheet cannot establish physical-panel compliance.
 Keep service authority behind explicit versioned APIs. Preserve existing clients,
 data, account boundaries and recovery paths during migrations. Do not import
 private service databases or replace transport implementations to simplify a UI.
+
+## Runtime errors and owned work
+
+Read [SDK-RUNTIME-CONTRACT.md](SDK-RUNTIME-CONTRACT.md) for the implemented
+`Services::invoke`/`ServiceReply` path, extension-version checks, typed private-safe
+diagnostics, completed-result payload validation and owned process limits.
+`msdk describe runtime` and `msdk explain CODE` expose that contract to authors.
+Backend protocol/version qualification, streaming/progress and context-specific
+adapter cancellation remain separate gates; the extension version is not an OS
+or provider API version.
 
 ## Fast build loop and honest delivery
 

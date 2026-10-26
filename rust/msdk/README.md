@@ -88,3 +88,19 @@ test, and compact/light/dark render profiles with asserted GTK 10/15-point fonts
 Run native probes under fresh Xvfb and D-Bus sessions with synthetic XDG state;
 never borrow the owner's desktop session. Exact remaining gates and environment
 limits are recorded in the completion ledger.
+
+## Runtime services and diagnostics
+
+`msdk describe runtime` lists actual limits and failure codes; `msdk explain CODE`
+provides recovery guidance. Modern backends implement
+`msdk_gtk::host::Services::invoke(ServiceCall)` and complete its owned
+`ServiceReply` with typed success/failure. The Host validates registered payloads,
+blocks incompatible extensions, routes failures to the app or banner and ignores
+duplicate terminal replies. Legacy provider entry points remain compatible.
+
+`msdk::process::spawn` provides owned Linux/macOS task groups, timeout and output
+limits; the GTK Host cancels its own jobs on accepted close. Runtime diagnostic,
+Debug and Display output omit private payloads; private UI detail is explicit.
+See [the full contract and verification commands](../../mseries/SDK-RUNTIME-CONTRACT.md).
+Streaming/progress, backend protocol negotiation and app-specific context/race
+qualification remain open.

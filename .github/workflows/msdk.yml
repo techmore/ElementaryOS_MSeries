@@ -92,7 +92,7 @@ jobs:
         run: |
           cargo clippy --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --all-targets -- -D warnings
           MSDK_PRIVATE_TEST_BUS=1 XDG_DATA_HOME="$RUNNER_TEMP/sdk-state" GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
-            cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --test lifecycle -- --test-threads=1
+            cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --test lifecycle --test runtime -- --test-threads=1
       - name: Package, install, reinstall and remove the generated app
         run: |
           "$CARGO_TARGET_DIR/debug/msdk" pack "$RUNNER_TEMP/generated" \

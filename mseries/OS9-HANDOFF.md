@@ -1,3 +1,38 @@
+## Typed SDK runtime and owned task commands — 2026-10-26
+
+ARM developer-path run 40363235712 passed on ed9bc5b. Continue that evidence; no
+replacement was needed for the completed foundation run.
+
+Added candidate `ServiceFailure`/FailureKind diagnostics, `msdk describe runtime`
+and runtime-code explanations. Modern `Services::invoke(ServiceCall)` owns typed
+async replies; registered result shapes are checked, first completion wins and
+errors do not fall through to real system work. Extension interface version 1 is
+checked before dispatch; real backend OS/network protocol negotiation remains
+separate. Existing provider entry points remain compatible. Missing fixture
+replies now fail explicitly, and fixture traces omit arguments.
+
+`msdk::process` owns a Linux/macOS process group, nonblocking pipes, monotonic
+120-second/default 1-MiB combined output bounds and cancellation/reaping. Host
+concurrency is four and accepted close cancels handles. Kernel PID identity is
+held until group signals finish, with cancellation serialized. Private stderr
+can reach app UI, while Debug/Display/diagnostics omit payloads. Streaming,
+partial output, privileged/daemon job supervision and app-context races remain
+open; no whole-SDK or backend stability claim. SDK-RUNTIME-CONTRACT.md records
+actual identifiers, limits, compatibility and reproduction commands.
+
+Real process/diagnostic tests pass on macOS. Initial Linux core/native checks
+pass, including blocked mismatch and recovery, unavailable/malformed/denied
+async replies, duplicate rejection and real command termination on close.
+Final fixture-no-fallback and updated discovery checks remain to qualify on the
+final Linux source. Automatic approval review rejected the updated source transfer
+to SER8 pending explicit destination/payload authorization; no transfer was made.
+Local core/lint/format checks pass. Home Storage now supplies a read-only useful
+reference flow, duplicate-submit suppression and actual command error/retry tests;
+SDK-GOLDEN-PATH.md records reproduction and still-pending native UI/trial gates.
+Next: authorize/resume isolated Linux qualification, retain source-matched receipts,
+then shared status module, streaming and controlled model trials.
+No owner desktop, accounts, services, kernel or panel changes.
+
 ## Source-matched SDK developer-path receipts retained — 2026-10-26
 
 The final isolated x86_64 pass covers exact SDK code `287886e3b4399c742bf286bbaf3905b36439467d`;

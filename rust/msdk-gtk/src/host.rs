@@ -18,21 +18,116 @@ use crate::render::{self, D, Dispatcher, Refresh};
 /// A message from outside the widgets (a worker thread, a service): name and payload.
 pub type Event = (String, Option<Value>);
 
+/// A typed request. An owned async task keeps the reply, which never retains GTK.
+pub struct ServiceCall {
+    pub service: String,
+    pub args: std::collections::BTreeMap<String, Value>,
+    pub reply: ServiceReply,
+}
+
+#[derive(Clone)]
+pub struct ServiceReply {
+    completed: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    service: String,
+    source: String,
+    operation: u64,
+    expected: Option<msdk::vocab::Payload>,
+    then: Option<String>,
+    error: Option<String>,
+    events: UnboundedSender<Event>,
+    failures: UnboundedSender<(msdk::runtime::ServiceFailure, Option<String>)>,
+}
+impl ServiceReply {
+    /// Validate the declared result before delivering it into app state.
+    pub fn success(&self, payload: Option<Value>) {
+        use msdk::vocab::Payload;
+        let valid = match self.expected {
+            None => true,
+            Some(Payload::None) => payload.is_none(),
+            Some(Payload::Text) => payload.as_ref().is_some_and(Value::is_string),
+            Some(Payload::Bool) => payload.as_ref().is_some_and(Value::is_boolean),
+        };
+        if !valid {
+            return self.fail(msdk::runtime::ServiceFailure::new(
+                msdk::runtime::FailureKind::MalformedData,
+                &self.service,
+                &self.source,
+                self.operation,
+            ));
+        }
+        if self
+            .completed
+            .swap(true, std::sync::atomic::Ordering::SeqCst)
+        {
+            return;
+        }
+        if let Some(message) = &self.then {
+            let _ = self.events.unbounded_send((message.clone(), payload));
+        }
+    }
+    /// Private detail may reach the app UI; it is omitted from diagnostics.
+    pub fn fail(&self, mut failure: msdk::runtime::ServiceFailure) {
+        if self
+            .completed
+            .swap(true, std::sync::atomic::Ordering::SeqCst)
+        {
+            return;
+        }
+        failure.service = self.service.clone();
+        failure.source = self.source.clone();
+        failure.operation = self.operation;
+        let _ = self.failures.unbounded_send((failure, self.error.clone()));
+    }
+}
+
 /// Builds the app's Rust logic once the host exists; it gets a sender for events from its own threads.
 /// System access an app can plug in: named services (`call`) and live feeds. Crates such as the T3 client implement it;
 /// `FixtureServices` answers from a JSON file so an app can run before its real backend exists.
 pub trait Services {
+    /// Primary typed dispatch. Return true once owned (including async work).
+    /// Returning false permits fallback, so start no work in that case.
+    fn invoke(&self, call: ServiceCall) -> Result<bool, msdk::runtime::ServiceFailure> {
+        self.call_checked(
+            &call.service,
+            &call.args,
+            call.reply.then,
+            call.reply.error,
+            call.reply.events,
+        )
+    }
+    /// Version of the SDK extension interface (not the backend's OS/network API).
+    /// Legacy providers implement this existing v1 interface implicitly.
+    fn api_version(&self) -> u32 {
+        msdk::runtime::SERVICES_API_VERSION
+    }
     /// Handles `service`; returns false when this provider does not own it. Replies go to `tx` as events.
     fn call(
+        &self,
+        _service: &str,
+        _args: &std::collections::BTreeMap<String, Value>,
+        _then: Option<String>,
+        _error: Option<String>,
+        _tx: UnboundedSender<Event>,
+    ) -> bool {
+        false
+    }
+    /// Typed dispatch. An error is owned by this provider: the Host reports it
+    /// without falling through to a real system action. Legacy call() remains
+    /// the default implementation for existing providers.
+    fn call_checked(
         &self,
         service: &str,
         args: &std::collections::BTreeMap<String, Value>,
         then: Option<String>,
         error: Option<String>,
         tx: UnboundedSender<Event>,
-    ) -> bool;
+    ) -> Result<bool, msdk::runtime::ServiceFailure> {
+        Ok(self.call(service, args, then, error, tx))
+    }
     /// Starts `feed`, calling `push` with the whole list now and whenever it changes. False when not owned.
-    fn start_feed(&self, feed: &str, push: Rc<dyn Fn(Value)>) -> bool;
+    fn start_feed(&self, _feed: &str, _push: Rc<dyn Fn(Value)>) -> bool {
+        false
+    }
     /// Called once when this host closes. Implementations must cancel owned work
     /// and retire callbacks; adapters shared across hosts must scope ownership.
     /// The default is for providers with no ongoing work (e.g. fixtures).
@@ -61,6 +156,9 @@ pub struct Host {
     closed: Cell<bool>,
     reload_source: RefCell<Option<glib::SourceId>>,
     window_watches: RefCell<Vec<crate::services::WindowWatch>>,
+    processes: RefCell<Vec<msdk::process::Process>>,
+    failures: UnboundedSender<(msdk::runtime::ServiceFailure, Option<String>)>,
+    operation: Cell<u64>,
 }
 
 // Widgets keep a dispatcher, never the Host itself. Otherwise Host -> widgets
@@ -197,6 +295,7 @@ impl Host {
             );
         }
         let (tx, mut rx) = unbounded::<Event>();
+        let (failures, mut failure_events) = unbounded();
         let custom_logic = logic.is_some();
         let logic: Box<dyn Logic> = match logic {
             Some(make) => make(tx.clone()),
@@ -252,6 +351,9 @@ impl Host {
             closed: Cell::new(false),
             reload_source: RefCell::new(None),
             window_watches: RefCell::new(Vec::new()),
+            processes: RefCell::new(Vec::new()),
+            failures,
+            operation: Cell::new(0),
         });
         *host.me.borrow_mut() = Rc::downgrade(&host);
         host.rebuild();
@@ -260,6 +362,13 @@ impl Host {
             while let Some((msg, payload)) = rx.next().await {
                 let Some(host) = weak.upgrade() else { break };
                 host.send(&msg, payload);
+            }
+        });
+        let weak = Rc::downgrade(&host);
+        glib::spawn_future_local(async move {
+            while let Some((failure, callback)) = failure_events.next().await {
+                let Some(host) = weak.upgrade() else { break };
+                host.runtime_failure(failure, callback);
             }
         });
         let weak = Rc::downgrade(&host);
@@ -311,6 +420,7 @@ impl Host {
             source.remove();
         }
         self.window_watches.borrow_mut().clear();
+        self.processes.borrow_mut().clear();
         if let Some(services) = &self.services {
             services.stop();
         }
@@ -335,6 +445,17 @@ impl Host {
             .cloned()
             .unwrap_or_default();
         for (key, name) in feeds {
+            if let Some(provider) = &self.services
+                && let Err(failure) = msdk::runtime::negotiate_service(
+                    provider.api_version(),
+                    name.as_str().unwrap_or(""),
+                    &format!("/feeds/{key}"),
+                    self.next_operation(),
+                )
+            {
+                self.runtime_failure(failure, None);
+                continue;
+            }
             if let Some(feed) = name.as_str()
                 && feed != "windows.list"
                 && let Some(sv) = &self.services
@@ -369,6 +490,30 @@ impl Host {
 
     fn dispatcher(&self) -> D {
         Rc::new(WeakDispatcher(self.me.borrow().clone()))
+    }
+
+    fn next_operation(&self) -> u64 {
+        let operation = self.operation.get().wrapping_add(1);
+        self.operation.set(operation);
+        operation
+    }
+
+    fn runtime_failure(&self, failure: msdk::runtime::ServiceFailure, callback: Option<String>) {
+        if self.closed.get() {
+            return;
+        }
+        eprintln!("{}", failure.diagnostic());
+        let mut message = failure.to_string();
+        // Details belong to the app's private UI, never to diagnostic output.
+        if let Some(detail) = failure.detail().filter(|detail| !detail.is_empty()) {
+            message.push('\n');
+            message.push_str(detail);
+        }
+        if let Some(callback) = callback {
+            let _ = self.tx.unbounded_send((callback, Some(json!(message))));
+        } else {
+            self.show_error(&message);
+        }
     }
 
     /// Builds the surface's widgets from the current document.
@@ -684,7 +829,7 @@ impl Host {
         }
     }
 
-    fn apply(&self, e: Effect) {
+    fn apply(&self, e: Effect, source: &str) {
         match e {
             Effect::Toast(t) => self.show_toast(&t),
             Effect::Quit => self.window.close(),
@@ -700,11 +845,51 @@ impl Host {
                 then,
                 error,
             } => {
-                let tx = self.tx.clone();
-                if let Some(sv) = &self.services
-                    && sv.call(&service, &args, then.clone(), error.clone(), tx.clone())
+                let operation = self.next_operation();
+                if let Some(provider) = &self.services
+                    && let Err(failure) = msdk::runtime::negotiate_service(
+                        provider.api_version(),
+                        &service,
+                        source,
+                        operation,
+                    )
                 {
+                    self.runtime_failure(failure, error);
                     return;
+                }
+                let tx = self.tx.clone();
+                if let Some(sv) = &self.services {
+                    let reply = ServiceReply {
+                        completed: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                        service: service.clone(),
+                        source: source.into(),
+                        operation,
+                        expected: msdk::vocab::service(&service).map(|service| service.then),
+                        then: then.clone(),
+                        error: error.clone(),
+                        events: tx.clone(),
+                        failures: self.failures.clone(),
+                    };
+                    let reply_errors = reply.clone();
+                    match sv.invoke(ServiceCall {
+                        service: service.clone(),
+                        args: args.clone(),
+                        reply,
+                    }) {
+                        Ok(true) => return,
+                        Ok(false)
+                            if reply_errors
+                                .completed
+                                .load(std::sync::atomic::Ordering::SeqCst) =>
+                        {
+                            return;
+                        }
+                        Ok(false) => {}
+                        Err(failure) => {
+                            reply_errors.fail(failure);
+                            return;
+                        }
+                    }
                 }
                 let fail =
                     move |tx: &UnboundedSender<Event>, error: &Option<String>, why: String| {
@@ -714,37 +899,52 @@ impl Host {
                     };
                 match service.as_str() {
                     "process.run" => {
+                        self.processes
+                            .borrow_mut()
+                            .retain(|process| !process.is_finished());
+                        if self.processes.borrow().len() >= msdk::runtime::MAX_HOST_PROCESSES {
+                            self.runtime_failure(
+                                msdk::runtime::ServiceFailure::new(
+                                    msdk::runtime::FailureKind::Busy,
+                                    &service,
+                                    source,
+                                    operation,
+                                ),
+                                error,
+                            );
+                            return;
+                        }
                         let cmd = args
                             .get("command")
                             .and_then(Value::as_str)
                             .unwrap_or("")
                             .to_string();
-                        std::thread::spawn(move || {
-                            match std::process::Command::new("sh")
-                                .arg("-c")
-                                .arg(&cmd)
-                                .output()
-                            {
-                                Ok(o) if o.status.success() => {
+                        let failures = self.failures.clone();
+                        let completion_source = source.to_string();
+                        let error2 = error.clone();
+                        let process = msdk::process::spawn(
+                            cmd,
+                            msdk::process::Limits::default(),
+                            operation,
+                            move |result| match result {
+                                Ok(output) => {
                                     if let Some(m) = then {
                                         let _ = tx.unbounded_send((
                                             m,
-                                            Some(json!(
-                                                String::from_utf8_lossy(&o.stdout)
-                                                    .trim_end()
-                                                    .to_string()
-                                            )),
+                                            Some(json!(output.stdout.trim_end())),
                                         ));
                                     }
                                 }
-                                Ok(o) => fail(
-                                    &tx,
-                                    &error,
-                                    String::from_utf8_lossy(&o.stderr).trim().to_string(),
-                                ),
-                                Err(e) => fail(&tx, &error, e.to_string()),
-                            }
-                        });
+                                Err(mut failure) => {
+                                    failure.source = completion_source;
+                                    let _ = failures.unbounded_send((failure, error2));
+                                }
+                            },
+                        );
+                        match process {
+                            Ok(process) => self.processes.borrow_mut().push(process),
+                            Err(failure) => self.runtime_failure(failure, error),
+                        }
                     }
                     "power.poweroff" | "power.reboot" => {
                         let verb = if service.ends_with("poweroff") {
@@ -764,10 +964,14 @@ impl Host {
                             fail(&tx, &error, e);
                         }
                     }
-                    other => fail(
-                        &tx,
-                        &error,
-                        format!("service {other} is not available in this runtime yet"),
+                    other => self.runtime_failure(
+                        msdk::runtime::ServiceFailure::new(
+                            msdk::runtime::FailureKind::Unavailable,
+                            other,
+                            source,
+                            operation,
+                        ),
+                        error,
                     ),
                 }
             }
@@ -784,8 +988,13 @@ impl Dispatcher for Host {
             let mut st = self.store.borrow_mut();
             self.logic.borrow_mut().update(&mut st, msg, payload)
         };
+        let source = if self.custom_logic {
+            "/logic".into()
+        } else {
+            format!("/update/{}", msg.replace('~', "~0").replace('/', "~1"))
+        };
         for e in effects {
-            self.apply(e);
+            self.apply(e, &source);
         }
         self.persist();
         self.refresh();

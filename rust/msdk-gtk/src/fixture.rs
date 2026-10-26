@@ -11,7 +11,7 @@ use std::rc::Rc;
 use futures_channel::mpsc::UnboundedSender;
 use serde_json::Value;
 
-use crate::host::{Event, Services};
+use crate::host::{Event, ServiceCall, Services};
 
 pub struct FixtureServices {
     feeds: BTreeMap<String, Value>,
@@ -41,17 +41,37 @@ impl FixtureServices {
 }
 
 impl Services for FixtureServices {
+    fn invoke(&self, call: ServiceCall) -> Result<bool, msdk::runtime::ServiceFailure> {
+        let Some(value) = self.calls.get(&call.service) else {
+            return Err(msdk::runtime::ServiceFailure::new(
+                msdk::runtime::FailureKind::Unavailable,
+                &call.service,
+                "/fixture/calls",
+                0,
+            ));
+        };
+        eprintln!(
+            "{}",
+            serde_json::json!({"schema":"msdk.fixture.call.v1", "service":call.service})
+        );
+        call.reply.success(if value.is_null() {
+            None
+        } else {
+            Some(value.clone())
+        });
+        Ok(true)
+    }
     fn call(
         &self,
         service: &str,
-        args: &BTreeMap<String, Value>,
+        _args: &BTreeMap<String, Value>,
         then: Option<String>,
         _error: Option<String>,
         tx: UnboundedSender<Event>,
     ) -> bool {
         eprintln!(
-            "fixture: {service} {}",
-            serde_json::to_string(args).unwrap_or_default()
+            "{}",
+            serde_json::json!({"schema":"msdk.fixture.call.v1", "service":service})
         );
         if let (Some(m), Some(reply)) = (then, self.calls.get(service)) {
             let _ = tx.unbounded_send((m, Some(reply.clone())));
