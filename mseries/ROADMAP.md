@@ -1,3 +1,13 @@
+## Usage provider overview review — 2026-10-26
+
+Hosted ARM SDK run 40397085739 passed on 0951bde, including the native widget
+and scrolling regression. Eight synthetic light/dark Sans 10/15 top/end captures
+are in sdk-tests/receipts/2026-10-26-usage-overview. All four fixture provider
+names and partial coverage are visible on opening in both profiles; cards
+remain separate and scrollable. Compact quota layout, long-label/translation,
+keyboard interaction, real adapters, actual status hosts and owner acceptance
+remain open. The overview is not proof of complete provider coverage.
+
 ## Usage provider overview — validation pending, 2026-10-26
 
 The candidate usage view now lists provider names and partial/unknown coverage
