@@ -1,5 +1,7 @@
 ## Candidate anchor hover failure — 2026-10-26
 
+SDK desktop-host work: an opt-in Plan usage page now shares the existing T3 menu source between Dock and Wingpanel, via a provisional C/Vala boundary. On a local ARM Ubuntu 26.04 VM with isolated synthetic data, the actual shared menu source passed hosted and dock-mode usage display, page switching and closed-read checks; neighboring indicators were stubs. Full Wingpanel/Dock build, installation, live desktop validation and GTK compatibility on the elementary target remain open. See `sdk-status-host/README.md`.
+
 ARM SDK run 40416161840 at 26a71f7 passed the candidate usage anchor interaction suite, including unpinned pointer exit, plus package lifecycle. The retained synthetic fixture receipt is `sdk-tests/receipts/2026-10-26-usage-anchor-final-pass/`; actual status-host integration and target acceptance remain open.
 
 ARM run 40415797379 at 7fa281f passed the candidate usage anchor synthetic hover travel, pin, outside dismissal and keyboard interactions, and package lifecycle; see `sdk-tests/receipts/2026-10-26-usage-anchor-pass/`. This does not qualify an installed desktop host. An added explicit unpinned pointer-leave check is pending.

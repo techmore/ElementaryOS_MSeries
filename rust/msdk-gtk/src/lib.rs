@@ -15,5 +15,6 @@ pub mod services;
 pub mod usage;
 pub mod usage_anchor;
 pub mod usage_control;
+pub mod usage_ffi;
 
 mod panel;

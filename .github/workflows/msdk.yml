@@ -9,6 +9,9 @@ on:
       - "rust/claude-pantheon-rs/sdk/**"
       - "rust/mseries-greeter/data/greeter.ui.json"
       - "mseries/sdk-tests/**"
+      - "mseries/sdk-status-host/**"
+      - "mseries/dock-taskbar/TaskbarT3RPopover.vala"
+      - "mseries/codexbar-wingpanel/JsonBoundary.vala"
       - "mseries/sdk-bench/**"
       - ".github/workflows/msdk.yml"
   push:
@@ -17,6 +20,9 @@ on:
       - "rust/msdk/**"
       - "rust/msdk-gtk/**"
       - "mseries/sdk-tests/**"
+      - "mseries/sdk-status-host/**"
+      - "mseries/dock-taskbar/TaskbarT3RPopover.vala"
+      - "mseries/codexbar-wingpanel/JsonBoundary.vala"
       - "mseries/sdk-bench/**"
       - ".github/workflows/msdk.yml"
 
@@ -48,7 +54,7 @@ jobs:
           PYTHON
           sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update
           sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 install -y --no-install-recommends cargo rustc rustfmt rust-clippy \
-            build-essential pkg-config libgtk-4-dev libwayland-dev libwayland-bin \
+            build-essential pkg-config valac libgtk-4-dev libgranite-7-dev libjson-glib-dev libwayland-dev libwayland-bin \
             xvfb xauth dbus-x11 at-spi2-core dpkg-dev desktop-file-utils appstream python3-jsonschema python3-pyatspi python3-dbus xdotool x11-utils
       - uses: actions/cache@v6
         with:
@@ -96,6 +102,46 @@ jobs:
           cargo clippy --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --all-targets -- -D warnings
           MSDK_PRIVATE_TEST_BUS=1 XDG_DATA_HOME="$RUNNER_TEMP/sdk-state" GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
             cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --test lifecycle --test runtime --test cli --test usage --test codexbar -- --test-threads=1
+      - name: C host SDK usage boundary
+        run: |
+          cargo build --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --lib
+          cc -Wall -Wextra -Werror mseries/sdk-tests/usage-host-abi.c \
+            -I "$RUNNER_TEMP/sdk/msdk-gtk/include" $(pkg-config --cflags --libs gtk4) \
+            -L "$CARGO_TARGET_DIR/debug" -lmsdk_gtk -Wl,-rpath,"$CARGO_TARGET_DIR/debug" \
+            -o "$RUNNER_TEMP/usage-host-abi"
+          printf '#!/bin/sh\nprintf x >> "%s"\necho "{}"\n' "$RUNNER_TEMP/usage-host-read" > "$RUNNER_TEMP/usage-host-fixture"
+          chmod 700 "$RUNNER_TEMP/usage-host-fixture"
+          GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
+            "$RUNNER_TEMP/usage-host-abi" "$RUNNER_TEMP/usage-host-fixture" "$RUNNER_TEMP/usage-host-read"
+          mkdir -p "$RUNNER_TEMP/vala-output"
+          valac --directory "$RUNNER_TEMP/vala-output" --pkg gtk4 --vapidir mseries/sdk-status-host --pkg msdk-usage \
+            -X "-I$RUNNER_TEMP/sdk/msdk-gtk/include" -X "-L$CARGO_TARGET_DIR/debug" -X -lmsdk_gtk \
+            -X "-Wl,-rpath,$CARGO_TARGET_DIR/debug" -o "$RUNNER_TEMP/usage-vala-host" mseries/sdk-status-host/UsagePage.vala mseries/sdk-tests/usage-vala-host.vala
+          rm -f "$RUNNER_TEMP/usage-host-read"
+          GSK_RENDERER=cairo xvfb-run -a dbus-run-session -- \
+            "$RUNNER_TEMP/usage-vala-host" "$RUNNER_TEMP/usage-host-fixture" "$RUNNER_TEMP/usage-host-read"
+      - name: Shared desktop status menu with SDK usage
+        run: |
+          mkdir -p "$RUNNER_TEMP/status-home/.local/bin" "$RUNNER_TEMP/status-home/.config" "$RUNNER_TEMP/status-home/.cache" "$RUNNER_TEMP/vala-output"
+          cat > "$RUNNER_TEMP/status-home/.local/bin/codexbar-linux" <<'SCRIPT'
+          #!/bin/sh
+          printf x >> "$HOME/reads"
+          now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          printf '{"schemaVersion":1,"entries":[{"provider":"codex","updatedAt":"%s","windows":[{"key":"week","label":"7 day","remaining":75,"resetsAt":""}]}]}\n' "$now"
+          SCRIPT
+          chmod 700 "$RUNNER_TEMP/status-home/.local/bin/codexbar-linux"
+          valac --directory "$RUNNER_TEMP/vala-output" --define MSDK_STATUS_HOST --pkg gtk4 --pkg granite-7 --pkg json-glib-1.0 --pkg gio-unix-2.0 \
+            --vapidir mseries/sdk-status-host --pkg msdk-usage \
+            -X "-I$RUNNER_TEMP/sdk/msdk-gtk/include" -X "-L$CARGO_TARGET_DIR/debug" -X -lmsdk_gtk -X "-Wl,-rpath,$CARGO_TARGET_DIR/debug" \
+            -o "$RUNNER_TEMP/status-host-integration" mseries/sdk-status-host/UsagePage.vala \
+            mseries/dock-taskbar/TaskbarT3RPopover.vala mseries/codexbar-wingpanel/JsonBoundary.vala \
+            mseries/sdk-tests/status-host-stubs.vala mseries/sdk-tests/status-host-integration.vala
+          for mode in wingpanel dock; do
+            rm -f "$RUNNER_TEMP/status-home/reads"
+            HOME="$RUNNER_TEMP/status-home" XDG_CONFIG_HOME="$RUNNER_TEMP/status-home/.config" XDG_CACHE_HOME="$RUNNER_TEMP/status-home/.cache" \
+              GSETTINGS_BACKEND=memory GTK_A11Y=none G_DEBUG=fatal-criticals GSK_RENDERER=cairo \
+              xvfb-run -a dbus-run-session -- "$RUNNER_TEMP/status-host-integration" "$RUNNER_TEMP/status-home/reads" "$mode"
+          done
       - name: Capture candidate usage rows for review
         run: |
           cargo build --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --examples
