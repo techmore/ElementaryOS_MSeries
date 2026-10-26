@@ -2,13 +2,16 @@
 """Universal dark mode for ElementaryOS_MSeries: one switch for Pantheon, GTK 3/4, libadwaita,
 Flatpak apps (through the settings portal) and Chromium-based browsers (which follow the portal).
 
-  mseries-dark-mode status | on | off | toggle | auto | sun | schedule [sun | START END] [--dry-run]
+  mseries-dark-mode status [--json]
+  mseries-dark-mode appearance light|dark|auto
+  mseries-dark-mode on|off|toggle|auto|tick|sun|schedule [sun | START END] [--dry-run]
 
-`auto` is the macOS-style cut-over: by default dark from sunset to sunrise, using the coordinates the
-desktop already stores for Night Light (override with `location LAT LON`). `schedule START END` uses
-fixed times instead. `auto` only acts when the day/night state changes, so a manual `on`/`off`/`toggle`
-sticks until the next sunrise or sunset. It also books a one-shot timer for that next transition. Pantheon keeps the choice in AccountsService (PrefersColorScheme: 0 none, 1 dark, 2 light) and
-mirrors it to org.gnome.desktop.interface color-scheme; both are set so the change is immediate.
+Automatic mode is the macOS-style cut-over: by default dark from sunset to sunrise, using the
+coordinates the desktop already stores for Night Light (override with `location LAT LON`).
+`schedule START END` uses fixed times instead. Light and Dark stay fixed until Automatic is chosen.
+The status command reports both the selected mode and the effective appearance. Pantheon keeps the
+choice in AccountsService (PrefersColorScheme: 0 none, 1 dark, 2 light) and mirrors it to
+org.gnome.desktop.interface color-scheme; both are set so the change is immediate.
 Display brightness, refresh rate and power are never touched.
 """
 import datetime
@@ -18,7 +21,7 @@ import os
 import subprocess
 import sys
 
-DEFAULTS = {"mode": "sun", "start": "19:00", "end": "07:00"}
+DEFAULTS = {"mode": "sun", "start": "19:00", "end": "07:00", "appearance": "auto"}
 CONF = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "mseries/dark-mode.json")
 ACCOUNTS = ("org.freedesktop.Accounts", f"/org/freedesktop/Accounts/User{os.getuid()}",
             "io.elementary.pantheon.AccountsService")
@@ -29,11 +32,26 @@ def sh(*cmd):
 
 
 def load():
+    had_appearance = False
     try:
         with open(CONF) as f:
-            return {**DEFAULTS, **json.load(f)}
+            saved = json.load(f)
+            cfg = {**DEFAULTS, **saved}
+            had_appearance = "appearance" in saved
     except (OSError, ValueError):
-        return dict(DEFAULTS)
+        cfg = dict(DEFAULTS)
+    if cfg["mode"] not in ("sun", "fixed"):
+        cfg["mode"] = "sun"
+    if cfg["appearance"] not in ("auto", "light", "dark"):
+        cfg["appearance"] = "auto"
+    # Older versions let a manual on/off override the last scheduled result until
+    # the next transition. Preserve that choice when migrating the old config.
+    if not had_appearance:
+        previous_auto = state_get()
+        if previous_auto in ("light", "dark") and current() != previous_auto:
+            cfg["appearance"] = current()
+            cfg["_legacy_override"] = True
+    return cfg
 
 
 def current():
@@ -49,6 +67,8 @@ def pantheon_value():
 
 def apply(mode, dry):
     pref, scheme = (1, "prefer-dark") if mode == "dark" else (2, "prefer-light")
+    if not dry:
+        sh("systemctl", "--user", "stop", "mseries-dark-mode-next.timer")
     steps = [
         ("AccountsService", ["busctl", "--system", "set-property", *ACCOUNTS, "PrefersColorScheme", "i", str(pref)]),
         ("gsettings", ["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme]),
@@ -61,7 +81,7 @@ def apply(mode, dry):
         if r.returncode:
             print(f"warning: {name} failed: {r.stderr.strip()}", file=sys.stderr)
     if not dry:
-        print(f"Dark mode {'on' if mode == 'dark' else 'off'} (apps follow within a moment).")
+        print(f"Applied {mode.title()} appearance (apps follow within a moment).")
 
 
 def coordinates(cfg):
@@ -131,7 +151,7 @@ def save(cfg, dry):
     if not dry:
         os.makedirs(os.path.dirname(CONF), exist_ok=True)
         with open(CONF, "w") as f:
-            json.dump(cfg, f)
+            json.dump({key: value for key, value in cfg.items() if not key.startswith("_")}, f)
 
 
 def minutes(text):
@@ -140,45 +160,168 @@ def minutes(text):
 
 
 def wanted(now, start, end):
+    return fixed_plan(now, start, end)[0]
+
+
+def fixed_plan(now, start, end):
+    """Return the scheduled appearance and its next transition for a local time window."""
     n, s, e = now.hour * 60 + now.minute, minutes(start), minutes(end)
-    return "dark" if (s <= n < e if s < e else n >= s or n < e) else "light"
+    today = now.date()
+    tomorrow = today + datetime.timedelta(days=1)
+
+    def at(day, minute):
+        return datetime.datetime.combine(
+            day, datetime.time(minute // 60, minute % 60), tzinfo=now.tzinfo
+        )
+
+    if s == e:
+        return "dark", None
+    if s < e:
+        if s <= n < e:
+            return "dark", at(today, e)
+        if n < s:
+            return "light", at(today, s)
+        return "light", at(tomorrow, s)
+    if n >= s:
+        return "dark", at(tomorrow, e)
+    if n < e:
+        return "dark", at(today, e)
+    return "light", at(today, s)
+
+
+def schedule_plan(cfg, now=None):
+    now = now or datetime.datetime.now().astimezone()
+    if cfg["mode"] == "sun":
+        coords = coordinates(cfg)
+        if coords:
+            return sun_state(now, *coords)
+    return fixed_plan(now, cfg["start"], cfg["end"])
+
+
+def schedule_label(cfg):
+    return "sunset to sunrise" if cfg["mode"] == "sun" else f"{cfg['start']}–{cfg['end']}"
+
+
+def clock_label(value):
+    return value.strftime("%I:%M %p").lstrip("0")
+
+
+def status_data(cfg):
+    appearance = current()
+    target, next_change = schedule_plan(cfg)
+    mode = cfg["appearance"]
+    mode_label = "Automatic" if mode == "auto" else "Manual"
+    summary = f"{appearance.title()} · {mode_label}"
+    if next_change:
+        next_appearance = "light" if target == "dark" else "dark"
+        next_text = f"{next_appearance.title()} at {clock_label(next_change)}"
+    else:
+        next_appearance = None
+        next_text = "next change unavailable"
+    if mode == "auto":
+        detail = f"Following {schedule_label(cfg)}; next change: {next_text}."
+    elif appearance == target:
+        detail = f"Fixed {appearance}; the {schedule_label(cfg)} schedule is paused."
+    else:
+        detail = f"Fixed {appearance}; the schedule would switch to {next_text}."
+    return {
+        "appearance": appearance,
+        "mode": mode,
+        "schedule": cfg["mode"],
+        "schedule_label": schedule_label(cfg),
+        "automatic_target": target,
+        "next_appearance": next_appearance,
+        "next_at": next_change.isoformat() if next_change else None,
+        "summary": summary,
+        "detail": detail,
+    }
+
+
+def print_status(cfg, as_json=False):
+    data = status_data(cfg)
+    if as_json:
+        print(json.dumps(data, ensure_ascii=False))
+    else:
+        print(f"Current appearance: {data['appearance'].title()}")
+        print(f"Selected mode: {'Automatic' if data['mode'] == 'auto' else data['mode'].title()}")
+        print(data["detail"])
+
+
+def apply_schedule(cfg, dry):
+    if cfg["appearance"] != "auto":
+        if cfg.get("_legacy_override"):
+            target, next_change = schedule_plan(cfg)
+            if target == state_get():
+                if not dry:
+                    print("Keeping the previous manual appearance until the next scheduled change.")
+                return
+            cfg.pop("_legacy_override", None)
+            cfg["appearance"] = "auto"
+            save(cfg, dry)
+        else:
+            if not dry:
+                print("Automatic schedule is paused; selected mode is %s." % cfg["appearance"].title())
+            else:
+                print("would keep the selected %s appearance (automatic schedule is paused)" % cfg["appearance"])
+            return
+    target, next_change = schedule_plan(cfg)
+    if dry:
+        print(f"would apply {target} appearance" if current() != target else f"would keep {target} appearance")
+    else:
+        sh("systemctl", "--user", "stop", "mseries-dark-mode-next.timer")
+        if current() != target:
+            apply(target, False)
+        state_set(target)
+    if next_change and not dry:
+        sh("systemd-run", "--user", "--quiet", "--unit=mseries-dark-mode-next", "--collect",
+           f"--on-calendar={next_change + datetime.timedelta(seconds=5):%Y-%m-%d %H:%M:%S}",
+           os.path.realpath(sys.argv[0]), "tick")
 
 
 def main(argv):
     dry = "--dry-run" in argv
-    args = [a for a in argv if a != "--dry-run"]
+    as_json = "--json" in argv
+    args = [a for a in argv if a not in ("--dry-run", "--json")]
     cmd = args[0] if args else "status"
     cfg = load()
     if cmd == "status":
-        pv = {0: "no preference", 1: "dark", 2: "light"}.get(pantheon_value(), "unknown")
-        sched = "sunset-sunrise" if cfg["mode"] == "sun" else f"{cfg['start']}-{cfg['end']}"
-        print(f"apps see: {current()}  |  Pantheon preference: {pv}  |  schedule: {sched}")
+        print_status(cfg, as_json)
     elif cmd in ("on", "off"):
-        apply("dark" if cmd == "on" else "light", dry)
+        mode = "dark" if cmd == "on" else "light"
+        cfg["appearance"] = mode
+        save(cfg, dry)
+        apply(mode, dry)
     elif cmd == "toggle":
-        apply("light" if current() == "dark" else "dark", dry)
-    elif cmd in ("auto", "sun"):
-        coords = coordinates(cfg) if cfg["mode"] == "sun" else None
-        nxt = None
-        if cfg["mode"] == "sun" and coords:
-            want, nxt = sun_state(datetime.datetime.now().astimezone(), *coords)
+        mode = "light" if current() == "dark" else "dark"
+        cfg["appearance"] = mode
+        save(cfg, dry)
+        apply(mode, dry)
+    elif cmd == "appearance":
+        if len(args) != 2 or args[1] not in ("light", "dark", "auto"):
+            print("usage: mseries-dark-mode appearance light|dark|auto", file=sys.stderr)
+            return 2
+        cfg["appearance"] = args[1]
+        save(cfg, dry)
+        if args[1] == "auto":
+            apply_schedule(cfg, dry)
         else:
-            want = wanted(datetime.datetime.now(), cfg["start"], cfg["end"])
-        if cmd == "sun":
-            print(f"{want} now; next change {nxt:%a %H:%M}" if nxt else f"{want} now")
-            return 0
-        last = state_get()
-        if want != last or dry:
-            if want != last:
-                apply(want, dry)
-            else:
-                print(f"would keep {want} (already decided)")
-            if not dry:
-                state_set(want)
-        if nxt and not dry:
-            sh("systemd-run", "--user", "--quiet", "--unit=mseries-dark-mode-next", "--collect",
-               f"--on-calendar={nxt + datetime.timedelta(seconds=5):%Y-%m-%d %H:%M:%S}",
-               os.path.realpath(sys.argv[0]), "auto")
+            apply(args[1], dry)
+        if not dry:
+            print_status(cfg)
+    elif cmd == "auto":
+        cfg["appearance"] = "auto"
+        save(cfg, dry)
+        apply_schedule(cfg, dry)
+        if not dry:
+            print_status(cfg)
+    elif cmd == "tick":
+        apply_schedule(cfg, dry)
+    elif cmd == "sun":
+        want, nxt = schedule_plan(cfg)
+        if nxt:
+            print(f"{want} now; next change {clock_label(nxt)}")
+        else:
+            print(f"{want} now; next change unavailable")
     elif cmd == "location":
         cfg = {**load(), "lat": float(args[1]), "lon": float(args[2])}
         save(cfg, dry)
@@ -187,15 +330,17 @@ def main(argv):
         if len(args) == 3:
             for t in args[1:]:
                 minutes(t)
-            cfg = {**load(), "mode": "fixed", "start": args[1], "end": args[2]}
+            cfg = {**load(), "mode": "fixed", "start": args[1], "end": args[2], "appearance": "auto"}
             save(cfg, dry)
         elif len(args) == 2 and args[1] == "sun":
-            cfg = {**load(), "mode": "sun"}
+            cfg = {**load(), "mode": "sun", "appearance": "auto"}
             save(cfg, dry)
-        if cfg["mode"] == "sun":
-            print("Dark from sunset to sunrise when `auto` runs.")
         else:
-            print(f"Dark from {cfg['start']} to {cfg['end']} when `auto` runs.")
+            print("usage: mseries-dark-mode schedule sun|START END", file=sys.stderr)
+            return 2
+        apply_schedule(cfg, dry)
+        if not dry:
+            print_status(cfg)
     else:
         print(__doc__)
         return 2

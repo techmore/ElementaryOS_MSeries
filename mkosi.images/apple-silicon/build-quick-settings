@@ -37,6 +37,7 @@ if [[ ! -s "$build_dir/src/libquick-settings.so" ]]; then
     exit 1
 fi
 install -D -m 0644 "$build_dir/src/libquick-settings.so" "$DESTDIR/$plugin"
+install -D -m 0755 "$SRCDIR/mseries/dark-mode/mseries-dark-mode" "$DESTDIR/usr/bin/mseries-dark-mode"
 
 python3 "$SRCDIR/mseries/panel/record-artifact" --root "$DESTDIR" \
     --pins "$SRCDIR/mseries/panel-factory-pins.json" --name quick-settings --commit "$source_commit"

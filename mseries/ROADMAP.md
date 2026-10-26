@@ -1,10 +1,45 @@
-## Quick Settings light/dark control — 2026-10-25
+## Owner-priority SDK/T3 qualification queue — 2026-10-25
 
-The top toggle-grid dark-mode tile is now an explicit Light/Dark choice in a
-dedicated Appearance card in Quick Settings. The card follows Elementary's
-shared color-scheme setting and is included by the desktop, package and factory
-source-preparation paths. Pinned plugin build and isolated state/write/sync
-probe pass. Source only; install, next-login load and visual acceptance remain.
+- #596: first qualify native T3 token monitoring and RepoBar-derived GitHub
+  overview; separate source/account/freshness and provide real SDK adapters.
+  [Source audit](SDK-AUDIT-2026-10-23.md#2026-10-25-t3-monitoring-and-sdk-qualification-addendum)
+  and [observable gates](APP-BUILDING-GUIDE.md#t3-priority-slice-and-sdk-qualification-gates).
+- #593: GUI/Dock usability, lifecycle and both requested modes; owner mode
+  terminology remains unresolved and must not be silently narrowed.
+- #595: Shiplog native integration into existing T3 Activity, not another bar
+  plugin; compare with closed #588 before claiming new/upstream parity.
+- #594: source-pinned Cua/Omarchy computer-use investigation and permissioned
+  SDK boundary; no live enablement.
+- techmore/rupert#543 / #544: Nanbeige4.3-33B SER8 capacity/runtime feasibility,
+  then Rupert adapter/quality/safety evaluation. Investigation issues only.
+
+SDK discovery smoke lists all six actual starters; installed native T3's
+offline first frame succeeds. Neither proves the monitoring slice, a completed
+SDK app/package, moderate-model usability, or owner acceptance. Preserve
+Signal/Messages deferral and qualified release promotion through `dev`.
+
+## Quick Settings appearance and stacked network rates — 2026-10-25
+
+Light/Dark/Automatic now live in the Quick Settings Appearance card, backed
+by the existing appearance helper and its manual-versus-scheduled mode.
+The installer retires the old standalone menu-bar module. Native Quick Settings
+and network builds installed; owner-requested Wingpanel reload activated the
+replacement. Download/upload rates are stacked vertically. The production
+appearance widget passed Automatic → Dark → Automatic against the installed
+backend under Xvfb. Owner visual acceptance remains open.
+
+## Next organization priority: SDK/spec completion — 2026-10-25
+
+Use #535 as the central acceptance track: a moderate LLM must be able to use
+the authoritative SDK/spec alone to build a complete, polished native app.
+Consolidate existing contracts and runnable reference flows; define behavioral
+and visual gates and retain evidence from an actual model-built app without
+expert rescue. SDK completeness, not directory tidiness, is the outcome.
+Keep per-component migration in the candidate lane until parity is proven.
+Integrate qualified batches into `dev`; promote a tested release to `main`.
+Close issues on explicit acceptance criteria, not PR merge alone. Standardize
+implemented/verified/merged/installed/loaded/accepted states and component-owned
+removal so obsolete launchers, services and panel modules cannot survive cutover.
 
 ## Apple Dev toolchain status follows current upstream — 2026-10-25
 

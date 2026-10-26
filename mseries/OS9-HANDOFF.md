@@ -1,16 +1,78 @@
-## Quick Settings appearance choices — 2026-10-25 (Codex)
+## Appearance integration qualification — 2026-10-26
 
-Moved the dark-mode tile out of the top toggle grid and added explicit Light/Dark
-choices in a dedicated Appearance card. The selection follows changes to
-Elementary's shared color-scheme setting. Desktop, package and factory builds
-use the shared source-preparation path; the factory enhancement payload now
-includes the widget source.
+Reconciled the live-cutover branch with current `dev`: retained the shared
+Light/Dark/Automatic backend, manual scheduling semantics, standalone-indicator
+retirement and stacked network rates. Preserved explicit accessible labels and
+tooltips for all three choices rather than reverting to direct setting writes
+that bypass schedule control. Kept the source audit and owner-priority queue;
+superseded source-only appearance notes do not replace loaded-runtime evidence.
 
-Verified: source-preparation regression tests (5/5), full pinned Quick Settings
-Meson/Ninja build, and an isolated Xvfb probe covering initial selection,
-button writes and external setting changes. No plugin installed and Wingpanel
-was not reloaded, so the running desktop has not changed. Next: review and merge
-the PR after CI; then load at next login and get owner visual acceptance.
+Verification: the complete prepared Quick Settings plugin rebuilt successfully.
+A mapped native-widget smoke read the installed backend, showed three enabled
+choices with exactly one selected and checked tooltips without changing the
+desktop's appearance. This integration pass did not reload the live panel or
+claim new owner visual acceptance.
+
+## T3/SDK audit and owner-priority issue queue — 2026-10-25
+
+Audited native T3 versus its separate SDK-hosted executable; current findings
+are in [SDK audit addendum](SDK-AUDIT-2026-10-23.md#2026-10-25-t3-monitoring-and-sdk-qualification-addendum).
+Corrected the mandatory SDK/app-building guides: `msdk new` exists for
+description/gates/README starters; complete app/backend/package generation
+and `gen`/`pack`/`parity` are not established. Added observable behavior,
+freshness/identity, real-adapter, visual/accessibility, lifecycle and
+moderate-model qualification gates.
+
+Owner priority is token monitoring and RepoBar GitHub overview, not completing
+all chat first. #596 tracks this slice. Source findings include stale/unknown
+server quota presentation/recommendation risks, issue-centric native GitHub
+support rather than RepoBar PR/CI/release parity, and missing SDK monitoring
+feeds. No T3 implementation changes or completion claims in this audit.
+
+Filed open issues: #593 GUI/Dock usability in both requested modes (terminology
+awaits clarification), #594 Cua/Omarchy computer-use research and #595 native
+Shiplog integration reusing existing Activity/#588. Linked direction to #535.
+Rupert investigations are in its own repo: techmore/rupert#543 Nanbeige4.3-33B
+SER8 feasibility and #544 adapter/answer-quality/fallback evaluation; no model
+download, host change or production deployment performed.
+
+Observed smoke: `cargo run -q -p msdk -- templates` succeeds (six starters).
+Installed native T3 offline/Xvfb first-frame command prints 135 ms; binary is
+not source-matched and this proves startup only. No live monitoring, SDK-port
+flow, model trial or T3 visual/accessibility acceptance was run.
+Panel follow-through: Quick Settings package 0mseries4 built with the helper
+and declared runtime dependencies; extracted helper `status --json` succeeds.
+Production network-widget smoke reads live counters and renders two lines at
+50×25; Appearance light/dark 320px previews reviewed. Loaded Wingpanel maps
+show the replacement Quick Settings/network modules and no appearance module.
+
+## Live Quick Settings appearance cutover and stacked network rates — 2026-10-25
+
+Quick Settings now owns Light/Dark/Automatic using the existing deployed
+`mseries-dark-mode appearance` backend, including schedule status. Reused the
+appearance worktree's backend/service/installer so manual selection pauses
+the timer rather than being overwritten. Status and changes run asynchronously;
+the status refresh timer runs only while the widget is mapped.
+
+The Quick Settings installer retires `libmseries-appearance.so` after building
+the replacement, retaining a rollback copy outside the indicator directory.
+Installed and explicitly reloaded `pantheon-wingpanel.service` at owner request;
+the new Quick Settings module was present and the standalone module absent
+from the running process maps. Network rates now use two compact lines,
+download above upload; the network installer handles the systemd-owned panel.
+
+Verification: full native Quick Settings and network builds/installations passed.
+The production Appearance widget was exercised under Xvfb against the installed
+backend: Automatic → Dark → Automatic, restoring the original mode.
+Desktop-wide Light/Brave/Flatpak follow-through and owner visual acceptance
+remain separate checks. No kernel, bootloader or audio changes.
+
+Owner's next organization priority: finish the authoritative SDK/spec path so a
+moderate LLM can build complete, high-quality apps. Track contracts, runnable
+reference flows, visual/behavioral gates and model-built app evidence under #535;
+do not substitute repository tidying or a broad rewrite for that outcome.
+Component lifecycle must distinguish merged, installed, loaded and accepted,
+with removal covering files, services, launchers, runtime state and reinstall paths.
 
 ## Apple Dev upstream compatibility refresh — 2026-10-25 (Codex)
 
