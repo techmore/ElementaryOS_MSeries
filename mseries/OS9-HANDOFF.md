@@ -1,3 +1,17 @@
+## Quick Settings appearance choices — 2026-10-25 (Codex)
+
+Moved the dark-mode tile out of the top toggle grid and added explicit Light/Dark
+choices in a dedicated Appearance card. The selection follows changes to
+Elementary's shared color-scheme setting. Desktop, package and factory builds
+use the shared source-preparation path; the factory enhancement payload now
+includes the widget source.
+
+Verified: source-preparation regression tests (5/5), full pinned Quick Settings
+Meson/Ninja build, and an isolated Xvfb probe covering initial selection,
+button writes and external setting changes. No plugin installed and Wingpanel
+was not reloaded, so the running desktop has not changed. Next: review and merge
+the PR after CI; then load at next login and get owner visual acceptance.
+
 ## Apple Dev upstream compatibility refresh — 2026-10-25 (Codex)
 
 The linked `joshuaswarren/omarchy-apple-dev` repository is at `9e9ec1f4`.

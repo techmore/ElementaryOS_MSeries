@@ -22,6 +22,21 @@ class SourcePreparationTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(HELPER, (ROOT / name).read_text())
 
+    def test_appearance_uses_an_explicit_light_dark_card(self):
+        source = (ROOT / 'mseries/quick-settings/Appearance.vala').read_text()
+        prepare = (ROOT / HELPER).read_text()
+        layout = (ROOT / 'mseries/patches/quick-settings-layout.patch').read_text()
+        self.assertIn('Appearance.vala', prepare)
+        self.assertIn('Gtk.ToggleButton.with_label (_("Light"))', source)
+        self.assertIn('Gtk.ToggleButton.with_label (_("Dark"))', source)
+        self.assertIn('settings.changed["color-scheme"]', source)
+        self.assertIn('appearance.add_row (new Appearance ())', layout)
+        self.assertIn('-            toggle_box.append (darkmode_button);', layout)
+
+    def test_factory_payload_includes_appearance_widget(self):
+        text = (ROOT / 'mseries/enhance.sh').read_text()
+        self.assertIn('quick-settings/Appearance.vala', text)
+
     def test_desktop_preserves_its_extra_sources(self):
         text = (ROOT / 'mseries/install-quick-settings-brightness.sh').read_text()
         for token in ('ShareState ShareClient SharePanel', 'AirDropPanel.vala',
