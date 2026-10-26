@@ -1,3 +1,14 @@
+## Usage provider marks and scrolling fixture — validation pending, 2026-10-26
+
+The candidate usage component can use existing CodexBar symbolic provider marks
+when present and always retains a readable provider label when absent. The
+synthetic preview now includes two Codex accounts, two Claude accounts, one
+Grok and one OpenCode account in a bounded scroll viewport. The CI fixture
+stages existing project icon assets in an isolated data directory and captures
+top and bottom in light/dark Sans 10/15; a native regression checks multiple
+accounts and scroll range. Source-matched GTK build/test, captures and visual
+review remain pending. No provider adapter, real account or host is involved.
+
 ## Usage card refinement review — 2026-10-26
 
 Hosted ARM SDK run 40395621853 passed on dd96c00, including native widget

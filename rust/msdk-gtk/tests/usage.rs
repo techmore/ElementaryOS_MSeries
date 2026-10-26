@@ -110,4 +110,74 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
             .any(|value| value == "7 day: 75% remaining")
     );
     assert!(stale_text.iter().any(|value| value == "Reset unknown"));
+
+    let mut many = Vec::new();
+    for (provider, display, count) in [
+        ("codex", "Codex", 2),
+        ("claude", "Claude", 2),
+        ("grok", "Grok", 1),
+        ("opencode", "OpenCode", 1),
+    ] {
+        for index in 0..count {
+            let mut item = snapshot.observations[0].clone();
+            item.scope.provider = provider.into();
+            item.scope.account = Some(format!("fixture-{index}"));
+            item.provider_label = display.into();
+            item.account_label = Some(format!("{display} account {index}"));
+            item.selected = index == 0;
+            many.push(item);
+        }
+    }
+    let view = msdk_gtk::usage::render(
+        &Snapshot {
+            coverage: Coverage::Partial,
+            observations: many,
+        },
+        150,
+    )
+    .unwrap();
+    let mut all_text = Vec::new();
+    labels(view.upcast_ref(), &mut all_text);
+    for expected in [
+        "Codex account 1",
+        "Claude account 1",
+        "Grok account 0",
+        "OpenCode account 0",
+    ] {
+        assert!(
+            all_text
+                .iter()
+                .any(|value| value == expected || value == &format!("{expected} · Selected"))
+        );
+    }
+    let scroll = gtk::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .vscrollbar_policy(gtk::PolicyType::Automatic)
+        .child(&view)
+        .build();
+    let window = gtk::Window::builder()
+        .default_width(360)
+        .default_height(300)
+        .child(&scroll)
+        .build();
+    window.present();
+    let context = gtk::glib::MainContext::default();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    while scroll.vadjustment().upper() <= scroll.vadjustment().page_size()
+        && std::time::Instant::now() < deadline
+    {
+        context.iteration(false);
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let adjustment = scroll.vadjustment();
+    assert!(
+        adjustment.upper() > adjustment.page_size(),
+        "long content must scroll"
+    );
+    adjustment.set_value(adjustment.upper() - adjustment.page_size());
+    assert!(
+        adjustment.value() > 0.0,
+        "the last provider must be reachable by scrolling"
+    );
+    window.close();
 }

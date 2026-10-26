@@ -27,6 +27,25 @@ fn label(text: &str) -> gtk::Label {
     label
 }
 
+// Match the optional marks installed by the existing CodexBar package. Keep
+// the provider label visible whether or not that package or icon exists.
+fn provider_mark(provider: &str) -> Option<gtk::Image> {
+    let icon = match provider {
+        "codex" => "mseries-codexbar-openai-symbolic",
+        "claude" => "mseries-codexbar-claude-symbolic",
+        "grok" => "mseries-codexbar-grok-symbolic",
+        "opencode" | "opencodego" => "mseries-codexbar-opencode-symbolic",
+        _ => return None,
+    };
+    let display = gtk::gdk::Display::default()?;
+    if !gtk::IconTheme::for_display(&display).has_icon(icon) {
+        return None;
+    }
+    let image = gtk::Image::from_icon_name(icon);
+    image.set_pixel_size(18);
+    Some(image)
+}
+
 fn state_text(state: State) -> &'static str {
     match state {
         State::Loading => "Loading",
@@ -126,9 +145,14 @@ pub fn render(snapshot: &Snapshot, now: i64) -> Result<gtk::Box, SnapshotError> 
     for group in groups {
         let card = gtk::Box::new(gtk::Orientation::Vertical, 6);
         card.add_css_class("usage-card");
+        let header = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        if let Some(mark) = provider_mark(group.provider) {
+            header.append(&mark);
+        }
         let heading = label(group.label);
         heading.add_css_class("usage-provider");
-        card.append(&heading);
+        header.append(&heading);
+        card.append(&header);
         let source = label(group.source_label);
         source.add_css_class("usage-detail");
         card.append(&source);

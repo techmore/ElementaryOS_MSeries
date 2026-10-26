@@ -47,23 +47,83 @@ fn main() {
             state: State::Stale,
             ..base.clone()
         };
+        let codex = Observation {
+            scope: Scope {
+                provider: "codex".into(),
+                account: Some("fixture-three".into()),
+                ..base.scope.clone()
+            },
+            provider_label: "Codex".into(),
+            account_label: Some("Primary account".into()),
+            ..base.clone()
+        };
+        let codex_other = Observation {
+            scope: Scope {
+                account: Some("fixture-four".into()),
+                ..codex.scope.clone()
+            },
+            account_label: Some("Second account".into()),
+            selected: false,
+            ..codex.clone()
+        };
+        let grok = Observation {
+            scope: Scope {
+                provider: "grok".into(),
+                account: Some("fixture-five".into()),
+                ..base.scope.clone()
+            },
+            provider_label: "Grok".into(),
+            account_label: Some("Grok account".into()),
+            selected: false,
+            state: State::Unknown,
+            windows: vec![Window {
+                key: "week".into(),
+                label: "7 day".into(),
+                quota: None,
+            }],
+            ..base.clone()
+        };
+        let opencode = Observation {
+            scope: Scope {
+                provider: "opencode".into(),
+                account: Some("fixture-six".into()),
+                ..base.scope.clone()
+            },
+            provider_label: "OpenCode".into(),
+            account_label: Some("OpenCode account".into()),
+            selected: false,
+            state: State::Unavailable,
+            windows: vec![],
+            ..base.clone()
+        };
         let snapshot = Snapshot {
             coverage: Coverage::Partial,
-            observations: vec![base, other],
+            observations: vec![base, other, codex, codex_other, grok, opencode],
         };
         let content = msdk_gtk::usage::render(&snapshot, 150).expect("synthetic snapshot is valid");
         content.set_margin_top(12);
         content.set_margin_bottom(12);
         content.set_margin_start(12);
         content.set_margin_end(12);
+        let scroll = gtk::ScrolledWindow::builder()
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .vscrollbar_policy(gtk::PolicyType::Automatic)
+            .child(&content)
+            .build();
         let window = gtk::ApplicationWindow::builder()
             .application(app)
             .title("Usage preview")
             .default_width(480)
             .default_height(500)
-            .child(&content)
+            .child(&scroll)
             .build();
         window.present();
+        if std::env::var_os("MSDK_USAGE_SCROLL_END").is_some() {
+            let adjustment = scroll.vadjustment();
+            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(900), move || {
+                adjustment.set_value(adjustment.upper() - adjustment.page_size());
+            });
+        }
         let app = app.clone();
         let path = output.clone();
         let failed = outcome.clone();
