@@ -1,3 +1,20 @@
+## Follow-up: running apps after Work Mode transitions — 2026-10-26
+
+The owner reported open windows disappearing after the duplicate-pin repair.
+The initial live mode round trip had disconnected the dock and silently fallen
+back to stock; checking settings/pins alone had missed this. Protocol evidence
+identified negative window geometry during taskbar -> floating relayout.
+`dock-mode-geometry.patch` now measures and sets the new layout size and shadow
+together. The actual dock survives four isolated nested-Wayland transitions
+with a fixture app tracked throughout, then correctly removes it on close.
+
+Final native build installed and dock alone reloaded. Live read-only
+`io.elementary.dock.items.ListRunningApps` reports nine running apps; 11 unique
+pins remain, no fallback marker, Windows Work Mode active. See the updated
+[detailed receipt](dock-tests/receipts/2026-10-26-work-mode-duplicates.md) for
+loaded binary identity, commands and limits. Owner visual acceptance remains
+open. No further live mode switching after the owner's disruption report.
+
 ## Duplicate dock icons and immediate Work Mode exit — 2026-10-26
 
 Owner clarified the icon defect as duplicates; Windows Work Mode here is the

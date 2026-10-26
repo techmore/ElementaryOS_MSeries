@@ -6,7 +6,11 @@ Repaired complete dock patch composition and made Exit Windows Work Mode apply
 immediately through the existing Desktop Mode helper. Production regression,
 full native build and light/dark launcher interaction checks pass. See
 [detailed evidence](dock-tests/receipts/2026-10-26-work-mode-duplicates.md).
-Broader #593 acceptance and owner visual review remain open.
+Also fixed negative Wayland geometry on taskbar -> floating transitions, which
+had triggered stock-dock fallback and lost running-app matching. Actual dock
+passes isolated Wayland open/close + four-transition lifecycle checks; final
+loaded dock reports nine running apps. Broader #593 acceptance and owner visual
+review remain open.
 
 ## Owner-priority SDK/T3 qualification queue — 2026-10-25
 

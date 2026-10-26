@@ -63,3 +63,23 @@
          string[] new_pinned_ids = {};
 
          for (uint i = 0; i < apps_store.get_n_items (); i++) {
+--- a/src/DBus/ItemInterface.vala
++++ b/src/DBus/ItemInterface.vala
+@@ -13,6 +13,17 @@
+         AppSystem.get_default ().remove_app_by_id (app_id);
+     }
+
++    // Read-only runtime diagnostics: pins alone do not prove window tracking.
++    public string[] list_running_apps () throws DBusError, IOError {
++        string[] ids = {};
++        var apps = AppSystem.get_default ().apps;
++        for (uint i = 0; i < apps.get_n_items (); i++) {
++            var app = (App) apps.get_item (i);
++            if (app.running) ids += app.app_info.get_id ();
++        }
++        return ids;
++    }
++
+     public string[] list_launchers () throws DBusError, IOError {
+         return AppSystem.get_default ().list_launchers ();
+     }

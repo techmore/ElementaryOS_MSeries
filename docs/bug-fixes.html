@@ -45,8 +45,10 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere}body{overflow-wrap:break-word}im
 <p><strong>2026-10-26 — duplicate app icons / Windows Work Mode:</strong>
 Dock initialization now runs once across layout remaps, and existing duplicate
 pins are normalized while preserving app order. The taskbar Exit Windows Work
-Mode action applies desktop restoration immediately. Full native build and
-isolated light/dark launcher interaction checks pass; owner visual acceptance
+Mode action applies desktop restoration immediately. Fixed invalid Wayland geometry during mode changes that triggered stock-dock
+fallback and lost running-app matching. Full native build, isolated light/dark
+launcher checks and a nested Wayland app lifecycle/transition trial pass; the
+loaded customized dock reports running apps again. Owner visual acceptance
 remains open. <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/dock-tests/receipts/2026-10-26-work-mode-duplicates.md">Evidence and deployment status</a>.</p>
 <h2>Historical fixes</h2>
 <p>These entries record what changed at the time. For current Touch ID, kernel and screenshot status, use the table above; old boot failures and retention behavior are not the current state.</p>

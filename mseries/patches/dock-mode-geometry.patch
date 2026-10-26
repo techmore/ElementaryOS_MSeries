@@ -1,0 +1,44 @@
+--- a/src/MainWindow.vala
++++ b/src/MainWindow.vala
+@@ -371,25 +371,22 @@
+         update_taskbar_width ();
+
+         surface.compute_size.connect ((surface, size) => {
+-            // manually set shadow width since the additional margin we add to avoid icons clipping when
+-            // bouncing isn't added by default and instead counts to the frame
+-            if (taskbar_mode) {
+-                // The flush taskbar has no floating shadow. Shadow insets derived from a
+-                // surface that grew (e.g. while the Start menu lays out) produced a negative
+-                // window-geometry height, a fatal xdg_surface invalid_size error in smithay.
+-                // Frame exactly the bar (full monitor width, bottom TaskbarRow.HEIGHT px) so the
+-                // compositor sets it flush; clamp so the geometry is always at least 1x1.
+-                var side = int.max (0, (surface.width - int.min (taskbar_width, surface.width)) / 2);
+-                // GTK keeps the same margin below the content as at the sides.
+-                var bottom = int.min (side, int.max (0, surface.height - TaskbarRow.HEIGHT));
+-                var top = int.max (0, surface.height - TaskbarRow.HEIGHT - bottom);
+-                size.set_shadow_width (side, side, top, bottom);
+-                return;
+-            }
+-            var item_manager_width = get_content_width ();
+-            var shadow_size = (surface.width - item_manager_width) / 2;
+-            var top_margin = TOP_MARGIN + shadow_size - 1;
+-            size.set_shadow_width (shadow_size, shadow_size, top_margin, shadow_size);
++            // Measure the NEW layout and set its size and shadow together. The
++            // surface still reports the OLD allocation during a mode change;
++            // reusing it can send negative xdg_surface window geometry.
++            int minimum, width, height;
++            measure (Gtk.Orientation.HORIZONTAL, -1, out minimum, out width, null, null);
++            width = int.max (1, width);
++            measure (Gtk.Orientation.VERTICAL, width, out minimum, out height, null, null);
++            height = int.max (1, height);
++            size.set_size (width, height);
++            var content_width = int.max (1, int.min (get_content_width (), width));
++            var side = int.max (0, (width - content_width) / 2);
++            var bottom = int.min (side, int.max (0, height - 1));
++            var top = taskbar_mode
++                ? int.max (0, height - TaskbarRow.HEIGHT - bottom)
++                : int.min (TOP_MARGIN + side - 1, int.max (0, height - bottom - 1));
++            size.set_shadow_width (side, side, int.max (0, top), bottom);
+         });
+
+         surface.layout.connect ((surface, width, height) => {

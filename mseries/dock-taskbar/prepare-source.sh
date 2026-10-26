@@ -35,6 +35,7 @@ sha256sum "$source_dir/src/Taskbar.vala" "$source_dir/src/StartMenu.vala" \
   "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala > "$source_dir/.mseries-preserved.sha256"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-unique-launchers.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/dock-mode-geometry.patch"
 git -C "$source_dir" apply --unidiff-zero "$repo/mseries/patches/dock-launcher-binding-lifecycle.patch"
 # Attach T3's existing local-feed dropdown to its launcher in both Dock layouts.
 git -C "$source_dir" apply "$repo/mseries/patches/dock-taskbar-t3r-popup.patch"
