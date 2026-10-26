@@ -1,3 +1,14 @@
+## Candidate usage preview review — 2026-10-26
+
+Hosted ARM developer-path run 40395051297 passed on edf7a4e, including native
+widget-tree regression and four synthetic usage screenshots. Review found the
+candidate too flat versus the CodexBar reference: provider/account hierarchy is
+weak, stale is repeated, and large-text wrapping is awkward. Images and scoped
+findings are in sdk-tests/receipts/2026-10-26-usage-preview. The candidate is
+not visually accepted; provider marks, compact hierarchy, interaction/scrolling,
+hosts and real adapters remain open. The earlier d4bd990 compile failure is
+retained above; the Rust orientation fix passed in this run.
+
 ## Candidate usage GTK compile repair — 2026-10-26
 
 Developer-path run 40394710018 failed compiling d4bd990 because the candidate
