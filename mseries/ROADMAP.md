@@ -1,3 +1,13 @@
+## Golden-path fixture validation — 2026-10-26
+
+On dbf4eee, hosted ARM SDK/System Monitor run 40392327560 passed. SDK
+Developer-path run 40392328090 attempt 1 failed because the generated app's
+accessibility root was not observed within the probe timeout. Attempt 2 passed,
+including that probe and the native runtime version-mismatch fixture/no-fallback
+regression, then package lifecycle. The first failure is retained; its cause is
+unknown and one retry does not establish that the probe is reliable. This tests
+SDK extension negotiation, not an OS backend protocol or a timed novice trial.
+
 ## Golden-path version injection — validation pending, 2026-10-26
 
 Fixture files may specify an SDK extension `api_version` to exercise a visible
