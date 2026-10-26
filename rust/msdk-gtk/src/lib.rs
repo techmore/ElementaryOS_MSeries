@@ -13,5 +13,6 @@ pub mod fixture;
 pub mod render;
 pub mod services;
 pub mod usage;
+pub mod usage_control;
 
 mod panel;

@@ -97,3 +97,10 @@ process, invalidates queued results and marks retained fresh observations stale.
 The callback reports idle, refreshing, updated and failed states for a host to
 present. Source age is rechecked at final delivery; the controller does not
 schedule polling, install status controls, authenticate or enumerate accounts.
+
+`msdk_gtk::usage_control::UsageControl` wraps the candidate viewport and
+on-demand monitor with a refresh button, spinner and status. The host calls
+`open` when its popup is shown and `close` when dismissed; opening requests one
+snapshot, repeated opens do not duplicate it, and unmapping or dropping the
+control cancels owned work. It does not install or select a desktop host,
+schedule background polling, manage accounts, or implement provider actions.

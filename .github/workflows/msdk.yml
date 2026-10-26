@@ -98,7 +98,9 @@ jobs:
             cargo test --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --test lifecycle --test runtime --test cli --test usage --test codexbar -- --test-threads=1
       - name: Capture candidate usage rows for review
         run: |
-          cargo build --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --example usage_preview
+          cargo build --manifest-path "$RUNNER_TEMP/sdk/Cargo.toml" -p msdk-gtk --examples
+          printf '#!/bin/sh\nprintf invalid-json\n' > "$RUNNER_TEMP/usage-fixture-failure"
+          chmod 700 "$RUNNER_TEMP/usage-fixture-failure"
           icons="$RUNNER_TEMP/usage-data/icons/hicolor/scalable/apps"
           mkdir -p "$icons"
           for provider in openai claude grok opencode; do
@@ -119,6 +121,9 @@ jobs:
               XDG_DATA_HOME="$RUNNER_TEMP/usage-data" XDG_CONFIG_HOME="$config" GTK_THEME="$theme" GSK_RENDERER=cairo MSDK_USAGE_SCROLL_END=1 \
                 xvfb-run -a dbus-run-session -- \
                   "$CARGO_TARGET_DIR/debug/examples/usage_preview" "$RUNNER_TEMP/sdk-evidence/usage-$mode-$points-end.png"
+              XDG_DATA_HOME="$RUNNER_TEMP/usage-data" XDG_CONFIG_HOME="$config" GTK_THEME="$theme" GSK_RENDERER=cairo \
+                xvfb-run -a dbus-run-session -- \
+                  "$CARGO_TARGET_DIR/debug/examples/usage_control_preview" "$RUNNER_TEMP/sdk-evidence/usage-error-$mode-$points.png" "$RUNNER_TEMP/usage-fixture-failure"
             done
           done
       - name: Package, install, reinstall and remove the generated app

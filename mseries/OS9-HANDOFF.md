@@ -1,3 +1,13 @@
+## Usage refresh control — native validation pending, 2026-10-26
+
+A candidate embeddable UsageControl exposes refresh, spinner and status around
+the on-demand monitor. Explicit open starts one read; repeated open does not
+start another, and close/unmap/drop cancel owned work. Native synthetic tests
+exercise success, malformed-output failure and retry; the CI preview captures
+failure state in light/dark at two text sizes. GTK execution and visual review
+are pending. Actual status hosts, keyboard/AT-SPI interaction, real collector
+and accounts remain unqualified; no panel or service was restarted.
+
 ## On-demand usage refresh validation — 2026-10-26
 
 Hosted ARM SDK developer-path run 40401954793 passed on ee9cd5e after the

@@ -423,5 +423,65 @@ fn usage_rows_preserve_accounts_and_do_not_show_expired_quota_as_live() {
             2
         );
         monitor.close();
+
+        let control = msdk_gtk::usage_control::UsageControl::new(
+            &snapshot,
+            1_767_225_600,
+            executable.clone(),
+            0,
+        )
+        .unwrap();
+        assert!(!control.refresh_button().is_sensitive());
+        control.open().unwrap();
+        control.open().unwrap();
+        assert!(!control.refresh_button().is_sensitive());
+        assert_eq!(control.status_label().text(), "Refreshing usage…");
+        let deadline = std::time::Instant::now() + Duration::from_secs(4);
+        while control.status_label().text() != "Refresh complete"
+            && std::time::Instant::now() < deadline
+        {
+            main.iteration(false);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert_eq!(control.status_label().text(), "Refresh complete");
+        assert!(control.refresh_button().is_sensitive());
+        assert_eq!(
+            std::fs::read_to_string(&marker).unwrap(),
+            "xxxx",
+            "repeated open must not duplicate reads"
+        );
+        std::fs::write(&executable, format!("#!/bin/sh\nprintf x >> '{safe_marker}'\nprintf 'synthetic-private-error' >&2\nprintf 'not-json'\n")).unwrap();
+        control.refresh_button().emit_clicked();
+        let deadline = std::time::Instant::now() + Duration::from_secs(4);
+        while control.status_label().text() != "Couldn't refresh usage"
+            && std::time::Instant::now() < deadline
+        {
+            main.iteration(false);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert_eq!(control.status_label().text(), "Couldn't refresh usage");
+        assert!(control.refresh_button().is_sensitive());
+        let mut failure_text = Vec::new();
+        labels(control.widget().upcast_ref(), &mut failure_text);
+        assert!(failure_text.iter().any(|value| value == "Stale"));
+        assert!(
+            !failure_text
+                .iter()
+                .any(|value| value.contains("synthetic-private-error"))
+        );
+        std::fs::write(&executable, &script).unwrap();
+        control.refresh_button().emit_clicked();
+        let deadline = std::time::Instant::now() + Duration::from_secs(4);
+        while control.status_label().text() != "Refresh complete"
+            && std::time::Instant::now() < deadline
+        {
+            main.iteration(false);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert_eq!(control.status_label().text(), "Refresh complete");
+        assert_eq!(std::fs::read_to_string(&marker).unwrap(), "xxxxxx");
+        control.close();
+        assert!(!control.refresh_button().is_sensitive());
+        assert_eq!(control.status_label().text(), "Usage not open");
     }
 }
