@@ -403,6 +403,7 @@ jobs:
           cd rust
           cargo build --release -p claude-pantheon-rs
           cargo test --release -p claude-pantheon-rs --lib
+          python3 -B -m unittest discover -s ../mseries/fleet-shepherd/tests
       # Upstream moves daily; a drift here is a note to run scripts/refresh-contracts.sh, not a red build.
       - name: Contracts drift against pingdotgg/t3code main (advisory)
         continue-on-error: true

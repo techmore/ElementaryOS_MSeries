@@ -23,3 +23,12 @@ This is a source review and owner direction, **not an implemented Fleet port**.
 Next: finish/install the unified dock menu first, then build the native remote
 connector flow using fixtures before connecting real machines. No SSH, remote
 configuration, Herdr/OMP installation or remote command was run in this review.
+
+## Native follow-through
+
+The source-only review above is superseded for implementation status by
+[`mseries/fleet-shepherd/README.md`](../../fleet-shepherd/README.md): native
+Remote Machines, explicit connector list/add/remove, bounded read-only refresh
+and an interactive terminal route are now implemented. Collector/license,
+downstream cancellation adaptation and isolated real-adapter/GTK evidence are
+retained there. Live SSH compatibility and owner acceptance remain open.
