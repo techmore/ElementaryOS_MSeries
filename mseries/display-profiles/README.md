@@ -51,3 +51,21 @@ Gala falls back to its own saved single-monitor layout, which can differ from yo
 the monitor attached, 1.5 after unplugging). Save the layout you want with only the built-in display attached
 (`mseries-display-profiles save laptop-only`, or "Save layout as profile" in Display Settings); the watcher then
 re-applies it after an unplug. The watcher also logs how long Gala took to drop the external output.
+
+## October 26, 2026 restore correction
+
+The live J314S watcher had been sending `ApplyMonitorsConfig` with a malformed
+GVariant signature, so laptop-only restoration after unplug and saved layout
+application failed before Gala could apply anything. Each logical-monitor
+tuple needs its own properties dictionary, followed by the method-level
+dictionary. The repository source and the owner's installed copy now use that
+signature.
+
+The owner's saved dock profile was for an Insignia TV, while the recorded dock
+monitor is an AOC 24E2QA. The private profile store now has a separate
+identity-matched AOC profile at 1920x1080/60, plus a laptop-only layout matching
+the current built-in 3024x1964/120 mode and 1.25 scale. The settings are backed
+up locally. The watcher is running the corrected code, but the current wip3
+kernel session lost its DP tunnel after five DCP target-validation timeouts, so
+the next cable/port recovery is still needed before a live layout application
+or unplug/restoration cycle can be qualified.

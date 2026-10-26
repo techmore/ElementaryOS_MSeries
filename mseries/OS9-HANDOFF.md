@@ -1,3 +1,36 @@
+## J314S monitor restoration incident — 2026-10-26
+
+Owner reports the WD22TB4 monitor does not restore while connected. Live host
+is `7.2.11-elementary-aurora72-wip3`; `boltctl` sees the WD22TB4 authorized at
+40 Gb/s, but Gala exposes only `eDP-1` and all external DRM connectors report
+`disconnected`. The DP tunnel routed through `dpin0`, then DCP target `0:0`
+validation timed out five times (`-110`); the kernel tore down `0:5 <-> 1:14`
+and logged `display teardown failed: -110`. This is a kernel/tunnel failure,
+not a display layout that can currently be restored in userspace. Historical
+wip3 evidence says changing physical USB-C ports restored one prior incident;
+the owner confirms the current cable is in rear-left, near the hinge. Requested
+moving to front-left or right to restore the link without changing boot state.
+
+The active `mseries-display-profiles` watcher also had an independent confirmed
+bug: its `ApplyMonitorsConfig` GVariant signature omitted the per-logical-monitor
+properties dictionary. The live API reported the expected signature and every
+prior unplug restoration failed with that mismatch. Corrected the repository
+and installed user-local watcher; restarted only that watcher (no Wingpanel or
+compositor restart). Its private profile store was backed up at
+`~/.cache/mseries-display-profiles-backup-20261026-071246`, then updated to
+preserve the observed built-in 3024x1964/120 at scale 1.25, restore the AOC
+24E2QA (`RJLRCHA019923`) dock monitor at 1920x1080/60, and keep the existing
+Insignia profile separate. This follows the saved profile identity schema and
+the prior owner-confirmed monitor evidence.
+
+**Not yet verified:** a live ApplyMonitorsConfig request, visible picture,
+unplug restoration, or repeated recovery. The current DP tunnel is down; do not
+mark monitor restore fixed based on userspace configuration alone. The wip3
+boot selection and kernel were not changed. Next: recover the picture on an
+available physical USB-C port, confirm the owner sees the desktop, then exercise
+one plug/unplug/restore cycle and keep repeating only if it fails. A different
+kernel/boot payload decision is a separate owner-gated recovery.
+
 ## Appearance integration qualification — 2026-10-26
 
 Reconciled the live-cutover branch with current `dev`: retained the shared

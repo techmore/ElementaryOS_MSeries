@@ -112,7 +112,12 @@ def read_state(b):
 
 def apply_config(b, serial, logical):
     from gi.repository import GLib
-    dc_call(b, "ApplyMonitorsConfig", GLib.Variant("(uua(iiduba(ssa{sv}))a{sv})", (serial, 1, logical, {})))
+    # MonitorsConfig has an a{sv} properties dictionary inside each logical
+    # monitor tuple, followed by the method-level properties dictionary.
+    # Omitting the inner dictionary makes every restore fail with a signature
+    # mismatch on current Mutter/Gala DisplayConfig implementations.
+    dc_call(b, "ApplyMonitorsConfig", GLib.Variant("(uua(iiduba(ssa{sv})a{sv})a{sv})",
+                                                    (serial, 1, logical, {})))
 
 
 def load():
