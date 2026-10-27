@@ -1,3 +1,72 @@
+## J314S monitor restoration incident — 2026-10-26
+
+Owner reported the WD22TB4 monitor did not restore while connected. Live host
+is `7.2.11-elementary-aurora72-wip3`; `boltctl` sees the WD22TB4 authorized at
+40 Gb/s, but Gala exposed only `eDP-1` and all external DRM connectors were
+`disconnected`. The DP tunnel routed through `dpin0`, then DCP target `0:0`
+validation timed out five times (`-110`); the kernel tore down `0:5 <-> 1:14`
+and logged `display teardown failed: -110`. This was a kernel/tunnel failure,
+not a display layout that userspace could restore. The cable was in rear-left,
+near the hinge. After moving to front-left, the owner reports the picture
+returned. DRM shows `card2-DP-2 connected/enabled`; Gala identifies AOC
+`24E2QA`, serial `RJLRCHA019923`, at 1920x1080/60, position (2420, 0), scale
+1.0. Kernel DCP `289c00000` (dcpext0), PHY 1, routed through dpin0. This is one
+successful alternate-port recovery, not a same-port or repeated-cycle pass.
+
+The open wip4 candidate PR #533 contains patch 0002 for this DCP failure class:
+a timed-out DPTX pipeline is held off and stale tunnel ownership is released.
+The retained wip3 incident report confirms same-port replug can hit the pinned
+DCP again, while another physical port recovered. The patch is build-checked but
+not booted on hardware; it prevents pinning on a subsequent request but does not
+reroute the already-failed plug in place. A wip4 trial and repeated
+plug/unplug qualification remain necessary before calling the kernel path
+durable.
+
+The active `mseries-display-profiles` watcher had an independent confirmed bug:
+its `ApplyMonitorsConfig` GVariant signature omitted the per-logical-monitor
+properties dictionary. Prior unplug restores failed with that mismatch. After
+fixing the signature, the first AOC profile attempt exposed a second shape
+error: each logical-monitor tuple also lacked its own final properties
+dictionary. Both are corrected in source and the installed user-local watcher;
+only the watcher was restarted (no Wingpanel/compositor restart). Its XDG desktop
+autostart entry is enabled and its process is running under the user session. At
+07:33 EDT, `mseries-display-profiles apply aoc-dock` returned success; Gala reported
+the saved AOC layout at 1920x1080/60, x=2419, scale 1.0, while DP-2 stayed connected.
+This proves the repaired D-Bus call can apply the saved profile. The private profile
+store was backed up at
+`~/.cache/mseries-display-profiles-backup-20261026-071246`, then updated to
+preserve the current built-in 3024x1964/120 at scale 1.25, restore the AOC dock
+monitor at 1920x1080/60, and keep the Insignia profile separate.
+
+At 07:43 EDT the owner ran one same-front-left cable cycle. On unplug Gala dropped
+the external output in 0.3 s and the watcher applied `laptop-only` successfully.
+On reconnect, `289c00000` allocated PHY 1, routed the Thunderbolt DP tunnel through
+`dpin0`, and modeset 1920x1080/60 without the previous DPTX timeout; the owner
+confirmed a visible picture. However, the EDID sysfs node was empty and Gala
+identified the output as `Apple:DP-2:Unknown`, so the old watcher did not match
+`aoc-dock`. The owner profile now records the known AOC-to-DP-2 association as a
+fallback only for that connector when the monitor identity is missing. The matcher
+then selected `aoc-dock`; a manual apply restored its saved x=2419 layout. Up to
+six attempts with explicit retry/failure logging are now in the installed watcher.
+Eight profile tests pass. At 07:52 EDT, a second same-front-left cycle passed with
+the revised watcher: unplug applied `laptop-only`; reconnect restored `aoc-dock`
+automatically despite the empty EDID, with DP-2 at 1920x1080/60 and x=2419. This
+qualifies the profile restore for two observed front-left cycles, including one after
+the fix, but does not resolve the kernel's rear-left DCP timeout. WIP4 and upstream
+review are complete, and the offline candidate and rollback are staged pending
+approval for an attended hardware trial. Do not claim permanent recovery yet. No
+boot state changed.
+
+Read-only WIP4 deployment audit after the display pass: all four entries in the
+private bundle's `inputs/SHA256SUMS` verify. The staged `boot.bin.rollback`
+SHA-256 (`9c9c2d01…`) matches the live `/boot/m1n1/boot.bin` byte-for-byte;
+`uname -r` remains wip3, GRUB `next_entry` is empty, `.20` is still persistent
+default, and `/boot` has 102 MB free. WIP4 is not installed or armed. These checks
+confirm staging/fallback identity, not a WIP4 boot or recovery result. The candidate
+kernel package declares 154,996 KB installed size and only `kmod` as a dependency;
+its control archive contains no maintainer scripts. Root has 21 GB free, and the
+staged 33 MB kernel plus 24 MB initramfs fit within current `/boot` headroom.
+
 ## Unified MSeries maintenance update — 2026-10-26
 
 Current `dev` is `04fe68e613a78634fad7dfb4a632719187f18f67` after PR #607; PR #606
