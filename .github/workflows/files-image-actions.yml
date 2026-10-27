@@ -26,6 +26,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
       - name: Parse every utility and probe source
         run: python3 -c 'import ast, pathlib; [ast.parse(p.read_text(), filename=str(p)) for p in pathlib.Path("mseries/image-actions").glob("*.py")]'
       - name: Install native runtime and isolated display
