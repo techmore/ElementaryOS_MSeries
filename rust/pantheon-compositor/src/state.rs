@@ -116,6 +116,8 @@ pub struct PantheonCompositor {
     pub activation_policy: ActivationPolicy,
     /// When the user last pressed a key; xdg-activation waits while they type.
     pub last_key_press: Option<std::time::Instant>,
+    /// Key whose press got a synthetic Shift in a terminal (see terminal_keys).
+    pub terminal_shift_key: Option<u32>,
     deferred_activations: usize,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
@@ -497,6 +499,7 @@ impl PantheonCompositor {
                 std::env::var("PANTHEON_ACTIVATION_POLICY").ok().as_deref(),
             ),
             last_key_press: None,
+            terminal_shift_key: None,
             deferred_activations: 0,
             session_lock_state,
             session_locked: false,
