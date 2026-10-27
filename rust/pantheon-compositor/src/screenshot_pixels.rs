@@ -64,7 +64,8 @@ where
     R: smithay::backend::renderer::ImportAll
         + smithay::backend::renderer::ImportMem
         + smithay::backend::renderer::Offscreen<smithay::backend::renderer::gles::GlesTexture>
-        + ExportMem,
+        + ExportMem
+        + crate::corner_render::CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     if state.session_locked {
@@ -213,7 +214,8 @@ pub fn process_request<R>(
     R: smithay::backend::renderer::ImportAll
         + smithay::backend::renderer::ImportMem
         + smithay::backend::renderer::Offscreen<smithay::backend::renderer::gles::GlesTexture>
-        + ExportMem,
+        + ExportMem
+        + crate::corner_render::CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     use std::sync::atomic::Ordering;

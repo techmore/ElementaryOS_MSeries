@@ -15,9 +15,10 @@
 //! [`popup_under`] is the matching hit test, so a popup that now draws above a
 //! neighbour also receives the pointer instead of the neighbour it covers.
 
+use crate::corner_render::{Clipper, RoundedClip};
 use smithay::{
     backend::renderer::{
-        ImportAll, Renderer,
+        ImportAll, Renderer, Texture,
         element::{
             AsRenderElements, Kind,
             surface::{WaylandSurfaceRenderElement, render_elements_from_surface_tree},
@@ -71,16 +72,20 @@ fn popup_offset(
 /// Render elements for `output`, top-most first: every popup of every mapped window,
 /// then every toplevel. Windows outside the output are skipped. An output that is not
 /// mapped to the space yields no elements, like `space_render_elements`.
+///
+/// With a `clipper` (the built-in output), popups are clipped to the popover corner radius
+/// and toplevels to the radii the corner policy gives their geometry.
 pub fn stacked_render_elements<R, C>(
     renderer: &mut R,
     space: &Space<Window>,
     output: &Output,
     alpha: f32,
+    clipper: Option<&Clipper<'_>>,
 ) -> Vec<C>
 where
     R: Renderer + ImportAll,
-    R::TextureId: Clone + 'static,
-    C: From<WaylandSurfaceRenderElement<R>>,
+    R::TextureId: Texture + Clone + 'static,
+    C: From<WaylandSurfaceRenderElement<R>> + From<RoundedClip<WaylandSurfaceRenderElement<R>>>,
 {
     let Some(output_geometry) = space.output_geometry(output) else {
         return Vec::new();
@@ -105,34 +110,54 @@ where
         for (popup, popup_location) in PopupManager::popups_for_surface(toplevel.wl_surface()) {
             let offset =
                 popup_offset(entry.window, &popup, popup_location).to_physical_precise_round(scale);
-            elements.extend(render_elements_from_surface_tree(
+            let tree: Vec<WaylandSurfaceRenderElement<R>> = render_elements_from_surface_tree(
                 renderer,
                 popup.wl_surface(),
                 location + offset,
                 scale,
                 alpha,
                 Kind::Unspecified,
-            ));
+            );
+            match clipper {
+                Some(clipper) => {
+                    let geometry = popup.geometry();
+                    let rect = Rectangle::new(
+                        entry.render_location
+                            + popup_offset(entry.window, &popup, popup_location)
+                            + geometry.loc,
+                        geometry.size,
+                    );
+                    elements.extend(clipper.wrap(tree, rect, clipper.popup_radii(rect)));
+                }
+                None => elements.extend(tree.into_iter().map(C::from)),
+            }
         }
     }
 
     for entry in &visible {
         let location = physical_location(entry);
-        match entry.window.toplevel() {
-            Some(toplevel) => elements.extend(render_elements_from_surface_tree(
+        let tree: Vec<WaylandSurfaceRenderElement<R>> = match entry.window.toplevel() {
+            Some(toplevel) => render_elements_from_surface_tree(
                 renderer,
                 toplevel.wl_surface(),
                 location,
                 scale,
                 alpha,
                 Kind::Unspecified,
-            )),
-            // `Window::render_elements` only delegates to the X11 surface here.
-            None => elements.extend(
-                entry
-                    .window
-                    .render_elements::<C>(renderer, location, scale, alpha),
             ),
+            // `Window::render_elements` only delegates to the X11 surface here.
+            None => entry
+                .window
+                .render_elements(renderer, location, scale, alpha),
+        };
+        match clipper {
+            Some(clipper) => {
+                let geometry = entry.window.geometry();
+                let rect = Rectangle::new(entry.render_location + geometry.loc, geometry.size);
+                let radii = clipper.toplevel_radii(entry.window, rect);
+                elements.extend(clipper.wrap(tree, rect, radii));
+            }
+            None => elements.extend(tree.into_iter().map(C::from)),
         }
     }
     elements
