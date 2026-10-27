@@ -258,10 +258,11 @@ Google sign-in and are separate from these local tests.
 
 ## Homeboard
 
-[Homeboard](https://tasks.stoverparc.org/board/)'s bridge keeps a dedicated
-**Homeboard** list in Evolution Data Server, so Homeboard tasks appear in the
-Tasks tab like any other list, with due dates, priority and project names; ticking
-or adding one here syncs to Homeboard within a few seconds. Install the bridge with
+[Homeboard](https://tasks.stoverparc.org/board/)'s bridge keeps one Evolution Data
+Server list per Homeboard project, plus a **Homeboard** list for tasks without a
+project. Homeboard tasks therefore appear in the Tasks tab (and in elementary Tasks)
+like any other list, with due dates, priority, project names and subtasks. Ticking,
+adding, moving or deleting one here syncs to Homeboard within a few seconds. Install the bridge with
 `bash mseries/install-homeboard-sync.sh` (pinned `techmore/homeboard` revision, or
 `HOMEBOARD_SOURCE=/path/to/checkout`; `--uninstall` removes it). It installs
 without the separate Homeboard indicator, starts in the background at login, is
@@ -269,8 +270,8 @@ restarted by the session if it exits, and is started on demand through D-Bus
 activation. Re-running the installer after a pin bump replaces the running bridge.
 The bridge backs off to at most 15 minutes while Homeboard is unreachable, reports
 a locked login keyring instead of waiting on it, and logs counts and failures (never
-task text or tokens) to the user journal. Deleting a Homeboard task in Tasks does
-not delete it on Homeboard; delete or archive it there. Details:
+task text or tokens) to the user journal. Deleting a Homeboard task in Tasks archives
+it on Homeboard, where it can be restored. Details:
 `linux/README.md` in `techmore/homeboard`.
 
 When the bridge is installed, a **Homeboard** strip sits above the composer:
