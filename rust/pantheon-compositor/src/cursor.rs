@@ -549,44 +549,27 @@ where
     let Some(region) = selected else {
         return Vec::new();
     };
-    let rect: Rectangle<i32, Logical> = Rectangle::new(
-        (region.x, region.y).into(),
-        (
-            region.width.min(i32::MAX as u32) as i32,
-            region.height.min(i32::MAX as u32) as i32,
-        )
-            .into(),
-    );
-    let scale = Scale::from(output.current_scale().fractional_scale());
+    use crate::screenshot::{self, Px};
+    let scale_f = output.current_scale().fractional_scale();
+    let scale = Scale::from(scale_f);
+    let rect = Px::from_region(region);
+    let area_px = Px::new(area.loc.x, area.loc.y, area.size.w, area.size.h);
     let mut elements = Vec::new();
-    for (index, border) in [
-        Rectangle::new(rect.loc, (rect.size.w, 3).into()),
-        Rectangle::new(
-            (rect.loc.x, rect.loc.y + rect.size.h - 3).into(),
-            (rect.size.w, 3).into(),
-        ),
-        Rectangle::new(rect.loc, (3, rect.size.h).into()),
-        Rectangle::new(
-            (rect.loc.x + rect.size.w - 3, rect.loc.y).into(),
-            (3, rect.size.h).into(),
-        ),
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        let Some(border) = border.intersection(area) else {
-            continue;
+    // Kept solid buffers are keyed by slot, so each piece has a fixed one.
+    let push = |slot: u8, r: Px, color: [f32; 4], elements: &mut Vec<CursorRenderElement<R>>| {
+        let Some(r) = r.intersect(area_px) else {
+            return;
         };
         let buffer = state.solid_buffers.get(
             &output.name(),
-            SolidSlot::Screenshot(index as u8),
-            border.size,
-            [0.21, 0.54, 0.9, 1.0],
+            SolidSlot::Screenshot(slot),
+            (r.w, r.h).into(),
+            color,
         );
         elements.push(
             SolidColorRenderElement::from_buffer(
                 &buffer,
-                (border.loc - area.loc)
+                Point::<i32, Logical>::from((r.x - area.loc.x, r.y - area.loc.y))
                     .to_f64()
                     .to_physical(scale)
                     .to_i32_round(),
@@ -596,6 +579,35 @@ where
             )
             .into(),
         );
+    };
+    let t = screenshot::border_thickness(scale_f);
+    // Front to back: label, white ring, dark ring, then the dimming outside.
+    let (width, height) = screenshot::physical_size(region, scale_f);
+    let (label_w, label_h) = {
+        let (bg, _) = screenshot::size_label(width, height, (0, 0));
+        (bg.w, bg.h)
+    };
+    let origin = screenshot::label_origin(rect, area_px, label_w, label_h);
+    if area_px
+        .intersect(Px::new(origin.0, origin.1, label_w, label_h))
+        .is_some()
+    {
+        let (bg, glyphs) = screenshot::size_label(width, height, origin);
+        for (i, g) in glyphs.into_iter().enumerate() {
+            push(13 + i as u8, g, [1.0, 1.0, 1.0, 1.0], &mut elements);
+        }
+        push(12, bg, [0.0, 0.0, 0.0, 0.75], &mut elements);
+    }
+    for (i, bar) in screenshot::ring_inside(rect, t).into_iter().enumerate() {
+        push(i as u8, bar, [1.0, 1.0, 1.0, 1.0], &mut elements);
+    }
+    for (i, bar) in screenshot::ring_outside(rect, 1).into_iter().enumerate() {
+        push(4 + i as u8, bar, [0.0, 0.0, 0.0, 0.6], &mut elements);
+    }
+    for (i, band) in screenshot::dim_bands(area_px, rect).into_iter().enumerate() {
+        if let Some(band) = band {
+            push(8 + i as u8, band, [0.0, 0.0, 0.0, 0.25], &mut elements);
+        }
     }
     elements
 }
@@ -623,6 +635,9 @@ where
             .map(|geometry| geometry.size),
     );
     elements.extend(render_cursor_elements(renderer, state, output));
+    // Selection feedback sits above windows and below the pointer. Capture
+    // starts only after the selection ends, so it never lands in the image.
+    elements.extend(render_screenshot_overlay(state, output));
     elements.extend(render_snap_assist_elements(renderer, state, output));
     if let (Some(animation), Some(area)) = (
         &state.gesture_animation,
