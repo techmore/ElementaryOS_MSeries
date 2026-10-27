@@ -67,6 +67,19 @@ bash mseries/install-work-mode.sh --uninstall
 The GSettings values and original state snapshot are retained on uninstall. The
 bottom dock uses elementary's existing dock package and pinned launchers.
 
+## Window buttons
+
+*Window buttons* in the panel (`window-buttons` key) sets GTK title-bar buttons
+while the Work Mode settings page is open. **Keep my layout** is the default, so
+the Mac-style buttons stay on the left (`close,minimize,maximize:`) in every mode.
+**Windows (right side)** is an explicit opt-in that puts minimize, maximize and
+close on the right (`:minimize,maximize,close`) while Work Mode is active.
+System Settings hides its own titlebar, so the panel supplies a header bar (drag
+area, back button and these window buttons), like the stock panels. Keeping the
+layout restores the GTK layout captured when the page was opened. The work-mode
+helper separately applies and restores the
+`org.gnome.desktop.wm.preferences button-layout` for other windows.
+
 ## Taskbar
 
 With the M-Series dock build (`mseries/patches/dock-taskbar.patch`), Windows Work Mode turns the dock
@@ -99,3 +112,7 @@ bash mseries/install-work-mode-icons.sh --uninstall
 The current `org.gnome.desktop.interface icon-theme` is snapshotted when the mode applies the theme
 and restored when the mode ends or on `--restore`. If the named theme is not installed, the icon theme
 is left alone.
+
+## Desktop mode switch
+
+`mseries-desktop-mode windows|elementary|toggle|status` (also the "Desktop Mode" launcher and its right-click actions) flips Windows Work Mode on or off immediately, with no logout. The taskbar Start menu's Power menu also has **Exit Windows Work Mode**, which calls the same desktop-mode helper to turn off the persistent mode switch and restore wallpaper and dock preferences immediately.

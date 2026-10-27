@@ -1,0 +1,104 @@
+name: Rust Pantheon Apple Dev
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev, main]
+    paths:
+      - "rust/mseries-pantheon-kit/**"
+      - "rust/mseries-apple-dev/**"
+      - "rust/Cargo.toml"
+      - "rust/Cargo.lock"
+      - ".github/workflows/rust-pantheon-apple-dev.yml"
+  pull_request:
+    paths:
+      - "rust/mseries-pantheon-kit/**"
+      - "rust/mseries-apple-dev/**"
+      - "rust/Cargo.toml"
+      - "rust/Cargo.lock"
+      - ".github/workflows/rust-pantheon-apple-dev.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Apple Dev test/build/package (arm64)
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/fast-apt
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config cargo rustc rustfmt rust-clippy \
+            libgtk-4-dev libgranite-7-dev libvte-2.91-gtk4-dev \
+            desktop-file-utils appstream xvfb dbus-x11
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: rust-pantheon-apple-dev-${{ runner.arch }}-${{ hashFiles('rust/Cargo.lock') }}
+          restore-keys: rust-pantheon-apple-dev-${{ runner.arch }}-
+
+      - name: Formatting and strict lint
+        run: |
+          cargo fmt --manifest-path rust/Cargo.toml -p mseries-pantheon-kit -p mseries-apple-dev --check
+          cargo clippy --manifest-path rust/Cargo.toml -p mseries-pantheon-kit -p mseries-apple-dev --locked -- -D warnings
+
+      - name: Unit tests
+        run: cargo test --manifest-path rust/Cargo.toml -p mseries-apple-dev --locked
+
+      - name: Build the Debian package
+        run: MSERIES_APPLE_DEV_OUTPUT_DIR="$RUNNER_TEMP/mseries-apple-dev" bash rust/mseries-apple-dev/build-deb.sh
+
+      - name: Validate desktop metadata
+        run: |
+          desktop-file-validate rust/mseries-apple-dev/data/org.techmore.mseries.AppleDev.desktop
+          appstreamcli validate --no-net rust/mseries-apple-dev/data/org.techmore.mseries.AppleDev.metainfo.xml
+
+      - name: Render current and stale SDK status in an isolated desktop
+        run: |
+          mkdir -p "$RUNNER_TEMP/apple-dev-preview"
+          dpkg-deb -x "$RUNNER_TEMP"/mseries-apple-dev/*.deb "$RUNNER_TEMP/apple-dev-preview"
+          bash rust/mseries-apple-dev/snapshot-sdk.sh \
+            "$RUNNER_TEMP/apple-dev-preview/usr/bin/mseries-apple-dev" "$RUNNER_TEMP/apple-dev-sdk-snapshots"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: apple-dev-sdk-snapshots-${{ github.run_id }}
+          path: ${{ runner.temp }}/apple-dev-sdk-snapshots/
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mseries-apple-dev-deb-${{ github.run_id }}
+          path: ${{ runner.temp }}/mseries-apple-dev/*.deb
+          if-no-files-found: error
+
+  upstream-regressions:
+    name: Pinned Apple toolkit offline regressions
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: joshuaswarren/omarchy-apple-dev
+          ref: 9e9ec1f44a5534070e8d1e2cad76344f232ec3a1
+          persist-credentials: false
+      - name: SDK stamp and Flutter regressions (no install or Apple account)
+        run: |
+          bash tests/sdk-state/check.sh
+          python3 -m unittest discover -s tests -p test_gen_info_plist.py
+          python3 -m unittest discover -s tests -p test_strip_frameworks.py

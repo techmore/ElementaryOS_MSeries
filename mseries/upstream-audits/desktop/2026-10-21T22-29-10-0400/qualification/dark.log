@@ -1,0 +1,4 @@
+/home/sdolbec/.codex/worktrees/dock-binding-dev/ElementaryOS_MSeries/mseries/dock-taskbar/../dock-tests/test-launcher-qualification.py:52: DeprecationWarning: Gio.DBusConnection.register_object is deprecated
+  connection.register_object('/org/freedesktop/portal/desktop', Gio.DBusNodeInfo.new_for_xml(xml).interfaces[0], call, None, None)
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering

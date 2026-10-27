@@ -1,0 +1,27 @@
+/* Disk Space. Colours come from the elementary theme; only the bar accents are ours. */
+@define-color ds_bar_accent @accent_color;
+@define-color ds_warn #d9791a;
+@define-color ds_full #c6262e;
+
+.ds-crumbs { padding: 0.25em 0.5em; }
+.ds-crumbs button { padding: 0.12em 0.5em; min-height: 1.5em; }
+.ds-crumb-current { font-weight: 600; }
+
+.ds-legend { padding: 0.35em 0.7em 0.6em; }
+.ds-sortbar { padding: 0.45em 0.7em; }
+.ds-actions { padding: 0.6em 0.7em; }
+.ds-selection { font-weight: 500; }
+.ds-status { padding: 0.3em 0.7em; }
+
+.ds-list { background: transparent; }
+.ds-row { padding: 0.4em 0.6em; }
+.ds-name { font-weight: 500; }
+.ds-size { font-weight: 600; font-feature-settings: "tnum"; }
+.ds-more { padding: 0.6em 0.7em; }
+
+.ds-side-row { padding: 0.3em 0.15em; }
+
+progressbar.ds-bar trough { min-height: 4px; border-radius: 2px; }
+progressbar.ds-bar progress { min-height: 4px; border-radius: 2px; background: @ds_bar_accent; }
+progressbar.ds-bar.ds-warn progress { background: @ds_warn; }
+progressbar.ds-bar.ds-full progress { background: @ds_full; }

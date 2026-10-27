@@ -51,6 +51,9 @@ impl SeatHandler for PantheonCompositor {
         let client = focused.and_then(|s| dh.get_client(s.id()).ok());
         set_data_device_focus(dh, seat, client.clone());
         set_primary_focus(dh, seat, client);
+        if let Some(surface) = focused {
+            self.clear_attention_for_focus(surface);
+        }
     }
 }
 
@@ -142,6 +145,30 @@ impl WaylandDndGrabHandler for PantheonCompositor {
 
 impl OutputHandler for PantheonCompositor {}
 
+//
+// Idle notify and idle inhibit
+//
+
+impl smithay::wayland::idle_notify::IdleNotifierHandler for PantheonCompositor {
+    fn idle_notifier_state(
+        &mut self,
+    ) -> &mut smithay::wayland::idle_notify::IdleNotifierState<Self> {
+        &mut self.idle_notifier_state
+    }
+}
+
+impl smithay::wayland::idle_inhibit::IdleInhibitHandler for PantheonCompositor {
+    fn inhibit(&mut self, surface: WlSurface) {
+        self.idle_inhibitors.insert(surface);
+        self.refresh_idle_inhibition();
+    }
+
+    fn uninhibit(&mut self, surface: WlSurface) {
+        self.idle_inhibitors.remove(&surface);
+        self.refresh_idle_inhibition();
+    }
+}
+
 impl SessionLockHandler for PantheonCompositor {
     fn lock_state(&mut self) -> &mut SessionLockManagerState {
         &mut self.session_lock_state
@@ -153,6 +180,8 @@ impl SessionLockHandler for PantheonCompositor {
         }
 
         self.cancel_active_gesture(smithay::backend::input::InputTime::now());
+        // Dismiss open menus so none stays on screen or keeps keys under the lock.
+        self.end_popup_grab_unless(None);
         let serial = smithay::utils::SERIAL_COUNTER.next_serial();
         self.seat.get_pointer().unwrap().unset_grab(
             self,
@@ -166,6 +195,9 @@ impl SessionLockHandler for PantheonCompositor {
         self.set_x11_keyboard_focus(None, serial);
         keyboard.set_focus(self, None, serial);
 
+        self.screenshot_selection.borrow_mut().cancel();
+        self.screenshot_requested.set(false);
+        self.screenshot_region.set(None);
         self.session_locked = true;
         self.lock_owner = Some(confirmation.ext_session_lock().id());
         self.lock_surfaces.clear();
@@ -187,6 +219,11 @@ impl SessionLockHandler for PantheonCompositor {
             .map(|output| output.name().to_string())
             .collect();
         self.lock_confirmation = Some(confirmation);
+        if self.displays_off {
+            // No frame will be shown while blanked; confirm the lock now.
+            self.lock_confirmation_outputs.clear();
+            self.finish_lock_confirmation_if_ready();
+        }
         #[cfg(feature = "native-drm")]
         self.request_native_redraw();
     }

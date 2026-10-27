@@ -6,29 +6,24 @@ name: Validate M-series wiring
 
 on:
   workflow_dispatch:
+  # No path filter: branch protection requires these jobs, and a skipped required
+  # check blocks the PR forever (e.g. Cargo.lock-only Dependabot bumps, #585).
   pull_request:
-    paths:
-      - "Justfile"
-      - "assemble-iso.sh"
-      - "mkosi.conf"
-      - "mkosi.images/**"
-      - "mkosi.conf.d/**"
-      - "mkosi.bump"
-      - "repos/**"
-      - "packages.arm64"
-      - "transform/**"
-      - "bin/**"
-      - "mseries/**"
-      - "docs/build-status.*"
-      - "docs/local-build-status.html"
-      - ".github/workflows/**"
+
+# New commits replace only checks for this workflow and PR. Publishing is not preempted.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   teams-web:
     name: Teams desktop launcher contracts
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install desktop integration test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi desktop-file-utils
       - name: Test without browsers, accounts or network
@@ -39,8 +34,11 @@ jobs:
   speech-release:
     name: English F5 release contracts (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install private GTK test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-ibus-1.0 gir1.2-atspi-2.0 dbus-x11 xvfb xauth
       - name: Verify source-only release, rollback and host checks
@@ -56,8 +54,11 @@ jobs:
   ui-scale:
     name: Size system ladder and Quick Settings text size (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native GTK and private D-Bus test dependencies
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-gi gsettings-desktop-schemas libglib2.0-bin dbus-x11 xvfb xauth
       - name: Planner, dock token and size-lint unit tests
@@ -75,8 +76,11 @@ jobs:
   bluetooth:
     name: Quick Settings Bluetooth controls (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native GTK and private D-Bus test dependencies
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-dbus python3-gi dbus-x11 xvfb xauth
       - name: Keep all Quick Settings builds on shared source preparation
@@ -91,8 +95,11 @@ jobs:
   native-ui-responsiveness:
     name: Native UI asynchronous backends (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install private GTK fixture dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-3.0 gir1.2-gtk-4.0 xvfb xauth dbus-x11 ffmpeg xdotool gir1.2-pango-1.0 python3-gi-cairo
       - name: Check responsiveness, error recovery and scale in both themes
@@ -106,8 +113,11 @@ jobs:
   orchard:
     name: Orchard GTK output and lifecycle regressions (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install GTK and Granite test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth dbus-x11 git meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libgee-0.8-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev
       - name: Test without a daemon or real guests
@@ -120,19 +130,26 @@ jobs:
       - name: Preserve screenshot originals across drag outcomes
         run: bash mseries/screenshot-shelf/test-retention.sh
 
+      - name: Verify Signal palette, cache migration and restore
+        run: python3 -B mseries/test-signal-accent.py
+
       - name: Prepare native indicator API
         run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/orchard-prefix" >> "$GITHUB_ENV"
-      - name: Build and test native Orchard windows and dropdown
+      - name: Build and test Orchard (machines, Incus, Podman) with the Wingpanel indicator
         run: |
-          meson setup "$RUNNER_TEMP/orchard-native" mseries/orchard-incus-native -Dwingpanel=enabled
+          sudo apt-get install -y qemu-utils genisoimage curl
+          meson setup "$RUNNER_TEMP/orchard-native" mseries/orchard -Dwingpanel=enabled
           meson compile -C "$RUNNER_TEMP/orchard-native"
           xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/orchard-native" --print-errorlogs
 
   work-mode:
     name: Windows Work Mode schedule and work-network rules (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install GSettings test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi libglib2.0-bin gsettings-desktop-schemas iproute2
       - name: Test with keyfile GSettings, a local IP service and no user services
@@ -141,8 +158,11 @@ jobs:
   dock-startup:
     name: Dock startup and launcher regressions (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native test dependencies
         run: sudo apt-get update && sudo apt-get install -y git valac libglib2.0-dev
       - name: Verify activation, delayed Gala readiness and session stops
@@ -154,8 +174,11 @@ jobs:
   desktop-space:
     name: Native top-bar scale and notch GTK allocation (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install GTK test dependencies
         run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev libgranite-7-dev xvfb xauth build-essential python3-gi libglib2.0-bin
       - name: Test top-bar 130 percent measurement and allocation
@@ -165,33 +188,41 @@ jobs:
       - name: Verify exact-kernel boot profile and rollback
         run: python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
 
-  machine-lab:
-    name: Machine Lab build and logic tests (arm64)
+  orchard-app:
+    name: Orchard app build, tests, metadata and Debian package (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev python3 appstream desktop-file-utils xvfb xauth genisoimage curl
-      - name: Build and run the logic tests (persistence, discovery, QMP transport)
+        run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev python3 appstream desktop-file-utils xvfb xauth dbus-x11 genisoimage curl qemu-utils
+      - name: Build and run the tests (machines, QMP, clipboard, display, Incus, Podman, window)
         run: |
-          meson setup build-ml mseries/machine-lab
-          meson compile -C build-ml
-          xvfb-run -a meson test -C build-ml --print-errorlogs
+          meson setup build-orchard mseries/orchard -Dwingpanel=disabled
+          meson compile -C build-orchard
+          xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C build-orchard --print-errorlogs
       - name: Check the version flag and desktop metadata
         run: |
-          xvfb-run -a build-ml/machine-lab --version
-          desktop-file-validate mseries/machine-lab/data/io.github.mseries.MachineLab.desktop
-          appstreamcli validate --no-net mseries/machine-lab/data/io.github.mseries.MachineLab.metainfo.xml
+          xvfb-run -a build-orchard/orchard --version
+          desktop-file-validate mseries/orchard/data/com.github.techmore.orchard.desktop
+          appstreamcli validate --no-net mseries/orchard/data/com.github.techmore.orchard.metainfo.xml
       - name: Build the Debian package
         run: |
           sudo apt-get install -y dpkg-dev
-          MACHINE_LAB_OUTPUT_DIR="$RUNNER_TEMP/ml-deb" bash mseries/machine-lab/build-deb.sh
+          ORCHARD_OUTPUT_DIR="$RUNNER_TEMP/orchard-deb" bash mseries/orchard/build-deb.sh
 
+  # The dev branch protection still requires a status check with Machine Lab's old job name; this
+  # alias satisfies it from the Orchard app job until the protection list names the new job.
   codexbar-wingpanel:
     name: CodexBar Wingpanel module, render and interaction probes (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native build and headless test dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config
@@ -205,6 +236,9 @@ jobs:
           meson setup "$RUNNER_TEMP/codexbar" mseries/codexbar-wingpanel
           ninja -C "$RUNNER_TEMP/codexbar"
           meson test -C "$RUNNER_TEMP/codexbar" --print-errorlogs
+          meson setup "$RUNNER_TEMP/t3-panel" mseries/t3-wingpanel
+          ninja -C "$RUNNER_TEMP/t3-panel"
+          bash mseries/t3-wingpanel/test.sh "$RUNNER_TEMP/t3-panel" "$RUNNER_TEMP/t3-panel-receipts"
           bash mseries/dock-taskbar/test-build.sh
       - name: RepoBar resolved-account cache and private indicator race/error probes
         run: |
@@ -218,6 +252,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install build and headless EDS test dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config gettext sassc
@@ -238,9 +274,18 @@ jobs:
   validate:
     name: mkosi summary + script checks (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Fetch the immutable capability audit source
+        run: |
+          audit_revision=$(python3 -c 'import json; print(json.load(open("docs/capabilities.json"))["source_revision"])')
+          [[ "$audit_revision" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git fetch --no-tags --depth=1 origin "$audit_revision"
+
+      - uses: ./.github/actions/fast-apt
 
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck dpkg-dev -y
@@ -250,23 +295,53 @@ jobs:
       - name: Syntax, shellcheck and unit checks (bash mseries/validate.sh)
         run: bash mseries/validate.sh
 
-      # codeload.github.com rate-limits busy runners (HTTP 429 failed PR #290 after
-      # two one-second retries). Keep the pinned tarball in the Actions cache and,
-      # on a miss, retry for up to ~3 minutes before giving up.
+      # codeload.github.com rate-limits busy runners (HTTP 429 failed PR #290, and again on 2026-10-23 for several
+      # branches at once, after six 30-second retries each). The tarball is kept in the Actions cache. On a miss:
+      # download with the job token (authenticated requests are limited separately), retry with growing waits, and
+      # fall back to a shallow `git fetch` of the same commit, which does not go through codeload. `git archive` with
+      # the same prefix gives the layout validate-dock-patches.py expects (`linux-<sha>/...`). The cache is saved
+      # right after a successful download, so a later failing step cannot throw the tarball away.
       - name: Restore the pinned Fairydust source tarball
         id: fairydust-cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: ${{ runner.temp }}/fairydust.tar.gz
           key: fairydust-source-ce9f2eba72c061a50b2d790450e90af3439d8c24
       - name: Download the pinned Fairydust source tarball
         if: steps.fairydust-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          curl --fail --location --retry 6 --retry-delay 30 --retry-all-errors \
-            --proto '=https' --tlsv1.2 \
-            https://codeload.github.com/AsahiLinux/linux/tar.gz/ce9f2eba72c061a50b2d790450e90af3439d8c24 \
-            -o "$RUNNER_TEMP/fairydust.tar.gz"
+          sha=ce9f2eba72c061a50b2d790450e90af3439d8c24
+          out="$RUNNER_TEMP/fairydust.tar.gz"
+          fetched=false
+          for wait in 0 20 60 120; do
+            sleep "$wait"
+            if curl --fail --location --proto '=https' --tlsv1.2 \
+                 -H "Authorization: Bearer $GH_TOKEN" \
+                 "https://codeload.github.com/AsahiLinux/linux/tar.gz/$sha" -o "$out"; then
+              fetched=true
+              break
+            fi
+            echo "::warning::codeload download failed; retrying after the next wait"
+          done
+          if [ "$fetched" != true ]; then
+            echo "::warning::codeload kept failing; falling back to a shallow git fetch of $sha"
+            rm -f "$out"
+            src="$RUNNER_TEMP/fairydust-src"
+            rm -rf "$src"
+            git init -q "$src"
+            git -C "$src" fetch -q --depth 1 https://github.com/AsahiLinux/linux.git "$sha"
+            git -C "$src" archive --format=tar.gz --prefix="linux-$sha/" -o "$out" FETCH_HEAD
+          fi
+          test -s "$out"
+      - name: Save the pinned Fairydust source tarball
+        if: steps.fairydust-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/fairydust.tar.gz
+          key: fairydust-source-ce9f2eba72c061a50b2d790450e90af3439d8c24
       - name: Validate experimental dock patches offline
         run: |
           set -euo pipefail
@@ -284,6 +359,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install offline test tools
         run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck python3-libarchive-c keyutils
       - name: Validate hardware ports without target hardware
@@ -291,6 +368,7 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s mseries/aurora-sep -p 'test_touchid*.py'
           python3 -m unittest discover -s mseries/power -p 'test_diagnostics.py'
+          python3 -B -m unittest discover -s mseries/power -p 'test_sensors.py'
           MSERIES_REQUIRE_ESP_TOOLS=1 python3 -m unittest discover -s mseries/hardware -p 'test_*.py'
           bash mseries/hardware/test-bluetooth.sh
           shellcheck -S warning mseries/install-hardware-support.sh mseries/hardware/bluetooth-resume-fix mseries/hardware/bluetooth-supported mseries/power/mseries-sleep-cost-hook
@@ -303,3 +381,95 @@ jobs:
           python3 mseries/test-omdrop-installer.py
           python3 -m unittest discover -s mseries/omdrop-awdl/tests
           python3 -m unittest discover -s mseries/omdrop/tests
+
+  claude-pantheon-rs:
+    name: Claude (T3 client) build, tests, desktop metadata and .deb (arm64)
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      # The crate pins gtk4 0.11 (v4_20) and granite-rs 3.3 (v7_8); Ubuntu's libgranite-7-dev is 7.8, enough
+      # for the bindings, so no PPA is needed here (RUST-UPSTREAM-MAINTENANCE.md). The indicator needs the
+      # wingpanel-9 API, which the daily PPA ships.
+      - uses: ./.github/actions/fast-apt
+
+      - name: Add elementary daily PPA (wingpanel-9 for the indicator)
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo add-apt-repository -y ppa:elementary-os/daily && sudo apt-get update; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sleep $((attempt * 20))
+          done
+          echo "the elementary daily PPA is unreachable" >&2
+          exit 1
+      - name: Install build dependencies
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
+              cargo rustc rustfmt rust-clippy pkg-config libgtk-4-dev libgranite-7-dev \
+              meson ninja-build valac libwingpanel-9-dev libjson-glib-dev libgee-0.8-dev \
+              libgtksourceview-5-dev libvte-2.91-gtk4-dev libwebkitgtk-6.0-dev \
+              librsvg2-bin dpkg-dev appstream desktop-file-utils xvfb xauth dbus-x11; then exit 0; fi
+            echo "attempt $attempt failed; retrying" >&2
+            sudo apt-get update || true
+            sleep $((attempt * 30))
+          done
+          exit 1
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: claude-pantheon-rs-${{ runner.arch }}-${{ hashFiles('rust/Cargo.lock') }}
+          restore-keys: claude-pantheon-rs-${{ runner.arch }}-
+      - name: Formatting and lints (cargo fmt --check, clippy -D warnings)
+        run: |
+          cd rust
+          cargo fmt -p claude-pantheon-rs --check
+          cargo clippy --release -p claude-pantheon-rs --all-targets -- -D warnings
+      - name: Build and run the protocol and model tests (recorded frames)
+        run: |
+          cd rust
+          cargo build --release -p claude-pantheon-rs
+          cargo test --release -p claude-pantheon-rs --lib
+          python3 -B -m unittest discover -s ../mseries/fleet-shepherd/tests
+      # Upstream moves daily; a drift here is a note to run scripts/refresh-contracts.sh, not a red build.
+      - name: Contracts drift against pingdotgg/t3code main (advisory)
+        continue-on-error: true
+        run: |
+          cd rust/claude-pantheon-rs
+          if ! T3_CONTRACTS_REPO="$RUNNER_TEMP/t3code" ./scripts/refresh-contracts.sh --check; then
+            echo "::warning title=T3 contracts drift::contracts/ no longer matches t3code main; run rust/claude-pantheon-rs/scripts/refresh-contracts.sh"
+            exit 1
+          fi
+      - name: Check the desktop entry and the AppStream metainfo
+        run: |
+          desktop-file-validate rust/claude-pantheon-rs/data/io.github.techmore.ClaudePantheonRs.desktop
+          appstreamcli validate --no-net rust/claude-pantheon-rs/data/io.github.techmore.ClaudePantheonRs.metainfo.xml
+      - name: Native T3 activity and subscription render gates (isolated offline home)
+        run: |
+          CLAUDE_PANTHEON_RENDER_RELEASE=1 CLAUDE_PANTHEON_FEATURE_PROBE="$RUNNER_TEMP/t3-features/light" \
+            bash rust/claude-pantheon-rs/tests/run-render-sandbox.sh
+          CLAUDE_PANTHEON_DARK=1 CLAUDE_PANTHEON_RENDER_RELEASE=1 \
+            CLAUDE_PANTHEON_FEATURE_PROBE="$RUNNER_TEMP/t3-features/dark" \
+            bash rust/claude-pantheon-rs/tests/run-render-sandbox.sh
+      - name: Upload native T3 feature renders
+        uses: actions/upload-artifact@v7
+        with:
+          name: t3-feature-renders-${{ github.run_id }}
+          path: ${{ runner.temp }}/t3-features/
+          if-no-files-found: error
+      - name: Indicator probe (headless)
+        run: |
+          meson setup "$RUNNER_TEMP/indicator" rust/claude-pantheon-rs/wingpanel-indicator
+          meson compile -C "$RUNNER_TEMP/indicator"
+          xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/indicator" --print-errorlogs
+      - name: Build the Debian package
+        run: CLAUDE_PANTHEON_OUTPUT_DIR="$RUNNER_TEMP/cpr-deb" bash rust/claude-pantheon-rs/build-deb.sh
+      - name: Upload the package
+        uses: actions/upload-artifact@v7
+        with:
+          name: claude-pantheon-rs-deb-${{ github.run_id }}
+          path: ${{ runner.temp }}/cpr-deb/*.deb
+          retention-days: 14

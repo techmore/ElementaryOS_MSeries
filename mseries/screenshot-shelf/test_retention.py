@@ -19,6 +19,32 @@ loader.exec_module(shelf)
 shelf.Gtk.init()
 
 
+class BackendTests(unittest.TestCase):
+    def test_native_capability_uses_existing_service_only(self):
+        bus = Mock()
+        bus.call_sync.return_value = shelf.GLib.Variant("(v)",
+            (shelf.GLib.Variant("u", 1),))
+        with patch.object(shelf.Gio, "bus_get_sync", return_value=bus):
+            self.assertTrue(shelf.pantheon_places_shelf())
+        self.assertEqual(bus.call_sync.call_args.args[6],
+                         shelf.Gio.DBusCallFlags.NO_AUTO_START)
+
+    def test_missing_or_invalid_capability_falls_back(self):
+        bus = Mock()
+        with patch.object(shelf.Gio, "bus_get_sync", return_value=bus):
+            for value in [0, "1", True]:
+                bus.call_sync.return_value.unpack.return_value = (value,)
+                self.assertFalse(shelf.pantheon_places_shelf())
+            bus.call_sync.side_effect = RuntimeError("old compositor")
+            self.assertFalse(shelf.pantheon_places_shelf())
+
+    def test_explicit_backend_override_wins(self):
+        with patch.dict(os.environ, {"MSERIES_SHELF_BACKEND": "x11"}):
+            with patch.object(shelf, "pantheon_places_shelf") as capability:
+                self.assertFalse(shelf.gala_places_shelf())
+                capability.assert_not_called()
+
+
 class RetentionTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -112,6 +138,65 @@ class RetentionTests(unittest.TestCase):
         self.assertEqual(w.hint.get_label(), 'Not accepted · Saved')
         w.cleanup()
         self.assertTrue(self.original.exists())
+
+    def test_recent_captures_share_one_multi_file_drag_and_remain_saved(self):
+        w = self.show()
+        second = self.root / "Screenshot second.png"
+        third = self.root / "Screenshot third.png"
+        second.write_bytes(self.original.read_bytes())
+        third.write_bytes(self.original.read_bytes())
+        self.app.show(str(second))
+        self.app.show(str(third))
+
+        self.assertIs(self.app.shelf, w)
+        self.assertEqual(w.hint.get_label(), "Drag 3 screenshots · Saved")
+        self.capture(w, "multi-recent")
+        files = w.file_list_for_drag().get_files()
+        self.assertEqual([file.get_path() for file in files], [capture["staged"] for capture in w.captures])
+
+        provider = w.on_prepare(None, 0, 0)
+        self.assertIsInstance(provider, shelf.Gdk.ContentProvider)
+        self.assertEqual(w.drag_count, 3)
+        w.finish("expired")
+        w.cleanup()
+        for capture in w.captures:
+            self.assertFalse(Path(capture["staged"]).exists())
+            self.assertTrue(Path(capture["path"]).exists())
+
+    def test_multi_file_drag_is_bounded_to_latest_supported_batch(self):
+        w = self.show()
+        for index in range(shelf.MAX_DRAG_FILES):
+            path = self.root / f"Screenshot {index}.png"
+            path.write_bytes(self.original.read_bytes())
+            self.app.show(str(path))
+
+        files = w.file_list_for_drag().get_files()
+        expected = [capture["staged"] for capture in w.captures[-shelf.MAX_DRAG_FILES:]]
+        self.assertEqual([file.get_path() for file in files], expected)
+        self.assertEqual(len(files), shelf.MAX_DRAG_FILES)
+        self.assertEqual(w.hint.get_label(), f"Latest {shelf.MAX_DRAG_FILES} of {shelf.MAX_DRAG_FILES + 1} · Saved")
+
+    def test_multi_file_drop_exports_each_image_for_running_flatpaks(self):
+        w = self.show()
+        second = self.root / "Screenshot second.png"
+        second.write_bytes(self.original.read_bytes())
+        self.app.show(str(second))
+        flatpak_apps = {"org.example.Signal"}
+        exports = []
+
+        def export(staged):
+            result = Mock(path=staged, granted=set())
+            exports.append((staged, result))
+            return result
+
+        with patch.object(shelf, "running_flatpak_apps", return_value=flatpak_apps), \
+                patch.object(shelf, "PortalExport", side_effect=export):
+            files = w.file_list_for_drag().get_files()
+
+        self.assertEqual([file.get_path() for file in files], [capture["staged"] for capture in w.captures])
+        self.assertEqual(len(exports), 2)
+        for _staged, portal in exports:
+            portal.grant_running.assert_called_once_with(flatpak_apps)
 
     def test_replacement_during_drag_waits_and_does_not_clear_new_card(self):
         old = self.show()

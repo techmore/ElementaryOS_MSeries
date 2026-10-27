@@ -12,16 +12,121 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
+import urllib.error
 import urllib.request
+from email.utils import parsedate_to_datetime
 
 from release import HERE, PINS, asset, extract, sha256, validate_kernel
 
 ENHANCEMENTS = HERE / "enhancements"
 MANIFEST = ENHANCEMENTS / "series.json"
+SOURCE_DOWNLOAD_ATTEMPTS = 4
+MAX_SOURCE_RETRY_DELAY = 30
+RETRYABLE_SOURCE_HTTP_ERRORS = {429, 500, 502, 503, 504}
+
+
+def source_retry_delay(error, attempt):
+    """Return a bounded retry delay, or None when Retry-After exceeds our wait budget."""
+    retry_after = error.headers.get("Retry-After") if error.headers else None
+    if retry_after:
+        try:
+            delay = float(retry_after)
+        except ValueError:
+            try:
+                delay = parsedate_to_datetime(retry_after).timestamp() - time.time()
+            except (OverflowError, TypeError, ValueError):
+                delay = None
+        if delay is not None:
+            delay = max(0.0, delay)
+            return delay if delay <= MAX_SOURCE_RETRY_DELAY else None
+    return min(float(2 ** (attempt + 1)), float(MAX_SOURCE_RETRY_DELAY))
+
+
+def download_pinned_source(url, destination, *, attempts=SOURCE_DOWNLOAD_ATTEMPTS):
+    """Download an immutable source archive with bounded HTTP 429/5xx retries."""
+    if attempts < 1:
+        raise ValueError("source download attempts must be positive")
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(url, timeout=120) as source, Path(destination).open("wb") as target:
+                shutil.copyfileobj(source, target)
+            return
+        except urllib.error.HTTPError as error:
+            if error.code not in RETRYABLE_SOURCE_HTTP_ERRORS or attempt + 1 >= attempts:
+                error.close()
+                raise
+            delay = source_retry_delay(error, attempt)
+            if delay is None:
+                error.close()
+                raise
+            print(f"Pinned source download returned HTTP {error.code}; retrying in {delay:g}s", flush=True)
+            error.close()
+            time.sleep(delay)
 
 
 def run(*args, **kwargs):
     subprocess.run([str(arg) for arg in args], check=True, **kwargs)
+
+
+def fetch_pinned_source_from_git(source_pin, destination):
+    """Archive an exact Git commit after verifying its commit and tree pins."""
+    required = ("git_url", "commit", "git_tree_sha1", "archive_root")
+    if any(not source_pin.get(key) for key in required):
+        raise ValueError("pinned source has no complete Git fallback identity")
+    with tempfile.TemporaryDirectory(prefix="aurora-pinned-source-") as temporary:
+        repository = Path(temporary) / "repository"
+        run("git", "init", "--quiet", "--initial-branch=source", repository)
+        run("git", "-C", repository, "fetch", "--quiet", "--depth=1", "--no-tags",
+            source_pin["git_url"], source_pin["commit"])
+        commit = subprocess.run(["git", "-C", str(repository), "rev-parse", "FETCH_HEAD"],
+                                 check=True, capture_output=True, text=True).stdout.strip()
+        if commit != source_pin["commit"]:
+            raise ValueError("Git source fallback resolved a different commit")
+        tree = subprocess.run(["git", "-C", str(repository), "rev-parse", "FETCH_HEAD^{tree}"],
+                              check=True, capture_output=True, text=True).stdout.strip()
+        if tree != source_pin["git_tree_sha1"]:
+            raise ValueError("Git source fallback tree checksum mismatch")
+        run("git", "-C", repository, "archive", "--format=tar",
+            f"--prefix={source_pin['archive_root']}/", f"--output={destination}", "FETCH_HEAD")
+
+
+def obtain_pinned_source(source_pin, cache, offline):
+    """Return (archive path, cleanup path) for a checksum-verified pinned source."""
+    path = Path(cache) / source_pin["name"]
+    if path.exists():
+        if sha256(path) != source_pin["sha256"]:
+            raise ValueError("unified source checksum mismatch")
+        return path, None
+    if offline:
+        raise ValueError(f"missing cached input: {path}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.part")
+    fallback = path.with_name(f".{path.name}.git.tar.part")
+    temporary.unlink(missing_ok=True)
+    fallback.unlink(missing_ok=True)
+    try:
+        try:
+            download_pinned_source(source_pin["url"], temporary)
+        except urllib.error.HTTPError as error:
+            if error.code not in RETRYABLE_SOURCE_HTTP_ERRORS or not source_pin.get("git_url"):
+                error.close()
+                raise
+            print(f"Pinned source codeload remained HTTP {error.code}; trying the exact Git tree",
+                  flush=True)
+            error.close()
+            try:
+                fetch_pinned_source_from_git(source_pin, fallback)
+            except Exception:
+                fallback.unlink(missing_ok=True)
+                raise
+            return fallback, fallback
+        if sha256(temporary) != source_pin["sha256"]:
+            raise ValueError("unified source checksum mismatch")
+        temporary.replace(path)
+        return path, None
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def tree_digest(root):
@@ -112,29 +217,22 @@ def prepare(cache, output, profile, offline):
     # Verify both original inputs before creating the output directory.
     inputs = {"recipe": asset(cache, "recipe", offline=offline)}
     source_pin = data.get("source")
+    temporary_source = None
     if source_pin:
-        path = Path(cache) / source_pin["name"]
-        if not path.exists():
-            if offline:
-                raise ValueError(f"missing cached input: {path}")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            temporary = path.with_suffix(path.suffix + ".part")
-            try:
-                with urllib.request.urlopen(source_pin["url"], timeout=120) as src, temporary.open("wb") as dst:
-                    shutil.copyfileobj(src, dst)
-                if sha256(temporary) != source_pin["sha256"]:
-                    raise ValueError("unified source checksum mismatch")
-                temporary.replace(path)
-            finally:
-                temporary.unlink(missing_ok=True)
-        if sha256(path) != source_pin["sha256"]:
-            raise ValueError("unified source checksum mismatch")
-        inputs["source"] = path
+        inputs["source"], temporary_source = obtain_pinned_source(source_pin, cache, offline)
     else:
         inputs["source"] = asset(cache, "source", offline=offline)
-    root = fresh(output)
-    upstream = source_pin["archive_root"] if source_pin else "aurora-linux-" + PINS["kernel_source"]
-    extract(inputs["source"], root, (upstream,))
+    source_fetch_method = "release-asset"
+    if source_pin:
+        source_fetch_method = "pinned-git-tree" if temporary_source else "pinned-archive-sha256"
+    source_archive_sha256 = sha256(inputs["source"])
+    try:
+        root = fresh(output)
+        upstream = source_pin["archive_root"] if source_pin else "aurora-linux-" + PINS["kernel_source"]
+        extract(inputs["source"], root, (upstream,))
+    finally:
+        if temporary_source:
+            temporary_source.unlink(missing_ok=True)
     source = root / "source"
     (root / upstream).rename(source)
     recipe = root / "recipe"
@@ -170,6 +268,8 @@ def prepare(cache, output, profile, offline):
     receipt = {"profile": profile, "kernel_release": data["kernel_release"][profile],
                "base_pins": PINS, "series_sha256": sha256(manifest(profile)), "patches": selected,
                "source_pin": source_pin,
+               "source_fetch_method": source_fetch_method,
+               "source_archive_sha256": source_archive_sha256,
                "source_tree_sha256": tree_digest(source),
                "modified_files": {name: sha256(source / name) for name in sorted(modified)},
                "prepared_config_sha256": sha256(root / "build/.config"),

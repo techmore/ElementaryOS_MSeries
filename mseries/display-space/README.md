@@ -168,3 +168,5 @@ this profile's block so later unrelated boot entries survive.
 ARM64 compilation and simulated GTK allocation do not establish a successful
 full-height hardware boot. Record the post-reboot clock/popover, dock reveal,
 placement persistence and monitor switching checks in `OS9-HANDOFF.md`.
+
+GTK performance rules shared by every app here: [GTK-PERFORMANCE-ASAHI.md](../GTK-PERFORMANCE-ASAHI.md).

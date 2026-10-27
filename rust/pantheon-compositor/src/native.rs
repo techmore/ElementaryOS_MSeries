@@ -65,6 +65,11 @@ use crate::{
 /// Grace period before a disabled output global is removed from clients.
 const GLOBAL_REMOVAL_DELAY: Duration = Duration::from_secs(2);
 
+/// Surfaces not shown on the output that flipped (occluded, off-screen, or on
+/// another monitor) still get a frame callback this often, so they keep
+/// making progress without animating at the full refresh rate.
+const HIDDEN_FRAME_CALLBACK_INTERVAL: Duration = Duration::from_secs(1);
+
 pub type GbmRendererBackend = GbmGlesBackend<GlesRenderer, DrmDeviceFd>;
 pub type NativeGpuManager = GpuManager<GbmRendererBackend>;
 pub type NativeAllocator = GbmAllocator<DrmDeviceFd>;
@@ -147,18 +152,21 @@ fn remove_stale_duplicates<D: DrmControlDevice>(
             let started = display_trace::enabled().then(Instant::now);
             let read = connector_edid(device, info.handle());
             if let Some(monotonic_us) = display_trace::stamp() {
-                tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                display_trace::lifecycle_event!(monotonic_us = monotonic_us as u64,
                     connector = ?info.handle(), stage = "edid_read", success = read.is_some(),
                     duration_us = started.map(|t| t.elapsed().as_micros() as u64).unwrap_or(0),
                     "existing duplicate-route EDID query completed");
             }
             let (edid, blob_id) = read?;
             if let Some(parsed) = edid::parse(&edid) {
-                identities.insert(info.handle(), OutputIdentity {
-                    vendor: parsed.vendor,
-                    product: parsed.product,
-                    serial: parsed.serial,
-                });
+                identities.insert(
+                    info.handle(),
+                    OutputIdentity {
+                        vendor: parsed.vendor,
+                        product: parsed.product,
+                        serial: parsed.serial,
+                    },
+                );
             }
             Some(Candidate {
                 key: info.handle(),
@@ -210,6 +218,12 @@ pub struct NativeRenderer {
     pub render_node: DrmNode,
     pub render_gbm: GbmDevice<DrmDeviceFd>,
     pub gpus: NativeGpuManager,
+    /// Default linux-dmabuf feedback (render node, sampling formats) and the
+    /// formats it lists; `None` while linux-dmabuf is not advertised.
+    dmabuf: Option<(
+        smithay::wayland::dmabuf::DmabufFeedback,
+        smithay::backend::allocator::format::FormatSet,
+    )>,
 }
 
 pub struct NativeKmsOutput {
@@ -221,6 +235,15 @@ pub struct NativeKmsOutput {
     pub global_id: smithay::reexports::wayland_server::backend::GlobalId,
     pub frame_pending: bool,
     trace: Option<OutputTrace>,
+    /// Frame timing for the 30 s metrics window.
+    stats: crate::metrics::output::OutputStats,
+    /// linux-dmabuf feedback with this output's scanout tranche, sent only to
+    /// surfaces presented zero-copy on one of its planes (built on first use).
+    scanout_feedback: Option<smithay::wayland::dmabuf::DmabufFeedback>,
+    /// The last render pass produced no damage, so no vblank will come to send
+    /// frame callbacks; an estimated-vblank timer has to.
+    needs_estimated_frame: bool,
+    estimated_frame_armed: bool,
 }
 
 pub struct NativeKmsDevice {
@@ -769,13 +792,29 @@ impl NativeKmsDevice {
         renderer: &mut NativeRenderer,
         state: &PantheonCompositor,
     ) -> Result<usize, Box<dyn std::error::Error>> {
-        state.update_fractional_scale_preferences();
+        crate::metrics::render_pass();
+        if state.displays_off {
+            return Ok(0);
+        }
+        if state.screenshot_requested.get() {
+            let outputs = self
+                .outputs
+                .iter()
+                .map(|output| output.output.clone())
+                .collect::<Vec<_>>();
+            let mut capture_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
+            crate::screenshot_pixels::process_request(&mut capture_renderer, state, &outputs);
+        }
+        let dirty_at = state.dirty_since.get();
+        let mut skipped_pending = false;
         let mut rendered = 0;
         let mut busy = false;
         for output in &mut self.outputs {
             if output.frame_pending {
+                skipped_pending = true;
                 continue;
             }
+            let started = Instant::now();
             let mut gpu_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
             let elements = if state.session_locked {
                 render_lock_surface_elements(&mut gpu_renderer, state, &output.output)
@@ -792,11 +831,32 @@ impl NativeKmsDevice {
                 },
                 FrameFlags::DEFAULT,
             )?;
+            // Remember which output each surface is mostly shown on, so the
+            // vblank only sends frame callbacks to surfaces on that output.
+            update_primary_scanout_outputs(state, &output.output, &frame.states);
+            if let Some((default_feedback, render_formats)) = &renderer.dmabuf {
+                let scanout_feedback = output.scanout_feedback.get_or_insert_with(|| {
+                    scanout_feedback(
+                        &output.drm_output,
+                        renderer.render_node,
+                        self.node,
+                        render_formats,
+                    )
+                    .unwrap_or_else(|| default_feedback.clone())
+                });
+                send_dmabuf_feedback(
+                    state,
+                    &output.output,
+                    &frame.states,
+                    default_feedback,
+                    scanout_feedback,
+                );
+            }
             if frame.is_empty {
-                crate::redraw_stats::frame_empty();
+                output.stats.record_empty();
+                output.needs_estimated_frame = true;
                 continue;
             }
-            crate::redraw_stats::frame_queued();
             match output.drm_output.queue_frame(()) {
                 Ok(()) => {}
                 Err(error) if flip_retry::is_busy(&error) => {
@@ -813,8 +873,18 @@ impl NativeKmsDevice {
             if let Some(trace) = &mut output.trace {
                 trace.queued(&output.output.name());
             }
+            output.stats.record_queued(
+                state.monotonic_clock.now().into(),
+                started.elapsed(),
+                dirty_at,
+            );
             output.frame_pending = true;
+            output.needs_estimated_frame = false;
             rendered += 1;
+        }
+        // Content that was waiting on a busy output will be drawn next pass.
+        if !skipped_pending && !busy {
+            state.dirty_since.set(None);
         }
         self.busy_retry = busy;
         if busy {
@@ -829,6 +899,30 @@ impl NativeKmsDevice {
         Ok(rendered)
     }
 
+    /// Blank every output for power save: disable its CRTC and planes. No
+    /// flip stays pending, so the watchdog sees nothing stuck.
+    pub fn power_off(&mut self) {
+        for output in &mut self.outputs {
+            if let Err(error) = output
+                .drm_output
+                .with_compositor(|compositor| compositor.clear())
+            {
+                tracing::warn!(output = %output.output.name(), ?error, "could not blank output");
+            }
+            output.frame_pending = false;
+            output.needs_estimated_frame = false;
+        }
+    }
+
+    /// Leave power save. The cleared CRTC state differs from the pending one,
+    /// so the next queued frame performs the modeset that turns it back on;
+    /// reset the buffers so that frame is drawn in full.
+    pub fn power_on(&mut self) {
+        for output in &mut self.outputs {
+            output.drm_output.reset_buffers();
+        }
+    }
+
     /// Whether the last render pass left an output waiting on a busy CRTC;
     /// reading it clears the flag.
     pub fn take_busy_retry(&mut self) -> bool {
@@ -838,6 +932,8 @@ impl NativeKmsDevice {
     pub fn frame_submitted(
         &mut self,
         crtc: smithay::reexports::drm::control::crtc::Handle,
+        flip: Duration,
+        sequence: Option<u32>,
     ) -> Result<Option<Output>, Box<dyn std::error::Error>> {
         let Some(output) = self.outputs.iter_mut().find(|output| output.crtc == crtc) else {
             return Ok(None);
@@ -846,8 +942,83 @@ impl NativeKmsDevice {
         if let Some(trace) = &mut output.trace {
             trace.submitted(&output.output.name());
         }
+        let refresh = output
+            .output
+            .current_mode()
+            .and_then(|mode| crate::metrics::output::refresh_period(mode.refresh));
+        output.stats.record_flip(flip, sequence, refresh);
         output.frame_pending = false;
         Ok(Some(output.output.clone()))
+    }
+
+    /// Outputs whose queued flip has been pending for at least `threshold`.
+    pub fn stuck_flips(&self, now: Duration, threshold: Duration) -> Vec<(String, Duration)> {
+        self.outputs
+            .iter()
+            .filter(|output| output.frame_pending)
+            .filter_map(|output| {
+                let age = output.stats.in_flight_age(now)?;
+                (age >= threshold).then(|| (output.output.name(), age))
+            })
+            .collect()
+    }
+
+    /// Take every output's frame stats for the metrics window.
+    pub fn take_metrics(&mut self) -> Vec<(String, crate::metrics::output::OutputWindow)> {
+        self.outputs
+            .iter_mut()
+            .filter_map(|output| {
+                output
+                    .stats
+                    .take_window()
+                    .map(|window| (output.output.name(), window))
+            })
+            .collect()
+    }
+
+    /// Outputs whose last pass was empty and have no estimated-vblank timer
+    /// yet: mark them armed and return when each one's next vblank is due.
+    fn arm_estimated_frames(
+        &mut self,
+        now: Duration,
+    ) -> Vec<(smithay::reexports::drm::control::crtc::Handle, Duration)> {
+        let mut due = Vec::new();
+        for output in &mut self.outputs {
+            if !output.needs_estimated_frame || output.estimated_frame_armed || output.frame_pending
+            {
+                continue;
+            }
+            let Some(refresh) = output
+                .output
+                .current_mode()
+                .and_then(|mode| crate::metrics::output::refresh_period(mode.refresh))
+            else {
+                continue;
+            };
+            let at = crate::metrics::output::next_vblank_estimate(
+                now,
+                output.stats.last_flip_time(),
+                refresh,
+            );
+            output.estimated_frame_armed = true;
+            due.push((output.crtc, at.saturating_sub(now)));
+        }
+        due
+    }
+
+    /// The estimated vblank for an empty frame arrived: returns the output to
+    /// send frame callbacks for, unless a real frame took over meanwhile.
+    fn estimated_frame_due(
+        &mut self,
+        crtc: smithay::reexports::drm::control::crtc::Handle,
+    ) -> Option<Output> {
+        let output = self.outputs.iter_mut().find(|output| output.crtc == crtc)?;
+        output.estimated_frame_armed = false;
+        if !std::mem::take(&mut output.needs_estimated_frame) || output.frame_pending {
+            return None;
+        }
+        output.stats.empty_frame_callbacks += 1;
+        Some(output.output.clone())
     }
 
     /// Release the placeholder framebuffer left by a finished prewarm. Call
@@ -1325,6 +1496,10 @@ impl NativeKmsDevice {
                 global_id,
                 frame_pending: false,
                 trace: output_trace,
+                stats: Default::default(),
+                scanout_feedback: None,
+                needs_estimated_frame: false,
+                estimated_frame_armed: false,
             });
             claimed_crtcs.insert(crtc);
             changed = true;
@@ -1491,10 +1666,22 @@ impl NativeKmsDevice {
             });
 
         if let Some(monotonic_us) = display_trace::stamp() {
-            tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
-                generation = trace.generation, stage = "reconcile_result", changed,
-                active_count = self.outputs.len(), retired_globals = self.pending_global_removals.len(),
-                "connector reconciliation completed");
+            // A change is always worth INFO, even on a routine safety poll,
+            // and so is the rest of this operation's trace.
+            if changed {
+                display_trace::end_quiet();
+            }
+            if !display_trace::quiet() {
+                tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                    generation = trace.generation, stage = "reconcile_result", changed,
+                    active_count = self.outputs.len(), retired_globals = self.pending_global_removals.len(),
+                    "connector reconciliation completed");
+            } else {
+                tracing::debug!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
+                    generation = trace.generation, stage = "reconcile_result", changed,
+                    active_count = self.outputs.len(), retired_globals = self.pending_global_removals.len(),
+                    "connector reconciliation completed");
+            }
         }
         Ok(changed)
     }
@@ -1781,6 +1968,10 @@ impl NativeKmsDevice {
                 global_id,
                 frame_pending: false,
                 trace: output_trace,
+                stats: Default::default(),
+                scanout_feedback: None,
+                needs_estimated_frame: false,
+                estimated_frame_armed: false,
             });
         }
         if outputs.is_empty() {
@@ -1849,7 +2040,7 @@ impl NativeBackend {
                     _ => {}
                 }
                 state.process_input_event(event);
-                #[cfg(feature = "native-drm")]
+                state.mark_dirty();
                 state.request_native_redraw();
             })?;
 
@@ -1888,13 +2079,20 @@ impl NativeBackend {
 
         event_loop
             .handle()
-            .insert_source(drm_notifier, |event, _, state| match event {
+            .insert_source(drm_notifier, |event, metadata, state| match event {
                 smithay::backend::drm::DrmEvent::VBlank(crtc) => {
-                    crate::redraw_stats::vblank();
+                    crate::metrics::vblank();
+                    // The kernel's flip timestamp (CLOCK_MONOTONIC on this
+                    // driver); fall back to now for a realtime-only device.
+                    let flip = match metadata.as_ref().map(|metadata| metadata.time) {
+                        Some(smithay::backend::drm::DrmEventTime::Monotonic(time)) => time,
+                        _ => state.monotonic_clock.now().into(),
+                    };
+                    let sequence = metadata.as_ref().map(|metadata| metadata.sequence);
                     let Some(backend) = state.native_backend.as_mut() else {
                         return;
                     };
-                    let output = match backend.kms.frame_submitted(crtc) {
+                    let output = match backend.kms.frame_submitted(crtc, flip, sequence) {
                         Ok(Some(output)) => output,
                         Ok(None) => return,
                         Err(error) => {
@@ -1906,15 +2104,11 @@ impl NativeBackend {
                         }
                     };
                     state.confirm_lock_output_frame(&output.name());
-                    state.gesture_frame_windows().iter().for_each(|window| {
-                        window.send_frame(
-                            &output,
-                            state.start_time.elapsed(),
-                            Some(Duration::ZERO),
-                            |_, _| Some(output.clone()),
-                        );
-                    });
+                    send_frame_callbacks(state, &output);
                     state.space.refresh();
+                    // After refresh, so a window that moved to another
+                    // output gets that output's scale (no-op otherwise).
+                    state.update_fractional_scale_preferences();
                     state.popups.cleanup();
                     let _ = state.display_handle.flush_clients();
                     state.request_native_redraw();
@@ -1925,8 +2119,8 @@ impl NativeBackend {
                 }
             })?;
 
-        let (redraw_sender, redraw_receiver) = channel::channel();
-        state.native_redraw_sender = Some(redraw_sender);
+        let (redraw_ping, redraw_source) = smithay::reexports::calloop::ping::make_ping()?;
+        state.native_redraw_ping = Some(redraw_ping);
         state.native_backend = Some(Self {
             _session: session,
             renderer,
@@ -1939,16 +2133,32 @@ impl NativeBackend {
         let redraw_handle = event_loop.handle();
         event_loop
             .handle()
-            .insert_source(redraw_receiver, move |event, _, state| {
-                if !matches!(event, ChannelEvent::Msg(())) {
-                    return;
-                }
+            .insert_source(redraw_source, move |(), _, state| {
+                state.native_redraw_pending.set(false);
                 let Some(mut backend) = state.native_backend.take() else {
                     return;
                 };
                 match backend.kms.render(&mut backend.renderer, state) {
                     Ok(_) => {
                         consecutive_render_failures = 0;
+                        let now: Duration = state.monotonic_clock.now().into();
+                        for (crtc, delay) in backend.kms.arm_estimated_frames(now) {
+                            let timer = Timer::from_duration(delay);
+                            let armed = redraw_handle.insert_source(timer, move |_, _, state| {
+                                let output = state
+                                    .native_backend
+                                    .as_mut()
+                                    .and_then(|backend| backend.kms.estimated_frame_due(crtc));
+                                if let Some(output) = output {
+                                    send_frame_callbacks(state, &output);
+                                    let _ = state.display_handle.flush_clients();
+                                }
+                                TimeoutAction::Drop
+                            });
+                            if let Err(error) = armed {
+                                tracing::warn!(?error, "could not arm the empty-frame callback timer");
+                            }
+                        }
                         if backend.kms.take_busy_retry() {
                             let retry = Timer::from_duration(flip_retry::RETRY_DELAY);
                             let _ = redraw_handle.insert_source(retry, |_, _, state| {
@@ -2068,14 +2278,151 @@ impl NativeBackend {
     }
 }
 
-/// Opt-in `zwp_linux_dmabuf_v1` for native clients. Off by default until a
-/// native trial has qualified it: set `PANTHEON_ENABLE_DMABUF=1` for the
-/// compositor service. Without it clients use wl_shm (software GTK rendering).
+/// Record, for every surface drawn in this output's frame, whether this
+/// output is now the one it is mostly shown on.
+fn update_primary_scanout_outputs(
+    state: &PantheonCompositor,
+    output: &Output,
+    render_states: &smithay::backend::renderer::element::RenderElementStates,
+) {
+    use smithay::desktop::utils::update_surface_primary_scanout_output;
+    for window in state.gesture_frame_windows() {
+        window.with_surfaces(|surface, states| {
+            update_surface_primary_scanout_output(
+                surface,
+                output,
+                states,
+                None,
+                render_states,
+                smithay::backend::renderer::element::default_primary_scanout_output_compare,
+            );
+        });
+    }
+}
+
+/// Frame callbacks after `output` presented (or would have, for an empty
+/// frame): surfaces whose primary scanout output is `output` get one now;
+/// surfaces shown nowhere get one at most every
+/// `HIDDEN_FRAME_CALLBACK_INTERVAL`. If such a hidden surface is still
+/// waiting, a sweep timer makes sure it is served even on an idle desktop.
+fn send_frame_callbacks(state: &PantheonCompositor, output: &Output) {
+    use smithay::wayland::compositor::SurfaceAttributes;
+    let time = state.start_time.elapsed();
+    // The lock screen is not a window: without this it draws one frame and
+    // then never again (typing on it showed nothing).
+    state.send_lock_surface_frames(output, time);
+    if legacy_frame_callbacks() {
+        for window in state.gesture_frame_windows() {
+            window.send_frame(output, time, Some(Duration::ZERO), |_, _| {
+                Some(output.clone())
+            });
+        }
+        return;
+    }
+    let hidden_waiting = std::cell::Cell::new(false);
+    let hidden_waiting = &hidden_waiting;
+    for window in state.gesture_frame_windows() {
+        window.send_frame(
+            output,
+            time,
+            Some(HIDDEN_FRAME_CALLBACK_INTERVAL),
+            |surface, states| {
+                let primary =
+                    smithay::desktop::utils::surface_primary_scanout_output(surface, states);
+                if primary.is_none()
+                    && !states
+                        .cached_state
+                        .get::<SurfaceAttributes>()
+                        .current()
+                        .frame_callbacks
+                        .is_empty()
+                {
+                    hidden_waiting.set(true);
+                }
+                primary
+            },
+        );
+    }
+    if hidden_waiting.get() {
+        arm_hidden_frame_sweep(state);
+    }
+}
+
+/// `PANTHEON_FRAME_CALLBACKS=all` restores the old behaviour (every window
+/// on every flip of every output), as a no-rebuild fallback if targeted
+/// callbacks ever stall a client.
+fn legacy_frame_callbacks() -> bool {
+    static LEGACY: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *LEGACY.get_or_init(|| {
+        let legacy = std::env::var("PANTHEON_FRAME_CALLBACKS").is_ok_and(|value| value == "all");
+        if legacy {
+            tracing::info!(
+                "PANTHEON_FRAME_CALLBACKS=all: frame callbacks to every window on every flip"
+            );
+        }
+        legacy
+    })
+}
+
+/// Serve hidden surfaces' frame callbacks once per interval while any are
+/// waiting; the timer drops itself when none are.
+fn arm_hidden_frame_sweep(state: &PantheonCompositor) {
+    if state.hidden_frame_sweep_armed.replace(true) {
+        return;
+    }
+    let timer = Timer::from_duration(HIDDEN_FRAME_CALLBACK_INTERVAL);
+    let armed = state.loop_handle.insert_source(timer, |_, _, state| {
+        state.hidden_frame_sweep_armed.set(false);
+        let outputs = state
+            .native_backend
+            .as_ref()
+            .map(|backend| {
+                backend
+                    .kms
+                    .outputs
+                    .iter()
+                    .map(|output| output.output.clone())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        // Re-arms itself through send_frame_callbacks if anyone still waits.
+        for output in &outputs {
+            send_frame_callbacks(state, output);
+        }
+        let _ = state.display_handle.flush_clients();
+        TimeoutAction::Drop
+    });
+    if let Err(error) = armed {
+        state.hidden_frame_sweep_armed.set(false);
+        tracing::warn!(
+            ?error,
+            "could not arm the hidden-surface frame callback timer"
+        );
+    }
+}
+
+/// Whether to advertise linux-dmabuf on the native backend: on by default
+/// since 2026-10-21 (owner-approved trial); `PANTHEON_DISABLE_DMABUF=1` or
+/// `PANTHEON_ENABLE_DMABUF=0` turns it off.
+fn dmabuf_enabled(disable: Option<&str>, enable: Option<&str>) -> bool {
+    disable != Some("1") && enable != Some("0")
+}
+
+/// `zwp_linux_dmabuf_v1` v4 for native clients, so Mesa picks the Asahi GPU
+/// and Chromium/Electron/GTK render on it instead of in software over wl_shm.
+/// The default feedback lists the render node's formats; each output also
+/// builds a scanout feedback (see [`scanout_feedback`]).
 fn advertise_dmabuf(state: &mut PantheonCompositor) {
     use smithay::backend::renderer::ImportDma;
     use smithay::wayland::dmabuf::DmabufFeedbackBuilder;
 
-    if std::env::var_os("PANTHEON_ENABLE_DMABUF").is_none_or(|value| value != "1") {
+    if !dmabuf_enabled(
+        std::env::var("PANTHEON_DISABLE_DMABUF").ok().as_deref(),
+        std::env::var("PANTHEON_ENABLE_DMABUF").ok().as_deref(),
+    ) {
+        tracing::info!(
+            "linux-dmabuf disabled by PANTHEON_DISABLE_DMABUF/PANTHEON_ENABLE_DMABUF; clients use wl_shm"
+        );
         return;
     }
     let Some(backend) = state.native_backend.as_mut() else {
@@ -2089,18 +2436,87 @@ fn advertise_dmabuf(state: &mut PantheonCompositor) {
             return;
         }
     };
-    let feedback = match DmabufFeedbackBuilder::new(node.dev_id(), formats).build() {
+    let feedback = match DmabufFeedbackBuilder::new(node.dev_id(), formats.clone()).build() {
         Ok(feedback) => feedback,
         Err(error) => {
             tracing::warn!(%error, "could not build dmabuf feedback; linux-dmabuf not advertised");
             return;
         }
     };
+    backend.renderer.dmabuf = Some((feedback.clone(), formats));
     let dh = state.display_handle.clone();
     state
         .dmabuf_state
         .create_global_with_default_feedback::<PantheonCompositor>(&dh, &feedback);
     tracing::info!("advertising linux-dmabuf v4 on the native renderer");
+}
+
+/// Feedback for a surface the display controller scans out directly: a
+/// scanout tranche on the KMS device with the output's plane formats (limited
+/// to ones the GPU can also sample, so composition stays a fallback), then
+/// the normal render tranche. Only sent to surfaces presented zero-copy, so
+/// ordinary windows are not steered to scanout-only layouts.
+fn scanout_feedback(
+    drm_output: &NativeDrmOutput,
+    render_node: DrmNode,
+    kms_node: DrmNode,
+    render_formats: &smithay::backend::allocator::format::FormatSet,
+) -> Option<smithay::wayland::dmabuf::DmabufFeedback> {
+    use smithay::backend::allocator::format::FormatSet;
+    use smithay::reexports::wayland_protocols::wp::linux_dmabuf::zv1::server::zwp_linux_dmabuf_feedback_v1::TrancheFlags;
+    use smithay::wayland::dmabuf::DmabufFeedbackBuilder;
+
+    let plane_formats = drm_output.with_compositor(|compositor| {
+        let surface = compositor.surface();
+        surface
+            .plane_info()
+            .formats
+            .iter()
+            .copied()
+            .chain(
+                surface
+                    .planes()
+                    .overlay
+                    .iter()
+                    .flat_map(|plane| plane.formats.iter().copied()),
+            )
+            .collect::<FormatSet>()
+    });
+    let scanout_formats = plane_formats
+        .intersection(render_formats)
+        .copied()
+        .collect::<FormatSet>();
+    DmabufFeedbackBuilder::new(render_node.dev_id(), render_formats.clone())
+        .add_preference_tranche(
+            kms_node.dev_id(),
+            TrancheFlags::Scanout,
+            scanout_formats,
+            4u32..=6,
+        )
+        .build()
+        .inspect_err(|error| tracing::warn!(%error, "could not build scanout dmabuf feedback"))
+        .ok()
+}
+
+/// Send each surface drawn on `output` the feedback that fits how it was
+/// presented (smithay only resends when it changes).
+fn send_dmabuf_feedback(
+    state: &PantheonCompositor,
+    output: &Output,
+    render_states: &smithay::backend::renderer::element::RenderElementStates,
+    default_feedback: &smithay::wayland::dmabuf::DmabufFeedback,
+    scanout_feedback: &smithay::wayland::dmabuf::DmabufFeedback,
+) {
+    use smithay::backend::renderer::element::utils::select_dmabuf_feedback;
+    for window in state.gesture_frame_windows() {
+        window.send_dmabuf_feedback(
+            output,
+            smithay::desktop::utils::surface_primary_scanout_output,
+            |surface, _| {
+                select_dmabuf_feedback(surface, render_states, default_feedback, scanout_feedback)
+            },
+        );
+    }
 }
 
 /// Record a hotplug-relevant event and arm the one-shot reconcile timer the
@@ -2135,15 +2551,31 @@ fn reconcile_tick(state: &mut PantheonCompositor) -> (TimeoutAction, Option<Inst
     let now = Instant::now();
     let removal = backend.kms.next_global_removal_deadline();
     let tick = backend.hotplug.tick(now, removal);
+    // A safety poll with no pending event: trace it at DEBUG unless it finds
+    // a change (the reconcile result is still logged at INFO then).
+    let _quiet = display_trace::QuietScope::enter(
+        tick.reconcile
+            && tick.safety_due
+            && !tick.event_due
+            && !tick.followup_due
+            && !tick.removal_due,
+    );
     if tick.reconcile {
         if let Some(monotonic_us) = display_trace::stamp() {
-            tracing::info!(target: "pantheon_display_lifecycle", monotonic_us = monotonic_us as u64,
-                stage = "scheduler_tick", event_due = tick.event_due, followup_due = tick.followup_due,
-                removal_due = tick.removal_due, safety_due = tick.safety_due,
+            display_trace::lifecycle_event!(
+                monotonic_us = monotonic_us as u64,
+                stage = "scheduler_tick",
+                event_due = tick.event_due,
+                followup_due = tick.followup_due,
+                removal_due = tick.removal_due,
+                safety_due = tick.safety_due,
                 session_paused = backend.session_paused,
-                event_wait_us = backend.trace_pending_event.map(|(t, _)| t.elapsed().as_micros() as u64),
+                event_wait_us = backend
+                    .trace_pending_event
+                    .map(|(t, _)| t.elapsed().as_micros() as u64),
                 burst_events = backend.trace_pending_event.map(|(_, n)| n).unwrap_or(0),
-                "display scheduler reconcile decision");
+                "display scheduler reconcile decision"
+            );
         }
         backend.trace_pending_event = None;
         if !backend.session_paused
@@ -2208,6 +2640,7 @@ impl NativeRenderer {
                         render_node,
                         render_gbm,
                         gpus,
+                        dmabuf: None,
                     });
                 }
                 Ok(None) => {}
@@ -2247,5 +2680,20 @@ impl NativeRenderer {
             .unwrap_or(node);
         gpus.as_mut().add_node(render_node, gbm.clone())?;
         Ok(Some((render_node, gbm)))
+    }
+}
+
+#[cfg(test)]
+mod dmabuf_tests {
+    use super::dmabuf_enabled;
+
+    #[test]
+    fn dmabuf_is_on_unless_switched_off() {
+        assert!(dmabuf_enabled(None, None));
+        assert!(dmabuf_enabled(None, Some("1")));
+        assert!(dmabuf_enabled(Some("0"), None));
+        assert!(!dmabuf_enabled(Some("1"), None));
+        assert!(!dmabuf_enabled(None, Some("0")));
+        assert!(!dmabuf_enabled(Some("1"), Some("1")));
     }
 }

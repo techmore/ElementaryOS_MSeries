@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.github.techmore.orchard</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Orchard</name>
+  <summary>Run other Linux machines, Incus containers and Podman pods on this Mac</summary>
+  <description>
+    <p>Orchard runs ARM64 virtual machines with QEMU and KVM, manages Incus containers and virtual machines over the local socket, and shows this user's rootless Podman containers, images and volumes, with the look and feel of an elementary OS app.</p>
+    <p>Machines: see each machine's desktop in a built-in Display tab with full screen, mouse and keyboard, pause and resume, a live console, and readiness and disk-space checks. Import guests already managed with mseries-vm, or create new ones from elementary OS, Omarchy, Ubuntu, Debian, Fedora or any ARM64 installer image.</p>
+    <p>Incus: create, start, stop, pause, snapshot, restore, clone and export instances; edit their configuration with version checks; read their logs; watch CPU, memory, network and disk statistics with 24 hours of history; browse images, networks, profiles and projects; mount folders, publish ports and attach networks.</p>
+    <p>Podman: start, stop, restart and remove containers, remove images and volumes, and open a details window with live counters.</p>
+  </description>
+  <launchable type="desktop-id">com.github.techmore.orchard.desktop</launchable>
+  <url type="homepage">https://github.com/techmore/ElementaryOS_MSeries</url>
+  <url type="bugtracker">https://github.com/techmore/ElementaryOS_MSeries/issues</url>
+  <provides><binary>orchard</binary></provides>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="1.0.0" date="2026-10-21">
+      <description>
+        <p>Machine Lab and Orchard for Incus merged into one app: Machine Lab's sidebar, pages and style with three sections (Machines, Incus, Podman) and Orchard's full Incus and Podman feature set. Idles at 0 % CPU: no pulse animation on running rows, cairo renderer, 1 px window outline, steady text cursor, timers only while a page is on screen.</p>
+      </description>
+    </release>
+  </releases>
+</component>

@@ -18,9 +18,9 @@
     {
       "file": "mseries/codexbar-wingpanel/Indicator.vala",
       "rule": "icon-px",
-      "match": "pixel_size = 12",
+      "match": "pixel_size = 24",
       "count": 2,
-      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+      "reason": "Dropdown icon glyph, doubled with the popover text (2em). Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
     },
     {
       "file": "mseries/codexbar-wingpanel/Indicator.vala",
@@ -32,16 +32,16 @@
     {
       "file": "mseries/codexbar-wingpanel/Indicator.vala",
       "rule": "icon-px",
-      "match": "pixel_size = 18",
+      "match": "pixel_size = 36",
       "count": 3,
-      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+      "reason": "Dropdown icon glyph, doubled with the popover text (2em). Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
     },
     {
       "file": "mseries/codexbar-wingpanel/Indicator.vala",
       "rule": "icon-px",
-      "match": "pixel_size = 32",
+      "match": "pixel_size = 64",
       "count": 1,
-      "reason": "Icon glyph size in pixels. Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
+      "reason": "Dropdown icon glyph, doubled with the popover text (2em). Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
     },
     {
       "file": "mseries/codexbar-wingpanel/settings/SettingsApp.vala",
@@ -219,18 +219,25 @@
       "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
     },
     {
-      "file": "mseries/orchard-incus-native/src/Dashboard.vala",
+      "file": "mseries/orchard/src/Dashboard.vala",
       "rule": "icon-px",
       "match": "pixel_size = 32",
       "count": 1,
       "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
     },
     {
-      "file": "mseries/orchard-incus-native/src/Indicator.vala",
+      "file": "mseries/orchard/src/Indicator.vala",
       "rule": "icon-px",
       "match": "pixel_size = 16",
       "count": 1,
       "reason": "Existing semantic illustration glyph; font migration preserves its geometry."
+    },
+    {
+      "file": "mseries/orchard/src/PodmanPage.vala",
+      "rule": "icon-px",
+      "match": "pixel_size = 24",
+      "count": 1,
+      "reason": "Row glyph at the same 24 px as the Machines pages' spec cards (page.vala, incus-page.vala) so the three sections match; follows the ladder together with them."
     },
     {
       "file": "mseries/patches/wingpanel-content-scale.patch",

@@ -64,9 +64,13 @@ pub struct Request {
     pub since_last_key: Option<Duration>,
 }
 
-/// Whether a freshly created token should be kept so it can be activated later.
-pub fn accepts_token(policy: ActivationPolicy, serial_trusted: bool) -> bool {
-    serial_trusted || policy == ActivationPolicy::Raise
+/// Every freshly created token is kept, whatever the policy: the policy runs
+/// in `verdict` when the token is used, and a refused activation becomes a
+/// demands-attention mark on the window instead of vanishing. (Under `strict`
+/// an untrusted token used to be rejected here, so the compositor never
+/// learned which window had asked.)
+pub fn accepts_token(_policy: ActivationPolicy, _serial_trusted: bool) -> bool {
+    true
 }
 
 pub fn is_typing(since_last_key: Option<Duration>) -> bool {
@@ -143,11 +147,16 @@ mod tests {
     }
 
     #[test]
-    fn strict_policy_keeps_only_trusted_tokens() {
-        assert!(accepts_token(ActivationPolicy::Strict, true));
-        assert!(!accepts_token(ActivationPolicy::Strict, false));
-        assert!(accepts_token(ActivationPolicy::Raise, true));
-        assert!(accepts_token(ActivationPolicy::Raise, false));
+    fn every_token_is_kept_so_a_refusal_can_ask_for_attention() {
+        for policy in [ActivationPolicy::Strict, ActivationPolicy::Raise] {
+            assert!(accepts_token(policy, true));
+            assert!(accepts_token(policy, false));
+        }
+        // The policy still refuses an untrusted token when it is used.
+        assert_eq!(
+            verdict(ActivationPolicy::Strict, request(false)),
+            Verdict::Ignore
+        );
     }
 
     #[test]

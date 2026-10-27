@@ -1,0 +1,46 @@
+{
+  "feeds": {
+    "t3.threads": [
+      { "id": "t1", "title": "Rust greeter on greetd", "project": "ElementaryOS_MSeries", "branch": "claude/greeter-greetd", "provider": "claude", "badge": "" },
+      { "id": "t2", "title": "Dock: window grouping", "project": "ElementaryOS_MSeries", "branch": "claude/dock-rust-2", "provider": "claude", "badge": "?" },
+      { "id": "t3", "title": "Import QuickBooks CSV", "project": "rupert", "branch": "main", "provider": "codex", "badge": "" },
+      { "id": "t4", "title": "Team chat gateway", "project": "rupert", "branch": "claude/team-chat", "provider": "opencode", "badge": "new" }
+    ],
+    "t3.entries": [
+      { "id": "e1", "kind": "user", "text": "Move the greeter onto the SDK renderer." },
+      { "id": "e2", "kind": "assistant", "text": "I'll replace the hand-written GTK front end with the renderer and a Logic implementation, then run the tests." },
+      { "id": "e3", "kind": "tool", "text": "Edit rust/mseries-greeter/src/main.rs (+82 -241)" },
+      { "id": "e4", "kind": "code", "text": "cargo test -p mseries-greeter\ntest result: ok. 6 passed; 0 failed" },
+      { "id": "e5", "kind": "permission", "text": "Run: gh pr create --base dev --title \"Greeter on the renderer\"" },
+      { "id": "e6", "kind": "assistant", "text": "Waiting for your approval to open the pull request." }
+    ],
+    "t3.accounts": [
+      { "id": "a1", "title": "Claude · work account", "state": "fresh", "source": "T3 server · fixture", "observed_at": "2026-10-25T20:00:00Z", "detail": "Session 94% used · resets 21:40\nWeekly 61% used" },
+      { "id": "a2", "title": "Codex · personal account", "state": "stale", "source": "T3 server · fixture", "observed_at": "2026-10-25T18:00:00Z", "detail": "Last observation is stale; current quota unavailable. Not a routing recommendation." },
+      { "id": "a3", "title": "OpenCode", "state": "unavailable", "source": "T3 server · fixture", "observed_at": "", "detail": "Provider did not report quota. Unknown is not zero." }
+    ],
+    "t3.history": [
+      { "id": "history:claude", "title": "Claude · provider total", "state": "fresh", "source": "T3 server · fixture", "observed_at": "2026-10-25T20:00:00Z", "detail": "30 days · 1.2M tokens · API-equivalent estimate $8.40; not billed cost or account quota." }
+    ],
+    "local.usage": [
+      { "id": "local:plan", "title": "Local subscription report", "state": "unavailable", "source": "This computer · display only", "observed_at": "", "detail": "Collector failed; saved gauges suppressed. Reading reports never starts a collector." }
+    ],
+    "github.overview": [
+      { "id": "github:example/project", "title": "example/project", "state": "fresh", "source": "github.com · fixture-user", "observed_at": "2026-10-25T20:00:00Z", "detail": "Default branch main · CI SUCCESS\nOpen issues 5 · open PRs 2\nActions: feature branch build queued · latest release v1.0" },
+      { "id": "github:example/other", "title": "example/other", "state": "partial", "source": "github.com · fixture-user", "observed_at": "2026-10-25T20:00:00Z", "detail": "Actions unavailable or restricted; default-branch CI unknown. No release reported." }
+    ],
+    "github.issues": [
+      { "id": "i1", "repo": "ElementaryOS_MSeries", "number": 52, "title": "Release pipeline: signed apt and pacman suites", "lane": "build", "priority": "p0" },
+      { "id": "i2", "repo": "ElementaryOS_MSeries", "number": 331, "title": "Panel anchoring for SDK panels", "lane": "feature", "priority": "p1" },
+      { "id": "i3", "repo": "rupert", "number": 290, "title": "Import QuickBooks bank CSV", "lane": "feature", "priority": "p2" }
+    ],
+    "t3.status": [
+      { "id": "s1", "running": 2, "waiting": 1, "nearest": "Claude session at 94%, resets 21:40", "oldest_prompt": "e5" }
+    ]
+  },
+  "calls": {
+    "t3.new_thread": "t5",
+    "router.route": "claude, lane:build: read the pipeline doc, fix the publish step, open a PR",
+    "t3.start_issue": "t6"
+  }
+}

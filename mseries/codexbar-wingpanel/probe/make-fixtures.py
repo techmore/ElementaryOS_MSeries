@@ -131,6 +131,24 @@ for provider, value in hint_accounts.items():
 write_fixture(here / "opencode-compact.json", scenarios["connected"], indent=1)
 write_fixture(here / "accounts-opencode-single.json", {"accounts": [accounts["opencode"]["accounts"][0]]})
 
+# One person, three sign-ins shared across providers: the account-legend layout numbers each address once.
+write_fixture(here / "shared-accounts.json", scenarios["connected"], indent=1)
+shared = copy.deepcopy(accounts)
+shared["codex"]["accounts"] = [
+    {"email": "me@example.com", "id": "a", "active": True, "plan": "prolite", "windows": []},
+    {"email": "work@example.org", "id": "b", "active": False, "plan": "plus", "windows": [
+        window("primary", "5 hour", 300, 5, 65), window("secondary", "7 day", 10080, 62, 5000)]},
+    {"email": "lab@example.edu", "id": "c", "active": False, "plan": "plus", "windows": [
+        window("primary", "5 hour", 300, 88, 20), window("secondary", "7 day", 10080, 40, 7000)]}]
+shared["claude"].update(activeEmail="me@example.com", activePlan="max20x", displayEmail="me@example.com", displayPlan="max20x")
+shared["claude"]["desktop"]["email"] = "me@example.com"
+shared["claude"]["accounts"][0].update(email="me@example.com", plan="max20x")
+shared["claude"]["accounts"][1].update(email="work@example.org", plan="pro")
+shared["opencode"]["accounts"][0]["email"] = "me@example.com"
+shared["opencode"]["accounts"][1]["email"] = "work@example.org"
+for provider, value in shared.items():
+    write_fixture(here / f"accounts-{provider}-shared.json", value)
+
 # Different CLI/app logins: app quota must win even when the CLI account is exhausted.
 write_fixture(here / "claude-split.json", scenarios["connected"], indent=1)
 split = copy.deepcopy(accounts["claude"])

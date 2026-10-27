@@ -148,8 +148,9 @@ def _stored_auth_env() -> dict:
             if key not in {"GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "GITHUB_ENTERPRISE_TOKEN"}}
 
 
-def _gh_accounts() -> list[dict]:
-    """Every account the GitHub CLI is signed in to, parsed from `gh auth status` (the CLI has no JSON for it)."""
+def _gh_status() -> tuple[list[dict], list[dict]]:
+    """`gh auth status` (the CLI has no JSON for it): the accounts it verified, and the ones it could not
+    (expired token, or no network)."""
     try:
         result = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=10, check=False, env=_stored_auth_env())
     except FileNotFoundError as exc:
@@ -157,13 +158,26 @@ def _gh_accounts() -> list[dict]:
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError("GitHub CLI did not respond before the timeout") from exc
     accounts: list[dict] = []
+    unverified: list[dict] = []
+    current: dict | None = None
     for line in (result.stdout + result.stderr).splitlines():
-        match = re.search(r"Logged in to (\S+) account (\S+)", line)
-        if match and "Failed" not in line:
-            accounts.append({"host": match.group(1).lower(), "login": match.group(2), "active": False})
-        elif accounts and re.search(r"Active account:\s*true", line):
-            accounts[-1]["active"] = True
-    return accounts
+        ok = re.search(r"Logged in to (\S+) account (\S+)", line)
+        failed = re.search(r"Failed to log in to (\S+) account (\S+)", line)
+        if ok:
+            current = {"host": ok.group(1).lower(), "login": ok.group(2), "active": False}
+            accounts.append(current)
+        elif failed:
+            # Its "Active account" line belongs to it, not to the verified account listed before it.
+            current = {"host": failed.group(1).lower(), "login": failed.group(2), "active": False}
+            unverified.append(current)
+        elif current is not None and re.search(r"Active account:\s*true", line):
+            current["active"] = True
+    return accounts, unverified
+
+
+def _gh_accounts() -> list[dict]:
+    """Every account the GitHub CLI is signed in to and could verify."""
+    return _gh_status()[0]
 
 
 @functools.lru_cache(maxsize=1)
@@ -311,20 +325,51 @@ def _repository_details(ids: list[str], since: dict[str, str]) -> list[dict]:
 ACTIVE_RUN_STATES = {"queued", "in_progress", "waiting", "requested", "pending"}
 
 
-def _workflow_runs(repos: list[dict], now: int) -> dict:
-    """Running and just-finished GitHub Actions runs (every branch and pull request) in recently active repositories."""
-    cutoff = datetime.fromtimestamp(now - 7 * 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z")
-    working = [repo["name"] for repo in repos
-               if repo["repoState"] != "hidden" and not repo["archived"] and not repo["fork"]
-               and repo["updatedAt"] >= cutoff][:30]
+def _optional_count(value: object) -> int | None:
+    """Unknown or malformed counts are not measured zeroes (bool is not a count)."""
+    return value if type(value) is int and value >= 0 else None
 
-    def runs_for(name: str) -> list[dict]:
+
+def _workflow_runs(repos: list[dict], now: int) -> dict:
+    """Bounded Actions query with per-repository observation and truncation evidence."""
+    cutoff = datetime.fromtimestamp(now - 7 * 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z")
+    working = []
+    observations = {}
+    for repo in repos:
+        name = repo["name"]
+        reason = ("hidden" if repo["repoState"] == "hidden" else "archived" if repo["archived"]
+                  else "fork" if repo["fork"] else "inactive" if repo["updatedAt"] < cutoff
+                  else "repository_limit" if len(working) >= 30 else "")
+        if reason:
+            observations[name] = {"repo": name, "state": "not_checked", "reason": reason,
+                                  "fetchedAt": None, "totalCount": None, "returnedCount": None,
+                                  "queryLimit": 15, "queryTruncated": None, "snapshotTruncated": False}
+        else:
+            working.append(name)
+
+    def runs_for(name: str) -> tuple[list[dict], dict]:
+        observation = {"repo": name, "state": "error", "reason": "fetch_failed", "fetchedAt": now,
+                       "totalCount": None, "returnedCount": None, "queryLimit": 15,
+                       "queryTruncated": None, "snapshotTruncated": False}
         try:
             payload = json.loads(_run_gh([f"repos/{name}/actions/runs?per_page=15"]).stdout)
-        except (RuntimeError, json.JSONDecodeError):
-            return []  # Actions disabled, no access, or a transient error: that repository just has no runs.
+        except (RuntimeError, OSError, json.JSONDecodeError):
+            return [], observation  # No raw stderr: it may contain credentials or private diagnostics.
+        page = payload.get("workflow_runs") if isinstance(payload, dict) else None
+        if (not isinstance(page, list) or len(page) > 15
+                or any(not isinstance(run, dict) or _optional_count(run.get("id")) in {None, 0}
+                       or not isinstance(run.get("status"), str) for run in page)):
+            observation["reason"] = "invalid_response"
+            return [], observation
+        total = _optional_count(payload.get("total_count"))
+        if total is not None and total < len(page):
+            observation["reason"] = "invalid_response"
+            return [], observation
+        observation.update(state="empty" if total == 0 and not page else "success", reason="",
+                           totalCount=total, returnedCount=len(page),
+                           queryTruncated=total > len(page) if total is not None else None)
         found = []
-        for run in payload.get("workflow_runs") or []:
+        for run in page:
             found.append({
                 "id": run.get("id"), "repo": name, "name": run.get("name") or run.get("display_title") or "workflow",
                 "branch": run.get("head_branch") or "", "event": run.get("event") or "",
@@ -332,10 +377,13 @@ def _workflow_runs(repos: list[dict], now: int) -> dict:
                 "url": run.get("html_url") or "", "createdAt": run.get("created_at") or "",
                 "updatedAt": run.get("updated_at") or "",
             })
-        return found
+        return found, observation
 
     with ThreadPoolExecutor(max_workers=6) as pool:
-        runs = [run for batch in pool.map(runs_for, working) for run in batch]
+        runs = []
+        for batch, observation in pool.map(runs_for, working):
+            runs.extend(batch)
+            observations[observation["repo"]] = observation
     # A run "in progress" for over six hours is stuck or abandoned, not work in flight.
     stale_cutoff = datetime.fromtimestamp(now - 6 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z")
     running = [run for run in runs if run["status"] in ACTIVE_RUN_STATES and run["createdAt"] >= stale_cutoff]
@@ -343,7 +391,16 @@ def _workflow_runs(repos: list[dict], now: int) -> dict:
     finished = [run for run in runs if run["status"] == "completed" and run["updatedAt"] >= recent_cutoff]
     running.sort(key=lambda run: run["createdAt"], reverse=True)
     finished.sort(key=lambda run: run["updatedAt"], reverse=True)
-    return {"checkedRepos": len(working), "running": running[:50], "finished": finished[:50]}
+    for run in running[50:] + finished[50:]:
+        observations[run["repo"]]["snapshotTruncated"] = True
+    displayed = running[:50] + finished[:50]
+    for name, observation in observations.items():
+        observation["displayedCount"] = sum(run["repo"] == name for run in displayed)
+    return {"checkedRepos": len(working), "running": running[:50], "finished": finished[:50],
+            "observations": [observations[repo["name"]] for repo in repos],
+            "repositoryLimit": 30, "queryLimit": 15, "runningLimit": 50, "finishedLimit": 50,
+            "runningWindowSeconds": 6 * 60 * 60, "finishedWindowSeconds": 2 * 60 * 60,
+            "snapshotTruncated": len(running) > 50 or len(finished) > 50}
 
 
 def fetch_snapshot() -> dict:
@@ -422,8 +479,8 @@ def fetch_snapshot() -> dict:
             "stars": int(repo.get("stargazerCount") or 0),
             "forks": int(repo.get("forkCount") or 0),
             "updatedAt": repo.get("updatedAt", ""),
-            "openIssues": int(issue_conn.get("totalCount") or 0),
-            "openPullRequests": int(pull_conn.get("totalCount") or 0),
+            "openIssues": _optional_count(issue_conn.get("totalCount")),
+            "openPullRequests": _optional_count(pull_conn.get("totalCount")),
             "branch": branch.get("name", ""),
             "commitCounts": commit_counts,
             "ci": rollup.get("state", "UNKNOWN").upper(),
@@ -556,9 +613,26 @@ def read_cache() -> dict | None:
             payload = json.load(stream)
         if payload.get("schemaVersion") != 1 or not isinstance(payload.get("repos"), list):
             return None
-        host, account = _identity()
-        if payload.get("host") != host or str(payload.get("account", "")).lower() != account:
-            return None
+        try:
+            host, account = _identity()
+        except RuntimeError as exc:
+            # `gh auth status` reports every account as failed when the network is down. Keep showing the last
+            # snapshot (marked stale, with the reason) when it belongs to the configured host and account.
+            settings = load_settings()
+            host, chosen = _hostname(settings), _account(settings).lower()
+            _, unverified = _gh_status()
+            stored = str(payload.get("account", "")).lower()
+            # Only a stored-but-unverifiable login (expired token or no network) may show old data; a signed-out
+            # CLI must not.
+            if payload.get("host") != host or not any(
+                    item["host"] == host and item["login"].lower() == (chosen or stored) for item in unverified):
+                return None
+            if chosen and stored != chosen:
+                return None
+            payload["error"] = "GitHub could not verify the saved login (offline or expired token); showing the last snapshot"
+        else:
+            if payload.get("host") != host or str(payload.get("account", "")).lower() != account:
+                return None
         payload["stale"] = True
         return apply_settings(payload)
     except (OSError, json.JSONDecodeError, TypeError, RuntimeError):
@@ -576,7 +650,7 @@ def get_snapshot(force: bool = False, max_age: int = CACHE_TTL_SECONDS) -> dict:
         return apply_settings(fetch_and_cache())
     except (RuntimeError, OSError) as exc:
         if cached:
-            cached["error"] = str(exc)
+            cached["error"] = cached.get("error") or str(exc)
             cached["stale"] = True
             return cached
         raise
@@ -773,9 +847,9 @@ def filter_repositories(snapshot: dict, scope: str = "dashboard", query: str = "
         selected.append(repo)
     sort = sort or settings.get("menuSort", "activity")
     if sort == "issues":
-        selected.sort(key=lambda item: (item.get("openIssues", 0), item.get("updatedAt", "")), reverse=True)
+        selected.sort(key=lambda item: (item.get("openIssues") is not None, item.get("openIssues") or 0, item.get("updatedAt", "")), reverse=True)
     elif sort == "prs":
-        selected.sort(key=lambda item: (item.get("openPullRequests", 0), item.get("updatedAt", "")), reverse=True)
+        selected.sort(key=lambda item: (item.get("openPullRequests") is not None, item.get("openPullRequests") or 0, item.get("updatedAt", "")), reverse=True)
     elif sort == "stars":
         selected.sort(key=lambda item: (item.get("stars", 0), item.get("updatedAt", "")), reverse=True)
     elif sort == "repo":
@@ -797,9 +871,9 @@ def filter_repositories(snapshot: dict, scope: str = "dashboard", query: str = "
 def _repo_details(name: str, endpoint: str, limit: int = 20, force: bool = False) -> object:
     name = _safe_repo_name(name)
     if endpoint == "issues":
-        route = f"repos/{name}/issues?state=open&per_page={max(1, min(100, limit))}"
-        items, _ = _api_json(route, force=force)
-        return [item for item in items if "pull_request" not in item]
+        # The issues endpoint mixes pull requests in, so take a full page and apply the limit after filtering.
+        items, _ = _api_json(f"repos/{name}/issues?state=open&per_page=100", force=force)
+        return [item for item in items if "pull_request" not in item][:max(1, min(100, limit))]
     if endpoint == "pulls":
         return _api_json(f"repos/{name}/pulls?state=open&per_page={max(1, min(100, limit))}", force=force)[0]
     if endpoint == "ci":
@@ -833,8 +907,9 @@ def _human_table(items: list[dict]) -> str:
     rows = []
     for item in items:
         rows.append("{:<34} {:>4} PR {:>5} issues {:<9} {}".format(
-            item.get("name", item.get("full_name", ""))[:34], item.get("openPullRequests", 0),
-            item.get("openIssues", 0), item.get("ci", ""), item.get("release", "")))
+            item.get("name", item.get("full_name", ""))[:34],
+            item.get("openPullRequests") if item.get("openPullRequests") is not None else "?",
+            item.get("openIssues") if item.get("openIssues") is not None else "?", item.get("ci", ""), item.get("release", "")))
     return "\n".join(rows)
 
 

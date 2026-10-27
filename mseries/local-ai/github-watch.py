@@ -25,13 +25,23 @@ def api(path, method='GET', data=None):
 
 
 def reconcile(previous, observations, errors, acknowledged=False):
-    snapshots = dict(previous.get('snapshots', {}))
-    pending = {} if acknowledged else dict(previous.get('pending', {}))
+    # Older dashboard issues stored the full observation in each snapshot and
+    # both ends of every pending change. Keep only the fields used to detect a
+    # change, and keep the original value only; the latest value is the current
+    # snapshot. This preserves provenance while keeping the issue body bounded.
+    snapshots = {key: change_marker(value)
+                 for key, value in previous.get('snapshots', {}).items()}
+    pending = {}
+    if not acknowledged:
+        for key, change in previous.get('pending', {}).items():
+            # Migrate legacy {from, to} entries without losing the first value.
+            pending[key] = (change['from'] if isinstance(change, dict)
+                            and 'from' in change and 'to' in change else change)
     for key, current in observations.items():
+        current = change_marker(current)
         old = snapshots.get(key)
         if old is not None and old != current:
-            pending[key] = {'from': pending.get(key, {}).get('from', change_marker(old)),
-                            'to': change_marker(current)}
+            pending.setdefault(key, change_marker(old))
         snapshots[key] = current
     return {'snapshots': snapshots, 'pending': pending, 'errors': errors}
 
@@ -66,9 +76,9 @@ def render(state):
              'New changes reopen this same issue. Review licenses, hardware applicability and diffs before importing.', '',
              'This watcher does not merge, deploy, change build pins, or qualify hardware.', '',
              '## Changes awaiting review', '']
-    for key, change in sorted(state['pending'].items())[:20]:
-        lines += [f'- **{key}**', '  - Before: `' + json.dumps(change['from'], sort_keys=True) + '`',
-                  '  - Now: `' + json.dumps(change['to'], sort_keys=True) + '`']
+    for key, before in sorted(state['pending'].items())[:20]:
+        lines += [f'- **{key}**', '  - Before: `' + json.dumps(before, sort_keys=True) + '`',
+                  '  - Now: `' + json.dumps(state['snapshots'].get(key), sort_keys=True) + '`']
     if not state['pending']:
         lines += ['No unacknowledged changes. Initial observations establish a baseline.']
     elif len(state['pending']) > 20:

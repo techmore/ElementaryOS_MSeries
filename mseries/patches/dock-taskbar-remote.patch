@@ -5,7 +5,7 @@ index 9d13ef2..5db32a4 100644
 @@ -471,6 +471,7 @@ dock-window.taskbar.dark .taskbar-logo-pane.taskbar-logo-pane-lit {
  .taskbar-repobar-button { padding: 2px 8px; min-width: 28px; min-height: 28px; border-radius: 6px; }
  /* The readout size follows the dock's icon size (TaskbarRepoBar.vala), so it changes with the mode and text step. */
- .taskbar-repobar-popup { font-size: 1.4em; }
+ .taskbar-repobar-popup { font-size: 1.25em; }
 +.taskbar-remote-button { padding: 4px; min-width: 28px; min-height: 28px; border-radius: 6px; }
  .taskbar-codexbar-separator { opacity: 0.35; }
  

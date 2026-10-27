@@ -19,6 +19,56 @@ use smithay::{
 
 use crate::PantheonCompositor;
 
+/// Solid-colour overlay pieces kept across frames. A new `SolidColorBuffer`
+/// every frame has a new id, so the damage tracker repaints it every frame
+/// even when nothing changed; a kept buffer only damages when its size or
+/// colour changes (or it moves).
+#[derive(Default)]
+pub(crate) struct SolidBuffers(
+    std::cell::RefCell<std::collections::HashMap<(String, SolidSlot), SolidColorBuffer>>,
+);
+
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub(crate) enum SolidSlot {
+    SnapPreview,
+    Screenshot(u8),
+    /// The n-th rectangle of the shell OSD.
+    Osd(u8),
+}
+
+impl SolidBuffers {
+    /// The kept buffer for `slot` on `output`, updated to `size` and `color`.
+    pub(crate) fn get(
+        &self,
+        output: &str,
+        slot: SolidSlot,
+        size: Size<i32, Logical>,
+        color: [f32; 4],
+    ) -> SolidColorBuffer {
+        let mut buffers = self.0.borrow_mut();
+        let buffer = buffers
+            .entry((output.to_owned(), slot))
+            .or_insert_with(|| SolidColorBuffer::new(size, color));
+        // `update` only bumps the commit counter when something differs.
+        buffer.update(size, color);
+        buffer.clone()
+    }
+}
+
+/// Physical pixel size of an output, as the wallpaper is scaled for it.
+pub(crate) fn output_pixel_size(
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Option<(i32, i32)> {
+    let geometry = state.space.output_geometry(output)?;
+    let size = geometry
+        .size
+        .to_f64()
+        .to_physical(output.current_scale().fractional_scale())
+        .to_i32_round::<i32>();
+    Some((size.w, size.h))
+}
+
 render_elements! {
     pub CursorRenderElement<R> where R: ImportAll + ImportMem;
     Surface=WaylandSurfaceRenderElement<R>,
@@ -81,7 +131,14 @@ where
     }
 
     let scale = Scale::from(output.current_scale().fractional_scale());
-    let mut elements = match &state.cursor_status {
+    let cursor_status = if state.screenshot_selection.borrow().active() {
+        CursorImageStatus::Named(CursorIcon::Crosshair)
+    } else if state.move_grab_active {
+        CursorImageStatus::Named(CursorIcon::Grabbing)
+    } else {
+        state.cursor_status.clone()
+    };
+    let mut elements = match &cursor_status {
         CursorImageStatus::Hidden => Vec::new(),
         CursorImageStatus::Surface(surface) if surface.alive() => {
             let hotspot = with_states(surface, |states| {
@@ -106,7 +163,7 @@ where
             )
         }
         CursorImageStatus::Surface(_) | CursorImageStatus::Named(_) => {
-            let icon = match &state.cursor_status {
+            let icon = match &cursor_status {
                 CursorImageStatus::Named(icon) => *icon,
                 _ => CursorIcon::Default,
             };
@@ -133,9 +190,15 @@ where
     };
 
     if let Some(preview) = state.corner_snap_preview.as_ref()
+        && !state.session_locked
         && preview.output.name() == output.name()
     {
-        let buffer = SolidColorBuffer::new(preview.rect.size, [0.18, 0.46, 0.92, 1.0]);
+        let buffer = state.solid_buffers.get(
+            &output.name(),
+            SolidSlot::SnapPreview,
+            preview.rect.size,
+            [0.18, 0.46, 0.92, 1.0],
+        );
         let location = (preview.rect.loc - output_geometry.loc)
             .to_f64()
             .to_physical(scale)
@@ -161,31 +224,16 @@ where
 {
     let wallpaper = state.wallpaper.as_ref()?;
     let output_geometry = state.space.output_geometry(output)?;
-    let source: Size<f64, Logical> = (wallpaper.width as f64, wallpaper.height as f64).into();
-    let target = output_geometry.size.to_f64();
-    let source_region = if wallpaper.picture_options == "zoom" && target.w > 0.0 && target.h > 0.0 {
-        let source_aspect = source.w / source.h;
-        let target_aspect = target.w / target.h;
-        if source_aspect > target_aspect {
-            let width = source.h * target_aspect;
-            Some(Rectangle::<f64, Logical>::new(
-                ((source.w - width) / 2.0, 0.0).into(),
-                (width, source.h).into(),
-            ))
-        } else {
-            let height = source.w / target_aspect;
-            Some(Rectangle::<f64, Logical>::new(
-                (0.0, (source.h - height) / 2.0).into(),
-                (source.w, height).into(),
-            ))
-        }
-    } else {
-        None
-    };
+    let size = output_pixel_size(state, output)?;
+    let (buffer, source_region) =
+        match wallpaper.buffer_for(size, Some(&state.wallpaper_scaled_sender))? {
+            crate::wallpaper::WallpaperBuffer::Scaled(buffer) => (buffer, None),
+            crate::wallpaper::WallpaperBuffer::Fallback(buffer, crop) => (buffer, crop),
+        };
     MemoryRenderBufferRenderElement::from_buffer(
         renderer,
         (0.0, 0.0),
-        &wallpaper.buffer,
+        &buffer,
         None,
         source_region,
         Some(output_geometry.size),
@@ -239,15 +287,20 @@ where
         Size::from((width, height)),
     );
     let scale = Scale::from(output.current_scale().fractional_scale());
+    let output_name = output.name();
     let mut elements = Vec::new();
+    let mut slot = 0_u8;
     let mut append = |rect: Rectangle<i32, Logical>, color: [f32; 4], opacity: f32| {
         let location = (rect.loc - geometry.loc)
             .to_f64()
             .to_physical(scale)
             .to_i32_round();
         let size = rect.size;
+        slot = slot.wrapping_add(1);
         if size.w > 0 && size.h > 0 {
-            let buffer = SolidColorBuffer::new(size, color);
+            let buffer = state
+                .solid_buffers
+                .get(&output_name, SolidSlot::Osd(slot), size, color);
             let element = SolidColorRenderElement::from_buffer(
                 &buffer,
                 location,
@@ -351,22 +404,202 @@ where
     R::TextureId: Texture + Clone + Send + 'static,
 {
     let output_name = output.name();
-    let Some(surface) = state.lock_surfaces.get(&output_name) else {
+    let scale = Scale::from(output.current_scale().fractional_scale());
+    // The pointer (and any volume/brightness OSD) above the lock surface.
+    let mut elements = state.screen_corners.elements(
+        renderer,
+        output,
+        state.space.output_geometry(output).map(|g| g.size),
+    );
+    if let Some(surface) = state.lock_surfaces.get(&output_name) {
+        elements.extend(render_screenshot_overlay(state, output));
+        elements.extend(render_cursor_elements(renderer, state, output));
+        elements.extend(
+            render_elements_from_surface_tree::<R, CursorRenderElement<R>>(
+                renderer,
+                surface.wl_surface(),
+                (0, 0),
+                scale,
+                1.0,
+                Kind::Unspecified,
+            ),
+        );
+    }
+    elements
+}
+
+/// Snap Assist: live, scaled thumbnails of the other windows in the empty
+/// half, on plates over a dimmed backdrop, the selection on an accent plate.
+/// Clients are not resized. Front to back: thumbnails, plates, backdrop.
+fn render_snap_assist_elements<R>(
+    renderer: &mut R,
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Vec<CursorRenderElement<R>>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    use crate::snap_assist::{BACKDROP_ALPHA, PLATE_ALPHA};
+    use smithay::backend::renderer::element::{
+        AsRenderElements,
+        utils::{Relocate, RelocateRenderElement, RescaleRenderElement},
+    };
+    let Some(assist) = state.snap_assist.as_ref() else {
+        return Vec::new();
+    };
+    if assist.output.name() != output.name() || state.session_locked {
+        return Vec::new();
+    }
+    let Some(area) = state.space.output_geometry(output) else {
         return Vec::new();
     };
     let scale = Scale::from(output.current_scale().fractional_scale());
-    render_elements_from_surface_tree::<R, CursorRenderElement<R>>(
-        renderer,
-        surface.wl_surface(),
-        (0, 0),
-        scale,
-        1.0,
-        Kind::Unspecified,
-    )
+    let physical = |point: Point<i32, Logical>| (point - area.loc).to_physical_precise_round(scale);
+    let mut elements = Vec::new();
+    for (window, thumb) in assist.thumbnails() {
+        let from = Rectangle::new(
+            state.space.element_location(&window).unwrap_or_default(),
+            window.geometry().size,
+        );
+        let origin = (from.loc - window.geometry().loc - area.loc).to_physical_precise_round(scale);
+        let anchor = physical(from.loc);
+        let offset = (thumb.loc - from.loc).to_physical_precise_round(scale);
+        let resize = Scale::from((
+            thumb.size.w.max(1) as f64 / from.size.w.max(1) as f64,
+            thumb.size.h.max(1) as f64 / from.size.h.max(1) as f64,
+        ));
+        let surfaces: Vec<WaylandSurfaceRenderElement<R>> =
+            window.render_elements(renderer, origin, scale, 1.0);
+        elements.extend(surfaces.into_iter().map(|surface| {
+            CursorRenderElement::Animated(RelocateRenderElement::from_element(
+                RescaleRenderElement::from_element(surface, anchor, resize),
+                offset,
+                Relocate::Relative,
+            ))
+        }));
+    }
+    if let Some(bars) = assist.ring_bars() {
+        for (buffer, bar) in assist.ring.iter().zip(bars) {
+            elements.push(
+                SolidColorRenderElement::from_buffer(
+                    buffer,
+                    physical(bar.loc),
+                    scale,
+                    1.0,
+                    Kind::Unspecified,
+                )
+                .into(),
+            );
+        }
+    }
+    for (plate_rect, plate) in assist.plate_rects.iter().zip(&assist.plates) {
+        elements.push(
+            SolidColorRenderElement::from_buffer(
+                plate,
+                physical(plate_rect.loc),
+                scale,
+                PLATE_ALPHA,
+                Kind::Unspecified,
+            )
+            .into(),
+        );
+    }
+    elements.push(
+        SolidColorRenderElement::from_buffer(
+            &assist.backdrop,
+            physical(assist.zone.loc),
+            scale,
+            BACKDROP_ALPHA,
+            Kind::Unspecified,
+        )
+        .into(),
+    );
+    elements
 }
 
 /// Shared scene assembly for nested and native outputs. Preview transforms
 /// never remap windows, so keyboard/pointer focus and workspace order stay put.
+fn render_screenshot_overlay<R>(
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Vec<CursorRenderElement<R>>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    if state.session_locked || !state.screenshot_selection.borrow().active() {
+        return Vec::new();
+    }
+    let Some(area) = state.space.output_geometry(output) else {
+        return Vec::new();
+    };
+    let pointer = state.seat.get_pointer().unwrap().current_location();
+    let selected = state.screenshot_selection.borrow().preview().or_else(|| {
+        let window = state.window_under(pointer)?;
+        let location = state.space.element_location(&window)?;
+        let size = window.geometry().size;
+        Some(crate::screenshot::Region {
+            x: location.x,
+            y: location.y,
+            width: size.w as u32,
+            height: size.h as u32,
+        })
+    });
+    let Some(region) = selected else {
+        return Vec::new();
+    };
+    let rect: Rectangle<i32, Logical> = Rectangle::new(
+        (region.x, region.y).into(),
+        (
+            region.width.min(i32::MAX as u32) as i32,
+            region.height.min(i32::MAX as u32) as i32,
+        )
+            .into(),
+    );
+    let scale = Scale::from(output.current_scale().fractional_scale());
+    let mut elements = Vec::new();
+    for (index, border) in [
+        Rectangle::new(rect.loc, (rect.size.w, 3).into()),
+        Rectangle::new(
+            (rect.loc.x, rect.loc.y + rect.size.h - 3).into(),
+            (rect.size.w, 3).into(),
+        ),
+        Rectangle::new(rect.loc, (3, rect.size.h).into()),
+        Rectangle::new(
+            (rect.loc.x + rect.size.w - 3, rect.loc.y).into(),
+            (3, rect.size.h).into(),
+        ),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let Some(border) = border.intersection(area) else {
+            continue;
+        };
+        let buffer = state.solid_buffers.get(
+            &output.name(),
+            SolidSlot::Screenshot(index as u8),
+            border.size,
+            [0.21, 0.54, 0.9, 1.0],
+        );
+        elements.push(
+            SolidColorRenderElement::from_buffer(
+                &buffer,
+                (border.loc - area.loc)
+                    .to_f64()
+                    .to_physical(scale)
+                    .to_i32_round(),
+                scale,
+                1.0,
+                Kind::Unspecified,
+            )
+            .into(),
+        );
+    }
+    elements
+}
+
 pub fn render_desktop_elements<R>(
     renderer: &mut R,
     state: &PantheonCompositor,
@@ -381,7 +614,16 @@ where
         AsRenderElements,
         utils::{Relocate, RelocateRenderElement, RescaleRenderElement},
     };
-    let mut elements = render_cursor_elements(renderer, state, output);
+    let mut elements = state.screen_corners.elements(
+        renderer,
+        output,
+        state
+            .space
+            .output_geometry(output)
+            .map(|geometry| geometry.size),
+    );
+    elements.extend(render_cursor_elements(renderer, state, output));
+    elements.extend(render_snap_assist_elements(renderer, state, output));
     if let (Some(animation), Some(area)) = (
         &state.gesture_animation,
         state.space.output_geometry(output),

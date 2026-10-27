@@ -22,10 +22,16 @@ const SCREENSAVER_BUS_NAME: &str = "org.gnome.ScreenSaver";
 const SCREENSAVER_OBJECT_PATH: &str = "/org/gnome/ScreenSaver";
 const SCREENSAVER_INTERFACE: &str = "org.gnome.ScreenSaver";
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 enum ShellEvent {
-    AcceleratorActivated(u32),
+    /// A grabbed key was pressed; delivered only to the connection that grabbed it.
+    AcceleratorActivated {
+        id: u32,
+        owner: String,
+    },
     ActiveChanged(bool),
+    /// Start the configured locker, as `org.gnome.ScreenSaver.Lock` does.
+    Lock,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -58,15 +64,81 @@ impl ShellOsd {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct KeyBinding {
     id: u32,
+    /// Unique bus name of the connection that grabbed the key.
+    owner: String,
     accelerator: ParsedAccelerator,
+}
+
+/// Every `GrabAccelerator` grab, tied to the D-Bus connection that made it.
+///
+/// A grab belongs to its connection: when that connection leaves the bus (a crash, a restart
+/// during testing) its grabs go with it, as in GNOME Shell. Without that, a restarted
+/// `gsd-media-keys` found its own volume keys still held by its dead predecessor, every
+/// `GrabAccelerators` call came back 0 and the keys stayed dead until the next login.
+#[derive(Default)]
+struct GrabTable {
+    bindings: Vec<KeyBinding>,
+    next_id: u32,
+}
+
+impl GrabTable {
+    /// Grab `accelerator` for `owner`; 0 means it is held by a different live connection.
+    /// A connection grabbing a key it already holds gets a fresh id and the old one stops
+    /// working, so a client that re-grabs before it releases cannot lock itself out.
+    fn grab(&mut self, owner: &str, accelerator: ParsedAccelerator) -> u32 {
+        if let Some(held) = self
+            .bindings
+            .iter()
+            .find(|binding| same_accelerator(binding.accelerator, accelerator))
+        {
+            if held.owner != owner {
+                tracing::warn!(holder = %held.owner, requester = %owner, "accelerator already grabbed by another connection");
+                return 0;
+            }
+            self.bindings
+                .retain(|binding| !same_accelerator(binding.accelerator, accelerator));
+        }
+
+        let id = self.next_id.max(1);
+        self.next_id = id.wrapping_add(1).max(1);
+        self.bindings.push(KeyBinding {
+            id,
+            owner: owner.to_owned(),
+            accelerator,
+        });
+        id
+    }
+
+    /// Release the grabs `owner` holds among `actions`; other connections' grabs are untouched.
+    fn release(&mut self, owner: &str, actions: &[u32]) -> usize {
+        let initial_len = self.bindings.len();
+        self.bindings
+            .retain(|binding| !(binding.owner == owner && actions.contains(&binding.id)));
+        initial_len - self.bindings.len()
+    }
+
+    /// Drop everything `owner` grabbed, once it has left the bus.
+    fn drop_owner(&mut self, owner: &str) -> usize {
+        let initial_len = self.bindings.len();
+        self.bindings.retain(|binding| binding.owner != owner);
+        initial_len - self.bindings.len()
+    }
+
+    fn matching(&self, keysym: Keysym, modifiers: &ModifiersState) -> Vec<(u32, String)> {
+        self.bindings
+            .iter()
+            .filter(|binding| matches_accelerator(binding.accelerator, keysym, modifiers))
+            .map(|binding| (binding.id, binding.owner.clone()))
+            .collect()
+    }
 }
 
 #[derive(Clone)]
 pub struct ShellCompatHandle {
-    bindings: Arc<Mutex<Vec<KeyBinding>>>,
+    bindings: Arc<Mutex<GrabTable>>,
     events: mpsc::Sender<ShellEvent>,
     active: Arc<AtomicBool>,
     active_since: Arc<Mutex<Option<Instant>>>,
@@ -75,7 +147,7 @@ pub struct ShellCompatHandle {
 
 impl ShellCompatHandle {
     pub fn start(wayland_display: OsString, redraw_sender: Sender<()>) -> Self {
-        let bindings = Arc::new(Mutex::new(Vec::new()));
+        let bindings = Arc::new(Mutex::new(GrabTable::default()));
         let (events, receiver) = mpsc::channel();
         let active = Arc::new(AtomicBool::new(false));
         let active_since = Arc::new(Mutex::new(None));
@@ -84,6 +156,7 @@ impl ShellCompatHandle {
         let service_active_since = active_since.clone();
         let osd = Arc::new(Mutex::new(None));
         let service_osd = osd.clone();
+        let (ready, names_owned) = mpsc::channel();
         let (osd_expiry, expiry_receiver) = mpsc::channel();
         let expiry_redraw_sender = redraw_sender.clone();
         thread::Builder::new()
@@ -102,9 +175,17 @@ impl ShellCompatHandle {
                     osd_expiry,
                     wayland_display,
                     receiver,
+                    ready,
                 })
             })
             .expect("failed to start shell compatibility D-Bus thread");
+        // The session is announced ready only once org.gnome.Shell exists, so gsd-media-keys
+        // never starts before the name it grabs the volume keys from.
+        if names_owned.recv_timeout(Duration::from_secs(5)).is_err() {
+            tracing::warn!(
+                "Shell compatibility names were not owned in time; continuing without waiting"
+            );
+        }
         Self {
             bindings,
             events,
@@ -125,22 +206,26 @@ impl ShellCompatHandle {
     }
 
     pub fn activate_key(&self, keysym: Keysym, modifiers: &ModifiersState) -> bool {
-        let matched = {
-            let bindings = self.bindings.lock().expect("keybinding lock poisoned");
-            bindings
-                .iter()
-                .filter(|binding| matches_accelerator(binding.accelerator, keysym, modifiers))
-                .map(|binding| binding.id)
-                .collect::<Vec<_>>()
-        };
+        let matched = self
+            .bindings
+            .lock()
+            .expect("keybinding lock poisoned")
+            .matching(keysym, modifiers);
 
         if matched.is_empty() {
             return false;
         }
-        for id in matched {
-            let _ = self.events.send(ShellEvent::AcceleratorActivated(id));
+        for (id, owner) in matched {
+            let _ = self
+                .events
+                .send(ShellEvent::AcceleratorActivated { id, owner });
         }
         true
+    }
+
+    /// Lock the session with the configured locker (idle lock).
+    pub fn request_lock(&self) {
+        let _ = self.events.send(ShellEvent::Lock);
     }
 
     pub fn set_locked(&self, locked: bool) {
@@ -154,13 +239,13 @@ impl ShellCompatHandle {
 }
 
 struct ShellKeyGrabber {
-    bindings: Arc<Mutex<Vec<KeyBinding>>>,
+    bindings: Arc<Mutex<GrabTable>>,
     osd: Arc<Mutex<Option<ShellOsd>>>,
     redraw_sender: Sender<()>,
     osd_expiry: mpsc::Sender<Instant>,
-    next_id: u32,
 }
 
+#[derive(Clone)]
 struct ScreenSaverCompat {
     wayland_display: OsString,
     lock_command: OsString,
@@ -171,23 +256,44 @@ struct ScreenSaverCompat {
 
 #[interface(name = "org.gnome.Shell")]
 impl ShellKeyGrabber {
-    fn grab_accelerator(&mut self, accelerator: String, _mode_flags: u32, grab_flags: u32) -> u32 {
-        self.grab_one(&accelerator, grab_flags)
+    fn grab_accelerator(
+        &self,
+        #[zbus(header)] header: zbus::message::Header<'_>,
+        accelerator: String,
+        _mode_flags: u32,
+        grab_flags: u32,
+    ) -> u32 {
+        self.grab_one(&sender_of(&header), &accelerator, grab_flags)
     }
 
-    fn grab_accelerators(&mut self, accelerators: Vec<(String, u32, u32)>) -> Vec<u32> {
+    fn grab_accelerators(
+        &self,
+        #[zbus(header)] header: zbus::message::Header<'_>,
+        accelerators: Vec<(String, u32, u32)>,
+    ) -> Vec<u32> {
+        let sender = sender_of(&header);
         accelerators
             .into_iter()
-            .map(|(accelerator, _mode_flags, grab_flags)| self.grab_one(&accelerator, grab_flags))
+            .map(|(accelerator, _mode_flags, grab_flags)| {
+                self.grab_one(&sender, &accelerator, grab_flags)
+            })
             .collect()
     }
 
-    fn ungrab_accelerator(&mut self, action: u32) -> bool {
-        self.remove_bindings(&[action]) > 0
+    fn ungrab_accelerator(
+        &self,
+        #[zbus(header)] header: zbus::message::Header<'_>,
+        action: u32,
+    ) -> bool {
+        self.remove_bindings(&sender_of(&header), &[action]) > 0
     }
 
-    fn ungrab_accelerators(&mut self, actions: Vec<u32>) -> bool {
-        let removed = self.remove_bindings(&actions);
+    fn ungrab_accelerators(
+        &self,
+        #[zbus(header)] header: zbus::message::Header<'_>,
+        actions: Vec<u32>,
+    ) -> bool {
+        let removed = self.remove_bindings(&sender_of(&header), &actions);
         removed == actions.len()
     }
 
@@ -227,32 +333,63 @@ impl ShellKeyGrabber {
 }
 
 impl ShellKeyGrabber {
-    fn grab_one(&mut self, accelerator: &str, grab_flags: u32) -> u32 {
+    fn grab_one(&self, owner: &str, accelerator: &str, grab_flags: u32) -> u32 {
         let Some(parsed) = parse_accelerator(accelerator, grab_flags) else {
+            tracing::warn!(%accelerator, %owner, "cannot parse grabbed accelerator");
             return 0;
         };
-        let mut bindings = self.bindings.lock().expect("keybinding lock poisoned");
-        if bindings
-            .iter()
-            .any(|binding| same_accelerator(binding.accelerator, parsed))
-        {
-            return 0;
-        }
-
-        let id = self.next_id;
-        self.next_id = self.next_id.wrapping_add(1).max(1);
-        bindings.push(KeyBinding {
-            id,
-            accelerator: parsed,
-        });
-        id
+        self.bindings
+            .lock()
+            .expect("keybinding lock poisoned")
+            .grab(owner, parsed)
     }
 
-    fn remove_bindings(&self, actions: &[u32]) -> usize {
-        let mut bindings = self.bindings.lock().expect("keybinding lock poisoned");
-        let initial_len = bindings.len();
-        bindings.retain(|binding| !actions.contains(&binding.id));
-        initial_len - bindings.len()
+    fn remove_bindings(&self, owner: &str, actions: &[u32]) -> usize {
+        self.bindings
+            .lock()
+            .expect("keybinding lock poisoned")
+            .release(owner, actions)
+    }
+}
+
+/// The unique bus name of the caller; empty only for a message with no sender, which the bus
+/// never delivers.
+fn sender_of(header: &zbus::message::Header<'_>) -> String {
+    header
+        .sender()
+        .map(|sender| sender.to_string())
+        .unwrap_or_default()
+}
+
+/// Release the grabs of every connection that leaves the bus.
+fn release_grabs_of_departed_clients(connection: &Connection, bindings: Arc<Mutex<GrabTable>>) {
+    let proxy = match zbus::blocking::fdo::DBusProxy::new(connection) {
+        Ok(proxy) => proxy,
+        Err(error) => {
+            tracing::warn!(%error, "cannot watch bus clients; grabs of departed clients will linger");
+            return;
+        }
+    };
+    let signals = match proxy.receive_name_owner_changed() {
+        Ok(signals) => signals,
+        Err(error) => {
+            tracing::warn!(%error, "cannot watch bus clients; grabs of departed clients will linger");
+            return;
+        }
+    };
+    for signal in signals {
+        let Ok(args) = signal.args() else { continue };
+        let name = args.name().to_string();
+        if !name.starts_with(':') || args.new_owner().is_some() {
+            continue;
+        }
+        let released = bindings
+            .lock()
+            .expect("keybinding lock poisoned")
+            .drop_owner(&name);
+        if released > 0 {
+            tracing::info!(owner = %name, released, "released key grabs of a client that left the bus");
+        }
     }
 }
 
@@ -317,7 +454,7 @@ impl ScreenSaverCompat {
 }
 
 struct ShellCompatContext {
-    bindings: Arc<Mutex<Vec<KeyBinding>>>,
+    bindings: Arc<Mutex<GrabTable>>,
     active: Arc<AtomicBool>,
     active_since: Arc<Mutex<Option<Instant>>>,
     osd: Arc<Mutex<Option<ShellOsd>>>,
@@ -325,6 +462,8 @@ struct ShellCompatContext {
     osd_expiry: mpsc::Sender<Instant>,
     wayland_display: OsString,
     receiver: mpsc::Receiver<ShellEvent>,
+    /// Signalled once the Shell and ScreenSaver names are owned.
+    ready: mpsc::Sender<()>,
 }
 
 fn serve_shell_compat(context: ShellCompatContext) {
@@ -337,6 +476,7 @@ fn serve_shell_compat(context: ShellCompatContext) {
         osd_expiry,
         wayland_display,
         receiver,
+        ready,
     } = context;
     let connection = match Connection::session() {
         Ok(connection) => connection,
@@ -349,11 +489,10 @@ fn serve_shell_compat(context: ShellCompatContext) {
     if let Err(error) = connection.object_server().at(
         OBJECT_PATH,
         ShellKeyGrabber {
-            bindings,
+            bindings: bindings.clone(),
             osd,
             redraw_sender,
             osd_expiry,
-            next_id: 1,
         },
     ) {
         tracing::warn!(%error, "cannot register the Shell keybinding compatibility interface");
@@ -364,19 +503,23 @@ fn serve_shell_compat(context: ShellCompatContext) {
         return;
     }
 
-    let lock_command =
-        std::env::var_os("PANTHEON_LOCK_COMMAND").unwrap_or_else(|| OsString::from("gtklock"));
+    let lock_command = lock_command(
+        std::env::var_os("PANTHEON_LOCK_COMMAND"),
+        std::path::Path::new(STYLED_LOCKER).is_file(),
+    );
     let lock_running = Arc::new(Mutex::new(false));
-    if let Err(error) = connection.object_server().at(
-        SCREENSAVER_OBJECT_PATH,
-        ScreenSaverCompat {
-            wayland_display,
-            lock_command,
-            active,
-            active_since,
-            lock_running,
-        },
-    ) {
+    let screensaver = ScreenSaverCompat {
+        wayland_display,
+        lock_command,
+        active,
+        active_since,
+        lock_running,
+    };
+    let idle_locker = screensaver.clone();
+    if let Err(error) = connection
+        .object_server()
+        .at(SCREENSAVER_OBJECT_PATH, screensaver)
+    {
         tracing::warn!(%error, "cannot register the ScreenSaver compatibility interface");
         return;
     }
@@ -385,19 +528,33 @@ fn serve_shell_compat(context: ShellCompatContext) {
         return;
     }
 
+    let watcher_connection = connection.clone();
+    if let Err(error) = thread::Builder::new()
+        .name("pantheon-shell-grabs".into())
+        .spawn(move || release_grabs_of_departed_clients(&watcher_connection, bindings))
+    {
+        tracing::warn!(%error, "cannot start the key grab watcher");
+    }
+
     tracing::info!("serving Shell accelerator and ScreenSaver compatibility interfaces");
+    let _ = ready.send(());
     loop {
         match receiver.recv() {
-            Ok(ShellEvent::AcceleratorActivated(action)) => {
+            Ok(ShellEvent::AcceleratorActivated { id, owner }) => {
                 let parameters = HashMap::<String, OwnedValue>::new();
                 if let Err(error) = connection.emit_signal(
-                    None::<&str>,
+                    Some(owner.as_str()),
                     OBJECT_PATH,
                     INTERFACE,
                     "AcceleratorActivated",
-                    &(action, parameters),
+                    &(id, parameters),
                 ) {
                     tracing::warn!(%error, "could not emit AcceleratorActivated");
+                }
+            }
+            Ok(ShellEvent::Lock) => {
+                if let Err(error) = idle_locker.lock() {
+                    tracing::warn!(%error, "could not start the session locker");
                 }
             }
             Ok(ShellEvent::ActiveChanged(active)) => {
@@ -414,6 +571,23 @@ fn serve_shell_compat(context: ShellCompatContext) {
             Err(_) => return,
         }
     }
+}
+
+/// The elementary-styled gtklock wrapper shipped with the session package.
+const STYLED_LOCKER: &str = "/usr/bin/pantheon-lock";
+
+/// `PANTHEON_LOCK_COMMAND` wins; otherwise the styled wrapper when it is
+/// installed, else stock gtklock.
+fn lock_command(configured: Option<OsString>, styled_installed: bool) -> OsString {
+    configured
+        .filter(|command| !command.is_empty())
+        .unwrap_or_else(|| {
+            OsString::from(if styled_installed {
+                STYLED_LOCKER
+            } else {
+                "gtklock"
+            })
+        })
 }
 
 fn run_osd_expiry(receiver: mpsc::Receiver<Instant>, redraw_sender: Sender<()>) {
@@ -493,4 +667,85 @@ pub(crate) fn matches_accelerator(
 
 fn same_accelerator(left: ParsedAccelerator, right: ParsedAccelerator) -> bool {
     left.keysym == right.keysym && left.modifiers == right.modifiers
+}
+
+#[cfg(test)]
+mod lock_command_tests {
+    use super::{STYLED_LOCKER, lock_command};
+    use std::ffi::OsString;
+
+    #[test]
+    fn styled_locker_is_the_default_when_installed() {
+        assert_eq!(lock_command(None, true), OsString::from(STYLED_LOCKER));
+        assert_eq!(lock_command(None, false), OsString::from("gtklock"));
+        assert_eq!(
+            lock_command(Some(OsString::from("swaylock")), true),
+            OsString::from("swaylock")
+        );
+        assert_eq!(
+            lock_command(Some(OsString::new()), true),
+            OsString::from(STYLED_LOCKER)
+        );
+    }
+}
+
+#[cfg(test)]
+mod grab_table_tests {
+    use super::{GrabTable, parse_accelerator};
+
+    const GSD: &str = ":1.20";
+    const GSD_RESTARTED: &str = ":1.95";
+    const OTHER: &str = ":1.31";
+
+    fn key(name: &str) -> super::ParsedAccelerator {
+        parse_accelerator(name, 0).expect("test accelerator parses")
+    }
+
+    #[test]
+    fn restarted_client_regrabs_keys_its_predecessor_held() {
+        let mut table = GrabTable::default();
+        assert_ne!(table.grab(GSD, key("XF86AudioRaiseVolume")), 0);
+        assert_ne!(table.grab(GSD, key("XF86AudioMute")), 0);
+
+        // The restarted client is refused while the dead one's grabs linger ...
+        assert_eq!(table.grab(GSD_RESTARTED, key("XF86AudioRaiseVolume")), 0);
+        // ... and succeeds once the bus reports the old connection gone.
+        assert_eq!(table.drop_owner(GSD), 2);
+        assert_ne!(table.grab(GSD_RESTARTED, key("XF86AudioRaiseVolume")), 0);
+    }
+
+    #[test]
+    fn a_live_clients_key_is_not_stolen() {
+        let mut table = GrabTable::default();
+        let held = table.grab(GSD, key("XF86AudioMute"));
+        assert_ne!(held, 0);
+        assert_eq!(table.grab(OTHER, key("XF86AudioMute")), 0);
+        assert_eq!(table.release(OTHER, &[held]), 0);
+        assert_eq!(table.release(GSD, &[held]), 1);
+    }
+
+    #[test]
+    fn regrab_before_release_keeps_the_key() {
+        let mut table = GrabTable::default();
+        let old = table.grab(GSD, key("XF86AudioLowerVolume"));
+        let new = table.grab(GSD, key("XF86AudioLowerVolume"));
+        assert_ne!(new, 0);
+        assert_ne!(new, old);
+        // gsd then releases the id it replaced: the fresh grab must survive.
+        assert_eq!(table.release(GSD, &[old]), 0);
+        assert_eq!(table.bindings.len(), 1);
+        assert_eq!(table.bindings[0].id, new);
+    }
+
+    #[test]
+    fn ids_are_never_zero_and_survive_wraparound() {
+        let mut table = GrabTable {
+            next_id: u32::MAX,
+            ..GrabTable::default()
+        };
+        let first = table.grab(GSD, key("XF86AudioMute"));
+        let second = table.grab(GSD, key("XF86AudioPlay"));
+        assert_eq!(first, u32::MAX);
+        assert_eq!(second, 1);
+    }
 }

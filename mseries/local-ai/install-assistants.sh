@@ -19,6 +19,7 @@ fi
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install --user --assumeyes --noninteractive flathub io.github.qwersyk.Newelle
 flatpak update --user --assumeyes --noninteractive --commit=7f106d29dc4fd3ee032005fe4160da8996b889a6b8e62db0ee7e9ab185561fa1 io.github.qwersyk.Newelle
+python3 "$here/mark-newelle-chat.py"  # Smart Reply chat-app marker; harmless while Smart Reply is off
 "$runtime" - <<'PY'
 from huggingface_hub import snapshot_download
 snapshot_download('mlx-community/Qwen3.5-9B-MLX-4bit',revision='938d8919941c6e7efd3c7150eff7fe9d12afa631',max_workers=2)

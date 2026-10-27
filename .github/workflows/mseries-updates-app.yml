@@ -29,8 +29,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: mseries-updates-app-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   app:
@@ -41,6 +41,8 @@ jobs:
       CARGO_TARGET_DIR: ${{ github.workspace }}/../mseries-updates-target
     steps:
       - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/fast-apt
 
       - name: Install build and test dependencies
         run: |

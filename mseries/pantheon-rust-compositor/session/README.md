@@ -81,13 +81,16 @@ that those services or the compositor are fully compatible; this is an
 experimental selection for staged qualification, with Gala still available
 as rollback.
 
-The compositor's `org.gnome.ScreenSaver.Lock` bridge launches `gtklock` by
-default and passes it the session's Wayland socket. A distro package for this
-session must include an `ext-session-lock-v1` client with PAM authentication
-(the Ubuntu `gtklock` package provides this protocol client); the source tree
-does not install it. `PANTHEON_LOCK_COMMAND` can select another installed
-client. Authentication, D-Bus activation and session lock/unlock have not yet
-been runtime-qualified. The compositor advertises fractional-scale and
+The compositor's `org.gnome.ScreenSaver.Lock` bridge (Super+L, and lock on
+idle) launches `/usr/bin/pantheon-lock` when installed, else stock `gtklock`,
+and passes it the session's Wayland socket. `pantheon-lock` runs the Ubuntu
+`gtklock` package (an `ext-session-lock-v1` client with PAM authentication)
+with the layout and stylesheet in `usr/share/pantheon-rust-compositor/lock/`,
+modelled on io.elementary.greeter: the user's wallpaper, the greeter's clock and
+date, and a card with avatar, name and password field, following the 12/24 h
+clock, accent and light/dark settings. `PANTHEON_LOCK_COMMAND` can select
+another installed client. Screenshots: `../lock-probe/shoot.sh`. Real unlock on
+the M1 Pro has not yet been qualified. The compositor advertises fractional-scale and
 viewporter globals, but rendering quality and moving windows between outputs
 with different scales still need nested-session qualification.
 
@@ -112,7 +115,13 @@ feedback, which Mesa needs to pick the real GPU (`libEGL: failed to get driver
 name for fd -1` and Vulkan `SURFACE_LOST` are the symptoms without it).
 Nested: created when the renderer has a render node and dmabuf formats; the
 Xvfb/llvmpipe test host has neither, so only the graceful skip was exercised
-headless. Native: OFF by default and compile-checked only; enable per service
-with `PANTHEON_ENABLE_DMABUF=1` (systemd drop-in) for a trial, keeping
-`GSK_RENDERER=gl` until it is proven. Failure mode to watch: a client dmabuf
-import failing and the app showing nothing.
+headless. Native: **ON by default since 2026-10-21** (owner-approved; the first
+login with that build is the trial). Turn it off with a drop-in
+(`systemctl --user edit pantheon-rust-compositor@wayland.service`, then
+`[Service]` / `Environment=PANTHEON_DISABLE_DMABUF=1`; `PANTHEON_ENABLE_DMABUF=0`
+works too) and log in again. Shell units keep `GSK_RENDERER=gl`. Each output
+also has a scanout feedback (scanout tranche on the KMS device with its plane
+formats), sent only to surfaces the display controller presents zero-copy;
+nothing is scanned out directly yet, so all clients get the render-node
+feedback. Failure mode to watch: a client dmabuf import failing and the app
+showing nothing.

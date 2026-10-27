@@ -58,6 +58,7 @@ else
   git -C "$work/source" checkout -q --detach FETCH_HEAD
 fi
 bash "$here/prepare-source.sh" "$work/source"
+cp "$here/test-unified.vala" "$work/source/src/test-unified.vala"
 cp "$here/../dock-tests/test-marker-state.vala" "$work/source/src/test-marker-state.vala"
 cp "$here/../dock-tests/test-size-policy.vala" "$work/source/src/test-size-policy.vala"
 cp "$here/../dock-tests/test-launcher-qualification.vala" "$work/source/src/test-launcher-qualification.vala"
@@ -68,6 +69,7 @@ foreach source : sources
     marker_sources += source
   endif
 endforeach
+executable('test-unified', gresource, marker_sources, 'test-unified.vala', dependencies: dependencies)
 executable('test-size-policy', gresource, marker_sources, 'test-size-policy.vala', dependencies: dependencies)
 executable('test-markers', gresource, marker_sources, 'test-marker-state.vala', dependencies: dependencies)
 executable('test-launcher-qualification', gresource, marker_sources, 'test-launcher-qualification.vala', dependencies: dependencies)
@@ -76,7 +78,7 @@ meson setup "$work/build" "$work/source" --buildtype=release
 meson compile -C "$work/build"
 glib-compile-schemas --strict --dry-run "$work/source/data"
 # These type names are emitted by the actual linked Vala classes.
-for component in DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockTaskbarRepoBar DockTaskbarRemote DockAppResolver; do
+for component in DockTaskbarT3 DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockTaskbarRepoBar DockTaskbarRemote DockTaskbarNotifications DockTaskbarAirDrop MSeriesAirDropPanel DockAppResolver; do
   strings "$work/build/src/io.elementary.dock" | grep -F "$component" > /dev/null
 done
 bash "$here/../dock-tests/test-size-policy.sh" "$work/source" "$work/build"
@@ -84,5 +86,6 @@ bash "$here/../dock-tests/test-markers.sh" "$work/source" "$work/build"
 GSETTINGS_SCHEMA_DIR="$work/source/data" python3 "$here/../dock-tests/test-launcher-qualification.py" \
   "$work/build/src/test-launcher-qualification" "${MSERIES_QUALIFICATION_OUT:-$work/qualification}"
 bash "$here/test-hover.sh"
+bash "$here/test-unified.sh" "$work/source" "$work/build" "${MSERIES_QUALIFICATION_OUT:-$work/qualification}/unified"
 bash "$here/../dock-tests/test-running-apps.sh"
 echo 'PASS complete Windows taskbar + CodexBar clean build; no deployment'

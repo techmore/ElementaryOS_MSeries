@@ -61,8 +61,11 @@ namespace MSeries {
         private bool panel_enabled = true;
         private uint settings_generation = 0;
 
-        public RepoBarIndicator () {
-            GLib.Object (code_name: "repobar");
+        public bool on_demand { get; construct; default = false; }
+        private bool opened_in_host = false;
+
+        public RepoBarIndicator (bool on_demand = false) {
+            GLib.Object (code_name: "repobar", on_demand: on_demand);
         }
 
         construct {
@@ -200,6 +203,8 @@ namespace MSeries {
             actions.append (make_dock_button ("Your pull requests", kind_icon ("pull"), "/pulls"));
             actions.append (make_dock_button ("Your issues", kind_icon ("issue"), "/issues"));
             settings_executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "mseries-repobar-settings");
+            if (!FileUtils.test (settings_executable, FileTest.IS_EXECUTABLE))
+                settings_executable = Environment.find_program_in_path ("mseries-repobar-settings") ?? settings_executable;
             var settings_button = new Gtk.Button () {
                 child = new Gtk.Image.from_icon_name ("preferences-system-symbolic") { pixel_size = 18 },
                 tooltip_text = "RepoBar Settings…"
@@ -256,7 +261,7 @@ namespace MSeries {
 
         /* Applies the show-in-panel preference: hidden means no GitHub requests, timers or notifications until it is turned back on. */
         private void apply_panel_enabled () {
-            panel_enabled = read_panel_enabled ();
+            panel_enabled = on_demand ? opened_in_host : read_panel_enabled ();
             this.visible = panel_enabled;
             if (!panel_enabled) {
                 if (refresh_source != 0) Source.remove (refresh_source);
@@ -369,7 +374,7 @@ namespace MSeries {
             };
             button.add_css_class ("flat");
             button.update_property (Gtk.AccessibleProperty.LABEL, label, -1);
-            button.clicked.connect (() => open_url ("https://" + host + path, button));
+            button.clicked.connect ((sender) => open_url ("https://" + host + path, sender));
             return button;
         }
 
@@ -433,7 +438,9 @@ namespace MSeries {
             if (refresh_source != 0) Source.remove (refresh_source);
             refresh_interval = seconds;
             refresh_source = Timeout.add_seconds (seconds, () => {
-                load_snapshot ();
+                // Ask for data older than the interval: the helper's own cache window equals the interval, so a bare
+                // tick landing a moment early would be answered from the cache and double the effective refresh time.
+                read_snapshot.begin (false, true);
                 return Source.CONTINUE;
             });
         }
@@ -448,7 +455,7 @@ namespace MSeries {
             refresh_button.set_sensitive (!busy);
         }
 
-        private async void read_snapshot (bool force) {
+        private async void read_snapshot (bool force, bool ticking = false) {
             if (in_flight || !panel_enabled) return;
             uint generation = settings_generation;
             in_flight = true;
@@ -459,6 +466,10 @@ namespace MSeries {
             try {
                 var argv = new string[] { executable };
                 if (force) argv += "--refresh";
+                else if (ticking) {
+                    argv += "--max-age";
+                    argv += ((int) refresh_interval - 15).to_string ();
+                }
                 var process = new Subprocess.newv (argv, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
                 yield process.communicate_utf8_async (null, null, out output, out error_text);
                 if (!process.get_successful () && output.strip ().length == 0) {
@@ -789,7 +800,7 @@ namespace MSeries {
                     if (pending != 0) Source.remove (pending);
                     pending = Timeout.add (200, () => {
                         pending = 0;
-                        if (read_panel_enabled () != panel_enabled) apply_panel_enabled ();
+                        if (!on_demand && read_panel_enabled () != panel_enabled) apply_panel_enabled ();
                         else if (panel_enabled) load_snapshot ();
                         return Source.REMOVE;
                     });
@@ -937,6 +948,7 @@ namespace MSeries {
         /* Desktop notification when default-branch CI starts failing or recovers. The first snapshot after login
          * only records states (persisted in the cache) so nothing old is announced again. */
         private void notify_ci_changes (Json.Array repos) {
+            if (on_demand) return;
             string path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "mseries", "repobar", "ci-states.json");
             var previous = new HashTable<string, string> (str_hash, str_equal);
             bool have_previous = false;
@@ -999,6 +1011,7 @@ namespace MSeries {
         /* Desktop notification for each workflow run that finished since the last refresh, on any branch or pull
            request in recently active repositories. The first snapshot after login only records what was seen. */
         private void notify_workflow_runs (Json.Object snapshot) {
+            if (on_demand) return;
             if (!snapshot.has_member ("actions") || snapshot.get_member ("actions").get_node_type () != Json.NodeType.OBJECT) return;
             string path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "mseries", "repobar", "run-states.json");
             var notified = new HashTable<string, bool> (str_hash, str_equal);
@@ -1174,7 +1187,7 @@ namespace MSeries {
             var summary = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
             summary.set_cursor_from_name ("pointer");
             var open_click = new Gtk.GestureClick () { button = 1 };
-            open_click.released.connect (() => open_url (url, summary));
+            open_click.released.connect ((gesture, n_press, x, y) => open_url (url, gesture.get_widget ()));
             summary.add_controller (open_click);
             card.append (summary);
 
@@ -1215,7 +1228,7 @@ namespace MSeries {
                 site_button.add_css_class ("site-link");
                 site_button.update_property (Gtk.AccessibleProperty.LABEL,
                     (pages.length > 0 ? "Open GitHub Pages site for " : "Open website for ") + short_name, -1);
-                site_button.clicked.connect (() => open_url (site, site_button));
+                site_button.clicked.connect ((sender) => open_url (site, sender));
                 head.append (site_button);
             }
             if (state == "hidden") {
@@ -1360,7 +1373,7 @@ namespace MSeries {
             var button = new Gtk.Button () { child = row, tooltip_text = "Open %s in Files".printf (path) };
             button.add_css_class ("flat");
             button.add_css_class ("link-row");
-            button.clicked.connect (() => open_folder (path, button));
+            button.clicked.connect ((sender) => open_folder (path, sender));
             return button;
         }
 
@@ -1409,14 +1422,14 @@ namespace MSeries {
             };
             open.add_css_class ("flat");
             open.add_css_class ("link-row");
-            open.clicked.connect (() => open_folder (path, open));
+            open.clicked.connect ((sender) => open_folder (path, sender));
             line.append (open);
             var terminal = new Gtk.Button.from_icon_name ("utilities-terminal-symbolic") { tooltip_text = "Open in Terminal", valign = Gtk.Align.CENTER };
             terminal.add_css_class ("flat");
             terminal.add_css_class ("compact");
             terminal.add_css_class ("dim-label");
             terminal.update_property (Gtk.AccessibleProperty.LABEL, "Open %s in Terminal".printf (GLib.Path.get_basename (path)), -1);
-            terminal.clicked.connect (() => open_terminal (path, terminal));
+            terminal.clicked.connect ((sender) => open_terminal (path, sender));
             line.append (terminal);
             return line;
         }
@@ -1449,7 +1462,7 @@ namespace MSeries {
             var button = new Gtk.Button () { child = content, tooltip_text = title };
             button.add_css_class ("flat");
             button.add_css_class ("link-row");
-            button.clicked.connect (() => open_url (url, button));
+            button.clicked.connect ((sender) => open_url (url, sender));
             return button;
         }
 
@@ -1527,8 +1540,8 @@ namespace MSeries {
             var button = new Gtk.Button () { child = new Gtk.Label (label) { xalign = 0 } };
             button.add_css_class ("flat");
             button.add_css_class ("menuitem");
-            button.clicked.connect (() => {
-                var popover = button.get_ancestor (typeof (Gtk.Popover)) as Gtk.Popover;
+            button.clicked.connect ((sender) => {
+                var popover = sender.get_ancestor (typeof (Gtk.Popover)) as Gtk.Popover;
                 if (popover != null) popover.popdown ();
                 action ();
             });
@@ -1550,14 +1563,14 @@ namespace MSeries {
             var list = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
             list.add_css_class ("detail-list");
             list.set_visible (false);
-            Gtk.ToggleButton? first = null;
+            unowned Gtk.ToggleButton? first = null;
             if (checkouts != null && checkouts.get_length () > 0) {
                 // Local checkouts come from the last scan, so this tab needs no GitHub request.
                 var chip = new Gtk.ToggleButton.with_label ("Checkouts %u".printf (checkouts.get_length ()));
                 chip.add_css_class ("flat");
                 first = chip;
-                chip.toggled.connect (() => {
-                    if (!chip.get_active ()) return;
+                chip.toggled.connect ((sender) => {
+                    if (!sender.get_active ()) return;
                     list.set_visible (true);
                     clear_box (list);
                     for (uint i = 0; i < checkouts.get_length (); i++) list.append (checkout_row (checkouts.get_object_element (i), name));
@@ -1569,8 +1582,8 @@ namespace MSeries {
                 var chip = new Gtk.ToggleButton.with_label (DETAIL_TITLES[i]);
                 chip.add_css_class ("flat");
                 if (first != null) chip.set_group (first); else first = chip;
-                chip.toggled.connect (() => {
-                    if (!chip.get_active ()) return;
+                chip.toggled.connect ((sender) => {
+                    if (!sender.get_active ()) return;
                     list.set_visible (true);
                     load_repo_detail.begin (name, url, key, list);
                 });
@@ -1579,15 +1592,18 @@ namespace MSeries {
             pane.append (chips);
             pane.append (list);
             revealer.set_child (pane);
-            toggle.toggled.connect (() => {
-                revealer.set_reveal_child (toggle.get_active ());
-                toggle.set_icon_name (toggle.get_active () ? "pan-down-symbolic" : "pan-end-symbolic");
-                if (toggle.get_active () && first != null && !first.get_active ()) first.set_active (true);
+            toggle.toggled.connect ((sender) => {
+                revealer.set_reveal_child (sender.get_active ());
+                sender.set_icon_name (sender.get_active () ? "pan-down-symbolic" : "pan-end-symbolic");
+                if (sender.get_active () && first != null && !first.get_active ()) first.set_active (true);
             });
             return revealer;
         }
 
         private async void load_repo_detail (string name, string repo_url, string key, Gtk.Box content) {
+            // Clicking chips quickly starts several loads into one list; only the newest may draw.
+            var request = content.get_data<uint> ("detail-request") + 1;
+            content.set_data<uint> ("detail-request", request);
             clear_box (content);
             var loading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 7) { margin_start = 4 };
             var spinner = new Gtk.Spinner ();
@@ -1609,8 +1625,10 @@ namespace MSeries {
                 }
                 var parser = new Json.Parser ();
                 parser.load_from_data (output);
+                if (content.get_data<uint> ("detail-request") != request) return;
                 render_repo_detail (key, parser.get_root (), repo_url, content);
             } catch (Error e) {
+                if (content.get_data<uint> ("detail-request") != request) return;
                 clear_box (content);
                 content.append (link_row ("dialog-error-symbolic", "Could not load " + key, "", ""));
                 content.get_last_child ().set_tooltip_text (e.message);
@@ -1710,7 +1728,7 @@ namespace MSeries {
             };
             button.add_css_class ("flat");
             button.add_css_class ("link-row");
-            button.clicked.connect (() => open_url (url, button));
+            button.clicked.connect ((sender) => open_url (url, sender));
             return button;
         }
 
@@ -1813,10 +1831,22 @@ namespace MSeries {
         }
 
         public override void opened () {
+            if (on_demand) {
+                if (!opened_in_host) {
+                    opened_in_host = true;
+                    apply_panel_enabled ();
+                }
+                return;
+            }
             load_snapshot ();
         }
 
         public override void closed () {
+            if (on_demand) {
+                opened_in_host = false;
+                settings_generation++;
+                apply_panel_enabled ();
+            }
         }
     }
 }

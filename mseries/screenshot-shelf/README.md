@@ -1,19 +1,34 @@
+## Screenshot shortcut gap and shelf repair — 2026-10-22
+
+Owner confirms Command+Shift+3/4 currently do nothing under Pantheon-R. Required:
++3 full-screen capture with camera sound and a three-second bottom-right shelf;
++4 crosshair drag selection, plus window hover/Space blue highlight and capture.
+The running session is pantheon-compositor, not Gala; the audited branch has no
+screenshot/screencopy path. Capture remains unimplemented/unqualified here.
+The shelf default now matches three seconds, and its installer stops only exact
+shelf argv matches instead of killing parent shells mentioning the path. All ten
+retention tests and shell syntax pass. The helper alone was deployed, source and
+installed hashes match, and a new process is running. The compositor/panel were
+not restarted; no live screenshot or message was taken/sent. Next: implement
+native compositor capture, selection and keybindings before attachment acceptance.
+
 # Screenshot shelf and Markup
 
 **Command+Shift+4** (Command is Ctrl on this keyboard) opens the selector: drag to capture an area, or press **Space** to switch to window mode (the window under the pointer is highlighted blue; click to capture it, Space again goes back to dragging) (needs the patched Gala from `install-gala-screen-corners.sh`, active after next login; stock Gala ignores Space). Command+Shift+3 captures the screen.
 
-After a screenshot, a thumbnail appears bottom-right at a fixed size (280x180 card, any screenshot shape) and stays for **4 seconds** (longer while the pointer is on it or you are dragging), so you can drag it into an app.
+After a screenshot, a thumbnail appears bottom-right at a fixed size (280x180 card, any screenshot shape) and stays for **4 seconds** (longer while the pointer is on it or you are dragging), so you can drag it into an app. If you take more screenshots while the card is visible, it keeps a recent batch and one drag offers up to the **12 newest screenshots** together. The thumbnail shows the newest image and the count; each original remains saved.
 
 | You do | What happens |
 | --- | --- |
-| Drag it into an app | Offers a copy. The saved screenshot is **always kept**. Check that the target shows an attachment; drag completion cannot confirm that. |
-| Press **Copy** | The full image goes on the clipboard; paste it anywhere (Ctrl+V). The file is kept. |
+| Drag it into an app | Offers the recent batch as image files. The saved screenshots are **always kept**. Check that the target shows each attachment; drag completion cannot confirm that. |
+| Press **Copy** | The newest full-size image goes on the clipboard; paste it anywhere (Ctrl+V). The file is kept. |
+| Press **Show** | Reveals the current batch of saved screenshots in Files, so you can attach older captures manually. |
 | Retry a drop | The card stays available until its normal timeout. Use **Copy** or **Show** if the target cannot read the offered file. Alt is no longer needed to keep the original. |
 | Click it, or press **Markup** | Opens Swappy (the card stays) (arrows, shapes, text, highlight, blur, crop). The result is saved next to the original as `<name> (markup).png`. |
 | Click the x | The thumbnail goes away and the screenshot stays in `~/Downloads/Screenshots`. |
 | Ignore it | It goes away after 4 seconds. |
 
-**Retention policy:** the shelf never deletes or trashes saved screenshots. Remove them explicitly in Files when you no longer need them. Accepted, refused, cancelled and unreadable-target drops all keep the original. A completed drag is not evidence that Signal attached the image.
+**Retention policy:** the shelf never deletes or trashes saved screenshots. Remove them explicitly in Files when you no longer need them. Accepted, refused, cancelled and unreadable-target drops all keep every original. A completed drag is not evidence that the target could read or attach the images.
 
 `mseries-markup FILE` also works from the file manager (Open With, Markup): images open in Swappy, PDFs in Papers (which has its own annotations).
 
@@ -89,14 +104,15 @@ that defers reading beyond it must attach the retained original through Show or
 paste the copied image. No timer is attached to the original. Exports are transient;
 process/session exit may revoke access earlier, while the saved screenshot survives.
 
-`bash mseries/screenshot-shelf/test-retention.sh` runs seven GTK regressions on a
+`bash mseries/screenshot-shelf/test-retention.sh` runs ten GTK regressions on a
 private Xvfb display and a D-Bus daemon with no service activation directories.
 It uses synthetic PNGs, fake portal exports, a private clipboard and isolated
 home/runtime/config/cache/data. It covers retry, accepted/refused retention,
 clipboard fallback, replacement during a drag, same-name staging, portal failure
-and delayed cleanup. No Signal account or real message is used.
+and delayed cleanup, native and Flatpak multi-file drags, and the 12-image bound.
+No Signal account or real message is used.
 
-Remaining #227 acceptance: actual Signal attachment preview/content (without
-sending), multiple screenshots, copy/paste, and XWayland-to-Wayland behavior on the
-owner's session. The existing official-client accent overlay remains an intermediate
-solution; this change does not implement a fully native Signal UI.
+Remaining #227 acceptance: actual Signal attachment preview/content for a
+multi-image drag (without sending), copy/paste, and XWayland-to-Wayland behavior
+on the owner's session. The existing official-client accent overlay remains an
+intermediate solution; this change does not implement a fully native Signal UI.

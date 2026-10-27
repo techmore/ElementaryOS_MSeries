@@ -22,6 +22,8 @@ class SourcePreparationTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(HELPER, (ROOT / name).read_text())
 
+
+
     def test_desktop_preserves_its_extra_sources(self):
         text = (ROOT / 'mseries/install-quick-settings-brightness.sh').read_text()
         for token in ('ShareState ShareClient SharePanel', 'AirDropPanel.vala',

@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 use std::{ffi::OsString, sync::Arc, time::Duration};
 
@@ -16,13 +17,15 @@ use smithay::{
             protocol::wl_surface::WlSurface,
         },
     },
-    utils::{Logical, Point, Size},
+    utils::{IsAlive, Logical, Point},
     wayland::{
         compositor::{CompositorClientState, CompositorState},
         dmabuf::DmabufState,
         fractional_scale::{
             FractionalScaleHandler, FractionalScaleManagerState, with_fractional_scale,
         },
+        idle_inhibit::IdleInhibitManagerState,
+        idle_notify::IdleNotifierState,
         input_method::InputMethodManagerState,
         output::OutputManagerState,
         selection::{data_device::DataDeviceState, primary_selection::PrimarySelectionState},
@@ -43,11 +46,13 @@ use crate::activation::{
     ActivationPolicy, DEFER_POLL, DeferStep, MAX_DEFERRED, Request, Verdict, accepts_token,
     defer_step, verdict,
 };
+use crate::attention::Reason;
 use crate::display_config::{
     ApplyRequest, DisplayConfigHandle, OutputModeSnapshot, OutputSnapshot,
     SavedMonitorConfiguration, save_monitor_configurations, transform_to_dbus,
 };
 use crate::gala_compat::{DesktopSnapshot, GalaAction, GalaCompatHandle, GalaWindow};
+use crate::metrics::client::{ClientRegistry, ClientStats};
 #[cfg(feature = "native-drm")]
 use crate::native::NativeBackend;
 use crate::pantheon_shell::{PanelState, PantheonShellState};
@@ -55,7 +60,14 @@ use crate::shell_compat::ShellCompatHandle;
 use crate::tiling::{CornerSnapPreview, TilingBindings};
 use crate::workspace::WorkspaceManager;
 #[cfg(feature = "native-drm")]
-use smithay::reexports::calloop::channel::Sender;
+use smithay::reexports::calloop::ping::Ping;
+
+/// The peer pid of a new client connection, read once at connect.
+fn peer_pid(stream: &std::os::unix::net::UnixStream) -> Option<u32> {
+    smithay::reexports::rustix::net::sockopt::socket_peercred(stream)
+        .ok()
+        .map(|credentials| credentials.pid.as_raw_pid() as u32)
+}
 
 fn is_ibus_input_method_stream(stream: &std::os::unix::net::UnixStream) -> bool {
     use std::os::unix::fs::MetadataExt;
@@ -107,6 +119,10 @@ pub struct PantheonCompositor {
     deferred_activations: usize,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
+    pub screenshot_requested: Cell<bool>,
+    pub screenshot_region: Cell<Option<crate::screenshot::Region>>,
+    pub screenshot_selection: std::cell::RefCell<crate::screenshot::Selection>,
+    pub screenshot_busy: Arc<std::sync::atomic::AtomicBool>,
     pub lock_surfaces: HashMap<String, LockSurface>,
     pub lock_owner: Option<smithay::reexports::wayland_server::backend::ObjectId>,
     pub lock_confirmation: Option<SessionLocker>,
@@ -139,11 +155,18 @@ pub struct PantheonCompositor {
     /// compositor memory, so every new session starts with the top bar shown.
     pub top_panel_mode: crate::pantheon_shell::TopPanelMode,
     pub last_work_areas: HashMap<String, smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
-    pub managed_windows:
-        HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
-    pub x11_managed_windows: HashMap<u32, ManagedWindow>,
+    /// Snap, maximize and fullscreen state for every window, by `Window::id()`.
+    pub(crate) placements: HashMap<crate::placement::WindowKey, crate::placement::WindowRecord>,
+    /// The window a move grab is dragging; its placement does not follow commits.
+    pub(crate) grabbed_window: Option<crate::placement::WindowKey>,
+    /// Two-member snap groups (phase 1) and the next free id.
+    pub(crate) snap_groups: HashMap<crate::snap_group::SnapGroupId, crate::snap_group::SnapGroup>,
+    pub(crate) next_snap_group: crate::snap_group::SnapGroupId,
+    /// Open Snap Assist, if any.
+    pub(crate) snap_assist: Option<crate::snap_assist::SnapAssist>,
+    /// A shared-edge resize grab is running (the pointer is locked).
+    pub(crate) split_grab_active: bool,
     pub x11_minimized_windows: HashMap<u32, (Window, Point<i32, Logical>)>,
-    pub tiled_windows: HashMap<smithay::reexports::wayland_server::backend::ObjectId, TiledWindow>,
     pub tiling_bindings: TilingBindings,
     pub corner_snap_preview: Option<CornerSnapPreview>,
     pub corner_snap_cancelled: bool,
@@ -171,6 +194,8 @@ pub struct PantheonCompositor {
     /// The seat's current popup grab and its root surface. Smithay keeps one grab
     /// stack per seat, so a grab from another root must end this one first.
     pub active_popup_grab: Option<(WlSurface, PopupGrab<PantheonCompositor>)>,
+    /// Windows that asked to be raised and were not (see `attention.rs`).
+    pub(crate) attention: crate::attention::Attention,
     pub cursor_status: CursorImageStatus,
     pub(crate) cursor_theme: crate::cursor_theme::CursorTheme,
     pub(crate) wallpaper: Option<crate::wallpaper::Wallpaper>,
@@ -180,35 +205,66 @@ pub struct PantheonCompositor {
     pub winit_redraw_sender: Option<channel::Sender<()>>,
     #[cfg(feature = "native-drm")]
     pub native_backend: Option<NativeBackend>,
+    /// Wakes the native render pass. Requests made before it runs coalesce
+    /// into one pass (`native_redraw_pending`), instead of one channel message
+    /// and one pass per request.
     #[cfg(feature = "native-drm")]
-    pub native_redraw_sender: Option<Sender<()>>,
+    pub native_redraw_ping: Option<Ping>,
+    #[cfg(feature = "native-drm")]
+    pub(crate) native_redraw_pending: Cell<bool>,
+    /// A 1 s timer serving frame callbacks of surfaces shown on no output.
+    #[cfg(feature = "native-drm")]
+    pub(crate) hidden_frame_sweep_armed: Cell<bool>,
+
+    /// Per-client commit counters, keyed by pid.
+    pub(crate) client_registry: ClientRegistry,
+    /// Monotonic time of the first commit or input since the last render pass
+    /// (start of the dirty→flip latency).
+    #[cfg_attr(not(feature = "native-drm"), allow(dead_code))]
+    pub(crate) dirty_since: Cell<Option<Duration>>,
+    pub(crate) monotonic_clock: smithay::utils::Clock<smithay::utils::Monotonic>,
+    /// Bumped when a window title or app id changes, for the Gala snapshot.
+    pub(crate) title_generation: Cell<u64>,
+    /// What the last published Gala snapshot was built from.
+    gala_snapshot_key: std::cell::RefCell<Option<GalaSnapshotKey>>,
+    gala_snapshot_at: Cell<Option<std::time::Instant>>,
+    /// (window, output scale) layout the fractional-scale preferences were last sent for.
+    fractional_scale_fingerprint: Cell<Option<u64>>,
+    /// Snap preview and OSD rectangles, kept so unchanged ones add no damage.
+    pub(crate) solid_buffers: crate::cursor::SolidBuffers,
+    /// Cached physical-panel corner masks; no timers or per-frame raster work.
+    pub(crate) screen_corners: crate::screen_corners::ScreenCorners,
+    /// Where wallpaper scaling threads deliver their result.
+    pub(crate) wallpaper_scaled_sender: channel::Sender<crate::wallpaper::ScaledWallpaper>,
+
+    /// Idle time for gsd-power and gnome-session (`org.gnome.Mutter.IdleMonitor`).
+    pub(crate) idle_monitor: crate::idle::IdleMonitorHandle,
+    /// ext-idle-notify-v1 for Wayland idle daemons.
+    pub(crate) idle_notifier_state: IdleNotifierState<Self>,
+    /// Keeps the zwp_idle_inhibit_manager_v1 global alive.
+    _idle_inhibit_state: IdleInhibitManagerState,
+    /// Surfaces with a live idle inhibitor (e.g. a playing video).
+    pub(crate) idle_inhibitors: HashSet<WlSurface>,
+    /// The displays are blanked through DisplayConfig `PowerSaveMode`.
+    pub(crate) displays_off: bool,
+    /// Pending lock after an idle blank (`lock-delay` > 0); input cancels it.
+    idle_lock_timer: Option<smithay::reexports::calloop::RegistrationToken>,
 }
 
-#[derive(Clone, Copy)]
-pub struct ManagedWindow {
-    pub restore_location: Point<i32, Logical>,
-    pub restore_size: Size<i32, Logical>,
-    pub maximized: bool,
-    pub fullscreen: bool,
+/// Everything the Gala snapshot depends on that can change between dispatches.
+#[derive(Clone, PartialEq, Eq)]
+struct GalaSnapshotKey {
+    workspaces: u64,
+    titles: u64,
+    focus: Option<smithay::reexports::wayland_server::backend::ObjectId>,
+    x11_focus: Option<u32>,
+    panels: usize,
+    attention: u64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TilePosition {
-    Left,
-    Right,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-}
-
-#[derive(Clone)]
-pub struct TiledWindow {
-    pub position: TilePosition,
-    pub output: smithay::output::Output,
-    pub rect: smithay::utils::Rectangle<i32, Logical>,
-    pub committed_size: Size<i32, Logical>,
-}
+/// Republish at least this often even when nothing seemed to change, in case
+/// a change has no hook (bounded staleness, not a timer: only on dispatch).
+const GALA_SNAPSHOT_MAX_AGE: Duration = Duration::from_secs(1);
 
 impl PantheonCompositor {
     pub fn new(
@@ -250,7 +306,18 @@ impl PantheonCompositor {
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
         let pointer_gestures_state =
             smithay::wayland::pointer_gestures::PointerGesturesState::new::<Self>(&dh);
-        let (display_config, apply_requests) = DisplayConfigHandle::start();
+        let (display_config, apply_requests, power_save_requests) = DisplayConfigHandle::start();
+        event_loop.handle().insert_source(
+            crate::wakeups::forward("display-power-save", power_save_requests),
+            |event, _, state| {
+                if let channel::Event::Msg(mode) = event {
+                    state.set_power_save_mode(mode);
+                }
+            },
+        )?;
+        let idle_monitor = crate::idle::IdleMonitorHandle::start();
+        let idle_notifier_state = IdleNotifierState::new(&dh, event_loop.handle());
+        let idle_inhibit_state = IdleInhibitManagerState::new::<Self>(&dh);
         event_loop.handle().insert_source(
             crate::wakeups::forward("display-apply", apply_requests),
             |event, _, state| {
@@ -333,12 +400,10 @@ impl PantheonCompositor {
         )?;
 
         event_loop.handle().insert_source(
-            Timer::from_duration(Duration::from_secs(30)),
-            |_, _, _| {
-                if let Some(line) = crate::redraw_stats::report() {
-                    tracing::info!("{line}");
-                }
-                TimeoutAction::ToDuration(Duration::from_secs(30))
+            Timer::from_duration(crate::metrics::REPORT_INTERVAL),
+            |_, _, state| {
+                state.report_metrics();
+                TimeoutAction::ToDuration(crate::metrics::REPORT_INTERVAL)
             },
         )?;
 
@@ -362,6 +427,25 @@ impl PantheonCompositor {
         let wallpaper = wallpaper_selection
             .as_ref()
             .and_then(crate::wallpaper::load_wallpaper);
+        let (wallpaper_scaled_sender, wallpaper_scaled) = channel::channel();
+        event_loop
+            .handle()
+            .insert_source(wallpaper_scaled, |event, _, state| {
+                let channel::Event::Msg(result) = event else {
+                    return;
+                };
+                let Some(wallpaper) = state.wallpaper.as_ref() else {
+                    return;
+                };
+                let live_sizes = state
+                    .space
+                    .outputs()
+                    .filter_map(|output| crate::cursor::output_pixel_size(state, output))
+                    .collect::<Vec<_>>();
+                if wallpaper.accept(result, &live_sizes) {
+                    state.request_native_redraw();
+                }
+            })?;
 
         // Setup a wayland socket that will be used to accept clients
         let socket_name = Self::init_wayland_listener(display, event_loop)?;
@@ -416,6 +500,10 @@ impl PantheonCompositor {
             deferred_activations: 0,
             session_lock_state,
             session_locked: false,
+            screenshot_requested: Cell::new(false),
+            screenshot_region: Cell::new(None),
+            screenshot_selection: std::cell::RefCell::new(Default::default()),
+            screenshot_busy: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             lock_surfaces: HashMap::new(),
             lock_owner: None,
             lock_confirmation: None,
@@ -445,10 +533,13 @@ impl PantheonCompositor {
             keep_above: HashSet::new(),
             top_panel_mode: crate::pantheon_shell::TopPanelMode::Normal,
             last_work_areas: HashMap::new(),
-            managed_windows: HashMap::new(),
-            x11_managed_windows: HashMap::new(),
+            placements: HashMap::new(),
+            grabbed_window: None,
+            snap_groups: HashMap::new(),
+            next_snap_group: 1,
+            snap_assist: None,
+            split_grab_active: false,
             x11_minimized_windows: HashMap::new(),
-            tiled_windows: HashMap::new(),
             tiling_bindings: TilingBindings::load(),
             corner_snap_preview: None,
             corner_snap_cancelled: false,
@@ -465,6 +556,7 @@ impl PantheonCompositor {
             initially_positioned: HashSet::new(),
             popups,
             active_popup_grab: None,
+            attention: crate::attention::Attention::default(),
             cursor_status: CursorImageStatus::default_named(),
             cursor_theme: crate::cursor_theme::CursorTheme::load(
                 crate::cursor_theme::configured_selection(),
@@ -476,17 +568,183 @@ impl PantheonCompositor {
             #[cfg(feature = "native-drm")]
             native_backend: None,
             #[cfg(feature = "native-drm")]
-            native_redraw_sender: None,
+            native_redraw_ping: None,
+            #[cfg(feature = "native-drm")]
+            native_redraw_pending: Cell::new(false),
+            #[cfg(feature = "native-drm")]
+            hidden_frame_sweep_armed: Cell::new(false),
+            client_registry: ClientRegistry::default(),
+            dirty_since: Cell::new(None),
+            monotonic_clock: smithay::utils::Clock::new(),
+            title_generation: Cell::new(0),
+            gala_snapshot_key: std::cell::RefCell::new(None),
+            gala_snapshot_at: Cell::new(None),
+            fractional_scale_fingerprint: Cell::new(None),
+            solid_buffers: Default::default(),
+            screen_corners: crate::screen_corners::ScreenCorners::from_environment(),
+            wallpaper_scaled_sender,
+            idle_monitor,
+            idle_notifier_state,
+            _idle_inhibit_state: idle_inhibit_state,
+            idle_inhibitors: HashSet::new(),
+            displays_off: false,
+            idle_lock_timer: None,
         })
     }
 
+    /// Any input from the user: reset idle time and wake blanked displays.
+    pub(crate) fn note_user_activity(&mut self) {
+        self.cancel_idle_lock();
+        self.idle_monitor.activity();
+        let seat = self.seat.clone();
+        self.idle_notifier_state.notify_activity(&seat);
+        if self.displays_off {
+            self.set_power_save_mode(crate::display_config::POWER_SAVE_ON);
+        }
+    }
+
+    /// A surface's idle inhibitor appeared or went away.
+    pub(crate) fn refresh_idle_inhibition(&mut self) {
+        self.idle_inhibitors.retain(|surface| surface.alive());
+        let inhibited = !self.idle_inhibitors.is_empty();
+        self.idle_notifier_state.set_is_inhibited(inhibited);
+        self.idle_monitor.set_inhibited(inhibited);
+    }
+
+    /// Apply Mutter's `PowerSaveMode`: 0 turns the displays on, 1–3 turn them
+    /// off (gsd-power uses 3 when the session goes idle). Off stops rendering
+    /// and disables each CRTC; the next frame after on re-enables it.
+    /// `PANTHEON_DISABLE_POWER_SAVE=1` keeps the displays on.
+    pub(crate) fn set_power_save_mode(&mut self, mode: i32) {
+        let Some(off) = crate::display_config::power_save_mode_turns_off(mode) else {
+            return;
+        };
+        if off && power_save_disabled(std::env::var("PANTHEON_DISABLE_POWER_SAVE").ok().as_deref())
+        {
+            tracing::info!(
+                "PANTHEON_DISABLE_POWER_SAVE=1: ignoring a request to blank the displays"
+            );
+            self.display_config
+                .set_power_save_mode(crate::display_config::POWER_SAVE_ON);
+            return;
+        }
+        if off == self.displays_off {
+            return;
+        }
+        if off {
+            self.cancel_active_gesture(smithay::backend::input::InputTime::now());
+            #[cfg(feature = "native-drm")]
+            if let Some(backend) = self.native_backend.as_mut() {
+                backend.kms.power_off();
+            }
+            self.displays_off = true;
+            // Nothing is shown while the displays are off, so a pending
+            // session lock must not wait for a frame that will not come.
+            self.lock_confirmation_outputs.clear();
+            self.finish_lock_confirmation_if_ready();
+            tracing::info!("displays off (power save)");
+            self.schedule_idle_lock();
+        } else {
+            self.cancel_idle_lock();
+            self.displays_off = false;
+            #[cfg(feature = "native-drm")]
+            if let Some(backend) = self.native_backend.as_mut() {
+                backend.kms.power_on();
+            }
+            self.mark_dirty();
+            self.request_native_redraw();
+            tracing::info!("displays on (power save ended)");
+        }
+        self.display_config.set_power_save_mode(if off {
+            crate::display_config::POWER_SAVE_OFF
+        } else {
+            crate::display_config::POWER_SAVE_ON
+        });
+    }
+
     pub fn request_native_redraw(&self) {
-        crate::redraw_stats::request();
+        crate::metrics::request();
         self.request_winit_redraw();
         #[cfg(feature = "native-drm")]
-        if let Some(sender) = &self.native_redraw_sender {
-            let _ = sender.send(());
+        if let Some(ping) = &self.native_redraw_ping
+            && !self.native_redraw_pending.replace(true)
+        {
+            ping.ping();
         }
+    }
+
+    /// A window title, app id or X11 property changed: republish the snapshot.
+    pub(crate) fn note_title_changed(&self) {
+        self.title_generation
+            .set(self.title_generation.get().wrapping_add(1));
+    }
+
+    /// Note that client content or input changed, for dirty→flip latency.
+    pub(crate) fn mark_dirty(&self) {
+        if self.dirty_since.get().is_none() {
+            self.dirty_since
+                .set(Some(self.monotonic_clock.now().into()));
+        }
+    }
+
+    /// Log and reset the 30 s metrics window.
+    fn report_metrics(&mut self) {
+        let counters = crate::metrics::take_counters();
+        let clients = self.client_registry.take_window();
+        #[cfg_attr(not(feature = "native-drm"), allow(unused_mut))]
+        let mut outputs = Vec::new();
+        #[cfg(feature = "native-drm")]
+        if let Some(backend) = self.native_backend.as_mut() {
+            outputs = backend.kms.take_metrics();
+        }
+        crate::metrics::report(counters, &clients, &outputs);
+    }
+
+    /// Commit counters for the client that owns `surface`. Wayland clients
+    /// carry theirs in `ClientState`; Xwayland surfaces are attributed to the
+    /// X11 window's own pid once the window is known (cached on the surface).
+    pub(crate) fn commit_stats_for(&mut self, surface: &WlSurface) -> Option<Arc<ClientStats>> {
+        let client = surface.client()?;
+        if let Some(state) = client.get_data::<ClientState>() {
+            return Some(state.stats.clone());
+        }
+        client.get_data::<smithay::xwayland::XWaylandClientData>()?;
+        let cached = smithay::wayland::compositor::with_states(surface, |states| {
+            states
+                .data_map
+                .insert_if_missing_threadsafe(X11CommitAttribution::default);
+            let attribution = states.data_map.get::<X11CommitAttribution>()?;
+            let mut attribution = attribution.0.lock().ok()?;
+            if let Some(stats) = &attribution.stats {
+                return Some(Ok(stats.clone()));
+            }
+            attribution.misses += 1;
+            Some(Err(attribution.misses))
+        })?;
+        let misses = match cached {
+            Ok(stats) => return Some(stats),
+            Err(misses) => misses,
+        };
+        let pid = self
+            .space
+            .elements()
+            .filter_map(|window| window.x11_surface())
+            .find(|x11| x11.wl_surface().as_ref() == Some(surface))
+            .map(|x11| x11.pid());
+        use crate::metrics::client::{X11Attribution as Decision, attribute_x11};
+        let stats = match attribute_x11(pid, misses, X11_ATTRIBUTION_ATTEMPTS) {
+            Decision::Client(pid) => self.client_registry.for_pid(pid),
+            Decision::Xwayland => self.client_registry.xwayland(),
+            Decision::XwaylandForNow => return Some(self.client_registry.xwayland()),
+        };
+        smithay::wayland::compositor::with_states(surface, |states| {
+            if let Some(attribution) = states.data_map.get::<X11CommitAttribution>()
+                && let Ok(mut attribution) = attribution.0.lock()
+            {
+                attribution.stats = Some(stats.clone());
+            }
+        });
+        Some(stats)
     }
 
     pub fn request_winit_redraw(&self) {
@@ -555,12 +813,34 @@ impl PantheonCompositor {
     }
 
     /// Publish the window/workspace snapshot to the Gala-compat D-Bus service.
-    /// Called after every event-loop dispatch (it only copies on change).
+    /// Called after every event-loop dispatch; skips the rebuild when nothing
+    /// it depends on changed (at most `GALA_SNAPSHOT_MAX_AGE` stale).
     pub(crate) fn publish_gala_snapshot(&self) {
         let focus = self
             .seat
             .get_keyboard()
             .and_then(|keyboard| keyboard.current_focus());
+        let key = GalaSnapshotKey {
+            workspaces: self.workspace_manager.generation(),
+            titles: self.title_generation.get(),
+            focus: focus.as_ref().map(|surface| surface.id()),
+            x11_focus: self
+                .x11_keyboard_focus
+                .as_ref()
+                .map(|surface| surface.window_id()),
+            panels: self.panels.len(),
+            attention: self.attention.generation(),
+        };
+        let now = std::time::Instant::now();
+        let fresh = self
+            .gala_snapshot_at
+            .get()
+            .is_some_and(|at| now.duration_since(at) < GALA_SNAPSHOT_MAX_AGE);
+        if fresh && self.gala_snapshot_key.borrow().as_ref() == Some(&key) {
+            return;
+        }
+        self.gala_snapshot_key.replace(Some(key));
+        self.gala_snapshot_at.set(Some(now));
         let windows = self
             .workspace_manager
             .windows()
@@ -609,6 +889,7 @@ impl PantheonCompositor {
                     app_id,
                     title,
                     has_focus,
+                    demands_attention: !has_focus && self.attention.contains(window.id()),
                     workspace_index: workspace_index as i32,
                     time_appeared_on_workspace: window.id() as i64,
                 }
@@ -725,24 +1006,21 @@ impl PantheonCompositor {
         let window = self
             .focused_window()
             .ok_or_else(|| "there is no focused application window to maximize".to_string())?;
-        if let Some(toplevel) = window.toplevel().cloned() {
-            if self.is_panel_surface(toplevel.wl_surface()) {
-                return Err("cannot maximize a panel surface".into());
-            }
-            let maximized = self
-                .managed_windows
-                .get(&toplevel.wl_surface().id())
-                .is_some_and(|state| state.maximized);
-            self.configure_window_mode(toplevel, !maximized, false);
-        } else if let Some(surface) = window.x11_surface().cloned() {
-            let maximized = self
-                .x11_managed_windows
-                .get(&surface.window_id())
-                .is_some_and(|state| state.maximized);
-            self.configure_x11_window_mode(&surface, !maximized, false);
-        } else {
+        if window
+            .toplevel()
+            .is_some_and(|toplevel| self.is_panel_surface(toplevel.wl_surface()))
+        {
+            return Err("cannot maximize a panel surface".into());
+        }
+        if window.toplevel().is_none() && window.x11_surface().is_none() {
             return Err("the focused surface is not a managed application window".into());
         }
+        let request = if self.placement_of(&window).is_maximized() {
+            crate::tiling::ModeRequest::Unmaximize
+        } else {
+            crate::tiling::ModeRequest::Maximize
+        };
+        self.set_window_mode(&window, request);
         self.refresh_panel_visibility();
         self.request_native_redraw();
         Ok(())
@@ -764,16 +1042,8 @@ impl PantheonCompositor {
             if self.is_panel_surface(surface) {
                 return Err("cannot minimize a panel surface".into());
             }
-            let was_focused = self
-                .seat
-                .get_keyboard()
-                .and_then(|keyboard| keyboard.current_focus())
-                .is_some_and(|mut focused| {
-                    while let Some(parent) = smithay::wayland::compositor::get_parent(&focused) {
-                        focused = parent;
-                    }
-                    focused == *surface
-                });
+            let was_focused = self.keyboard_focus_is_in(surface);
+            self.end_popup_grab_of(surface);
             self.workspace_manager.set_location(window.id(), location);
             window.set_activated(false);
             self.space.unmap_elem(&window);
@@ -941,6 +1211,7 @@ impl PantheonCompositor {
         if self.session_locked {
             return Err("cannot switch workspaces while the session is locked".into());
         }
+        self.dismiss_snap_assist();
         let Ok(index) = usize::try_from(index) else {
             return Err("workspace index must be non-negative".into());
         };
@@ -961,6 +1232,8 @@ impl PantheonCompositor {
         if current == workspace {
             return Ok(());
         }
+        // The old workspace's windows (and their menus) are about to unmap.
+        self.end_popup_grab_unless(None);
 
         let visible = self
             .space
@@ -1026,7 +1299,11 @@ impl PantheonCompositor {
         for (window, location) in &target_windows {
             self.space.map_element(window.clone(), *location, false);
         }
-        if let Some((window, _)) = target_windows.last() {
+        if let Some((window, _)) = target_windows
+            .iter()
+            .rev()
+            .find(|(window, _)| crate::xwayland::window_accepts_focus(window))
+        {
             self.raise_window(window, true);
             let serial = smithay::utils::SERIAL_COUNTER.next_serial();
             if let Some(toplevel) = window.toplevel() {
@@ -1077,6 +1354,12 @@ impl PantheonCompositor {
             if let Some(location) = self.space.element_location(&window) {
                 self.workspace_manager.set_location(id, location);
             }
+            let had_focus = window
+                .toplevel()
+                .is_some_and(|toplevel| self.keyboard_focus_is_in(toplevel.wl_surface()));
+            if let Some(toplevel) = window.toplevel() {
+                self.end_popup_grab_of(&toplevel.wl_surface().clone());
+            }
             let was_x11_focused = window
                 .x11_surface()
                 .is_some_and(|surface| self.x11_keyboard_focus.as_ref() == Some(surface));
@@ -1086,16 +1369,14 @@ impl PantheonCompositor {
                 self.set_x11_keyboard_focus(None, smithay::utils::SERIAL_COUNTER.next_serial());
                 self.focus_next_window();
             }
-            if window.toplevel().is_some_and(|toplevel| {
-                self.seat
-                    .get_keyboard()
-                    .and_then(|keyboard| keyboard.current_focus())
-                    .is_some_and(|focused| focused == *toplevel.wl_surface())
-            }) {
+            if had_focus {
                 self.focus_next_window();
             }
         }
+        self.dismiss_snap_assist();
         self.workspace_manager.assign_window(id, target);
+        // A member moved to another workspace leaves its group.
+        self.prune_snap_groups();
         if target == self.workspace_manager.active() && !self.is_workspace_window_minimized(&window)
         {
             if let Some(location) = self.workspace_manager.location(id) {
@@ -1107,6 +1388,14 @@ impl PantheonCompositor {
         self.request_native_redraw();
         self.gala_compat.request_windows_changed();
         Ok(())
+    }
+
+    /// S17: a snapped or maximized window restored from minimize re-fits the
+    /// current work area instead of reappearing at a stale rect.
+    fn reapply_restored_placement(&mut self, window: &Window) {
+        if !self.placement_of(window).is_floating() {
+            self.apply_placement(window);
+        }
     }
 
     fn is_workspace_window_minimized(&self, window: &Window) -> bool {
@@ -1129,6 +1418,7 @@ impl PantheonCompositor {
                 .location(window.id())
                 .unwrap_or(location);
             self.space.map_element(window.clone(), location, true);
+            self.reapply_restored_placement(window);
             return;
         }
         if let Some(surface) = window.x11_surface()
@@ -1141,6 +1431,7 @@ impl PantheonCompositor {
             if surface.set_mapped(true).is_ok() {
                 self.space.map_element(window.clone(), location, true);
                 window.set_activated(true);
+                self.reapply_restored_placement(window);
             }
         }
     }
@@ -1706,9 +1997,27 @@ impl PantheonCompositor {
         Ok(())
     }
 
+    /// Send each window's preferred fractional scale for the output it is on.
+    /// Cheap when nothing moved between outputs: a fingerprint of the (window,
+    /// output scale) layout is compared first and the surface trees are only
+    /// walked when it changed.
     pub fn update_fractional_scale_preferences(&self) {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
         for window in self.space.elements() {
-            let Some(output) = self.space.outputs_for_element(window).first().cloned() else {
+            window.id().hash(&mut hasher);
+            self.space
+                .outputs_for_element(window)
+                .first()
+                .map(|output| output.current_scale().fractional_scale().to_bits())
+                .hash(&mut hasher);
+        }
+        let fingerprint = hasher.finish();
+        if self.fractional_scale_fingerprint.replace(Some(fingerprint)) == Some(fingerprint) {
+            return;
+        }
+        for window in self.space.elements() {
+            let Some(output) = self.primary_output_for(window) else {
                 continue;
             };
             let scale = output.current_scale().fractional_scale();
@@ -1746,13 +2055,22 @@ impl PantheonCompositor {
             //
             // You may also associate some data with the client when inserting the client.
             let is_ibus_input_method_client = is_ibus_input_method_stream(&client_stream);
+            let pid = peer_pid(&client_stream);
+            let stats = match pid {
+                Some(pid) => state.client_registry.for_pid(pid),
+                None => state
+                    .client_registry
+                    .get_or_insert(u32::MAX, || "unknown".into()),
+            };
             state
                 .display_handle
                 .insert_client(
                     client_stream,
                     Arc::new(ClientState {
+                        compositor_state: CompositorClientState::default(),
                         is_ibus_input_method_client,
-                        ..ClientState::default()
+                        pid,
+                        stats,
                     }),
                 )
                 .unwrap();
@@ -1835,6 +2153,68 @@ impl PantheonCompositor {
         }
     }
 
+    /// Frame callbacks for this output's lock surface. The lock screen is not
+    /// a window, so the window frame-callback paths never reach it.
+    pub(crate) fn send_lock_surface_frames(
+        &self,
+        output: &smithay::output::Output,
+        time: Duration,
+    ) {
+        if !self.session_locked {
+            return;
+        }
+        if let Some(surface) = self.lock_surfaces.get(&output.name()) {
+            smithay::desktop::utils::send_frames_surface_tree(
+                surface.wl_surface(),
+                output,
+                time,
+                Some(Duration::ZERO),
+                |_, _| Some(output.clone()),
+            );
+        }
+    }
+
+    /// The displays were just blanked. If the user has been idle (gsd-power's
+    /// idle blank, not a lid or a manual switch-off) and `lock-enabled` is on,
+    /// lock after `lock-delay` seconds unless they come back first, as GNOME
+    /// Shell does.
+    fn schedule_idle_lock(&mut self) {
+        if self.session_locked || self.idle_monitor.idle_ms() < IDLE_LOCK_MIN_IDLE_MS {
+            return;
+        }
+        let Some(delay) = idle_lock_delay() else {
+            return;
+        };
+        self.cancel_idle_lock();
+        if delay.is_zero() {
+            tracing::info!("idle blank: locking the session");
+            self.shell_compat.request_lock();
+            return;
+        }
+        tracing::info!(
+            delay_s = delay.as_secs(),
+            "idle blank: locking after lock-delay"
+        );
+        let timer = smithay::reexports::calloop::timer::Timer::from_duration(delay);
+        match self.loop_handle.insert_source(timer, |_, _, state| {
+            state.idle_lock_timer = None;
+            if state.displays_off && !state.session_locked {
+                tracing::info!("lock-delay passed while idle: locking the session");
+                state.shell_compat.request_lock();
+            }
+            smithay::reexports::calloop::timer::TimeoutAction::Drop
+        }) {
+            Ok(token) => self.idle_lock_timer = Some(token),
+            Err(error) => tracing::warn!(%error, "could not arm the idle lock timer"),
+        }
+    }
+
+    fn cancel_idle_lock(&mut self) {
+        if let Some(token) = self.idle_lock_timer.take() {
+            self.loop_handle.remove(token);
+        }
+    }
+
     pub fn confirm_lock_output_frame(&mut self, output_name: &str) {
         if !self.session_locked || self.lock_confirmation.is_none() {
             return;
@@ -1848,7 +2228,7 @@ impl PantheonCompositor {
         self.finish_lock_confirmation_if_ready();
     }
 
-    fn finish_lock_confirmation_if_ready(&mut self) {
+    pub(crate) fn finish_lock_confirmation_if_ready(&mut self) {
         if !self.session_locked || self.lock_confirmation.is_none() {
             return;
         }
@@ -1869,7 +2249,7 @@ impl FractionalScaleHandler for PantheonCompositor {
         }
         let output = self
             .find_window_for_surface(&root)
-            .and_then(|window| self.space.outputs_for_element(&window).first().cloned())
+            .and_then(|window| self.primary_output_for(&window))
             .or_else(|| self.primary_output());
         if let Some(output) = output {
             smithay::wayland::compositor::with_states(&surface, |states| {
@@ -1926,8 +2306,8 @@ impl XdgActivationHandler for PantheonCompositor {
         self.xdg_activation_state
             .retain_tokens(|_, token| token.timestamp.elapsed() < ACTIVATION_TOKEN_TTL);
         self.arm_activation_sweep();
-        // A token without a valid recent input serial is still kept under the
-        // `raise` policy; request_activation decides what to do with it.
+        // Kept under every policy; request_activation applies the policy and
+        // turns a refusal into a demands-attention mark.
         accepts_token(
             self.activation_policy,
             self.activation_serial_trusted(&data),
@@ -1955,7 +2335,11 @@ impl XdgActivationHandler for PantheonCompositor {
             since_last_key: self.last_key_press.map(|pressed| pressed.elapsed()),
         };
         match verdict(self.activation_policy, request) {
-            Verdict::Ignore => {}
+            Verdict::Ignore => {
+                if let Some(window) = self.workspace_window_for_root(&root) {
+                    self.request_attention(&window, Reason::ActivationIgnored);
+                }
+            }
             Verdict::ActivateNow => self.activate_root_surface(root),
             Verdict::ActivateWhenIdle => self.defer_activation(root),
         }
@@ -2005,6 +2389,9 @@ impl PantheonCompositor {
                         DeferStep::GiveUp => {
                             state.deferred_activations =
                                 state.deferred_activations.saturating_sub(1);
+                            if let Some(window) = state.workspace_window_for_root(&root) {
+                                state.request_attention(&window, Reason::ActivationGaveUp);
+                            }
                             TimeoutAction::Drop
                         }
                     }
@@ -2059,10 +2446,28 @@ impl PantheonCompositor {
 
 /// Data associated with a wayland client that connects to PantheonCompositor.
 /// One instance of this type per client.
-#[derive(Default)]
 pub struct ClientState {
     pub compositor_state: CompositorClientState,
     pub is_ibus_input_method_client: bool,
+    /// Peer pid, read once at connect (no per-commit `SO_PEERCRED`).
+    #[allow(dead_code)]
+    pub pid: Option<u32>,
+    /// Commit counters shared by every connection from this pid.
+    pub stats: Arc<ClientStats>,
+}
+
+/// Failed lookups before an Xwayland surface with no X11 window is counted
+/// as Xwayland's own for good (about two seconds of 60 Hz commits).
+const X11_ATTRIBUTION_ATTEMPTS: u32 = 120;
+
+/// Per-surface cache of which X11 client an Xwayland surface belongs to.
+#[derive(Default)]
+struct X11CommitAttribution(std::sync::Mutex<X11Attribution>);
+
+#[derive(Default)]
+struct X11Attribution {
+    stats: Option<Arc<ClientStats>>,
+    misses: u32,
 }
 
 impl ClientData for ClientState {
@@ -2091,7 +2496,11 @@ where
 
 impl PantheonCompositor {
     /// See [`place_in_space`]: move a window and keep its place in the stack.
-    pub(crate) fn place_window(&mut self, window: &Window, location: impl Into<Point<i32, Logical>>) {
+    pub(crate) fn place_window(
+        &mut self,
+        window: &Window,
+        location: impl Into<Point<i32, Logical>>,
+    ) {
         place_in_space(&mut self.space, window, location.into());
     }
 }
@@ -2170,5 +2579,127 @@ mod stacking_tests {
         space.map_element(Fake(1), (0, 0), false);
         place_in_space(&mut space, &Fake(2), (3, 3).into());
         assert_eq!(order(&space), vec![1, 2]);
+    }
+}
+
+/// A blank only counts as idle (and may lock) after this long without input.
+const IDLE_LOCK_MIN_IDLE_MS: u64 = 5_000;
+
+/// How long after an idle blank to lock, or `None` not to lock. Reads
+/// `org.gnome.desktop.screensaver` `lock-enabled` / `lock-delay` and
+/// `org.gnome.desktop.lockdown` `disable-lock-screen` when the blank happens.
+/// `PANTHEON_IDLE_LOCK=off` disables it; `PANTHEON_IDLE_LOCK=<seconds>`
+/// overrides the delay (used by the nested probe).
+fn idle_lock_delay() -> Option<Duration> {
+    let override_value = std::env::var("PANTHEON_IDLE_LOCK").ok();
+    let enabled = gsettings_bool("org.gnome.desktop.screensaver", "lock-enabled");
+    let delay_s = gsettings_u32("org.gnome.desktop.screensaver", "lock-delay");
+    let lockdown = gsettings_bool("org.gnome.desktop.lockdown", "disable-lock-screen");
+    idle_lock_decision(override_value.as_deref(), enabled, delay_s, lockdown)
+}
+
+fn idle_lock_decision(
+    override_value: Option<&str>,
+    enabled: Option<bool>,
+    delay_s: Option<u32>,
+    lockdown: Option<bool>,
+) -> Option<Duration> {
+    match override_value.map(str::trim) {
+        Some("off" | "false" | "no") => return None,
+        Some(value) if !value.is_empty() => {
+            return value.parse::<u64>().ok().map(Duration::from_secs);
+        }
+        _ => {}
+    }
+    if lockdown == Some(true) || enabled != Some(true) {
+        return None;
+    }
+    Some(Duration::from_secs(u64::from(delay_s.unwrap_or(0))))
+}
+
+fn gsettings(schema: &str) -> Option<gio::Settings> {
+    // g_settings_new aborts on a missing schema, so look it up first.
+    gio::SettingsSchemaSource::default()?.lookup(schema, true)?;
+    Some(gio::Settings::new(schema))
+}
+
+fn gsettings_bool(schema: &str, key: &str) -> Option<bool> {
+    use gio::prelude::SettingsExt;
+    let settings = gsettings(schema)?;
+    settings
+        .settings_schema()?
+        .has_key(key)
+        .then(|| settings.boolean(key))
+}
+
+fn gsettings_u32(schema: &str, key: &str) -> Option<u32> {
+    use gio::prelude::SettingsExt;
+    let settings = gsettings(schema)?;
+    settings
+        .settings_schema()?
+        .has_key(key)
+        .then(|| settings.uint(key))
+}
+
+/// `PANTHEON_DISABLE_POWER_SAVE=1` (or `true`/`yes`) keeps the displays on.
+fn power_save_disabled(value: Option<&str>) -> bool {
+    matches!(value.map(str::trim), Some("1" | "true" | "yes"))
+}
+
+#[cfg(test)]
+mod power_save_tests {
+    use super::power_save_disabled;
+    use crate::display_config::power_save_mode_turns_off;
+
+    #[test]
+    fn power_save_modes_map_to_on_and_off() {
+        assert_eq!(power_save_mode_turns_off(0), Some(false));
+        for mode in 1..=3 {
+            assert_eq!(power_save_mode_turns_off(mode), Some(true));
+        }
+        assert_eq!(power_save_mode_turns_off(-1), None);
+        assert_eq!(power_save_mode_turns_off(4), None);
+    }
+
+    #[test]
+    fn idle_lock_follows_gnome_settings() {
+        use super::idle_lock_decision;
+        use std::time::Duration;
+        // the owner's settings: lock-enabled, lock-delay 0 → lock at once
+        assert_eq!(
+            idle_lock_decision(None, Some(true), Some(0), Some(false)),
+            Some(Duration::ZERO)
+        );
+        assert_eq!(
+            idle_lock_decision(None, Some(true), Some(30), None),
+            Some(Duration::from_secs(30))
+        );
+        assert_eq!(idle_lock_decision(None, Some(false), Some(0), None), None);
+        assert_eq!(
+            idle_lock_decision(None, Some(true), Some(0), Some(true)),
+            None,
+            "lockdown wins"
+        );
+        assert_eq!(
+            idle_lock_decision(None, None, None, None),
+            None,
+            "no schema, no lock"
+        );
+        assert_eq!(
+            idle_lock_decision(Some("off"), Some(true), Some(0), None),
+            None
+        );
+        assert_eq!(
+            idle_lock_decision(Some("2"), Some(false), None, None),
+            Some(Duration::from_secs(2))
+        );
+    }
+
+    #[test]
+    fn power_save_escape_hatch() {
+        assert!(power_save_disabled(Some("1")));
+        assert!(power_save_disabled(Some(" yes ")));
+        assert!(!power_save_disabled(Some("0")));
+        assert!(!power_save_disabled(None));
     }
 }

@@ -57,26 +57,40 @@ the built package. Native login qualification is still open.
 This proves the native display path and rollback, not a
 complete Pantheon session or a performance/stability improvement.
 
-The nested prototype now handles the existing half-snap chords (`Super+Left`
-and `Super+Right`) and quarter-snap chords (`Super+Alt+U/I/J/K` plus the
-existing Super+keypad aliases). It computes rectangles from the focused
-window's output work area, sends an xdg configure, and reflows managed tiles
-when panel/output work areas change. Starting a compositor move/resize or
-maximizing the window ends its managed tile. `Super+Shift+Left/Right` moves a
-window to the adjacent output while preserving its work-area offset (or tile
-position). Shortcuts load at session startup from the existing Mutter half-tile,
-Pantheon quarter-tile, and GNOME monitor-move GSettings keys; built-in defaults
-apply if those schemas or keys are unavailable. Restart the session after
-changing bindings. These keyboard paths are compile checked only: runtime
-shortcut and multi-output behavior remain open. During a compositor move, the
-40-logical-pixel output corners show a translucent quarter preview; releasing
-snaps the window, and Escape cancels the snap. Fixed-size windows are excluded.
-The drag preview and release path also need runtime qualification.
+Snapping (phase 0 of the [next-generation plan](NEXT-GEN-INVESTIGATION-2026-10-21.md#2-snapping-and-adding-more-apps-to-a-snap)):
+every window has one placement (`Floating`, `Tiled`, `Maximized{prior}`,
+`Fullscreen{prior}`) keyed by `Window::id()` in `src/placement.rs`, which holds the
+pure, unit-tested geometry. `Super+Left/Right` snap halves and toggle (the same or
+opposite side restores the pre-snap rect; quarters slide or grow), `Super+Up`
+maximizes and remembers a tile, `Super+Down` steps back (maximized → tile →
+floating). Quarter chords (`Super+Alt+U/I/J/K`, Super+keypad) toggle too.
+`Super+Shift+Left/Right` moves a window, its tile or its maximize to the adjacent
+output. Dragging a snapped or maximized window more than 8 px restores its
+floating size with the grabbed title-bar point under the pointer; the 40 px edge
+zones preview what the window will actually get (minimum size included), Escape
+cancels, and release recomputes the zone for the current work area. Wayland
+windows move only after the client acks the new size (400 ms fallback), tiles
+send `Tiled*` states for their work-area edges, a client larger than its zone
+stays snapped and grows inward from the screen edge, and snapped X11 windows
+that resize themselves are told their rect again. The window's output is the
+one its geometry overlaps most, not a random one. Bindings load at session
+start (`org.techmore.mseries.snapping` `maximize`/`restore` plus the Mutter and
+GNOME keys, with built-in defaults). Phase 1: snapping a half next to an
+empty half opens **Snap Assist**, live scaled thumbnails of the other windows on
+that output and workspace in the empty half (arrows/Tab, Return or click to
+choose, Escape or any other key to dismiss; clients are not resized). Choosing
+one, or snapping beside a window already on the other half, forms a two-member
+**snap group** (`src/snap_group.rs`, a `SnapNode` split tree): members raise
+together, dragging their shared edge resizes both (clamped to minimum sizes),
+maximize/restore keeps the group, and un-snapping, closing or moving a member
+returns the other to its half. Nested regression:
+[snap-tests](snap-tests/README.md). Multi-output, X11 and native input remain
+owner acceptance.
 
 At startup, the keyboard now loads the user's XKB model, active XKB layout,
 options, and repeat settings from GNOME GSettings. This applies the M-series
-`ctrl:swap_lwin_lctl` Command/Ctrl mapping. The compositor polls settings
-once per second and applies layout, option, and repeat changes live; this path
+`ctrl:swap_lwin_lctl` and `ctrl:swap_rwin_rctl` Command/Ctrl mappings. The compositor
+polls settings once per second and applies layout, option, and repeat changes live; this path
 is build-checked but not runtime-qualified. The current source is US;
 `mozc-jp` is installed but inactive. F5 dictation is an active IBus workflow
 and inserts committed Unicode into focused fields. The Rust compositor's
