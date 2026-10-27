@@ -5,3 +5,6 @@ mseries/patches/dock-taskbar-codexbar.patch whitespace=-blank-at-eol
 mseries/patches/dock-taskbar-repobar.patch whitespace=-blank-at-eol
 mseries/patches/dock-taskbar-power-buttons.patch whitespace=-blank-at-eol
 mseries/patches/dock-running-apps.patch whitespace=-blank-at-eol
+# Both files are append/prepend logs edited by every PR; keep both sides instead of conflicting.
+mseries/OS9-HANDOFF.md merge=union
+mseries/ROADMAP.md merge=union
