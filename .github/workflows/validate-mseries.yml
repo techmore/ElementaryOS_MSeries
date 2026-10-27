@@ -6,24 +6,9 @@ name: Validate M-series wiring
 
 on:
   workflow_dispatch:
+  # No path filter: branch protection requires these jobs, and a skipped required
+  # check blocks the PR forever (e.g. Cargo.lock-only Dependabot bumps, #585).
   pull_request:
-    paths:
-      - "rust/claude-pantheon-rs/**"
-      - "Justfile"
-      - "assemble-iso.sh"
-      - "mkosi.conf"
-      - "mkosi.images/**"
-      - "mkosi.conf.d/**"
-      - "mkosi.bump"
-      - "repos/**"
-      - "packages.arm64"
-      - "transform/**"
-      - "bin/**"
-      - "mseries/**"
-      - "docs/build-status.*"
-      - "docs/capabilities.*"
-      - "docs/local-build-status.html"
-      - ".github/workflows/**"
 
 # New commits replace only checks for this workflow and PR. Publishing is not preempted.
 concurrency:
