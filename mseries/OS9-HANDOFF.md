@@ -1,3 +1,7 @@
+## Public messaging status — 2026-10-27
+
+The public homepage and support matrix now distinguish the scoped October 20 BlueFerry texting observation from the owner’s October 22 decision that the Messages and Signal experience is incomplete and deferred. See [MESSAGING-STATUS.md](MESSAGING-STATUS.md). This documentation update does not change or qualify the apps, phone pairing or hardware.
+
 ## Title bar buttons stay on the left — 2026-10-27
 
 Owner request: window title-bar buttons always on the left. Live `button-layout` was `:minimize,maximize,close` because Work Mode's `window-buttons` key defaulted to `windows` (not user-set in dconf) and applied the Windows layout whenever Work Mode was active; the saved original it would restore was already `close,minimize,maximize:`. The schema default is now `unchanged`, so Work Mode no longer touches the layout; `windows` remains an explicit opt-in. Work Mode tests: 14 pass (new test asserts the default leaves the left layout alone; the two tests that exercised the Windows layout now set it explicitly). **Not deployed:** the default changes only after the schema is recompiled by the Work Mode install, and the helper then restores the saved left layout on its next tick; no live gsettings, panel or session change was made.
