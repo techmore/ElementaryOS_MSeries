@@ -422,7 +422,7 @@ dependencies = [
  "gtk4",
  "msdk",
  "msdk-gtk",
- "mseries-pantheon-kit",
+ "mseries-pantheon-kit 0.1.0",
  "pulldown-cmark",
  "rayon",
  "serde",
@@ -1917,7 +1917,7 @@ dependencies = [
  "granite-rs",
  "gtk4",
  "libc",
- "mseries-pantheon-kit",
+ "mseries-pantheon-kit 0.1.0",
  "serde",
  "serde_json",
  "vte4",
@@ -1939,7 +1939,7 @@ dependencies = [
  "granite-rs",
  "gtk4",
  "libc",
- "mseries-pantheon-kit",
+ "mseries-pantheon-kit 0.1.0",
  "pangocairo",
  "rayon",
 ]
@@ -1967,6 +1967,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "mseries-image-studio"
+version = "0.1.0"
+dependencies = [
+ "granite-rs",
+ "gtk4",
+ "mseries-pantheon-kit 0.1.0 (git+https://github.com/techmore/ElementaryOS_MSeries.git?rev=e15f9272d9d466e078bef990da1cd462cfcb7f43)",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "mseries-messages"
 version = "0.1.0"
 dependencies = [
@@ -1975,7 +1986,7 @@ dependencies = [
  "image",
  "ipnet",
  "mseries-ai",
- "mseries-pantheon-kit",
+ "mseries-pantheon-kit 0.1.0",
  "percent-encoding",
  "reqwest",
  "serde_json",
@@ -1990,7 +2001,21 @@ dependencies = [
  "gio",
  "granite-rs",
  "gtk4",
- "mseries-update-core",
+ "mseries-update-core 0.1.0",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "mseries-pantheon-kit"
+version = "0.1.0"
+source = "git+https://github.com/techmore/ElementaryOS_MSeries.git?rev=e15f9272d9d466e078bef990da1cd462cfcb7f43#e15f9272d9d466e078bef990da1cd462cfcb7f43"
+dependencies = [
+ "gdk-pixbuf",
+ "gio",
+ "granite-rs",
+ "gtk4",
+ "mseries-update-core 0.1.0 (git+https://github.com/techmore/ElementaryOS_MSeries.git?rev=e15f9272d9d466e078bef990da1cd462cfcb7f43)",
  "serde",
  "serde_json",
 ]
@@ -2016,7 +2041,7 @@ version = "0.1.0"
 dependencies = [
  "granite-rs",
  "gtk4",
- "mseries-pantheon-kit",
+ "mseries-pantheon-kit 0.1.0",
  "vte4",
 ]
 
@@ -2029,13 +2054,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "mseries-update-core"
+version = "0.1.0"
+source = "git+https://github.com/techmore/ElementaryOS_MSeries.git?rev=e15f9272d9d466e078bef990da1cd462cfcb7f43#e15f9272d9d466e078bef990da1cd462cfcb7f43"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "mseries-updates"
 version = "0.1.0"
 dependencies = [
  "granite-rs",
  "gtk4",
- "mseries-pantheon-kit",
- "mseries-update-core",
+ "mseries-pantheon-kit 0.1.0",
+ "mseries-update-core 0.1.0",
 ]
 
 [[package]]
