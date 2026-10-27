@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "kernel_repo": "techmore/ElementaryOS_MSeries-Kernel",
+  "release_tag": "kernel-2026.10.27.1",
+  "kernel_repo_commit": "c98d92c16807f8212e93818e11706ee32170d1db",
+  "channel": "fairydust-usb4",
+  "kernel_release": "7.1.13-elementary-fairydust-usb4",
+  "toolchain_note": "Built by Kernel-repo CI with rustc 1.99.0; the earlier local build used rustc 1.98.1 (compiled Rust differs, source and config options identical). Accepted as canonical by the owner on 2026-10-27, to be proven by the j314s boot.",
+  "packages": [
+    {
+      "name": "linux-image-7.1.13-elementary-fairydust-usb4",
+      "version": "7.1.13+elementary.usb4.4",
+      "file": "linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.4_arm64.deb",
+      "asset": "linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.4_arm64.deb",
+      "sha256": "deae4866097b2cc46494ca2020e86913c92035439423e1292ccb49145be25430"
+    },
+    {
+      "name": "m1n1",
+      "version": "1.5.2-2ubuntu0.1~asahi1",
+      "file": "m1n1_1.5.2-2ubuntu0.1~asahi1_arm64.deb",
+      "asset": "m1n1_1.5.2-2ubuntu0.1.asahi1_arm64.deb",
+      "sha256": "6c78ead41b46b7cfca145e01743ed4874e58e8b37f0127d46d3b7c186cdb2088"
+    },
+    {
+      "name": "u-boot-asahi",
+      "version": "2025.10-2-1",
+      "file": "u-boot-asahi_2025.10-2-1_arm64.deb",
+      "asset": "u-boot-asahi_2025.10-2-1_arm64.deb",
+      "sha256": "e0cc3d96dc4d57fb491979280254bc095204588c66984bc46948b35529690b51"
+    }
+  ],
+  "boot": {
+    "m1n1_bootbin": {
+      "file": "fairydust-m1n1-boot.bin",
+      "asset": "fairydust-m1n1-boot.bin",
+      "sha256": "049c5bf29e5e4f379e44e8ef8fffce3a018ede03ee19676c98cc6ee6e8608f8d"
+    }
+  }
+}
