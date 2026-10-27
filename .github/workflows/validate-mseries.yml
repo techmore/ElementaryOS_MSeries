@@ -36,6 +36,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install desktop integration test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi desktop-file-utils
       - name: Test without browsers, accounts or network
@@ -48,6 +50,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install private GTK test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-ibus-1.0 gir1.2-atspi-2.0 dbus-x11 xvfb xauth
       - name: Verify source-only release, rollback and host checks
@@ -65,6 +69,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native GTK and private D-Bus test dependencies
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-gi gsettings-desktop-schemas libglib2.0-bin dbus-x11 xvfb xauth
       - name: Planner, dock token and size-lint unit tests
@@ -84,6 +90,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native GTK and private D-Bus test dependencies
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-dbus python3-gi dbus-x11 xvfb xauth
       - name: Keep all Quick Settings builds on shared source preparation
@@ -100,6 +108,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install private GTK fixture dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-3.0 gir1.2-gtk-4.0 xvfb xauth dbus-x11 ffmpeg xdotool gir1.2-pango-1.0 python3-gi-cairo
       - name: Check responsiveness, error recovery and scale in both themes
@@ -115,6 +125,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install GTK and Granite test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth dbus-x11 git meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libgee-0.8-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev
       - name: Test without a daemon or real guests
@@ -144,6 +156,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install GSettings test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi libglib2.0-bin gsettings-desktop-schemas iproute2
       - name: Test with keyfile GSettings, a local IP service and no user services
@@ -154,6 +168,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native test dependencies
         run: sudo apt-get update && sudo apt-get install -y git valac libglib2.0-dev
       - name: Verify activation, delayed Gala readiness and session stops
@@ -167,6 +183,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install GTK test dependencies
         run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev libgranite-7-dev xvfb xauth build-essential python3-gi libglib2.0-bin
       - name: Test top-bar 130 percent measurement and allocation
@@ -181,6 +199,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install build dependencies
         run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev python3 appstream desktop-file-utils xvfb xauth dbus-x11 genisoimage curl qemu-utils
       - name: Build and run the tests (machines, QMP, clipboard, display, Incus, Podman, window)
@@ -205,6 +225,8 @@ jobs:
     runs-on: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native build and headless test dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config
@@ -234,6 +256,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install build and headless EDS test dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config gettext sassc
@@ -263,6 +287,8 @@ jobs:
           audit_revision=$(python3 -c 'import json; print(json.load(open("docs/capabilities.json"))["source_revision"])')
           [[ "$audit_revision" =~ ^[0-9a-f]{40}$ ]] || exit 1
           git fetch --no-tags --depth=1 origin "$audit_revision"
+
+      - uses: ./.github/actions/fast-apt
 
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck dpkg-dev -y
@@ -336,6 +362,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install offline test tools
         run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck python3-libarchive-c keyutils
       - name: Validate hardware ports without target hardware
@@ -366,6 +394,8 @@ jobs:
       # The crate pins gtk4 0.11 (v4_20) and granite-rs 3.3 (v7_8); Ubuntu's libgranite-7-dev is 7.8, enough
       # for the bindings, so no PPA is needed here (RUST-UPSTREAM-MAINTENANCE.md). The indicator needs the
       # wingpanel-9 API, which the daily PPA ships.
+      - uses: ./.github/actions/fast-apt
+
       - name: Add elementary daily PPA (wingpanel-9 for the indicator)
         run: |
           for attempt in 1 2 3 4 5; do
