@@ -1,3 +1,15 @@
+## Public messaging status — 2026-10-27
+
+The public homepage and support matrix now distinguish the scoped October 20 BlueFerry texting observation from the owner’s October 22 decision that the Messages and Signal experience is incomplete and deferred. See [MESSAGING-STATUS.md](MESSAGING-STATUS.md). This documentation update does not change or qualify the apps, phone pairing or hardware.
+
+## Public upstream watch: scheduled retry verified — 2026-10-27
+
+PR #618 merged as `5267e1be7cea5d37d49e8c1f6630e3401274560a`. Scheduled run
+`40502016600` completed successfully against `dev` revision
+`7478f2fe9ce2230e8f21666cffcc9d8b4232c3bd`, verifying the retry fix in the
+scheduled watcher. Issue #51 remains open with public changes awaiting review;
+no upstream changes were imported and no hardware qualification is implied.
+
 ## Files Quick Actions: image conversion — 2026-10-25
 
 Issue #531 implementation: user-local Contractor actions, native conversion
@@ -871,6 +883,14 @@ now stage outside discovery and require explicit activation; no further panel
 reload was issued. Physical Wingpanel behavior/owner acceptance remain open. Whole-chat validation stays
 deferred. Next: confirm the loaded unified native menu without duplicating old
 modules, then owner visual/account acceptance. No factory boot qualification.
+## Separate Intel kiosk project — 2026-10-26
+
+Owner selected a standalone `elementaryos-i3-kiosk` repository for a minimal
+shell/Chromium kiosk. Hardware reliability is the first gate; no M-series
+installer, kernel or desktop app bundle is being ported wholesale. Initial
+read-only inventory, candidate boundaries and preview tools live in that private
+repository. Production kiosk unchanged; shell implementation and hardware
+qualification remain open. No public machine details or credentials retained here.
 
 ## Native Fleet in T3 and unified-menu dev integration — 2026-10-26
 
@@ -1931,6 +1951,46 @@ run 39939630433 succeeded, but that does not publish PR #519's unmerged changes.
 No kernel, boot payload, display, power, audio or desktop state changed in this
 maintenance pass.
 
+
+## Image Studio backend port — 2026-10-22
+
+Owner selected Claude's UI and prohibited further generations/benchmarks.
+Imported Claude's read-only `claude/image-studio-native-ui` working-tree snapshot;
+original worktree untouched. [Source hashes](image-studio/UI-PROVENANCE.json).
+
+Backend retains CPU/Vulkan tiled VAE, TAESD preview-only, disk-backed weights,
+GPU budget, SD1.5 Plus Face references with immutable hashes, saved settings and
+structured logs. Fixed UI/backend value ranges, stale metrics, frame-vs-step
+progress, Run readiness, auxiliary weights appearing as checkpoints, and image
+count dispatch through a sequential queue. Downloader conversion shares the
+workflow lock. Claude's canvas, gallery, filmstrip and stylesheet are retained.
+
+Validation: source review against pinned upstream CLI/docs, Python and embedded
+downloader syntax parsing, offline Rust compile check. No inference, benchmarks,
+model download/conversion, UI launch or runtime tests during this integration.
+No live app reinstall/restart or kernel/boot/Mesa changes. [Model/kernel decisions](image-studio/UPSTREAM-DIFFUSION.md)
+and [backend contract](image-studio/README.md). Deployment and runtime validation
+are not claimed by this source-only pass.
+
+## Image Studio upstream performance and quality — 2026-10-22
+
+Pinned [Aurora/Asahi/omarchy-mlx audit](image-studio/UPSTREAM-DIFFUSION.md)
+identifies safe app/runtime candidates and deferred driver experiments. RV FP16
+CPU-VAE run completed in 258.856 s; quality acceptance remains open. GPU VAE
+stopped at memory reserve, so is unqualified. Next: measured decoder optimization,
+reference consistency within the memory budget, final native app deployment.
+
+## Image Studio: native app and local preview pipeline — 2026-10-22
+
+Applications launcher/icon installed. Native GTK/Granite/SDK layout now has visible Run/Stop, compact
+settings popover, live image stage, Library inspection/reuse, model download/storage management,
+model feature guide, sequential Compare sweeps and optional local Qwen vision review.
+
+One Honeykrisp/M1 Pro SD 1.5 Q4 512² Euler 8-step trial completed in 55.701 s with eight previews,
+first preview at 4.021 s, and the desktop reserve preserved. Qwen3-VL 2B CPU review completed with a
+retained advisory report. This does not qualify every model or guarantee grading accuracy. LoRA,
+inpainting, image-reference generation and Q8/Turbo hardware qualification remain next work.
+See [handoff](OS9-HANDOFF.md) and [app notes](image-studio/README.md).
 
 ## Orchard: Machine Lab + Orchard for Incus merged — 2026-10-21
 

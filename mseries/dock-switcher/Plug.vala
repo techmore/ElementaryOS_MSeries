@@ -3,6 +3,7 @@
 namespace MSeriesDockSwitcher {
     public class Plug : Switchboard.Plug {
         private DockPage? page = null;
+        private Gtk.Widget? content = null;
 
         public Plug () {
             var supported = new Gee.TreeMap<string, string?> (null, null);
@@ -18,14 +19,26 @@ namespace MSeriesDockSwitcher {
         }
 
         public override Gtk.Widget get_widget () {
-            if (page == null) {
+            if (content == null) {
                 page = new DockPage ();
+            // Settings hides its own titlebar and puts the plug straight into a navigation page, so the
+            // plug supplies the header bar: drag area, back button and the window buttons.
+            var headerbar = new Adw.HeaderBar () {
+                show_title = false
+            };
+            headerbar.add_css_class ("flat");
+            page.vexpand = true;
+            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+            box.append (headerbar);
+            box.append (page);
+            content = box;
             }
-            return page;
+            return content;
         }
 
         public override void shown () {
-            ((DockPage) get_widget ()).refresh ();
+            get_widget ();
+            page.refresh ();
         }
 
         public override void hidden () {

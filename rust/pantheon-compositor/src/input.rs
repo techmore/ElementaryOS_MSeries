@@ -128,6 +128,38 @@ impl PantheonCompositor {
                 let x11_focus = self.x11_keyboard_focus.clone();
                 let seat = self.seat.clone();
 
+                // Mac-style Cmd+C/V/A in terminals: hold a synthetic Shift around the key.
+                {
+                    let keyboard = self.seat.get_keyboard().unwrap();
+                    let evdev = event.key_code().raw().saturating_sub(8);
+                    let shift_code = smithay::backend::input::Keycode::new(
+                        crate::terminal_keys::KEY_LEFTSHIFT + 8,
+                    );
+                    if key_state == smithay::backend::input::KeyState::Pressed {
+                        let mods = keyboard.modifier_state();
+                        if x11_focus.is_none()
+                            && !self.session_locked
+                            && crate::terminal_keys::needs_shift(
+                                mods.ctrl, mods.logo, mods.shift, mods.alt, evdev,
+                            )
+                            && self
+                                .focused_window()
+                                .and_then(|window| self.window_app_id(&window))
+                                .is_some_and(|id| crate::terminal_keys::is_terminal_app_id(&id))
+                        {
+                            keyboard.input::<(), _>(
+                                self,
+                                shift_code,
+                                smithay::backend::input::KeyState::Pressed,
+                                SERIAL_COUNTER.next_serial(),
+                                time,
+                                |_, _, _| FilterResult::Forward,
+                            );
+                            self.terminal_shift_key = Some(evdev);
+                        }
+                    }
+                }
+
                 self.seat.get_keyboard().unwrap().input::<(), _>(
                     self,
                     event.key_code(),
@@ -143,19 +175,24 @@ impl PantheonCompositor {
                             state.request_native_redraw(); state.request_winit_redraw();
                             return FilterResult::Intercept(());
                         }
+                        // Command is Ctrl here (ctrl:swap_lwin_lctl), so Ctrl or Super works.
                         if key_state == smithay::backend::input::KeyState::Pressed
-                            && !state.session_locked && modifiers.logo && modifiers.shift
-                            && !modifiers.ctrl && !modifiers.alt
+                            && !state.session_locked && (modifiers.logo != modifiers.ctrl) && modifiers.shift
+                            && !modifiers.alt
                             && matches!(keysym.modified_sym().raw(), smithay::input::keyboard::xkb::keysyms::KEY_4 | smithay::input::keyboard::xkb::keysyms::KEY_dollar)
                         {
-                            let point = state.seat.get_pointer().unwrap().current_location();
-                            state.screenshot_selection.borrow_mut().begin((point.x.round() as i32, point.y.round() as i32));
+                            if state.screenshot_selection.borrow().active() {
+                                state.screenshot_selection.borrow_mut().cancel();
+                            } else {
+                                let point = state.seat.get_pointer().unwrap().current_location();
+                                state.begin_screenshot_selection((point.x.round() as i32, point.y.round() as i32));
+                            }
                             state.request_native_redraw(); state.request_winit_redraw();
                             return FilterResult::Intercept(());
                         }
                         if key_state == smithay::backend::input::KeyState::Pressed
-                            && !state.session_locked && modifiers.logo && modifiers.shift
-                            && !modifiers.ctrl && !modifiers.alt
+                            && !state.session_locked && (modifiers.logo != modifiers.ctrl) && modifiers.shift
+                            && !modifiers.alt
                             && matches!(keysym.modified_sym().raw(),
                                 smithay::input::keyboard::xkb::keysyms::KEY_3 |
                                 smithay::input::keyboard::xkb::keysyms::KEY_numbersign)
@@ -236,6 +273,19 @@ impl PantheonCompositor {
                         }
                     },
                 );
+                if key_state == smithay::backend::input::KeyState::Released
+                    && self.terminal_shift_key == Some(event.key_code().raw().saturating_sub(8))
+                {
+                    self.terminal_shift_key = None;
+                    self.seat.get_keyboard().unwrap().input::<(), _>(
+                        self,
+                        smithay::backend::input::Keycode::new(crate::terminal_keys::KEY_LEFTSHIFT + 8),
+                        smithay::backend::input::KeyState::Released,
+                        SERIAL_COUNTER.next_serial(),
+                        time,
+                        |_, _, _| FilterResult::Forward,
+                    );
+                }
                 self.refresh_panel_visibility();
             }
             InputEvent::PointerMotion { event, .. } => {
@@ -344,6 +394,9 @@ impl PantheonCompositor {
                     let point = pointer.current_location();
                     let point = (point.x.round() as i32, point.y.round() as i32);
                     if self.session_locked {
+                        self.screenshot_selection.borrow_mut().cancel();
+                    } else if button == 0x111 {
+                        // Right-click leaves the selector.
                         self.screenshot_selection.borrow_mut().cancel();
                     } else if button == 0x110 {
                         if button_state == ButtonState::Pressed {

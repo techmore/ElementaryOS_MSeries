@@ -26,6 +26,8 @@ jobs:
             - runner: ubuntu-26.04-arm
               arch: arm64
     runs-on: ${{ matrix.runner }}
+    # mkosi image build plus R2 upload; daily-9.0.yml gives the same build 180 minutes.
+    timeout-minutes: 180
     permissions:
       contents: write
     outputs:

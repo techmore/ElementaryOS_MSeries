@@ -1,10 +1,17 @@
 ## wip4 revision 6: DP routing candidate — 2026-10-27
 
 Owner report: dock HDMI and Ethernet not working on wip3; HDMI worked after moving the dock to another port. Journals show `apple-dcp 28cc00000` timing out the DPTX validate call (-110 x6, "Type-C DPTX reconnect failed after 5 retries") on every failing boot, each time on the first plug within ~4 s of resuming from s2idle; the same dock then worked on `289c00000`. wip2 used `28cc00000` successfully; wip3 never did. Ethernet (RTL8153, `r8152`) enumerated but had no carrier this boot (it had carrier on the previous wip3 boot with the identical missing-`rtl8153b-2.fw` message), so that looks physical/cable, not kernel. Candidate: wip4 revision 6 = wip3 source + #157 + local 0002 + upstream #186 (0003-0005; #163 excluded as conflicting duplicate). Full-tree `candidate.py prepare`/`check` and 83 aurora tests pass; kernel build, KUnit and boot are NOT done. Nothing installed, staged, armed or rebooted. `thunderbolt_apple.s2idle_teardown/resume_recovery/router_sleep` remain at the default N (upstream did not test them with a real dock).
+## Public messaging status — 2026-10-27
+
+The public homepage and support matrix now distinguish the scoped October 20 BlueFerry texting observation from the owner’s October 22 decision that the Messages and Signal experience is incomplete and deferred. See [MESSAGING-STATUS.md](MESSAGING-STATUS.md). This documentation update does not change or qualify the apps, phone pairing or hardware.
+
+## Title bar buttons stay on the left — 2026-10-27
+
+Owner request: window title-bar buttons always on the left. Live `button-layout` was `:minimize,maximize,close` because Work Mode's `window-buttons` key defaulted to `windows` (not user-set in dconf) and applied the Windows layout whenever Work Mode was active; the saved original it would restore was already `close,minimize,maximize:`. The schema default is now `unchanged`, so Work Mode no longer touches the layout; `windows` remains an explicit opt-in. Work Mode tests: 14 pass (new test asserts the default leaves the left layout alone; the two tests that exercised the Windows layout now set it explicitly). **Not deployed:** the default changes only after the schema is recompiled by the Work Mode install, and the helper then restores the saved left layout on its next tick; no live gsettings, panel or session change was made.
 
 ## Upstream watch: retry transient GitHub errors — 2026-10-27
 
-After #598/#610 the dashboard renders and the 03:40 manual run passed, but the 05:06 scheduled run exited 1 because one source (`aurora-silicon/linux`) returned HTTP 500 (shown under "Fetch failures" in issue #51). `people-watch.get` had no retry, so any transient upstream 5xx failed the job. It now retries 5xx, 429, URL errors and timeouts up to 3 times (1 s, 3 s, 8 s); 404 still returns None and other 4xx (401/403/422) are not retried; a persistent failure still raises and still fails the run. 5 new tests in `test_github_watch.py`; 93 local-ai tests pass. Not yet observed on a scheduled run.
+After #598/#610 the dashboard rendered and the 03:40 manual run passed, but the 05:06 scheduled run exited 1 because one source (`aurora-silicon/linux`) returned HTTP 500 (shown under "Fetch failures" in issue #51). `people-watch.get` had no retry, so any transient upstream 5xx failed the job. It now retries 5xx, 429, URL errors and timeouts up to 3 times (1 s, 3 s, 8 s); 404 still returns None and other 4xx (401/403/422) are not retried; a persistent failure still raises and still fails the run. 5 new tests in `test_github_watch.py`; 93 local-ai tests pass. PR #618 merged as `5267e1be7cea5d37d49e8c1f6630e3401274560a`; scheduled run `40502016600` completed successfully on `dev` revision `7478f2fe9ce2230e8f21666cffcc9d8b4232c3bd`. Issue #51 remains open with public upstream changes awaiting review; the watcher does not import changes or qualify hardware.
 
 ## Wingpanel indicator staging hazard — 2026-10-27
 
@@ -1010,6 +1017,14 @@ now stage outside discovery and require explicit activation; no further panel
 reload was issued. Physical Wingpanel behavior/owner acceptance remain open. Whole-chat validation stays
 deferred. Next: confirm the loaded unified native menu without duplicating old
 modules, then owner visual/account acceptance. No factory boot qualification.
+## Separate Intel kiosk project — 2026-10-26
+
+Owner selected a standalone `elementaryos-i3-kiosk` repository for a minimal
+shell/Chromium kiosk. Hardware reliability is the first gate; no M-series
+installer, kernel or desktop app bundle is being ported wholesale. Initial
+read-only inventory, candidate boundaries and preview tools live in that private
+repository. Production kiosk unchanged; shell implementation and hardware
+qualification remain open. No public machine details or credentials retained here.
 
 ## Native Fleet in T3 and unified-menu dev integration — 2026-10-26
 
@@ -2405,6 +2420,103 @@ run 39939630433 succeeded, but that does not publish PR #519's unmerged changes.
 No kernel, boot payload, display, power, audio or desktop state changed in this
 maintenance pass.
 
+
+## Image Studio: Claude UI with decoder/reference backend — 2026-10-22
+
+Owner selected Claude's UI and prohibited further generations/benchmarks.
+Imported Claude's read-only `claude/image-studio-native-ui` working-tree snapshot;
+original worktree untouched. [Source hashes](image-studio/UI-PROVENANCE.json).
+
+Backend retains CPU/Vulkan tiled VAE, TAESD preview-only, disk-backed weights,
+GPU budget, SD1.5 Plus Face references with immutable hashes, saved settings and
+structured logs. Fixed UI/backend value ranges, stale metrics, frame-vs-step
+progress, Run readiness, auxiliary weights appearing as checkpoints, and image
+count dispatch through a sequential queue. Downloader conversion shares the
+workflow lock. Claude's canvas, gallery, filmstrip and stylesheet are retained.
+
+Validation: source review against pinned upstream CLI/docs, Python and embedded
+downloader syntax parsing, offline Rust compile check. No inference, benchmarks,
+model download/conversion, UI launch or runtime tests during this integration.
+No live app reinstall/restart or kernel/boot/Mesa changes. [Model/kernel decisions](image-studio/UPSTREAM-DIFFUSION.md)
+and [backend contract](image-studio/README.md). Deployment and runtime validation
+are not claimed by this source-only pass.
+
+## Image Studio upstream diffusion audit — 2026-10-22
+
+Reviewed Aurora, Asahi/Honeykrisp, omarchy-mlx, its TensorFold workflow and
+Mesa compute PR #6. [Pinned findings and patch plan](image-studio/UPSTREAM-DIFFUSION.md).
+Mesa #6 remains NOT READY; its targeted passes do not resolve prior wide-suite
+regressions. TensorFold's qualified video workflow needs 96 GB, unsuitable for
+this 32 GB host. No driver/kernel changes made. Running kernel is
+`7.2.11-elementary-aurora72-wip3`; Mesa package is `26.0.8-1ubuntu0.3`.
+
+Realistic Vision V6 FP16 plus external MSE VAE, 512×768, DPM++ 2M/Karras,
+30 steps, CFG 5, seed 424242 completed in 258.856 s with 30 previews and first
+preview at 7.292 s. Image is sharper than the old Q4 test, but subject consistency
+and prompt adherence remain insufficient for the owner's quality acceptance.
+A logging finalization bug incorrectly marked this successful engine output
+failed; retained metadata records that repair and source is fixed. GPU VAE
+trial stopped at the 6 GiB reserve after 3.18 s: no GPU-VAE qualification.
+
+Current source adds prominent short model/settings summary, larger native text,
+RV downloader and explicit VAE/sampler/scheduler controls, personal model notes,
+run logs, repeat/new-seed actions and reliable sweep state. Repeated recipes drop
+old measurements. Latest scoped `cargo check -p mseries-image-studio` passes;
+updated binary deployment and final quality acceptance remain outstanding.
+
+## Image Studio: native app, live local previews and vision review — 2026-10-22
+
+Installed as **Image Studio** in Applications with its SVG icon, stable user-local executable and D-Bus
+activation. The GTK 4 / Granite / Pantheon SDK window follows the desktop stylesheet and color/font
+preferences. Run, Stop and Reload recipe remain in the header. Compact windows move generation
+settings into a native popover. Library supports image viewing, settings inspection and recipe reuse.
+Models offers SD 1.5 Q4/Q8, SDXL Turbo FP16, and Qwen3-VL 2B plus its matching projector. Storage
+reports include image models, shared AI weights, images/previews, and the app-managed engine/source.
+Downloads resolve a revision, verify size/SHA-256 and retain receipts. Model guide distinguishes engine
+capabilities and author defaults from local qualification. Compare queues bounded sequential lighting,
+step or installed-model sweeps; optional CPU vision review runs after image generation unloads.
+
+Concrete hardware result: stable-diffusion.cpp `fd21ecfceef2665d2c5f2db8536e3202d864fd30`, Honeykrisp
+Apple M1 Pro, SD 1.5 Q4, Euler, 8 steps, CFG 7, seed 424242, 512×512, batch 1: **55.701 s**, first
+preview **4.021 s**, **8 genuine projected-latent previews**, peak child process RSS **1957 MiB**,
+minimum observed available host memory **7308 MiB**. GPU memory is not included in process RSS.
+The resulting PNG and recipe are in the owner's private Image Studio Library. This is a low-step
+baseline hardware trial, not portrait-quality or all-model qualification. A sequential Qwen3-VL 2B Q4
++ Q8 projector CPU review completed in **94.439 s**, advisory score **2.8/5**, with per-criterion
+explanations, image hash, exact rubric and an optional user-applied prompt suggestion saved beside it.
+
+Checks: build and Python parsing; six Rust data tests; five offline adapter checks (integrity, memory
+admission, actual fixture subprocess/preview transport, and fixed-seed sweep persistence); GTK interaction
+coverage including frame replacement, model/guide/review/compare navigation, recipe reuse and header
+Run/Stop. Desktop dark and compact light renders inspected; compact settings popover opens/closes.
+Desktop launcher validation passed. No indicator, kernel, compositor or audio changes were made.
+
+Local runs remain supervised calibration: estimated admission budgets plus a continuously sampled
+6 GiB desktop reserve, cancellation and a 15-minute image limit. LoRA/inpainting/reference-conditioned
+local generation remain unqualified and are labeled accordingly. Q8/Turbo inference and the accuracy
+of automated vision grades are not qualified by the single Q4 hardware run. Hosted samples retain
+unknown provider settings rather than fabricated values. See [app notes](image-studio/README.md).
+
+## Image Studio: Draw Things-style native redesign — 2026-10-22 (Claude Code)
+
+Owner asked for Image Studio to look like a beautiful, native elementary OS app inspired by Draw Things.
+UI only: no generation, model, download or recipe logic changed, and no indicator, kernel, compositor or
+audio changes were made. One scoped stylesheet (`rust/mseries-image-studio/src/style.rs`) uses the
+elementary stylesheet's named colors. Create is now a dotted canvas with glass status/detail pills, a
+history filmstrip, a floating prompt dock with a pill Generate button, recipe chips and an inspector of
+collapsible cards with real sliders. Library is a gallery with a detail pane and a Recipes tab; Models,
+Model guide, Compare, Review and Run logs use the same card system. The header keeps Reload recipe and
+Stop; Run moved into the dock (Ctrl+Enter still works). The compact breakpoint is now 76 text units, and
+the regular layout's minimum width is asserted to stay below it. Built-in sample prompts now describe an
+original fictional adult character instead of a named real person.
+
+Checks: build; six Rust data tests; the Xvfb render test (updated for the new widgets) passed five
+consecutive regular runs plus the compact run, covering save/load, library selection and reuse, recipe
+load, model/guide/compare/review navigation and live preview frame replacement; dark and light renders
+were inspected from fictional fixtures (`tests/demo_data.py`, screenshots in `image-studio/docs/screenshots`);
+a smoke start against the real data dir exited cleanly. **Not verified:** keyboard tab order and screen
+reader behavior, a real generation run through the new Generate button, and Orca/high-contrast themes.
+Installed to `~/.local/libexec/mseries-image-studio`; a running instance keeps the old UI until reopened.
 
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 

@@ -234,7 +234,7 @@ jobs:
         run: |
           # A package version that sorts by commit time, so a later build always supersedes an earlier one.
           stamp=$(TZ=UTC git show -s --format=%cd --date=format:%Y%m%d%H%M%S HEAD)
-          DEB_VERSION="0.1.0+git${stamp}.$(git rev-parse --short=7 HEAD)" \
+          DEB_VERSION="1:0.1.0+git${stamp}.$(git rev-parse --short=7 HEAD)" \
             OUTDIR=out/compositor bash mseries/pantheon-rust-compositor/build-deb.sh
 
       - name: Upload compositor package
@@ -369,7 +369,9 @@ jobs:
           fi
           echo "AUTH_HEADER=$auth" >> "$GITHUB_ENV"
 
-      - uses: ./.github/actions/fast-apt
+      # The repository is checked out under src/, and only when the key is present.
+      - uses: ./src/.github/actions/fast-apt
+        if: steps.key.outputs.have == 'true'
 
       - name: Assemble and sign the ${{ steps.suite.outputs.channel }} suite
         if: steps.key.outputs.have == 'true'

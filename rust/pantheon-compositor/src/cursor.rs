@@ -17,7 +17,10 @@ use smithay::{
     wayland::compositor::with_states,
 };
 
-use crate::PantheonCompositor;
+use crate::{
+    PantheonCompositor,
+    corner_render::{CornerRenderer, RoundedClip},
+};
 
 /// Solid-colour overlay pieces kept across frames. A new `SolidColorBuffer`
 /// every frame has a new id, so the damage tracker repaints it every frame
@@ -70,11 +73,12 @@ pub(crate) fn output_pixel_size(
 }
 
 render_elements! {
-    pub CursorRenderElement<R> where R: ImportAll + ImportMem;
+    pub CursorRenderElement<R> where R: ImportAll + ImportMem + CornerRenderer;
     Surface=WaylandSurfaceRenderElement<R>,
     Memory=MemoryRenderBufferRenderElement<R>,
     Solid=SolidColorRenderElement,
     WrappedSurface=Wrap<WaylandSurfaceRenderElement<R>>,
+    Rounded=RoundedClip<WaylandSurfaceRenderElement<R>>,
     Animated=smithay::backend::renderer::element::utils::RelocateRenderElement<smithay::backend::renderer::element::utils::RescaleRenderElement<WaylandSurfaceRenderElement<R>>>,
 }
 
@@ -119,7 +123,7 @@ pub fn render_cursor_elements<R>(
     output: &smithay::output::Output,
 ) -> Vec<CursorRenderElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     let Some(output_geometry) = state.space.output_geometry(output) else {
@@ -219,7 +223,7 @@ pub fn render_wallpaper_element<R>(
     output: &smithay::output::Output,
 ) -> Option<CursorRenderElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     let wallpaper = state.wallpaper.as_ref()?;
@@ -249,7 +253,7 @@ fn render_shell_osd_elements<R>(
     output: &smithay::output::Output,
 ) -> Vec<CursorRenderElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     let Some(osd) = state.shell_compat.active_osd() else {
@@ -400,17 +404,13 @@ pub fn render_lock_surface_elements<R>(
     output: &smithay::output::Output,
 ) -> Vec<CursorRenderElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     let output_name = output.name();
     let scale = Scale::from(output.current_scale().fractional_scale());
     // The pointer (and any volume/brightness OSD) above the lock surface.
-    let mut elements = state.screen_corners.elements(
-        renderer,
-        output,
-        state.space.output_geometry(output).map(|g| g.size),
-    );
+    let mut elements = render_screen_mask_elements(renderer, state, output);
     if let Some(surface) = state.lock_surfaces.get(&output_name) {
         elements.extend(render_screenshot_overlay(state, output));
         elements.extend(render_cursor_elements(renderer, state, output));
@@ -428,6 +428,33 @@ where
     elements
 }
 
+/// The built-in display's rounded corners, above windows, the dock, panels and the lock
+/// screen. External outputs get none.
+fn render_screen_mask_elements<R>(
+    renderer: &mut R,
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Vec<CursorRenderElement<R>>
+where
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    let Some(pixels) = output_pixel_size(state, output) else {
+        return Vec::new();
+    };
+    crate::corner_render::screen_mask_elements(
+        renderer,
+        &state.corner_masks,
+        &state.corner_tokens,
+        output,
+        pixels,
+        output.current_scale().fractional_scale(),
+    )
+    .into_iter()
+    .map(CursorRenderElement::from)
+    .collect()
+}
+
 /// Snap Assist: live, scaled thumbnails of the other windows in the empty
 /// half, on plates over a dimmed backdrop, the selection on an accent plate.
 /// Clients are not resized. Front to back: thumbnails, plates, backdrop.
@@ -437,7 +464,7 @@ fn render_snap_assist_elements<R>(
     output: &smithay::output::Output,
 ) -> Vec<CursorRenderElement<R>>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     use crate::snap_assist::{BACKDROP_ALPHA, PLATE_ALPHA};
@@ -549,44 +576,27 @@ where
     let Some(region) = selected else {
         return Vec::new();
     };
-    let rect: Rectangle<i32, Logical> = Rectangle::new(
-        (region.x, region.y).into(),
-        (
-            region.width.min(i32::MAX as u32) as i32,
-            region.height.min(i32::MAX as u32) as i32,
-        )
-            .into(),
-    );
-    let scale = Scale::from(output.current_scale().fractional_scale());
+    use crate::screenshot::{self, Px};
+    let scale_f = output.current_scale().fractional_scale();
+    let scale = Scale::from(scale_f);
+    let rect = Px::from_region(region);
+    let area_px = Px::new(area.loc.x, area.loc.y, area.size.w, area.size.h);
     let mut elements = Vec::new();
-    for (index, border) in [
-        Rectangle::new(rect.loc, (rect.size.w, 3).into()),
-        Rectangle::new(
-            (rect.loc.x, rect.loc.y + rect.size.h - 3).into(),
-            (rect.size.w, 3).into(),
-        ),
-        Rectangle::new(rect.loc, (3, rect.size.h).into()),
-        Rectangle::new(
-            (rect.loc.x + rect.size.w - 3, rect.loc.y).into(),
-            (3, rect.size.h).into(),
-        ),
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        let Some(border) = border.intersection(area) else {
-            continue;
+    // Kept solid buffers are keyed by slot, so each piece has a fixed one.
+    let push = |slot: u8, r: Px, color: [f32; 4], elements: &mut Vec<CursorRenderElement<R>>| {
+        let Some(r) = r.intersect(area_px) else {
+            return;
         };
         let buffer = state.solid_buffers.get(
             &output.name(),
-            SolidSlot::Screenshot(index as u8),
-            border.size,
-            [0.21, 0.54, 0.9, 1.0],
+            SolidSlot::Screenshot(slot),
+            (r.w, r.h).into(),
+            color,
         );
         elements.push(
             SolidColorRenderElement::from_buffer(
                 &buffer,
-                (border.loc - area.loc)
+                Point::<i32, Logical>::from((r.x - area.loc.x, r.y - area.loc.y))
                     .to_f64()
                     .to_physical(scale)
                     .to_i32_round(),
@@ -596,6 +606,35 @@ where
             )
             .into(),
         );
+    };
+    let t = screenshot::border_thickness(scale_f);
+    // Front to back: label, white ring, dark ring, then the dimming outside.
+    let (width, height) = screenshot::physical_size(region, scale_f);
+    let (label_w, label_h) = {
+        let (bg, _) = screenshot::size_label(width, height, (0, 0));
+        (bg.w, bg.h)
+    };
+    let origin = screenshot::label_origin(rect, area_px, label_w, label_h);
+    if area_px
+        .intersect(Px::new(origin.0, origin.1, label_w, label_h))
+        .is_some()
+    {
+        let (bg, glyphs) = screenshot::size_label(width, height, origin);
+        for (i, g) in glyphs.into_iter().enumerate() {
+            push(13 + i as u8, g, [1.0, 1.0, 1.0, 1.0], &mut elements);
+        }
+        push(12, bg, [0.0, 0.0, 0.0, 0.75], &mut elements);
+    }
+    for (i, bar) in screenshot::ring_inside(rect, t).into_iter().enumerate() {
+        push(i as u8, bar, [1.0, 1.0, 1.0, 1.0], &mut elements);
+    }
+    for (i, bar) in screenshot::ring_outside(rect, 1).into_iter().enumerate() {
+        push(4 + i as u8, bar, [0.0, 0.0, 0.0, 0.6], &mut elements);
+    }
+    for (i, band) in screenshot::dim_bands(area_px, rect).into_iter().enumerate() {
+        if let Some(band) = band {
+            push(8 + i as u8, band, [0.0, 0.0, 0.0, 0.25], &mut elements);
+        }
     }
     elements
 }
@@ -606,7 +645,24 @@ pub fn render_desktop_elements<R>(
     output: &smithay::output::Output,
 ) -> Result<Vec<CursorRenderElement<R>>, smithay::output::OutputNoMode>
 where
-    R: Renderer + ImportAll + ImportMem,
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    render_desktop_elements_with(renderer, state, output, true)
+}
+
+/// `screen_mask` draws the built-in display's rounded corners over everything.
+/// Screenshots pass false: the mask is a property of the panel, not of the
+/// desktop, so a capture keeps full square content (as on macOS) while window
+/// rounding stays.
+pub fn render_desktop_elements_with<R>(
+    renderer: &mut R,
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+    screen_mask: bool,
+) -> Result<Vec<CursorRenderElement<R>>, smithay::output::OutputNoMode>
+where
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     use crate::gesture_animation::PreviewKind;
@@ -614,15 +670,15 @@ where
         AsRenderElements,
         utils::{Relocate, RelocateRenderElement, RescaleRenderElement},
     };
-    let mut elements = state.screen_corners.elements(
-        renderer,
-        output,
-        state
-            .space
-            .output_geometry(output)
-            .map(|geometry| geometry.size),
-    );
+    let mut elements = if screen_mask {
+        render_screen_mask_elements(renderer, state, output)
+    } else {
+        Vec::new()
+    };
     elements.extend(render_cursor_elements(renderer, state, output));
+    // Selection feedback sits above windows and below the pointer. Capture
+    // starts only after the selection ends, so it never lands in the image.
+    elements.extend(render_screenshot_overlay(state, output));
     elements.extend(render_snap_assist_elements(renderer, state, output));
     if let (Some(animation), Some(area)) = (
         &state.gesture_animation,
@@ -727,10 +783,25 @@ where
         // Not `space_render_elements`: that draws each window's popups at the
         // window's own place in the stack, so a lower window's menu was clipped
         // by a higher neighbour. This draws every popup above every toplevel.
+        let clipper = state.space.output_geometry(output).and_then(|geometry| {
+            crate::corner_render::Clipper::new(
+                renderer,
+                state.corner_tokens,
+                output,
+                geometry,
+                |window| {
+                    window
+                        .toplevel()
+                        .is_some_and(|toplevel| state.is_panel_surface(toplevel.wl_surface()))
+                },
+            )
+        });
         elements.extend(crate::popup_stack::stacked_render_elements::<
             R,
             CursorRenderElement<R>,
-        >(renderer, &state.space, output, 1.0));
+        >(
+            renderer, &state.space, output, 1.0, clipper.as_ref()
+        ));
     }
     if let Some(wallpaper) = render_wallpaper_element(renderer, state, output) {
         elements.push(wallpaper);

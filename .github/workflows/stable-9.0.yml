@@ -6,8 +6,14 @@ name: Build and Release Stable (elementary OS 9)
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   call-reusable-build:
+    # build-release.yml asks for contents: write; a reusable call cannot exceed its caller.
+    permissions:
+      contents: write
     if: github.repository == 'elementary/os'
     uses: ./.github/workflows/build-release.yml
     with:

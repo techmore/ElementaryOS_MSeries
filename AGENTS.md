@@ -24,6 +24,11 @@
 > reload or recovery from a confirmed panel defect, and state when code is installed but not yet loaded. Record the pin,
 > what you re-verified and what is still unverified in `mseries/OS9-HANDOFF.md`.
 
+- **One source of truth per app:** SDK crates and apps (`rust/msdk*`, `rust/mseries-*` except the compositor,
+  `mseries/sdk-*`, `battery`, `phone-setup`, `polybagger-print-manager`, `messages-mcp` and more) are edited in
+  [techmore/mseries-sdk-apps](https://github.com/techmore/mseries-sdk-apps). The copies here are frozen snapshots
+  (`FROZEN.md` in each dir); CI rejects PR edits unless labeled `allow-frozen-edit`. Table and full list:
+  [mseries/REPO-OWNERSHIP.md](mseries/REPO-OWNERSHIP.md).
 - Keep `mseries/OS9-HANDOFF.md`, `mseries/ROADMAP.md`, and relevant public
   status pages current as work lands. Record concrete changes, commands,
   verification results, blockers, and the next task.

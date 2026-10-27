@@ -1,0 +1,252 @@
+diff --git a/res/swappy.glade b/res/swappy.glade
+index 259d617..93fcd73 100644
+--- a/res/swappy.glade
++++ b/res/swappy.glade
+@@ -22,6 +22,21 @@
+     <property name="can_focus">False</property>
+     <property name="icon_name">edit-copy-symbolic</property>
+   </object>
++  <object class="GtkImage" id="img-print-surface">
++    <property name="visible">True</property>
++    <property name="can_focus">False</property>
++    <property name="icon_name">document-print-symbolic</property>
++  </object>
++  <object class="GtkImage" id="img-pdf-surface">
++    <property name="visible">True</property>
++    <property name="can_focus">False</property>
++    <property name="icon_name">document-save-as-symbolic</property>
++  </object>
++  <object class="GtkImage" id="img-close-window">
++    <property name="visible">True</property>
++    <property name="can_focus">False</property>
++    <property name="icon_name">window-close-symbolic</property>
++  </object>
+   <object class="GtkImage" id="img-save-surface">
+     <property name="visible">True</property>
+     <property name="can_focus">False</property>
+@@ -787,6 +802,54 @@
+                 <property name="position">2</property>
+               </packing>
+             </child>
++            <child>
++              <object class="GtkButton" id="print">
++                <property name="visible">True</property>
++                <property name="can_focus">False</property>
++                <property name="receives_default">True</property>
++                <property name="tooltip_text" translatable="yes">Print… (Ctrl+P)</property>
++                <property name="image">img-print-surface</property>
++                <property name="always_show_image">True</property>
++                <signal name="clicked" handler="print_clicked_handler" swapped="no"/>
++              </object>
++              <packing>
++                <property name="expand">False</property>
++                <property name="fill">True</property>
++                <property name="position">3</property>
++              </packing>
++            </child>
++            <child>
++              <object class="GtkButton" id="save-pdf">
++                <property name="visible">True</property>
++                <property name="can_focus">False</property>
++                <property name="receives_default">True</property>
++                <property name="tooltip_text" translatable="yes">Save as PDF… (Ctrl+Shift+P)</property>
++                <property name="image">img-pdf-surface</property>
++                <property name="always_show_image">True</property>
++                <signal name="clicked" handler="pdf_clicked_handler" swapped="no"/>
++              </object>
++              <packing>
++                <property name="expand">False</property>
++                <property name="fill">True</property>
++                <property name="position">4</property>
++              </packing>
++            </child>
++            <child>
++              <object class="GtkButton" id="close">
++                <property name="visible">True</property>
++                <property name="can_focus">False</property>
++                <property name="receives_default">True</property>
++                <property name="tooltip_text" translatable="yes">Close (Esc)</property>
++                <property name="image">img-close-window</property>
++                <property name="always_show_image">True</property>
++                <signal name="clicked" handler="close_clicked_handler" swapped="no"/>
++              </object>
++              <packing>
++                <property name="expand">False</property>
++                <property name="fill">True</property>
++                <property name="position">5</property>
++              </packing>
++            </child>
+           </object>
+           <packing>
+             <property name="pack_type">end</property>
+diff --git a/src/application.c b/src/application.c
+index 57d652f..aaa9ae6 100644
+--- a/src/application.c
++++ b/src/application.c
+@@ -312,6 +312,153 @@ void save_clicked_handler(GtkWidget *widget, struct swappy_state *state) {
+   save_state_to_file_or_folder(state, NULL);
+ }
+ 
++// ---- Printing -------------------------------------------------------------
++
++struct print_job {
++  GdkPixbuf *pixbuf;
++};
++
++static void print_draw_page(GtkPrintOperation *operation,
++                            GtkPrintContext *context, gint page_nr,
++                            gpointer data) {
++  struct print_job *job = (struct print_job *)data;
++  cairo_t *cr = gtk_print_context_get_cairo_context(context);
++  gdouble page_width = gtk_print_context_get_width(context);
++  gdouble page_height = gtk_print_context_get_height(context);
++  gdouble image_width = gdk_pixbuf_get_width(job->pixbuf);
++  gdouble image_height = gdk_pixbuf_get_height(job->pixbuf);
++
++  // Fit the whole image on the page, keep its proportions, centre it and never
++  // enlarge it past its natural size at 96 dpi.
++  gdouble natural_scale = 72.0 / 96.0;
++  gdouble scale = MIN(page_width / image_width, page_height / image_height);
++  scale = MIN(scale, natural_scale);
++  gdouble draw_width = image_width * scale;
++  gdouble draw_height = image_height * scale;
++
++  cairo_save(cr);
++  cairo_translate(cr, (page_width - draw_width) / 2.0,
++                  (page_height - draw_height) / 2.0);
++  cairo_scale(cr, scale, scale);
++  gdk_cairo_set_source_pixbuf(cr, job->pixbuf, 0, 0);
++  cairo_pattern_set_filter(cairo_get_source(cr), CAIRO_FILTER_BEST);
++  cairo_paint(cr);
++  cairo_restore(cr);
++}
++
++// Runs the system print dialog (which includes "Print to File" for a PDF), or
++// exports straight to `pdf_path` when it is given.
++static void print_pixbuf(struct swappy_state *state, GdkPixbuf *pixbuf,
++                         const char *pdf_path) {
++  struct print_job job = {.pixbuf = pixbuf};
++  GtkPrintOperation *operation = gtk_print_operation_new();
++  GError *error = NULL;
++
++  gtk_print_operation_set_n_pages(operation, 1);
++  gtk_print_operation_set_job_name(operation, "Screenshot");
++  gtk_print_operation_set_unit(operation, GTK_UNIT_POINTS);
++  gtk_print_operation_set_use_full_page(operation, FALSE);
++  // A wide screenshot prints on a landscape page, a tall one on a portrait page.
++  GtkPageSetup *setup = gtk_page_setup_new();
++  gtk_page_setup_set_orientation(
++      setup, gdk_pixbuf_get_width(pixbuf) > gdk_pixbuf_get_height(pixbuf)
++                 ? GTK_PAGE_ORIENTATION_LANDSCAPE
++                 : GTK_PAGE_ORIENTATION_PORTRAIT);
++  gtk_print_operation_set_default_page_setup(operation, setup);
++  g_object_unref(setup);
++  g_signal_connect(operation, "draw-page", G_CALLBACK(print_draw_page), &job);
++
++  GtkPrintOperationResult result;
++  if (pdf_path != NULL) {
++    gtk_print_operation_set_export_filename(operation, pdf_path);
++    result = gtk_print_operation_run(operation, GTK_PRINT_OPERATION_ACTION_EXPORT,
++                                     GTK_WINDOW(state->ui->window), &error);
++  } else {
++    result = gtk_print_operation_run(operation,
++                                     GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
++                                     GTK_WINDOW(state->ui->window), &error);
++  }
++
++  if (result == GTK_PRINT_OPERATION_RESULT_ERROR) {
++    g_warning("unable to print the drawing area: %s",
++              error != NULL ? error->message : "unknown error");
++    GtkWidget *dialog = gtk_message_dialog_new(
++        GTK_WINDOW(state->ui->window), GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR,
++        GTK_BUTTONS_CLOSE, "Could not print the screenshot");
++    gtk_message_dialog_format_secondary_text(
++        GTK_MESSAGE_DIALOG(dialog), "%s",
++        error != NULL ? error->message : "Unknown error");
++    gtk_dialog_run(GTK_DIALOG(dialog));
++    gtk_widget_destroy(dialog);
++  }
++
++  if (error != NULL) {
++    g_error_free(error);
++  }
++  g_object_unref(operation);
++}
++
++static void action_print(struct swappy_state *state) {
++  // Commit a potential paint (e.g. text being written) so it is printed too.
++  commit_state(state);
++  GdkPixbuf *pixbuf = pixbuf_get_from_state(state);
++  print_pixbuf(state, pixbuf, NULL);
++  g_object_unref(pixbuf);
++}
++
++static void action_save_pdf(struct swappy_state *state) {
++  commit_state(state);
++
++  GtkFileChooserNative *chooser = gtk_file_chooser_native_new(
++      "Save as PDF", GTK_WINDOW(state->ui->window),
++      GTK_FILE_CHOOSER_ACTION_SAVE, "_Save", "_Cancel");
++  gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(chooser),
++                                                 TRUE);
++
++  GtkFileFilter *filter = gtk_file_filter_new();
++  gtk_file_filter_set_name(filter, "PDF document");
++  gtk_file_filter_add_mime_type(filter, "application/pdf");
++  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(chooser), filter);
++
++  time_t now = time(NULL);
++  char stamp[64];
++  strftime(stamp, sizeof(stamp), "Screenshot %Y-%m-%d %H.%M.%S.pdf",
++           localtime(&now));
++  gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(chooser), stamp);
++  if (state->config->save_dir != NULL) {
++    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(chooser),
++                                        state->config->save_dir);
++  }
++
++  if (gtk_native_dialog_run(GTK_NATIVE_DIALOG(chooser)) == GTK_RESPONSE_ACCEPT) {
++    char *path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(chooser));
++    if (path != NULL) {
++      char *with_extension = NULL;
++      if (!g_str_has_suffix(path, ".pdf")) {
++        with_extension = g_strconcat(path, ".pdf", NULL);
++      }
++      GdkPixbuf *pixbuf = pixbuf_get_from_state(state);
++      print_pixbuf(state, pixbuf, with_extension != NULL ? with_extension : path);
++      g_object_unref(pixbuf);
++      g_free(with_extension);
++      g_free(path);
++    }
++  }
++  g_object_unref(chooser);
++}
++
++void print_clicked_handler(GtkWidget *widget, struct swappy_state *state) {
++  action_print(state);
++}
++
++void pdf_clicked_handler(GtkWidget *widget, struct swappy_state *state) {
++  action_save_pdf(state);
++}
++
++void close_clicked_handler(GtkWidget *widget, struct swappy_state *state) {
++  gtk_main_quit();
++}
++
+ void clear_clicked_handler(GtkWidget *widget, struct swappy_state *state) {
+   action_clear(state);
+ }
+@@ -359,6 +506,12 @@ void window_keypress_handler(GtkWidget *widget, GdkEventKey *event,
+       case GDK_KEY_w:
+         gtk_main_quit();
+         break;
++      case GDK_KEY_p:
++        action_print(state);
++        break;
++      case GDK_KEY_P:
++        action_save_pdf(state);
++        break;
+       case GDK_KEY_z:
+         action_undo(state);
+         break;

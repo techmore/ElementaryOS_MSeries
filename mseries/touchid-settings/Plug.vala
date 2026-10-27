@@ -3,6 +3,7 @@
 namespace MSeriesTouchId {
     public class Plug : Switchboard.Plug {
         private TouchIdPage? page = null;
+        private Gtk.Widget? content = null;
 
         public Plug () {
             var supported = new Gee.TreeMap<string, string?> (null, null);
@@ -18,15 +19,27 @@ namespace MSeriesTouchId {
         }
 
         public override Gtk.Widget get_widget () {
-            if (page == null) {
+            if (content == null) {
                 page = new TouchIdPage ();
+            // Settings hides its own titlebar and puts the plug straight into a navigation page, so the
+            // plug supplies the header bar: drag area, back button and the window buttons.
+            var headerbar = new Adw.HeaderBar () {
+                show_title = false
+            };
+            headerbar.add_css_class ("flat");
+            page.vexpand = true;
+            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+            box.append (headerbar);
+            box.append (page);
+            content = box;
             }
-            return page;
+            return content;
         }
 
         /* Probe the sensor only when the page is opened, never when Settings starts. */
         public override void shown () {
-            ((TouchIdPage) get_widget ()).refresh.begin ();
+            get_widget ();
+            page.refresh.begin ();
         }
 
         public override void hidden () {}

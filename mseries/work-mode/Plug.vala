@@ -42,22 +42,6 @@ namespace MSeriesWorkMode {
                 settings.bind ("enabled", enabled, "active", GLib.SettingsBindFlags.DEFAULT);
                 mode_group.add (enabled);
 
-                var close_row = new Adw.ActionRow () {
-                    title = "Close Settings",
-                    subtitle = "Close this window"
-                };
-                var close_button = new Gtk.Button.with_label ("Close") {
-                    valign = Gtk.Align.CENTER
-                };
-                close_button.clicked.connect (() => {
-                    var window = page.get_root () as Gtk.Window;
-                    if (window != null) {
-                        window.close ();
-                    }
-                });
-                close_row.add_suffix (close_button);
-                mode_group.add (close_row);
-
                 var wallpaper = new Adw.ActionRow () {
                     title = "Work wallpaper",
                     subtitle = wallpaper_name ()
@@ -191,7 +175,18 @@ namespace MSeriesWorkMode {
                     apply_now ();
                 });
                 refresh_status ();
-                content = page;
+
+                // Settings hides its own titlebar and puts the plug straight into a navigation page, so the
+                // plug supplies the header bar: drag area, back button and the window buttons.
+                var headerbar = new Adw.HeaderBar () {
+                    show_title = false
+                };
+                headerbar.add_css_class (Granite.STYLE_CLASS_FLAT);
+                page.vexpand = true;
+                var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+                box.append (headerbar);
+                box.append (page);
+                content = box;
             }
             return content;
         }
@@ -216,8 +211,14 @@ namespace MSeriesWorkMode {
 
         private string service_host () {
             var service = settings.get_string ("public-ip-service");
-            var host = GLib.Uri.peek_scheme (service) != null ? service.split ("/")[2] : null;
-            return host ?? service;
+            if (GLib.Uri.peek_scheme (service) != null) {
+                // Return from inside the scope: the copy must happen before the split array is freed.
+                var parts = service.split ("/");
+                if (parts.length > 2) {
+                    return parts[2];
+                }
+            }
+            return service;
         }
 
         private Adw.EntryRow time_row (string title, string key) {

@@ -181,6 +181,13 @@ install_deb() {
   log "installing $deb"
   log "  sha256 $sha"
   dpkg-deb --info "$deb" | sed -n '/^ Package:/p;/^ Version:/p;/^ Depends:/p' | sed 's/^/  /'
+  # Never let an older build silently replace fixes already installed.
+  local new_version have_version
+  new_version=$(dpkg-deb -f "$deb" Version)
+  have_version=$(dpkg-query -W -f='${Version}' pantheon-rust-compositor 2>/dev/null || true)
+  if [[ -n $have_version ]] && dpkg --compare-versions "$new_version" lt "$have_version"; then
+    die "refusing to downgrade pantheon-rust-compositor $have_version -> $new_version"
+  fi
   as_root dpkg -i "$deb"
   reload_user_manager
   log "installed. The running session is unchanged; the Rust session is selectable at the next login."
