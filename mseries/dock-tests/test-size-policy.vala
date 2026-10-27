@@ -35,6 +35,20 @@ void check_state (Dock.Launcher launcher, Dock.ItemGroup group, Gtk.Separator? s
     assert (group.width_request == expected + Dock.Launcher.PADDING * 2);
     if (separator != null) assert (separator.height_request == expected);
 }
+// Container items (workspace/group icons) deliberately have no context menu.
+class TooltipOnlyItem : Dock.ContainerItem {
+    public TooltipOnlyItem () { Object (group: Dock.BaseItem.Group.NONE, tooltip_text: "Tooltip-only fixture"); }
+    public bool tooltip_open { get { return popover_tooltip.visible; } }
+    public void hover (bool entered) {
+        var controllers = observe_controllers ();
+        for (uint i = 0; i < controllers.get_n_items (); i++) {
+            var controller = controllers.get_item (i) as Gtk.EventControllerMotion;
+            if (controller == null) continue;
+            if (entered) Signal.emit_by_name (controller, "enter", 1.0, 1.0);
+            else Signal.emit_by_name (controller, "leave");
+        }
+    }
+}
 int main () {
     Gtk.init ();
     var service_ready = new MainLoop ();
@@ -62,11 +76,20 @@ int main () {
         if (child is Gtk.Separator) separator = (Gtk.Separator) child;
     }
     var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+    var tooltip_only = new TooltipOnlyItem ();
+    box.append (tooltip_only);
     box.append (launcher);
     box.append (group);
     var window = new Gtk.Window () { child = box };
     window.present ();
     drain ();
+    tooltip_only.hover (true);
+    drain ();
+    assert (tooltip_only.tooltip_open);
+    tooltip_only.hover (false);
+    drain ();
+    assert (!tooltip_only.tooltip_open);
+    print ("PASS tooltip-only container hover/leave without a context menu or GTK critical\n");
     check_state (launcher, group, separator, settings, 48);
     // No settings writes below: both adoption and unmanage must invalidate caches.
     write_policy ("[SizeSystem]\nversion=1\nmanaged=true\n");

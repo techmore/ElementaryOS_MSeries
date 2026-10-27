@@ -7,6 +7,7 @@ source_dir=${1:?usage: prepare-source.sh UPSTREAM_SOURCE}
 for patch in dock-drawers dock-workspace-startup dock-taskbar dock-taskbar-codexbar dock-taskbar-repobar dock-taskbar-power-buttons dock-taskbar-notifications; do
   git -C "$source_dir" apply "$repo/mseries/patches/$patch.patch"
 done
+git -C "$source_dir" apply "$repo/mseries/patches/dock-tooltip-optional-menu.patch"
 cp "$here/TaskbarNotifications.vala" "$source_dir/src/TaskbarNotifications.vala"
 cp "$here/TaskbarCodexBar.vala" "$source_dir/src/TaskbarCodexBar.vala"
 cp "$repo/mseries/quick-settings/AirDropPanel.vala" "$source_dir/src/AirDropPanel.vala"
