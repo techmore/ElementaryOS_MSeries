@@ -13,7 +13,12 @@ fi
 
 mkdir -p "$OUTDIR/debian/pantheon-rust-compositor"
 PACKAGE_ROOT="$OUTDIR/debian/pantheon-rust-compositor"
-VERSION=${DEB_VERSION:-0.1.0+git$(git -C "$ROOT" rev-parse --short HEAD)}
+# Epoch 1 plus a commit-time stamp: every later build sorts above every earlier
+# one under dpkg (the old bare 0.1.0+git<hash> scheme did not), so apt or an
+# image build can never pick an older package and revert fixes.
+STAMP=$(TZ=UTC git -C "$ROOT" show -s --format=%cd --date=format:%Y%m%d%H%M%S HEAD)
+VERSION=${DEB_VERSION:-1:0.1.0+git${STAMP}.$(git -C "$ROOT" rev-parse --short=7 HEAD)}
+FILE_VERSION=${VERSION#*:}
 
 cargo build --release --locked --manifest-path "$ROOT/rust/Cargo.toml" \
   -p pantheon-compositor --bin pantheon-compositor --features native-drm
@@ -72,5 +77,5 @@ Description: experimental Rust compositor for the Pantheon M-series session
 EOF
 
 dpkg-deb --build --root-owner-group "$PACKAGE_ROOT" \
-  "$OUTDIR/pantheon-rust-compositor_${VERSION}_arm64.deb"
-dpkg-deb --info "$OUTDIR/pantheon-rust-compositor_${VERSION}_arm64.deb"
+  "$OUTDIR/pantheon-rust-compositor_${FILE_VERSION}_arm64.deb"
+dpkg-deb --info "$OUTDIR/pantheon-rust-compositor_${FILE_VERSION}_arm64.deb"

@@ -234,7 +234,7 @@ jobs:
         run: |
           # A package version that sorts by commit time, so a later build always supersedes an earlier one.
           stamp=$(TZ=UTC git show -s --format=%cd --date=format:%Y%m%d%H%M%S HEAD)
-          DEB_VERSION="0.1.0+git${stamp}.$(git rev-parse --short=7 HEAD)" \
+          DEB_VERSION="1:0.1.0+git${stamp}.$(git rev-parse --short=7 HEAD)" \
             OUTDIR=out/compositor bash mseries/pantheon-rust-compositor/build-deb.sh
 
       - name: Upload compositor package
