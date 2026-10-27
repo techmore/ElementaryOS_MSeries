@@ -32,7 +32,7 @@ if ldd "$work/build/libdatetime.so" | grep -q 'not found'; then
 fi
 mseries_backup "$plugin" io.elementary.panel.datetime
 sudo install -Dm755 "$repo/mseries/calendar/accounts" /usr/local/bin/mseries-calendar-accounts
-# Rename into place: never truncate a library mapped by the running Wingpanel.
-sudo install -m644 "$work/build/libdatetime.so" "$plugin.mseries-new"
-sudo mv -f "$plugin.mseries-new" "$plugin"
+# Rename into place from a sibling directory: never truncate a library mapped by the running
+# Wingpanel, and never leave a temp module inside the directory it watches.
+mseries_install_indicator 644 "$work/build/libdatetime.so" "$plugin"
 echo 'Installed Events/Tasks agenda. Reload Wingpanel to activate. Calendar Accounts opens Google sign-in.'
