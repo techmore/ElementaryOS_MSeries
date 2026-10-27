@@ -1,3 +1,7 @@
+## Public messaging status — 2026-10-27
+
+The public homepage and support matrix now distinguish the scoped October 20 BlueFerry texting observation from the owner’s October 22 decision that the Messages and Signal experience is incomplete and deferred. See [MESSAGING-STATUS.md](MESSAGING-STATUS.md). This documentation update does not change or qualify the apps, phone pairing or hardware.
+
 ## Public upstream watch: scheduled retry verified — 2026-10-27
 
 PR #618 merged as `5267e1be7cea5d37d49e8c1f6630e3401274560a`. Scheduled run
