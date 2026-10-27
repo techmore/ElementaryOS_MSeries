@@ -2,6 +2,8 @@
 
 mod activation;
 mod attention;
+mod corner_render;
+mod corners;
 mod cursor;
 mod cursor_theme;
 mod display_config;
@@ -37,7 +39,6 @@ mod popup_stack;
 #[cfg(feature = "native-drm")]
 mod prewarm;
 mod protocols;
-mod screen_corners;
 pub mod screenshot;
 pub mod screenshot_pixels;
 pub mod screenshot_save;

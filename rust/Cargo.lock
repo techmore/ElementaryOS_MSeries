@@ -2285,6 +2285,7 @@ dependencies = [
  "bitflags",
  "gio",
  "image",
+ "msdk",
  "smithay",
  "tracing",
  "tracing-subscriber",

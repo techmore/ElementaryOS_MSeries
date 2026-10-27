@@ -232,8 +232,10 @@ pub struct PantheonCompositor {
     fractional_scale_fingerprint: Cell<Option<u64>>,
     /// Snap preview and OSD rectangles, kept so unchanged ones add no damage.
     pub(crate) solid_buffers: crate::cursor::SolidBuffers,
-    /// Cached physical-panel corner masks; no timers or per-frame raster work.
-    pub(crate) screen_corners: crate::screen_corners::ScreenCorners,
+    /// The `corners` design tokens, read once at start-up.
+    pub(crate) corner_tokens: crate::corners::CornerTokens,
+    /// Screen-corner mask bitmaps kept across frames.
+    pub(crate) corner_masks: crate::corner_render::MaskBuffers,
     /// Where wallpaper scaling threads deliver their result.
     pub(crate) wallpaper_scaled_sender: channel::Sender<crate::wallpaper::ScaledWallpaper>,
 
@@ -581,7 +583,8 @@ impl PantheonCompositor {
             gala_snapshot_at: Cell::new(None),
             fractional_scale_fingerprint: Cell::new(None),
             solid_buffers: Default::default(),
-            screen_corners: crate::screen_corners::ScreenCorners::from_environment(),
+            corner_tokens: crate::corners::CornerTokens::load(),
+            corner_masks: Default::default(),
             wallpaper_scaled_sender,
             idle_monitor,
             idle_notifier_state,
