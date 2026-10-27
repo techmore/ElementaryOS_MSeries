@@ -77,6 +77,24 @@ pub type NativeExporter = GbmFramebufferExporter<DrmDeviceFd>;
 pub type NativeOutputManager = DrmOutputManager<NativeAllocator, NativeExporter, (), DrmDeviceFd>;
 pub type NativeDrmOutput = DrmOutput<NativeAllocator, NativeExporter, (), DrmDeviceFd>;
 type NativeMultiRenderer<'a> = MultiRenderer<'a, 'a, GbmRendererBackend, GbmRendererBackend>;
+
+/// The corner clip runs on the render device's GLES renderer and frame, which the multi-GPU
+/// wrapper hands out; a frame copied to another GPU afterwards keeps the clipped pixels.
+impl crate::corner_render::CornerRenderer for NativeMultiRenderer<'_> {
+    fn corner_program(&mut self) -> Option<smithay::backend::renderer::gles::GlesTexProgram> {
+        crate::corner_render::gles_corner_program(self.as_mut())
+    }
+
+    fn gles_frame<'a, 'b, 'c>(
+        frame: &'c mut <Self as smithay::backend::renderer::RendererSuper>::Frame<'a, 'b>,
+    ) -> &'c mut smithay::backend::renderer::gles::GlesFrame<'a, 'b>
+    where
+        'b: 'a,
+        Self: 'a,
+    {
+        frame.as_mut()
+    }
+}
 type HardwareNode = (DrmNode, GbmDevice<DrmDeviceFd>);
 
 const OUTPUT_FORMATS: &[smithay::backend::allocator::Fourcc] = &[
