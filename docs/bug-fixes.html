@@ -42,6 +42,16 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere}body{overflow-wrap:break-word}im
 <tr><td>16</td><td>Dock monitor: audio and video out of sync; monitor speakers not usable</td><td class="open">Reported 2026-10-18; not measured</td><td>The picture works at 1080p60 (4K30 stays dark; 4K60 is not offered by this TV). HDMI audio is off in the driver (marked unstable upstream), so sound plays on the Mac speakers or an AirPlay output, and the lag has not been traced. See <code>mseries/AV-SYNC-EXTERNAL-DISPLAY.md</code>.</td></tr>
 </table></div>
 
+<p><strong>2026-10-26 — duplicate app icons / Windows Work Mode:</strong>
+Dock initialization now runs once across layout remaps, and existing duplicate
+pins are normalized while preserving app order. The taskbar Exit Windows Work
+Mode action applies desktop restoration immediately. Fixed invalid Wayland geometry during mode changes that triggered stock-dock
+fallback and lost running-app matching. Full native build, isolated light/dark
+launcher checks and a nested Wayland app lifecycle/transition trial pass; the
+loaded customized dock reports running apps again. A follow-up corrects GTK
+shadow space so controls stay inside the bottom bar; before/after nested
+screenshots were visually reviewed. Owner visual acceptance
+remains open. <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/dev/mseries/dock-tests/receipts/2026-10-26-work-mode-duplicates.md">Evidence and deployment status</a>.</p>
 <h2>Historical fixes</h2>
 <p>These entries record what changed at the time. For current Touch ID, kernel and screenshot status, use the table above; old boot failures and retention behavior are not the current state.</p>
 <div class="table-scroll" role="region" aria-label="Scrollable status table" tabindex="0"><table>

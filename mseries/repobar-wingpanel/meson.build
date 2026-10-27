@@ -10,7 +10,7 @@ shared_module(
   'repobar',
   'Indicator.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep],
-  install: true,
+  install: get_option('install_indicator'),
   install_dir: indicators_dir,
 )
 

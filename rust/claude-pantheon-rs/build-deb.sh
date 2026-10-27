@@ -36,6 +36,15 @@ mkdir -p "$stage"
 target_dir="$(cd "$here" && cargo metadata --format-version 1 --no-deps | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')"
 install -Dm755 "$target_dir/release/claude-pantheon-rs" "$stage/usr/bin/claude-pantheon-rs"
 install -Dm755 "$target_dir/release/claude-pantheon-sdk" "$stage/usr/bin/claude-pantheon-sdk"
+install -Dm755 "$repo_root/mseries/install-tstack-skills.py" "$stage/usr/bin/mseries-install-tstack-skills"
+for skill in full-send full-stop council sol-loop file-pr takeover babysit-pr modernize leaving-pr-comments; do
+  install -d "$stage/usr/share/mseries/tstack/$skill"
+  cp -a "$repo_root/.agents/skills/$skill/." "$stage/usr/share/mseries/tstack/$skill/"
+done
+install -Dm644 "$repo_root/.agents/skills/TSTACK-LICENSE.txt" "$stage/usr/share/mseries/tstack/TSTACK-LICENSE.txt"
+install -Dm755 "$repo_root/mseries/fleet-shepherd/bin/mseries-fleet" "$stage/usr/bin/mseries-fleet"
+install -Dm755 "$repo_root/mseries/fleet-shepherd/bin/fleet-snapshot" "$stage/usr/lib/mseries/fleet/fleet-snapshot"
+install -Dm644 "$repo_root/mseries/fleet-shepherd/LICENSE" "$stage/usr/share/doc/claude-pantheon-rs/fleet-shepherd-MIT.txt"
 install -Dm755 "$repo_root/mseries/repobar.py" "$stage/usr/bin/mseries-repobar"
 install -Dm644 "$here/data/io.github.techmore.ClaudePantheonSdk.desktop" "$stage/usr/share/applications/io.github.techmore.ClaudePantheonSdk.desktop"
 install -Dm644 "$here/data/$id.desktop" "$stage/usr/share/applications/$id.desktop"
@@ -52,9 +61,10 @@ done
 # ---- the Wingpanel indicator -------------------------------------------------------------------
 if ((with_indicator)); then
   work="$out/indicator"
-  meson setup "$work" "$here/wingpanel-indicator" --prefix=/usr --buildtype=release >/dev/null
+  meson setup "$work" "$here/../../mseries/t3-wingpanel" --prefix=/usr --buildtype=release >/dev/null
   meson compile -C "$work"
   DESTDIR="$stage" meson install -C "$work" >/dev/null
+  install -Dm755 "$repo_root/mseries/activate-t3-panel.sh" "$stage/usr/bin/mseries-activate-t3-panel"
 fi
 find "$stage" -type d -exec chmod 0755 {} +
 find "$stage/usr/share" -type f -exec chmod 0644 {} +

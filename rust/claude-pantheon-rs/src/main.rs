@@ -38,7 +38,12 @@ fn main() -> gtk::glib::ExitCode {
     // Desktop actions and a second launch reach the running instance through GApplication's command line.
     let mut forwarded: Vec<String> = args
         .iter()
-        .filter(|a| matches!(a.as_str(), "--new-thread" | "--usage" | "--repositories" | "--settings" | "--full"))
+        .filter(|a| {
+            matches!(
+                a.as_str(),
+                "--new-thread" | "--usage" | "--repositories" | "--fleet" | "--activity" | "--settings" | "--full"
+            )
+        })
         .cloned()
         .collect();
     if let Some(i) = args.iter().position(|a| a == "--thread")
@@ -84,6 +89,8 @@ fn main() -> gtk::glib::ExitCode {
     for (name, run) in [
         ("new-thread", Box::new(|a: &Rc<app::App>| a.new_chat()) as Box<dyn Fn(&Rc<app::App>)>),
         ("usage", Box::new(|a: &Rc<app::App>| a.show_usage())),
+        ("fleet", Box::new(|a: &Rc<app::App>| a.show_fleet())),
+        ("activity", Box::new(|a: &Rc<app::App>| a.show_activity())),
         ("repositories", Box::new(|a: &Rc<app::App>| a.show_repository_overview())),
         ("open-full", Box::new(|a: &Rc<app::App>| a.window().present())),
         (
@@ -121,6 +128,8 @@ fn main() -> gtk::glib::ExitCode {
             match arg.to_str() {
                 Some("--new-thread") => application.activate_action("new-thread", None),
                 Some("--usage") => application.activate_action("usage", None),
+                Some("--fleet") => application.activate_action("fleet", None),
+                Some("--activity") => application.activate_action("activity", None),
                 Some("--repositories") => application.activate_action("repositories", None),
                 Some("--full") => application.activate_action("open-full", None),
                 Some("--settings") => application.activate_action("settings", None),

@@ -107,6 +107,7 @@ pub struct App {
     // pages
     usage_page: usage::UsagePage,
     activity_page: Rc<crate::activity_view::ActivityPage>,
+    fleet_page: Rc<crate::fleet::FleetPage>,
     repos_page: Rc<repos::ReposPage>,
     repo_monitor: Rc<crate::repo_monitor_view::RepoMonitorView>,
     diagnostics_page: Rc<diagnostics::DiagnosticsPage>,
@@ -258,6 +259,8 @@ impl App {
             &section(&[
                 ("Usage", "win.usage"),
                 ("Activity", "win.activity"),
+                ("Remote Machines", "win.fleet"),
+                ("Tstack Workflows", "win.tstack"),
                 ("Repository Overview", "win.repository-overview"),
                 ("Repos and Issues", "win.repos"),
                 ("Changes in This Thread", "win.changes"),
@@ -389,6 +392,7 @@ impl App {
 
         let usage_page = usage::UsagePage::new();
         let activity_page = crate::activity_view::ActivityPage::new();
+        let fleet_page = crate::fleet::FleetPage::new();
         let repos_page = Rc::new(repos::ReposPage::new());
         let repo_monitor = crate::repo_monitor_view::RepoMonitorView::new();
         let diagnostics_page = Rc::new(diagnostics::DiagnosticsPage::new());
@@ -402,6 +406,7 @@ impl App {
         stack.add_named(&chat_page, Some("chat"));
         stack.add_named(usage_page.widget(), Some("usage"));
         stack.add_named(activity_page.widget(), Some("activity"));
+        stack.add_named(fleet_page.widget(), Some("fleet"));
         stack.add_named(repos_page.widget(), Some("repos"));
         stack.add_named(repo_monitor.widget(), Some("repository-overview"));
         stack.add_named(diagnostics_page.widget(), Some("diagnostics"));
@@ -488,6 +493,7 @@ impl App {
             pair_button,
             usage_page,
             activity_page,
+            fleet_page,
             repos_page,
             repo_monitor,
             diagnostics_page,
@@ -635,6 +641,8 @@ impl App {
             ("send", &["<Control>Return", "<Control>KP_Enter"], Box::new(|a| a.send())),
             ("usage", &["<Control><Shift>u"], Box::new(|a| a.show_usage())),
             ("activity", &[], Box::new(|a| a.show_activity())),
+            ("fleet", &[], Box::new(|a| a.show_fleet())),
+            ("tstack", &[], Box::new(|a| a.show_tstack())),
             ("repository-overview", &[], Box::new(|a| a.show_repository_overview())),
             ("repos", &[], Box::new(|a| a.show_repos())),
             ("changes", &[], Box::new(|a| a.show_changes())),
@@ -753,6 +761,7 @@ impl App {
         for (title, page) in [
             ("Open Usage", "usage"),
             ("Open Activity", "activity"),
+            ("Remote Machines", "fleet"),
             ("Open Repository Overview", "repository-overview"),
             ("Open Repos and Issues", "repos"),
             ("Open Diagnostics", "diagnostics"),
@@ -761,6 +770,7 @@ impl App {
             out.push(Entry { title: title.into(), kind: "Page".into(), action: Action::Page(page.into()) });
         }
         for (title, action) in [
+            ("Tstack Workflows", "tstack"),
             ("Pair with a T3 environment", "pair"),
             ("Import sessions from Claude Code and Codex", "import"),
             ("Hand off to repo", "handoff"),
@@ -832,6 +842,7 @@ impl App {
             Action::Page(page) => match page.as_str() {
                 "usage" => self.show_usage(),
                 "activity" => self.show_activity(),
+                "fleet" => self.show_fleet(),
                 "repository-overview" => self.show_repository_overview(),
                 "repos" => self.show_repos(),
                 "diagnostics" => self.show_diagnostics(),
@@ -3243,6 +3254,36 @@ impl App {
     }
 
     // ---- repos, issues, runner -----------------------------------------------------------------
+
+    pub fn show_fleet(self: &Rc<Self>) {
+        self.leave_live();
+        self.list.unselect_all();
+        self.title.set_text("Remote Machines");
+        self.window.set_title(Some("Remote Machines - T3"));
+        self.subtitle.set_text("Fleet Shepherd · configured SSH aliases · read-only monitoring");
+        self.subtitle.set_visible(true);
+        self.show_page("fleet");
+        self.fleet_page.open();
+    }
+    pub fn fleet_page(&self) -> &Rc<crate::fleet::FleetPage> {
+        &self.fleet_page
+    }
+
+    pub fn show_tstack(self: &Rc<Self>) {
+        let weak = Rc::downgrade(self);
+        crate::tstack::show(&self.window, move |name| {
+            let Some(app) = weak.upgrade() else { return };
+            if app.live.borrow().is_none() && app.draft.borrow().is_none() {
+                app.toast("Open a live thread or prepare a new thread before choosing a workflow.");
+                return;
+            }
+            let draft = app.entry.text();
+            app.entry.set_text(&crate::tstack::prepare(name, &draft));
+            app.show_page("chat");
+            app.entry.view.grab_focus();
+            app.toast("Workflow request prepared. Review it, then send when ready.");
+        });
+    }
 
     pub fn show_activity(self: &Rc<Self>) {
         self.leave_live();

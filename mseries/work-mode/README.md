@@ -69,11 +69,14 @@ bottom dock uses elementary's existing dock package and pinned launchers.
 
 ## Window buttons
 
-*Window buttons* in the panel (`window-buttons` key) sets the title-bar buttons while the mode is on. **Windows (right side)**, the default, puts
-minimize, maximize and close on the right (`:minimize,maximize,close`) so every window has a visible close button. **Keep my layout** changes
-nothing. The previous `org.gnome.desktop.wm.preferences button-layout` is snapshotted the first time the mode applies it and restored when
-the mode ends, when you switch to *Keep my layout* while active, or with `mseries-work-mode --restore`. New windows follow the setting; windows
-that were already open may need to be reopened to redraw their buttons.
+*Window buttons* in the panel (`window-buttons` key) sets GTK title-bar buttons
+while the Work Mode settings page is open. **Windows (right side)**, the
+default, puts minimize, maximize and close on the right
+(`:minimize,maximize,close`). The panel also provides a *Close Settings*
+button in its content so this window remains closable if the desktop hides its
+titlebar. **Keep my layout** restores the GTK layout captured when the page was
+opened. The work-mode helper separately applies and restores the
+`org.gnome.desktop.wm.preferences button-layout` for other windows.
 
 ## Taskbar
 
@@ -110,4 +113,4 @@ is left alone.
 
 ## Desktop mode switch
 
-`mseries-desktop-mode windows|elementary|toggle|status` (also the "Desktop Mode" launcher and its right-click actions) flips Windows Work Mode on or off immediately, with no logout.
+`mseries-desktop-mode windows|elementary|toggle|status` (also the "Desktop Mode" launcher and its right-click actions) flips Windows Work Mode on or off immediately, with no logout. The taskbar Start menu's Power menu also has **Exit Windows Work Mode**, which calls the same desktop-mode helper to turn off the persistent mode switch and restore wallpaper and dock preferences immediately.

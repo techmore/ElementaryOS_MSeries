@@ -23,6 +23,8 @@ jobs:
           repository: erikwb/blueferry
           ref: 60fd7ef1abbd25947981f0cf27a521d82784a75f
           path: .pin-test-blueferry
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native fixture dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi python3-dbus python3-pil gir1.2-gtk-4.0 libgranite-7-dev gir1.2-secret-1 gnome-keyring dbus-x11 xvfb xauth
       - name: Check matching, drafts, failed writes and isolated Secret Service
