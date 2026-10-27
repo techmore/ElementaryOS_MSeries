@@ -73,11 +73,11 @@ bottom dock uses elementary's existing dock package and pinned launchers.
 while the Work Mode settings page is open. **Keep my layout** is the default, so
 the Mac-style buttons stay on the left (`close,minimize,maximize:`) in every mode.
 **Windows (right side)** is an explicit opt-in that puts minimize, maximize and
-close on the right (`:minimize,maximize,close`) while Work Mode is active. The
-panel also provides a *Close Settings* button in its content so this window
-remains closable if the desktop hides its titlebar. Keeping the layout restores
-the GTK layout captured when the page was opened. The work-mode helper
-separately applies and restores the
+close on the right (`:minimize,maximize,close`) while Work Mode is active.
+System Settings hides its own titlebar, so the panel supplies a header bar (drag
+area, back button and these window buttons), like the stock panels. Keeping the
+layout restores the GTK layout captured when the page was opened. The work-mode
+helper separately applies and restores the
 `org.gnome.desktop.wm.preferences button-layout` for other windows.
 
 ## Taskbar
