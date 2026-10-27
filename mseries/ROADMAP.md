@@ -1,3 +1,869 @@
+## Candidate anchor hover failure — 2026-10-26
+
+SDK desktop-host ARM workflow 40418084280 passed on attempt 2 at 64ca2db, including C/Vala host boundaries, shared T3 menu in hosted and dock modes with synthetic neighbors, and SDK/package checks. Attempt 1 passed host checks but its later private display failed to open; see `sdk-tests/receipts/2026-10-26-desktop-host-ci/`. Real desktop builds, installation, target GTK compatibility and owner acceptance remain open.
+
+SDK desktop-host work: an opt-in Plan usage page now shares the existing T3 menu source between Dock and Wingpanel, via a provisional C/Vala boundary. On a local ARM Ubuntu 26.04 VM with isolated synthetic data, the actual shared menu source passed hosted and dock-mode usage display, page switching and closed-read checks; neighboring indicators were stubs. Full Wingpanel/Dock build, installation, live desktop validation and GTK compatibility on the elementary target remain open. See `sdk-status-host/README.md`.
+
+ARM SDK run 40416161840 at 26a71f7 passed the candidate usage anchor interaction suite, including unpinned pointer exit, plus package lifecycle. The retained synthetic fixture receipt is `sdk-tests/receipts/2026-10-26-usage-anchor-final-pass/`; actual status-host integration and target acceptance remain open.
+
+ARM run 40415797379 at 7fa281f passed the candidate usage anchor synthetic hover travel, pin, outside dismissal and keyboard interactions, and package lifecycle; see `sdk-tests/receipts/2026-10-26-usage-anchor-pass/`. This does not qualify an installed desktop host. An added explicit unpinned pointer-leave check is pending.
+
+ARM run 40412642984 at 98867b8 passed core, generated app, accessibility, lifecycle and usage-refresh steps. The candidate anchor opened and read once, but failed pointer travel; pinning and subsequent steps were not reached. See `sdk-tests/receipts/2026-10-26-usage-anchor-travel-fail/`. X11 surface diagnostics are being added; native interaction validation remains open.
+
+Candidate usage anchor: ARM run 40407270110 did not open on hover; diagnostics showed the test pointer on the X root and no synthetic read. The isolated fixture now exports GTK bounds for pointer placement. GTK documents that changing auto-hide hides a visible popover, so the candidate now closes and reopens on pinning without restarting its read; interaction validation remains pending. This is a reusable candidate, not an installed desktop host. See `sdk-tests/receipts/2026-10-26-usage-anchor-coordinates/`.
+
+SDK run 40406733431 compiled 5c7dcbc but failed the synthetic hover interaction:
+the Usage anchor was present while the popup was not observed. The failure is
+retained under sdk-tests/receipts/2026-10-26-usage-anchor-hover-fail; its cause
+is unproven. The follow-up checks actual popup mapping and adds pointer/read
+diagnostics. It needs source-matched native execution; no host acceptance is
+claimed and no owner desktop was changed.
+
+## Candidate usage status anchor — native validation pending, 2026-10-26
+
+An embeddable GTK UsageAnchor is modeled on the existing taskbar hover/pin
+interaction and owns the UsageControl lifecycle without background polling. A
+private synthetic X11/AT-SPI probe exercises hover focus, pointer travel,
+hover-to-click pinning, outside dismissal, keyboard open/Escape and closed
+no-read behavior. Native compilation and interaction tests are pending. This
+widget is not installed in either real desktop profile; host adapters, real
+provider coverage and owner acceptance remain open. No panel was restarted.
+
+## Usage control keyboard validation — 2026-10-26
+
+Hosted ARM developer-path run 40405964283 passed on 477234a. A private synthetic
+AT-SPI/keyboard probe found `Refresh usage` as a button, used Tab and Space to
+exercise failure and retry, checked stale data and private-stderr exclusion,
+and closed with Ctrl+Q. Four reviewed failure-state frames and the probe
+receipt are in sdk-tests/receipts/2026-10-26-usage-keyboard-pass. Earlier
+private-display and accessible-name failures remain retained. This does not
+qualify keyboard scrolling, actual desktop status-host interactions, real
+accounts or owner visual acceptance.
+
+## Usage accessibility name diagnosis — 2026-10-26
+
+SDK run 40405291097 failed its synthetic keyboard probe on 9dac12e. The
+retained AT-SPI tree shows a button named `Refresh` with role `button`, not the
+expected `Refresh usage`. See sdk-tests/receipts/2026-10-26-usage-accessibility-tree.
+The visible label has been changed to `Refresh usage` to match the intended
+accessible name; GTK, keyboard and visual revalidation remain pending. The
+previous X-display startup failure is separate and remains unexplained.
+
+## Usage keyboard probe failures — 2026-10-26
+
+SDK run 40404146612 on 34a26fa failed twice: attempt 1 could not open the
+private X display; attempt 2 opened the app but the expected accessible refresh
+button was not found. Synthetic receipts are in
+sdk-tests/receipts/2026-10-26-usage-keyboard-failures. Causes are unproven and
+no keyboard acceptance is claimed. The follow-up records a bounded synthetic
+accessibility tree on failure so the actual role/name can be diagnosed.
+
+## Usage keyboard and AT-SPI probe — validation pending, 2026-10-26
+
+A private-session synthetic app and probe exercise the actual UsageControl via
+Tab and Space, inspect the accessible name/role, provoke a failed refresh, retry
+and close with Ctrl+Q. The probe records only synthetic data and checks private
+stderr does not enter the accessible tree. Native execution is pending. This
+standalone fixture does not prove keyboard behavior or focus in either actual
+status host and does not touch real accounts or the owner desktop.
+
+## Usage refresh control validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40403452026 passed on e1c91a8. Native
+synthetic tests cover open/busy/failure/retry and four failure-state light/dark
+Sans 10/15 frames were reviewed and retained under
+sdk-tests/receipts/2026-10-26-usage-control-final. Failure, stale data and the
+Refresh button are visible in the fixture; the footer no longer repeats the
+failure wording. Keyboard/AT-SPI, busy-state visual review, actual status hosts,
+real collectors/accounts and owner approval remain open.
+
+## Usage control initial validation — 2026-10-26
+
+Hosted ARM SDK run 40402684685 passed on a5b0ff2, including synthetic GTK
+success/failure/retry and failure-state captures. Initial review found the
+notice, stale data and refresh button readable, but the failure was repeated in
+both the panel and footer. Four frames and limits are retained under
+sdk-tests/receipts/2026-10-26-usage-control-first. The footer now says “Retry
+when ready”; that follow-up still needs source-matched GTK and visual review.
+Real collectors, keyboard/AT-SPI and actual desktop hosts remain open.
+
+## Usage refresh control — native validation pending, 2026-10-26
+
+A candidate embeddable UsageControl exposes refresh, spinner and status around
+the on-demand monitor. Explicit open starts one read; repeated open does not
+start another, and close/unmap/drop cancel owned work. Native synthetic tests
+exercise success, malformed-output failure and retry; the CI preview captures
+failure state in light/dark at two text sizes. GTK execution and visual review
+are pending. Actual status hosts, keyboard/AT-SPI interaction, real collector
+and accounts remain unqualified; no panel or service was restarted.
+
+## On-demand usage refresh validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40401954793 passed on ee9cd5e after the
+retained 58dd831 strict-lint failure. The native synthetic executable test
+checks no reads while closed or merely opened, duplicate refresh coalescing,
+source-age recheck at delivery, close/cancel, and a new refresh after reopening.
+The fixture does not prove real collector/account behavior, visible refresh
+controls, desktop-host integration or owner acceptance. No scheduled polling
+or owner desktop service was started.
+
+## Refresh controller lint repair — 2026-10-26
+
+SDK developer-path run 40401485674 failed at GTK strict clippy on 58dd831:
+`needless_return` in the expired-reply match arm. The arm now uses unit. Native
+controller tests did not run in that attempt and source-matched validation is
+still required. The earlier failed run remains evidence, not a passing test.
+
+## On-demand usage refresh lifecycle — native validation pending, 2026-10-26
+
+A candidate CodexBarMonitor explicitly opens/closes a UsagePanel, starts one
+bounded read on request, coalesces duplicates, cancels/invalidate on close and
+reports state to its host. It rechecks source age at final GTK delivery; no
+polling is scheduled. Synthetic GTK tests cover closed/open no-read, duplicate
+refresh, age, cancellation and reopen. The 107-test core suite and clippy pass
+on macOS; source-matched GTK compilation and lifecycle execution are pending.
+This does not connect either actual desktop status host or real provider data.
+
+## Scoped usage delivery validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40400566671 passed on 5a6a1e6. Its GTK
+regression executes a synthetic snapshot program, applies a successful result,
+rejects a queued result after a context switch, and checks that a later failure
+shows a generic notice with last-known data marked stale and no private stderr.
+The executable and data are synthetic; real collector/account integration,
+actual desktop host interactions and visual review of the new failure state
+remain open. No background polling or owner desktop service was started.
+
+## Scoped usage delivery — native validation pending, 2026-10-26
+
+UsagePanel can consume the scoped CodexBar read on the GTK/state-owner thread:
+old queued replies are ignored, and current failures retain last-known data as
+stale with a generic notice. A synthetic executable-to-GTK regression covers
+success, a context switch after queueing, failure and private-stderr exclusion.
+Core usage tests and strict clippy pass on macOS; source-matched GTK execution
+is pending. The caller still owns refresh, cancellation and host lifecycle.
+
+## Scoped CodexBar read validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40399879070 passed on 9e8fecc. Its five
+CodexBar tests include an actual synthetic executable with a shell-sensitive
+filename, literal `--snapshot` argument, malformed output and a context switch
+that cancels the owned work and rejects the stale completion. The core test
+also checks literal argv and preserved scope across transformation. These are
+isolated synthetic executable tests, not a live collector or account read.
+Real provider coverage, polling lifecycle and desktop status hosts remain open.
+
+## CodexBar bounded read adapter — native validation pending, 2026-10-26
+
+A scoped direct-executable SDK process API runs literal argv without a shell.
+The CodexBar adapter uses it for one five-second, two-MiB bounded `--snapshot`
+read, retaining context until delivery and leaving polling/service management
+to its caller. Synthetic executable tests cover arguments, malformed output and
+context cancellation. The full 107-test core suite and strict clippy pass on
+macOS; GTK adapter execution/source-matched Linux validation remain pending.
+No live collector, account data, desktop service or daemon was touched.
+## CodexBar snapshot decoder validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40398755850 passed on ee2eb68. Four decoder
+regressions cover aggregate scope and partial coverage, null quota, source-time
+freshness, future/expired values, malformed input, bounds and error redaction;
+a native GTK widget test renders a synthetic v1 snapshot. This validates the
+decoder against fixtures, not execution of a live collector, real accounts,
+account-specific coverage or either actual desktop host. Those remain open.
+
+## CodexBar snapshot decoder — native validation pending, 2026-10-26
+
+A bounded read-only decoder maps the existing CodexBar v1 provider snapshot to
+candidate usage observations, retaining source timestamps and partial coverage.
+It never claims account-specific usage from provider aggregates. Synthetic
+regressions cover unknown, stale, future, expired and malformed data and a GTK
+rendering path. No process, live backend or owner account is touched. GTK
+compilation and source-matched native tests are pending; real collector reads,
+account adapters and status-host integration remain open.
+
+## Usage viewport refresh validation — 2026-10-26
+
+Hosted ARM developer-path run 40397942393 passed on cc2dace. Its native widget
+regression rejects an invalid replacement, applies two valid updates and retains
+a numeric scroll offset with unchanged-height synthetic content. Preview images
+are retained in sdk-tests/receipts/2026-10-26-usage-viewport; reviewed frames
+keep provider overview visible at the top. Semantic anchoring, shorter/changed
+content behavior beyond clamping, keyboard/focus, real providers and both actual
+status-area hosts remain open. No owner desktop or real accounts were touched.
+
+## Usage viewport refresh — validation pending, 2026-10-26
+
+The candidate GTK UsagePanel provides a bounded read-only viewport and validates
+replacement snapshots before display. It restores a prior numeric scroll offset
+when refreshing and coalesces restoration after back-to-back updates. Native
+tests exercise invalid replacement, multiple updates and scroll retention; the
+synthetic preview now embeds this viewport. GTK compilation and execution on
+this exact source remain pending. Semantic row anchoring, focus in interactive
+children, provider refresh/teardown and actual status-host binding remain open.
+
+## Usage provider overview review — 2026-10-26
+
+Hosted ARM SDK run 40397085739 passed on 0951bde, including the native widget
+and scrolling regression. Eight synthetic light/dark Sans 10/15 top/end captures
+are in sdk-tests/receipts/2026-10-26-usage-overview. All four fixture provider
+names and partial coverage are visible on opening in both profiles; cards
+remain separate and scrollable. Compact quota layout, long-label/translation,
+keyboard interaction, real adapters, actual status hosts and owner acceptance
+remain open. The overview is not proof of complete provider coverage.
+
+## Usage provider overview — validation pending, 2026-10-26
+
+The candidate usage view now lists provider names and partial/unknown coverage
+before the provider cards. Repeated sources for one provider remain separate
+cards while the overview lists that provider once. The native regression checks
+that the four-provider overview and partial coverage precede all account rows.
+Source-matched GTK tests, top/end screenshots and visual review remain pending;
+this is not an interactive status host or evidence of complete provider coverage.
+
+## Multi-provider usage fixture review — 2026-10-26
+
+Hosted ARM SDK run 40396405090 passed on 2111eb1. Native synthetic checks cover
+two Codex accounts, two Claude, Grok and OpenCode and a reachable programmatic
+scroll end; eight reviewed top/end light/dark Sans 10/15 frames are retained in
+sdk-tests/receipts/2026-10-26-usage-multiprovider. Existing CodexBar provider
+marks were staged only in the isolated fixture. At large text only two providers
+are visible on opening, so the provider-coverage presentation requirement is
+still unmet. Keyboard scrolling, actual hosts, real adapters and owner visual
+approval remain open.
+
+## Usage provider marks and scrolling fixture — validation pending, 2026-10-26
+
+The candidate usage component can use existing CodexBar symbolic provider marks
+when present and always retains a readable provider label when absent. The
+synthetic preview now includes two Codex accounts, two Claude accounts, one
+Grok and one OpenCode account in a bounded scroll viewport. The CI fixture
+stages existing project icon assets in an isolated data directory and captures
+top and bottom in light/dark Sans 10/15; a native regression checks multiple
+accounts and scroll range. Source-matched GTK build/test, captures and visual
+review remain pending. No provider adapter, real account or host is involved.
+
+## Usage card refinement review — 2026-10-26
+
+Hosted ARM SDK run 40395621853 passed on dd96c00, including native widget
+checks and four synthetic light/dark Sans 10/15 captures. Compared with the
+previous preview, the card and account headings improve hierarchy and avoid
+repeated stale text and awkward reset wrapping in the tested fixture. Evidence
+is in sdk-tests/receipts/2026-10-26-usage-cards. Provider marks, compact quota
+presentation, multi-provider/long-list review, host interactions, real adapters
+and owner approval remain open; this is not full status-module acceptance.
+
+## Usage card hierarchy refinement — validation pending, 2026-10-26
+
+The candidate usage rows now use a scoped, theme-derived card treatment based on
+CodexBar's existing card styling. Account headings have stronger hierarchy;
+stale is shown once per account, and reset text has a separate line for large
+text. The widget regression also checks stale versus expired presentation.
+This is not a provider mark, complete status control or visual acceptance.
+Source-matched native GTK build, tests, new captures and independent review
+are required before claiming an improvement.
+
+## Candidate usage preview review — 2026-10-26
+
+Hosted ARM developer-path run 40395051297 passed on edf7a4e, including native
+widget-tree regression and four synthetic usage screenshots. Review found the
+candidate too flat versus the CodexBar reference: provider/account hierarchy is
+weak, stale is repeated, and large-text wrapping is awkward. Images and scoped
+findings are in sdk-tests/receipts/2026-10-26-usage-preview. The candidate is
+not visually accepted; provider marks, compact hierarchy, interaction/scrolling,
+hosts and real adapters remain open. The earlier d4bd990 compile failure is
+retained above; the Rust orientation fix passed in this run.
+
+## Candidate usage GTK compile repair — 2026-10-26
+
+Developer-path run 40394710018 failed compiling d4bd990 because the candidate
+usage component used the Vala spelling `Orientation::VERTICAL` in Rust. The
+three sites now use the Rust GTK spelling `Orientation::Vertical`. No native
+widget test or screenshot ran in that attempt. Source-matched GTK validation
+and visual review remain required; retain this failed attempt in the record.
+
+## Synthetic usage preview — validation pending, 2026-10-26
+
+An isolated GTK example renders synthetic accounts and saves a window capture;
+the SDK workflow builds it and captures light/dark at Sans 10 and 15 for review.
+This is a candidate component preview, not a real status host or evidence of
+visual acceptance. GTK compilation, all four captures and independent visual
+review remain pending on the exact source. It must not read real account data.
+
+## Candidate usage GTK rows — validation pending, 2026-10-26
+
+`msdk_gtk::usage::render` builds read-only provider/source and account rows from
+validated snapshots with explicit unavailable, stale and expired states. A
+native widget-tree test covers separate accounts, unknown/expired quota and
+partial coverage. The data tests (4), complete macOS core suite (106) and strict
+clippy pass. GTK compilation, native execution, light/dark/large-text visual
+review and real status hosts remain open. This initial widget does not yet meet
+the full CodexBar-derived status standard or implement refresh and actions.
+
+## Usage presentation inputs — 2026-10-26
+
+The candidate usage snapshot now carries separate display labels and selected
+state, and can group validated observations by provider and source while
+preserving every account and separating aggregates. Four usage tests and all
+106 core tests plus strict clippy pass on macOS. This prepares inputs for a
+native control; it is not a widget, provider adapter or status host. The
+source-matched Linux run for the prior commit is still in progress, and this
+local change needs its own Linux, visual and interaction validation.
+
+## Usage observation snapshots — 2026-10-26
+
+The candidate Rust usage data layer now supports explicit coverage and validates
+snapshot identity, duplicate scopes/windows, source timestamps for fresh
+observations and impossible token subsets. Distinct accounts and sources are
+not merged; unknown values remain optional. Full macOS core tests (106) and
+strict clippy pass. This is an in-memory API, not a wire protocol, collector,
+presentation or status host. Source-matched Linux and the remaining status-area
+integration and visual/interaction gates are still required.
+
+## Usage observation semantics — 2026-10-26
+
+The candidate `msdk::usage` data API separates account/provider/source scope,
+used and remaining quota, expired windows, unknown values and token subsets.
+Debug omits scope identifiers. Three focused semantic tests and the complete
+105-test core suite plus strict clippy pass on macOS. This is data groundwork;
+collectors, cross-source deduplication, native presentation, both status hosts,
+real interaction/visual review and source-matched Linux validation remain open.
+The benchmark host is unreachable. See `SDK-USAGE-DATA.md` for the boundary.
+
+## SDK accessibility failure diagnosis — 2026-10-26
+
+The synthetic failure artifact from developer-path run 40392328090 attempt 1
+shows GTK failed to open the display before accessibility registration. The
+reason for the display failure remains unknown; attempt 2 passed. The original
+receipt is retained in sdk-tests/receipts/2026-10-26-accessibility-failure.
+The probe now reports a child exit immediately and preserves stderr, instead of
+waiting for an accessibility-root timeout after the app has already exited.
+Linux execution of this probe change remains to be verified.
+
+## Golden-path fixture validation — 2026-10-26
+
+On dbf4eee, hosted ARM SDK/System Monitor run 40392327560 passed. SDK
+Developer-path run 40392328090 attempt 1 failed because the generated app's
+accessibility root was not observed within the probe timeout. Attempt 2 passed,
+including that probe and the native runtime version-mismatch fixture/no-fallback
+regression, then package lifecycle. The first failure is retained; its cause is
+unknown and one retry does not establish that the probe is reliable. This tests
+SDK extension negotiation, not an OS backend protocol or a timed novice trial.
+
+## Golden-path version injection — validation pending, 2026-10-26
+
+Fixture files may specify an SDK extension `api_version` to exercise a visible
+version mismatch without a real backend; invalid version values are rejected.
+The golden-path guide describes the injection. A native regression checks the
+error and verifies no built-in process fallback executes. GTK compilation and
+source-matched native execution remain pending; this is not an OS backend
+protocol compatibility result or a measured developer trial.
+
+## Context-bound feed validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40391629479 and SDK/System Monitor run
+40391629511 passed on bb90bf7. The native GTK lifecycle test confirms a
+current feed update reaches host state, an update from an advanced context is
+ignored, rebinding is rejected, and the provider stops on close. This is an
+explicitly bound test provider; legacy providers are unscoped, and cancelling
+backend reads/subscriptions and displaying account identity remain provider
+responsibilities. Physical Pantheon and model-trial gates remain open.
+
+## SDK context-bound feeds — validation pending, 2026-10-26
+
+An opt-in typed feed endpoint carries an app-owned context to GTK delivery and
+rejects stale updates. Legacy feeds remain compatible and unscoped; providers
+must explicitly retire subscriptions and reads on context changes and close.
+A native lifecycle regression covers delivery, context advance, rebinding
+rejection and close. Source-matched Linux GTK compilation and execution are
+required before this feature is claimed as validated; SER8 remains unreachable.
+
+## SDK source-matched ARM and native validation — 2026-10-26
+
+Developer-path run 40391194892 passed for b7b3a99 on hosted ARM Linux:
+core tests/lint, schema checks, generated native build, keyboard/accessibility,
+render matrix, native host lifecycle (including the incompatible provider and
+built-in feed regression), and package install/reinstall/removal. SDK/System
+Monitor run 40391194847 also passed on that source. These are hosted CI checks,
+not physical M-series Pantheon or owner visual acceptance. The model trial and
+other release gates remain open.
+
+## SDK built-in feed compatibility — 2026-10-26
+
+The local GTK host change keeps an incompatible optional service extension from
+blocking the host-owned `windows.list` feed; lifecycle test now exercises that
+combination and verifies the incompatible provider receives no external feed.
+The generated test document and manifest pass the SDK checker with zero warnings.
+This change has not been compiled or run on Linux GTK and is not
+ready to claim as verified. SDK developer-path run 40390669721 passed on prior commit 4909d91, including
+native lifecycle and package operations; SER8 is unreachable. Validate this
+changed source and retain the result before claiming it passes. The current core-only macOS
+suite, including the unread scoped-stream case, passes 102 tests and clippy.
+
+## SDK authoring scenario tool — 2026-10-26
+
+The benchmark worker now accepts a confined scenario-file path for `gate`, so
+model authors can run the same acceptance scenarios supplied by SDK starters.
+Five boundary tests pass; a local worker-to-CLI smoke passed all seven settings
+gates, including four named scenarios. This is not a model trial or isolated
+Linux benchmark preflight; the changed worker/controller still need staging and
+validation on SER8 before admission. Source-matched ARM runs remain pending.
+
+## SDK context-bound process streaming — 2026-10-26
+
+The Rust SDK now offers `spawn_streaming_scoped`: context expiry cancels the
+owned process, and chunks and completion carry their context to the final state
+owner. The test switches context after receiving a real process chunk, verifies
+the queued chunk and completion are rejected, and verifies a new stream works.
+A further macOS regression verifies unread buffered bytes and a completed reply
+are both rejected after the context closes, even after the process exits.
+The complete SDK core suite and strict clippy passed in a macOS SDK-only copy.
+This source change postdates the previous Linux/ARM and GTK qualification;
+source-matched Linux, ARM and release-host validation remain outstanding. It
+does not automatically scope GTK feeds or external backend subscriptions.
+
+## SDK benchmark packaging and quit checks — 2026-10-26
+
+The SDK authoring harness now exposes packaging through its fixed SDK tool
+surface and treats failure to quit on Ctrl+Q as a failed capture. An isolated
+uid2000 smoke built a real .deb and launched the generated settings window;
+a separate window that ignores Ctrl+Q produced the expected failure. Evidence
+is in `sdk-bench/receipts/2026-10-26-pack-preflight`. This smoke did not install
+or remove its package. Four boundary tests pass. The first model trial and
+independent acceptance remain open; the latest attempt to check SER8 timed out,
+so its current model residency is unknown. Native ports of every app are not a
+completion requirement.
+
+## SDK authoring preflight retained; model admission deferred — 2026-10-26
+
+The full offline uid2000 tool preflight succeeds through generation, build,
+actual external capture and Ctrl+Q; the fixture screenshot has visible real
+settings content without clipped primary controls. Four tool-boundary tests
+and the three native suites pass. All 80 SDK source fingerprints match the
+production snapshot. Sanitized configuration, seed/generated source and locks,
+provisioning/prewarm logs and tool results are retained under
+sdk-bench/receipts/2026-10-26-preflight. Benchmark helper boundary tests now run
+in SDK CI; CI never launches the model controller.
+
+The s01 seed17 controller's admission attempt exited before inference because
+qwen3.5:2b was already resident in the existing Ollama service. Residency does
+not prove active inference; the conservative rule avoids replacing that worker.
+No prompts were dispatched, generated model code was run, or model-quality
+score claimed. No daemon or owner workload was stopped/switched. The synthetic
+smoke project/state was archived and cleared; the sandbox is empty for a future
+properly admitted cohort. Keep the admission receipt; do not count it as a
+failed or completed model trial. Full-spec/baseline/repeated-model qualification
+remains open.
+
+SDK ARM developer-path run 40378225258 succeeded on bd002fa, and matching
+SDK/System Monitor run 40378225297 passed. This covers the current production
+Rust context-binding code; newer changes here are benchmark tooling/docs only.
+Native app ports/product feature parity remain outside SDK completion scope.
+
+## SDK model authoring discovery runner and offline preflight — 2026-10-26
+
+Added a bounded SDK JSON-action authoring controller for the frozen benchmark
+specs, plus a fixed project-only tool worker and external window/capture/quit
+probe. Four boundary tests pass. It pins qwen3.5:4b digest
+ d8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04,
+packaged Apache-2.0 license, runtime/options and prompt/spec/source identities.
+The model receives actual app frames; independent audit alone can establish the
+rubric done bar. `done` is a candidate, not a pass. No baseline/repeated-model or
+whole-SDK completion result is claimed by harness preparation.
+
+Prepared a separate ephemeral msdk-bench-20261026 clone with uid2000, zero
+capabilities, loopback-only networking for execution, no owner-data mounts and
+configured CPU/memory/process/disk bounds. Trusted GTK/SQLite/screenshot setup
+and cache warming occurred before the trial timer. Initial provisioning failed
+because networking was disabled too early; no model code/inference ran. Corrected
+order is provision first, disable and verify before generated code. No host
+model daemon was restarted, no second GPU worker launched, and no owner app,
+desktop, accounts or service data changed.
+
+Offline unprivileged native CLI/lifecycle/runtime preflight passes. Fixed
+settings new/gen/build/capture/Ctrl+Q succeeds through the actual tool bridge:
+generation ~0.021s, cold cache-completion build 82.12s, window mapped ~0.283s and
+capture ~0.927s. These are harness/provisioning facts, not model coding times or
+a general performance comparison. Archive/clear that owned smoke project before
+starting the unchanged s01 model cohort. Retain all failures/interventions and
+inspect produced code/GUI/SQLite/shortcuts before scoring. See sdk-bench/RUNNER.md.
+
+## Owner SDK scope clarification: native is not mandatory for every app — 2026-10-26
+
+The owner explicitly said we do not need a native experience for all apps.
+SDK completion covers reusable SDK capabilities and a small set of representative
+consumer/integration flows. Preserve suitable web interfaces, wrappers, webview/
+hybrid architectures and existing clients; do not create a project-wide native
+porting or full app-parity prerequisite. Generic WebView hosting is not currently
+a shipped vocabulary component, so do not imply that integration already exists.
+
+Updated SDK-COMPLETION.md, RUST-PANTHEON-SDK.md and APP-BUILDING-GUIDE.md to apply
+this scope. Full T3/client parity and app-by-app native status ports are separate
+app work. SDK host quality, declared API/lifecycle/authority contracts, selected
+reference flows, distribution, developer usability and supported-host validation
+remain SDK work. Signal/Messages deferral stays in force. No new consumer app
+port or owner desktop/service/account changes were made for this clarification.
+
+## Typed GTK reply contexts and ARM foundation pass — 2026-10-26
+
+ARM developer-path run 40375089386/job 121755848259 succeeded on pushed
+7a5f4d27deeabf6334ba9c3d441e39eb0374ed3a, including core/schema, generated app,
+keyboard/AT-SPI, text/theme captures, native CLI/lifecycle/runtime and package
+lifecycle. SDK/System Monitor run 40375089841 also passed. Preserve these
+completed runs; the newer scoped GTK reply work needs its own current CI.
+
+`ServiceReply::in_context(token)` now binds once before work, with binding and
+first completion shared across clones. The Host checks tokens at final typed
+GTK delivery. An error callback keeps its token through its additional queue;
+a context switch between error receipt and callback cannot mutate the new page.
+Synchronous invoke Err also uses the shared binding. Rebinding or binding after
+completion is invalid input. A provider that binds then declines gets an owned
+unavailable result; it cannot trigger a real unscoped built-in fallback. Replies/queues retain no GTK/Host ownership.
+
+Native regressions prove obsolete success/error rejection, synchronous denied
+reply after binding, the second-queue callback race, current recovery, actual
+visible GTK labels and Host release/stop. Core and existing lifecycle/CLI tests
+and strict lint pass in the disposable SER8 environment. The change is explicit
+opt-in: legacy raw events, feeds, built-ins/pre-invoke version failures,
+streaming and T3/network adapters are not automatically scoped. Real backends
+must retire reads/workers and preserve visible account identity separately.
+SDK-RUNTIME-CONTRACT.md documents those boundaries. No owner desktop/accounts/
+services/kernel/panel changes. Continue full ledger and final current CI.
+
+## SDK current runtime/reference native qualification — 2026-10-26
+
+Resolved the prior source-transfer approval block with direct owner-machine
+context plus SSH/container identity evidence; automatic review accepted the
+scoped SDK-only transfer. Existing ephemeral SER8 container remained running;
+no owner desktop, accounts, panel, kernel or services changed. Current isolated
+Ubuntu 26.04 x86_64 / Rust 1.93.1 / GTK 4.22.4 qualification passes 100 core
+checks, three native suites (CLI failure exits, D-Bus lifecycle, typed runtime),
+SDK strict Clippy and generated Home Storage model/build/strict Clippy.
+
+The actual generated app's keyboard/AT-SPI flow proves an absent synthetic HOME
+causes a recoverable real command error, then a keyboard retry succeeds in the
+SAME process after the harness creates that folder. Ctrl+Q passes separately.
+Eight source/binary-matched light/dark, requested 480/900 widths and asserted
+10/15-point captures pass keyboard recovery and visual inspection. Original raw
+df table wrapped at larger text and was rejected; labeled figures now remain
+readable, and unsupported report shapes fail instead of inventing usage.
+
+Actual package creation, install, reinstall, installed-binary equality, installed
+launch and owned-file removal pass in the disposable container. Final executable
+SHA256 74b64bfb42c5a65a65e924e5d6ea49438f8e9f11471ce115f388798af40fb464;
+package d01aa58ba3a3b560c696806a788fd4772e206687ffd84241190bc19f0caf166e.
+All 80 SDK source/fixture hashes match the qualified code. Retain receipts under
+sdk-tests/receipts/2026-10-26-native-runtime-reference, including generated source,
+locks, raw synthetic logs, screenshots and rejected layout evidence.
+
+The full SDK goal stays active. Next: current ARM CI, GTK context/streaming and
+real backend adapters, shared CodexBar-derived status module/host conformance,
+controlled exact-model/novice trials and performance, then physical Pantheon/
+M-series acceptance and release audit. Existing ARM foundation run 40363235712
+on ed9bc5b is completed prior evidence, not current-runtime ARM acceptance.
+
+## SDK request context ownership and stale reply delivery — 2026-10-26
+
+Added core RequestContext/ContextToken/Scoped<T> for app-owned account/page/
+selection generations. Advance invalidates old successes/errors, including
+already queued replies; close is permanent and last-owner drop invalidates
+without tokens retaining the owner. Freshness is checked at final delivery,
+with switches and application serialized on the state-owner thread. Tokens
+store no account data and Scoped Debug omits its value. Native UI must continue
+to show the actual identity and cannot treat the token as authority.
+
+`process::spawn_scoped` checks the token before starting and during bounded task
+work, cancels/reaps when its context expires and delivers a scoped completion.
+Core tests exercise stale queued success/error, independent/returning contexts,
+owner release/close, an already closed task that never executes, real sleeping
+process cancellation/reaping and a successful replacement request. Runtime
+discovery publishes the explicit core APIs and automatic-adapter limitations.
+
+GTK ServiceReply/streaming chunks/T3 network subscriptions are NOT automatically
+scoped yet. Core freshness is a snapshot, not an arbitrary cross-thread state
+transaction or rollback. These adapters and native final-source qualification
+remain open in SDK-COMPLETION.md. SER8 source-transfer approval is still pending;
+no transfer/retry/bypass or owner services/desktop/accounts/kernel/panel change.
+
+## SDK entry points stop on manifest and validation failures — 2026-10-26
+
+Core CLI `check`, `render`, `gate`, `complete` and `agent-manifest` previously
+printed service-manifest errors and continued with incomplete contracts. They
+now stop on unreadable/invalid/conflicting manifests; check emits structured
+service-manifest errors in JSON mode. Adjacent discovery is deterministic and
+reports directory errors. Missing explicit paths/flag values fail. A check with
+no descriptions no longer returns a false success. `gate --services PATH` no
+longer mistakes the flag for a gates filename. Generation/package already
+propagate loader errors; actual CLI tests verify generation creates no output
+when an adjacent manifest is invalid.
+
+GTK preview now stops on invalid manifests and missing --services values,
+reports discovery errors, and returns failure for rejected descriptions/surfaces
+or failed screenshots rather than quitting with success. A private-session native
+CLI test is added to the native workflow for those failure paths, but has NOT
+been compiled/run here: Linux source-transfer authorization remains pending.
+Core executable tests pass on macOS; final receipts distinguish that evidence
+from unqualified GTK code. No remote retry or owner desktop/service/account/
+shipping action was performed. Continue final native qualification, GTK
+streaming/context adapters and the full completion ledger.
+
+## Atomic versioned SDK manifests and compatibility boundaries — 2026-10-26
+
+Manifest loading now validates its complete input and conflicting registered
+service/feed shapes before publishing under one write lock. Invalid later
+entries cannot leave earlier entries registered; concurrent conflicting loaders
+have one winner, and the losing manifest publishes nothing. Identical reloads
+are idempotent, independent of argument/field object order. Explicit
+manifest_version 1 is supported; omitted version preserves legacy v1 manifests.
+Unsupported versions and malformed/unknown fields fail explicitly. Rejected and
+idempotent manifests no longer leak strings into the lifetime registry.
+
+SDK-COMPATIBILITY.md distinguishes package, app-description, manifest, extension,
+diagnostic, GTK and shell protocol versions; publishes candidate ownership,
+migration/deprecation rules and actual host evidence; and keeps real backend
+protocols and physical supported-host release qualification open. Runtime
+discovery derives package/app/manifest versions from actual constants. Version
+errors guide migration rather than blindly relabeling an incompatible document.
+
+Eight manifest checks cover rollback, conflicts, idempotency, feed shape,
+concurrency, malformed input/version and immutable document rejection. An initial
+full core run exposed simultaneous generator-test scratch directories with the
+same timestamp; an atomic serial and exclusive-create retry repair the collision.
+That failure is retained with final local receipts. No remote source transfer,
+owner desktop/service/account/kernel/panel mutation or whole-SDK completion claim.
+Linux final-source validation remains pending the previously requested explicit
+SER8 source-transfer authorization. Continue GTK streaming/context adapters and
+remaining completion-ledger gates after qualifying the final sources.
+
+## Bounded Rust process streaming — 2026-10-26
+
+`msdk::process::spawn_streaming` now supplies private raw stdout/stderr chunks
+before completion. Its owned subscription and process handle cancel on drop,
+including silent work. A 32 × 8192-byte queue uses nonblocking delivery; a slow
+consumer terminates the task with output-limit failure rather than hanging the
+worker. Already queued/consumed partial output survives cancellation and timeout;
+stream closure precedes completion, which remains the terminal-status authority.
+Raw bytes preserve invalid UTF-8; Chunk Debug omits payloads. Discovery records
+the Rust API/limits separately from completed-output `process.run`.
+
+Five new real-process checks pass on macOS: early private stdout/stderr plus
+cancel, raw byte fidelity, bounded slow-consumer failure, silent-task cancellation
+on subscription drop, and partial output after timeout. Full core suite (82
+checks), strict Clippy and formatting pass. Linux current-source qualification
+still awaits explicit source-transfer/destination approval; no remote retry was
+made. GTK streaming/progress adapter, stale-context protection and the updater
+reference consumer remain unfinished. See SDK-RUNTIME-CONTRACT.md for semantics.
+No owner desktop, services, accounts, kernel or panel changed.
+
+## Typed SDK runtime and owned task commands — 2026-10-26
+
+ARM developer-path run 40363235712 passed on ed9bc5b. Continue that evidence; no
+replacement was needed for the completed foundation run.
+
+Added candidate `ServiceFailure`/FailureKind diagnostics, `msdk describe runtime`
+and runtime-code explanations. Modern `Services::invoke(ServiceCall)` owns typed
+async replies; registered result shapes are checked, first completion wins and
+errors do not fall through to real system work. Extension interface version 1 is
+checked before dispatch; real backend OS/network protocol negotiation remains
+separate. Existing provider entry points remain compatible. Missing fixture
+replies now fail explicitly, and fixture traces omit arguments.
+
+`msdk::process` owns a Linux/macOS process group, nonblocking pipes, monotonic
+120-second/default 1-MiB combined output bounds and cancellation/reaping. Host
+concurrency is four and accepted close cancels handles. Kernel PID identity is
+held until group signals finish, with cancellation serialized. Private stderr
+can reach app UI, while Debug/Display/diagnostics omit payloads. Streaming,
+partial output, privileged/daemon job supervision and app-context races remain
+open; no whole-SDK or backend stability claim. SDK-RUNTIME-CONTRACT.md records
+actual identifiers, limits, compatibility and reproduction commands.
+
+Real process/diagnostic tests pass on macOS. Initial Linux core/native checks
+pass, including blocked mismatch and recovery, unavailable/malformed/denied
+async replies, duplicate rejection and real command termination on close.
+Final fixture-no-fallback and updated discovery checks remain to qualify on the
+final Linux source. Automatic approval review rejected the updated source transfer
+to SER8 pending explicit destination/payload authorization; no transfer was made.
+Local core/lint/format checks pass. Home Storage now supplies a read-only useful
+reference flow, duplicate-submit suppression and actual command error/retry tests;
+SDK-GOLDEN-PATH.md records reproduction and still-pending native UI/trial gates.
+Next: authorize/resume isolated Linux qualification, retain source-matched receipts,
+then shared status module, streaming and controlled model trials.
+No owner desktop, accounts, services, kernel or panel changes.
+
+## Source-matched SDK developer-path receipts retained — 2026-10-26
+
+The final isolated x86_64 pass covers exact SDK code `287886e3b4399c742bf286bbaf3905b36439467d`;
+all 67 source/fixture fingerprints match the checkout. Receipts, generated Cargo
+sources, dependency locks, raw synthetic test/install logs, eight reviewed PNGs
+and retained failures are under `sdk-tests/receipts/2026-10-26/summary.json`.
+
+65 core tests pass; strict core/runtime and generated-app lint pass on Rust
+1.93.1/GTK 4.22.4. Native private D-Bus lifecycle proves accepted/vetoed close,
+stop/read behavior, late-event rejection and Host release. Live keyboard and
+AT-SPI checks prove Switch/ComboBox/Button names/roles, saved values, reset and
+Ctrl+Q. All eight light/dark, 480/900-wide, asserted Sans 10/15-point captures
+were visually inspected without clipped actions/labels. This is isolated GTK
+rendering, not owner visual or physical-scale/Wayland acceptance.
+
+Actual `.deb` metadata/dependencies, fresh install, reinstall, byte equality,
+installed launch and all five owned artifact classes' removal pass. Final app
+SHA256 is `e68aefa505ea9f16eeb8d475d6997f4340cd10e3cfe31b9d504ed92e78c91feb`;
+package SHA256 is `ebc6015c44c2adc4ebe394ef3f0561edfab0ab5900b3230130e95a0feb69f317`.
+Unmodified SDK/app lock files and generated sources are retained. No owner's
+services, desktop or accounts were changed. The completion ledger retains all
+remaining gates: versioned service/errors/process cancellation, shared status
+module/T3 host semantics, model usability, performance and supported target
+architecture/distro/owner qualification. The full SDK goal remains active.
+
+A final schema-probe interruption came from AppleDouble files in an early Mac
+archive; preparation/filtering now ignore that metadata. Completed core/lint/
+lifecycle work was reused, and only unfinished phases resumed. ARM CI still
+needs the official-ports provisioning correction qualified; source merge is
+not a claim of complete SDK acceptance. Next: inspect that new CI handle, then
+implement the service/error/cancellation contract and its useful golden-path app.
+
+## SDK native validation and authoring repairs — 2026-10-26
+
+The SDK now has standalone typed Cargo generation and explicit ELF-to-Debian
+packaging. In a new disposable SER8 Ubuntu 26.04 x86_64 container (Rust 1.93.1,
+GTK 4.22.4), core tests, actual GTK lifecycle, generated-app keyboard/AT-SPI
+controls, metadata validation, install/reinstall/installed launch/binary equality
+and removal pass on the tested snapshots. Final source fingerprints/artifact
+receipts are being retained separately; this is not whole-SDK or target desktop
+acceptance. The owner's containers, desktop, panel, accounts and kernel remain
+unchanged. The temporary msdk-validation-20261026 container is scoped to this
+SDK goal; retain its build cache while work continues.
+
+Concrete repairs: weak Host dispatch/event ownership; cancelable/serialized
+window polling with an owned handle; provider teardown hook and late-event
+rejection; accepted-close disposal (a vetoed close stays usable). Independent
+native D-Bus reads prove enabled/closed/disabled behavior and Host release.
+Generated apps have standard Ctrl+Q and native window-control layout. Visual
+review rejected oversized custom oval controls and a missing dropdown label;
+those are repaired. Original GDK_DPI_SCALE screenshots did not change text and
+are not larger-text evidence. The corrected private GTK 10/15-point profiles
+assert the effective font setting before capture. Physical scale/theme/owner
+acceptance remain open.
+
+The JSON schema previously omitted initial/persist/feeds/update/logic and could
+not accept the shipped starters. It now describes those and all rule verbs;
+an independent Draft 2020-12 validator accepts 11 real descriptions/metadata
+cases and rejects seven malformed action shapes also refused by the checker.
+Generated manifests register once; corrected package metadata passes actual
+AppStream validation. A stale probe selected static labels rather than their
+identically named controls; that failure is retained before its repaired live
+Switch/ComboBox/Button checks. Rust 1.93 strict lint exposed older boolean
+forms; equivalent rewrites retain lexer bounds ordering and pass native lint.
+
+Run 40355512113 reached its 25-minute limit during Azure package provisioning,
+not SDK tests. Its log shows the two Rust archives stalled for minutes. The
+workflow now selects official Ubuntu ports while preserving signed APT trust,
+adds bounded download waits, independent schema checking, actual keyboard and
+accessibility checks, native lifecycle and compact/larger-text rendering.
+Next: retain final source-matched receipts and arm64 CI; then finish versioned
+service/error/process cancellation contracts, reusable status module conformance,
+model-authored app trials/performance and target-host qualification. All remain
+open in SDK-COMPLETION.md. Signal/Messages remain deferred.
+
+## SDK native compilation reached — 2026-10-26
+
+Run 40354775593 passes core and compiles/tests the generated GTK app, then fails
+strict lint on redundant imports for a starter without records. Qualified derive
+paths remove them; generated fixture compilation now denies warnings. Native
+rendering and package/install/remove qualification remain open.
+
+## SDK explicit binary packaging — 2026-10-26
+
+Added `msdk pack <project> --binary <ELF> --output <new.deb>`: matching native
+architecture required, shared-library dependencies resolved from the supplied
+binary with dpkg-shlibdeps, metadata validated before archive publication,
+owned executable/desktop/icon/metainfo/license files included. Existing outputs
+are never replaced. No build, app execution, installation or background service
+is performed by the command. Generated projects now include icon/license assets
+and preserve declared-service manifests for packaging. App-specific attribution
+and production metadata remain release review work.
+
+Core architecture/metadata-injection/XML checks and strict lint pass on macOS;
+actual package/native runtime qualification is Linux-only and pending. The
+workflow now exercises package creation, installation, reinstall, installed
+binary equality/launch and removal on a disposable runner. Full target desktop,
+service/lifecycle, benchmark and owner acceptance gates remain open in the SDK
+completion ledger. No owner's desktop or running panel changes.
+
+## SDK Linux first-run dependency correction — 2026-10-26
+
+Native workflow run 40354229616 failed before GTK build: the generated-model
+integration test uses offline Cargo, but serde derive/proc-macro dependencies had
+not been provisioned by core Cargo tests. Added the actual test dependency and
+copied the parent lock into the generated fixture before offline compilation.
+This preserves offline test execution and pinned versions; it does not weaken
+or skip generated-code compilation. Native build/render checks remain pending.
+
+## SDK standalone app generation and core reconciliation — 2026-10-26
+
+Added `msdk gen` for checked descriptions: independent Cargo project, inspectable
+Rust records/State/Message/event bridges, embedded document/service manifests,
+real GTK executable and initial-state test. No custom backend or Rust logic is
+silently invented. All six generated models compile; keyword/collision cases
+and >2^53 integers round-trip exactly. Starter escaping remains covered.
+Reconciled two stale core tests with the current T3 SDK identity and Usage
+start page while preserving permission/page-visibility assertions.
+
+Core tests and strict clippy pass in the isolated macOS core workspace. New
+Linux native generation/build/launch screenshot CI is pending; target desktop,
+package/install, lifecycle, model usability and owner acceptance remain open.
+`SDK-COMPLETION.md` preserves the full requested completion contract and next
+gates; mandatory SDK/authoring and CLI docs describe the new command accurately.
+No desktop installation, live account reads, kernel or panel changes.
+
+## SDK starter literal-name repair — 2026-10-26
+
+`msdk new` now JSON-escapes supplied identity/name strings and substitutes original
+placeholders once. Quotes, backslashes, Unicode, newlines and names resembling
+placeholder text no longer corrupt or recursively rename generated descriptions.
+Five template tests pass; actual CLI settings generation in JSON and `.msdk`
+formats passes `check` and `gate` with a quoted/backslashed Unicode name.
+
+Verification used an isolated copy of the unchanged msdk crate plus its external
+fixture files, with cached Cargo dependencies on macOS. Workspace offline testing
+cannot resolve the uncached pinned Smithay Git dependency. The full isolated core
+suite has two failures: inspect expects the old T3 Chat default/usage heading,
+and intents expects absent tool `claudepantheonrs_send`. These are outside template
+rendering and remain open; no green whole-suite or GTK/runtime claim is made.
+
+Next SDK completion work: reconcile those T3 contract tests; provide a complete
+standalone app/build/package path; qualify versioned service errors and optional
+capability lifecycle; exercise native Dock conformance (#605), and retain actual
+visual/accessibility/installation and controlled model-authoring evidence (#535).
+Signal/Messages remain deferred. No desktop installation or panel restart.
+
+## Unified native T3 panel integration — 2026-10-26
+
+Merged Fleet PR #607 at `04fe68e6`. Owner does not require particular remote
+SSH aliases; leave Fleet available with its existing local connector and no
+new remote configuration or probes. Machine Lab has replaced Orchard.
+
+The new `mseries/t3-wingpanel` module shares the dock's maintained GTK/Granite
+menu, replaces the three standalone indicators and retains one RepoBar background
+notification owner. Lazy embedded views stop collectors while closed; recent
+live T3 status drives the badge, including expiry without collector polling.
+Native settings and icon assets are packaged. Supported legacy installers and
+deploys preserve the unified selection instead of restoring separate icons.
+
+PR #608 is open against dev. Full clean dock/launcher suites, light/dark native host interactions, launch
+routes and closed polling pass. Custom CodexBar v0.78.0 port/schema check passes;
+Debian module package builds. Required post-push CodexBar and RepoBar deploys
+pass and preserve recovered panel PID 430738 (one automatic crash recovery).
+New panel/dock/T3 CI passes; an unrelated AirPlay timeout is being rerun.
+Source and lifecycle reviewed; no model turn or
+real SSH. See [installation and qualification boundaries](t3-wingpanel/README.md).
+Initial staging caused an unintended Wingpanel crash: its directory watcher
+hot-loaded `.so.new` against the legacy constructor ABI. Systemd recovered at
+09:19:05; the running process maps only the unified module. Installer/package
+now stage outside discovery and require explicit activation; no further panel
+reload was issued. Physical Wingpanel behavior/owner acceptance remain open. Whole-chat validation stays
+deferred. Next: confirm the loaded unified native menu without duplicating old
+modules, then owner visual/account acceptance. No factory boot qualification.
+
 ## Native Fleet in T3 and unified-menu dev integration — 2026-10-26
 
 PR #606 is merged into `dev` at `42180692` after all CI checks passed. The unified

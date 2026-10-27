@@ -8,6 +8,13 @@ The owner rejected the result. Both apps are incomplete and deferred.
 
 ## First establish what the person will experience
 
+The owner clarified on 2026-10-26 that not every app needs a native experience.
+Choose the UI architecture for the actual product journey: existing web UI,
+wrapper, webview/hybrid or native controls as appropriate. SDK completion needs
+reusable capabilities and representative integration proof, not native rewrites
+of every app or full feature parity with every existing client. Do not promise
+a WebView vocabulary component or other integration that has not been shipped.
+
 Write a short outcome contract before implementation:
 
 - What opens, which window owns navigation, and what each primary action does.
@@ -19,6 +26,14 @@ Write a short outcome contract before implementation:
 Use the user's existing decisions. Clarify only material unresolved choices;
 continue independent work while waiting. Do not substitute infrastructure or a
 passing fixture for the requested experience.
+
+For Dock/status-area work, also read [DOCK-SDK-SPEC.md](DOCK-SDK-SPEC.md).
+The native CodexBar presentation is the reference for SDK standards; its broken
+runtime is not a dependency to copy blindly. Build T3 against those standards,
+not a bespoke replacement dashboard. Identify the actual host control before
+editing: a launcher pin, top-bar indicator and bottom-right status icon are
+different surfaces. Shared data or a fixture render does not prove the requested
+control works or matches the reference.
 
 ## Show a running example early
 
@@ -37,8 +52,9 @@ necessary. Do not add recurring notifications or timers just to enforce this rul
 
 ## Use the implemented SDK authoring path
 
-Descriptions (`.msdk` or JSON), rules and declared services are the primary
-authoring path. `msdk new` already generates a description, gates and README
+For SDK-rendered native UI, descriptions (`.msdk` or JSON), rules and declared
+services are the primary authoring path. This is not a requirement to replace
+an appropriate existing frontend. `msdk new` generates a description, gates and README
 from six templates; it does not generate a complete Cargo project, backend,
 standalone executable or package. Use app-local Rust `Services`/`Logic` only
 where the supported vocabulary is insufficient; record each escape hatch and
@@ -51,9 +67,13 @@ transport, account mappings and GitHub services remain app-specific adapters.
 
 Use `cargo run -p msdk -- templates` from `rust/` to discover actual starters,
 then the CLI's `describe`, `check` and `gate` commands. Consult
-[RUST-PANTHEON-SDK.md](RUST-PANTHEON-SDK.md) for boundaries. Do not present
-proposed `msdk gen`, `msdk pack`, `msdk parity` or live introspection commands
-as available. Keep native chrome, scaling, accessibility, recoverable states,
+[RUST-PANTHEON-SDK.md](RUST-PANTHEON-SDK.md) for boundaries. Use `msdk gen <description> <new-directory> --sdk-root <checkout>/rust`
+when a standalone Cargo executable and typed models are needed. It preserves
+rules and the GTK host; custom service backends are app-owned extension points.
+Use `msdk pack <generated-project> --binary <built-ELF> --output <new.deb>`
+on the matching Linux architecture after building the intended artifact; package
+creation is separate from install/reinstall/remove and loaded-host qualification.
+Do not present proposed `msdk parity` or live introspection commands as available. Keep native chrome, scaling, accessibility, recoverable states,
 diagnostics and install/remove behavior in the delivered outcome contract.
 
 ## Keep development builds fast
@@ -92,8 +112,10 @@ Owner priority (2026-10-25): **token monitoring and RepoBar-style repository/
 GitHub integration first**, before broader T3 chat expansion. This defines the
 first qualification slice, not a reduction of #523's full-client requirements.
 Use #535 for SDK readiness and #593 for GUI/Dock usability. Signal/Messages
-remain deferred. Record supported operating modes explicitly; the owner's
-phrase “Windows and non-Windows mode” remains unresolved until clarified.
+remain deferred. Windows mode means the bottom-right taskbar status area, not
+the app launcher. Elementary mode requires the corresponding profile-owned
+status host. Both mappings and their verification are governed by
+[DOCK-SDK-SPEC.md](DOCK-SDK-SPEC.md).
 
 | Gate | Observable success condition |
 | --- | --- |
@@ -104,7 +126,7 @@ phrase “Windows and non-Windows mode” remains unresolved until clarified.
 | Write authority | Read-only inspection never files an issue, starts implementation, sends a turn or mutates Git. Explicit write actions identify repository/target and surface cancellation/failure; retries cannot silently duplicate an issue/action. Provider/model choice is separate from issue intake. Credentials stay in supported credential storage and out of logs/screenshots. |
 | Real adapters | Exercise the delivered SDK executable through its actual service/feed adapters, including denied access, missing `gh`, unavailable service and incompatible API versions. Rule gates that assert emitted effects or injected callbacks do not prove a service executed. Hide/disable explicitly unsupported actions with an explanation. |
 | Visual and accessible | Review actual compact/regular, light/dark and default/larger-text screens; no clipped primary actions or unreadable rates/quotas. Complete the primary flow keyboard-only with visible focus and correct live accessible names/roles. A semantic tree or token-contrast check is supporting evidence only. |
-| Dock and modes | Qualify launch/activation, popover ownership/dismissal, state freshness, full-window routing and app identity in the supported Dock layouts/modes; retain the detailed #523 interaction gates. Test transitions and relaunch, not launch alone. Resolve #593's mode terminology before closing that requirement. |
+| Dock and modes | Qualify the actual Windows bottom-right status control and elementary profile's corresponding host, including hover-to-click, dismissal, focus, data scope, mode transitions and relaunch. Follow DOCK-SDK-SPEC.md; a new launcher pin or another window is not substitute evidence. |
 | Install and remove | Build/package/install the delivered executable, desktop entry/icons/assets and activation path; confirm source-to-installed-to-loaded identity. Uninstall retires owned launchers/services/modules/runtime state and prevents supported setup paths restoring obsolete components. State user-data retention and preserve unrelated clients/accounts. |
 | Model-built proof | Give a named moderate model the pinned SDK/spec, a clean worktree and synthetic service fixtures. Record prompt/model/runtime, commands, first/final result, repairs and every human intervention. Independently review behavior, visuals and accessibility. Keep the 30-minute first-use coding target and separately report provisioning and checkout-to-running wall time. No full-app quality claim from a generated description or first frame. |
 
@@ -120,7 +142,10 @@ parity remains separately tracked and cannot be inferred from this slice.
 
 > Read AGENTS.md, mseries/RUST-PANTHEON-SDK.md and this guide. Build [app/user
 > journey] using [existing reference]. State the visible outcome and integration
-> behavior first. Show a runnable primary flow within about 30 minutes, or report
+> behavior first. For Dock/status-area integrations, read mseries/DOCK-SDK-SPEC.md,
+> use its CodexBar-derived presentation and host contract, and bind supported
+> adapters. Do not invent an SDK module/API or claim draft #599 is an accepted
+> reference. Show a runnable primary flow within about 30 minutes, or report
 > the concrete blocker at that checkpoint. Use a fixture backend if necessary.
 > Review the actual UI early; keep progress updates centered on the user journey.
 > Use incremental debug builds, a shared cache and focused checks; avoid repeated

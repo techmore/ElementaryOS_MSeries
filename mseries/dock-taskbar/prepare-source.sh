@@ -88,3 +88,38 @@ for filename, required in {
         if token not in text:
             raise SystemExit(f'Incomplete Windows taskbar source: {filename} lacks {token}')
 PY
+
+python3 - "$source_dir/src/AppSystem/Launcher.vala" <<'PYCODE'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+s = p.read_text()
+assert s.count('new TaskbarT3RPopover (this, app)') == 1
+p.write_text(s.replace('new TaskbarT3RPopover (this, app)', 'new TaskbarT3RPopover (this, ItemManager.get_icon_size () * 7 / 12)'))
+PYCODE
+
+# Opt-in SDK status page. Default builds retain the existing status experience.
+# The prefix contains include/msdk-usage.h and lib/libmsdk_gtk.so.
+if [[ -n ${MSDK_USAGE_PREFIX:-} ]]; then
+  [[ $MSDK_USAGE_PREFIX = /* && -f $MSDK_USAGE_PREFIX/include/msdk-usage.h && -f $MSDK_USAGE_PREFIX/lib/libmsdk_gtk.so ]] || {
+    echo 'MSDK_USAGE_PREFIX must be an absolute SDK prefix with its header and library' >&2
+    exit 1
+  }
+  cp "$repo/mseries/sdk-status-host/UsagePage.vala" "$source_dir/src/SdkUsagePage.vala"
+  cp "$repo/mseries/sdk-status-host/msdk-usage.vapi" "$source_dir/src/msdk-usage.vapi"
+  python3 - "$source_dir/src/meson.build" "$MSDK_USAGE_PREFIX" <<'PYSDK'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+prefix = Path(sys.argv[2])
+s = p.read_text()
+marker = 'executable(\n    meson.project_name(),'
+assert s.count(marker) == 1, 'Dock executable declaration changed'
+setup = f"sources += ['SdkUsagePage.vala']\ndependencies += declare_dependency(compile_args: ['-I' + {str(prefix / 'include')!r}], link_args: ['-L' + {str(prefix / 'lib')!r}, '-lmsdk_gtk', '-Wl,-rpath,' + {str(prefix / 'lib')!r}])\n\n"
+s = s.replace(marker, setup + marker, 1)
+target = '    dependencies: dependencies,\n    install: true'
+assert s.count(target) == 1, 'Dock executable dependency declaration changed'
+s = s.replace(target, "    dependencies: dependencies,\n    vala_args: ['--define=MSDK_STATUS_HOST', '--vapidir=' + meson.current_source_dir(), '--pkg=msdk-usage'],\n    install: true", 1)
+p.write_text(s)
+PYSDK
+fi

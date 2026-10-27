@@ -8,6 +8,12 @@ src="$repo/mseries/codexbar-wingpanel"
 
 if [[ ${1:-} == --uninstall ]]; then
   indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
+  if [[ -f "$indicators_dir/libmseries-t3.so" || -f "$indicators_dir/../mseries-pending-indicators/libmseries-t3.so" ]]; then
+    sudo rm -f "$indicators_dir/libcodexbar.so"
+    echo 'Standalone module retired; shared settings, helpers and icons retained for T3.'
+    exit 0
+  fi
+  indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
   sudo rm -f "$indicators_dir/libcodexbar.so"
   source "$repo/mseries/lib-codexbar.sh"
   for mark in "${CODEXBAR_MARKS[@]}"; do
@@ -40,7 +46,10 @@ done
 
 build_dir=$(mktemp -d "${TMPDIR:-/tmp}/codexbar-wingpanel.XXXXXX")
 trap 'rm -rf "$build_dir"' EXIT
-meson setup "$build_dir" "$src" --prefix=/usr
+indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
+install_indicator=true
+[[ ! -f "$indicators_dir/libmseries-t3.so" && ! -f "$indicators_dir/../mseries-pending-indicators/libmseries-t3.so" ]] || install_indicator=false
+meson setup "$build_dir" "$src" --prefix=/usr -Dinstall_indicator="$install_indicator"
 ninja -C "$build_dir"
 meson test -C "$build_dir" --print-errorlogs
 sudo ninja -C "$build_dir" install
@@ -49,3 +58,7 @@ if command -v gtk-update-icon-cache >/dev/null; then
   sudo gtk-update-icon-cache -f /usr/share/icons/hicolor
 fi
 echo 'Installed CodexBar in Wingpanel. The dropdown shows compact quota rows with reset times, pace tooltips, and account actions.'
+
+if [[ $install_indicator == false ]]; then
+  bash "$repo/mseries/install-t3-wingpanel.sh"
+fi

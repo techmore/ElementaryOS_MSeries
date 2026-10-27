@@ -17,7 +17,7 @@ Hover opens after 250 ms without stealing typing focus; click pins/toggles;
 leaving waits 450 ms. Native buttons provide keyboard activation and Escape or
 outside-click dismisses an interactive menu. All pages share one theme/text scale
 and a bounded scroll viewport. The floating Dock's T3 launcher uses the same menu.
-The separate top-panel indicators are unchanged by this taskbar-first cutover.
+The native top-panel host now shares this menu; see [T3 Wingpanel](../t3-wingpanel/README.md) for staged installation and legacy module retirement.
 
 `test-build.sh` compiles the whole pinned dock and runs the production launcher
 qualification plus `test-unified.sh`, using private buses, HOME and fake helpers.

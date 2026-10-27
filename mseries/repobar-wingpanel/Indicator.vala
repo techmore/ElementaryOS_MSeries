@@ -203,6 +203,8 @@ namespace MSeries {
             actions.append (make_dock_button ("Your pull requests", kind_icon ("pull"), "/pulls"));
             actions.append (make_dock_button ("Your issues", kind_icon ("issue"), "/issues"));
             settings_executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "mseries-repobar-settings");
+            if (!FileUtils.test (settings_executable, FileTest.IS_EXECUTABLE))
+                settings_executable = Environment.find_program_in_path ("mseries-repobar-settings") ?? settings_executable;
             var settings_button = new Gtk.Button () {
                 child = new Gtk.Image.from_icon_name ("preferences-system-symbolic") { pixel_size = 18 },
                 tooltip_text = "RepoBar Settings…"
