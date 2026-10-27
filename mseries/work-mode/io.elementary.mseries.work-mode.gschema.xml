@@ -56,9 +56,9 @@
         <choice value="windows"/>
         <choice value="unchanged"/>
       </choices>
-      <default>'windows'</default>
+      <default>'unchanged'</default>
       <summary>Window buttons</summary>
-      <description>'windows' puts minimize, maximize and close on the right of every window title bar while Windows Work Mode is active and restores your layout when it ends. 'unchanged' keeps your own layout.</description>
+      <description>'unchanged' (the default) keeps your own layout, so the Mac-style buttons stay on the left. 'windows' puts minimize, maximize and close on the right of every window title bar while Windows Work Mode is active and restores your layout when it ends.</description>
     </key>
   </schema>
 </schemalist>
