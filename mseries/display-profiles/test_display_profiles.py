@@ -23,6 +23,14 @@ def raw(ext_connector="HDMI-1", with_ext=True, ext_mode="3840x2160@30.000"):
     return (1, mons, logical, {})
 
 
+def raw_missing_edid(ext_connector="DP-2"):
+    state = raw(ext_connector=ext_connector)
+    serial, mons, logical, props = state
+    _old_spec, modes, monitor_props = mons[1]
+    mons[1] = ((ext_connector, "Apple", ext_connector, "Unknown"), modes, monitor_props)
+    return serial, mons, logical, props
+
+
 class Profiles(unittest.TestCase):
     def setUp(self):
         _s, self.mons, self.lms = dp.parse_state(raw())
@@ -44,6 +52,21 @@ class Profiles(unittest.TestCase):
         self.assertEqual([m[0] for lm in cfg for m in lm[5]], ["eDP-1", "DP-2"])
         self.assertEqual(cfg[1][5][0][1], "3840x2160@30.000")
         self.assertEqual(cfg[1][:2], (1512, 0))
+
+    def test_missing_edid_uses_only_saved_connector_fallback(self):
+        _s, known, logical = dp.parse_state(raw(ext_connector="DP-2"))
+        profile = {"match": dp.externals(known), "layout": dp.snapshot(known, logical)}
+        _s, missing, _l = dp.parse_state(raw_missing_edid("DP-2"))
+        self.assertEqual(dp.pick_profile({"aoc-dock": profile}, missing), "aoc-dock")
+        cfg = dp.build_config(profile, missing)
+        self.assertEqual([m[0] for lm in cfg for m in lm[5]], ["eDP-1", "DP-2"])
+        self.assertEqual(cfg[1][:2], (1512, 0))
+
+    def test_missing_edid_on_another_connector_does_not_guess_profile(self):
+        _s, known, logical = dp.parse_state(raw(ext_connector="DP-2"))
+        profile = {"match": dp.externals(known), "layout": dp.snapshot(known, logical)}
+        _s, missing, _l = dp.parse_state(raw_missing_edid("DP-3"))
+        self.assertIsNone(dp.pick_profile({"aoc-dock": profile}, missing))
 
     def test_missing_mode_falls_back_to_preferred(self):
         p = {"match": [], "layout": [{"x": 0, "y": 0, "scale": 1.0, "transform": 0, "primary": True,
