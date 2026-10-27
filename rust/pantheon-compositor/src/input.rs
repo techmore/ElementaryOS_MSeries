@@ -140,9 +140,10 @@ impl PantheonCompositor {
                             state.request_native_redraw(); state.request_winit_redraw();
                             return FilterResult::Intercept(());
                         }
+                        // Command is Ctrl here (ctrl:swap_lwin_lctl), so Ctrl or Super works.
                         if key_state == smithay::backend::input::KeyState::Pressed
-                            && !state.session_locked && modifiers.logo && modifiers.shift
-                            && !modifiers.ctrl && !modifiers.alt
+                            && !state.session_locked && (modifiers.logo != modifiers.ctrl) && modifiers.shift
+                            && !modifiers.alt
                             && matches!(keysym.modified_sym().raw(), smithay::input::keyboard::xkb::keysyms::KEY_4 | smithay::input::keyboard::xkb::keysyms::KEY_dollar)
                         {
                             let point = state.seat.get_pointer().unwrap().current_location();
@@ -151,8 +152,8 @@ impl PantheonCompositor {
                             return FilterResult::Intercept(());
                         }
                         if key_state == smithay::backend::input::KeyState::Pressed
-                            && !state.session_locked && modifiers.logo && modifiers.shift
-                            && !modifiers.ctrl && !modifiers.alt
+                            && !state.session_locked && (modifiers.logo != modifiers.ctrl) && modifiers.shift
+                            && !modifiers.alt
                             && matches!(keysym.modified_sym().raw(),
                                 smithay::input::keyboard::xkb::keysyms::KEY_3 |
                                 smithay::input::keyboard::xkb::keysyms::KEY_numbersign)
