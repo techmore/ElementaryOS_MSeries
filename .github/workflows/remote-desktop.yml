@@ -8,6 +8,10 @@ on:
       - mseries/dock-taskbar/**
       - mseries/patches/dock-taskbar-remote.patch
       - .github/workflows/remote-desktop.yml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   rust:
     name: Rust core, loopback WebRTC, D-Bus smoke
