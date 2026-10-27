@@ -1,3 +1,42 @@
+## Unified MSeries maintenance update — 2026-10-26
+
+Current `dev` is `04fe68e613a78634fad7dfb4a632719187f18f67` after PR #607; PR #606
+is also integrated. PR #607's build and validation checks passed, though GitHub
+records no review. Remote compatibility and owner acceptance remain open.
+The scheduled upstream watch run [40327523535](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40327523535)
+on prior `dev` `42180692a9ebac06c0732ec2933e13cb60c6e108` failed at **Update
+upstream dashboard** with the existing 65,000-byte issue-body guard; the workflow
+still preserved its public branch-head artifact. This repeats the size failure
+from run [40270963184](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40270963184).
+No manual retry or duplicate watcher was started, and the public issue was not
+changed by this maintenance pass.
+
+Resumed PR #598, which compacts watcher snapshot/pending state while retaining
+the original pending revision and migrating legacy `{from, to}` entries. The
+last read-only render of retained issue state preserved 378 snapshots and 173
+pending changes in 50,425 bytes. Refreshed the isolated branch onto current
+`dev`; `bash mseries/validate.sh --only local-ai` passes all 3 checks, Python
+compilation and `git diff --check` pass. Current-head PR checks will run after
+the refreshed push; review is still required, so the PR remains open and
+unmerged. Next: review that refreshed head, then rely on the next scheduled
+watch run to verify it after integration.
+
+Daily Pages deployment [40327769060](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40327769060)
+succeeded for the exact current `dev` SHA. Live `index.html`,
+`build-status.html` and `build-status.js` returned HTTP 200 and byte-match
+source. No status-page change was needed.
+
+Reused the existing J314S evidence: the October 21 wip2 trial has owner-confirmed
+picture on all three USB-C ports; the October 22 wip3 trial still has one
+no-picture observation without same-port recovery; VRR activation remains brief
+(3/25 samples), not sustained qualification. No kernel, boot, dock, display,
+audio, power-policy or desktop state was changed, and no factory image was
+assembled or booted. One medium `tokio` Dependabot alert remains open; PR #585's
+checks pass but it has no review. PR #607 is integrated into `dev`, with its
+build and validation checks passing; no review was recorded and remote/owner
+acceptance remains open. No dependency change was included in this focused
+update.
+
 ## Candidate anchor hover failure — 2026-10-26
 
 SDK desktop-host ARM workflow 40418084280 passed on attempt 2 at 64ca2db, including C/Vala host boundaries, shared T3 menu in hosted and dock modes with synthetic neighbors, and SDK/package checks. Attempt 1 passed host checks but its later private display failed to open; see `sdk-tests/receipts/2026-10-26-desktop-host-ci/`. Real desktop builds, installation, target GTK compatibility and owner acceptance remain open.

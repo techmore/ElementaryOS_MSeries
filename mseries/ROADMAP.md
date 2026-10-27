@@ -965,6 +965,26 @@ passes isolated Wayland open/close + four-transition lifecycle checks; final
 loaded dock reports nine running apps. Broader #593 acceptance and owner visual
 review remain open.
 
+## Public upstream watcher — 2026-10-26
+
+Scheduled run [40327523535](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40327523535)
+on prior `dev` `42180692a9ebac06c0732ec2933e13cb60c6e108` again hit the
+65,000-byte dashboard issue guard; its public branch-head artifact was preserved.
+PR #607 then merged into current `dev` at `04fe68e613a78634fad7dfb4a632719187f18f67`
+with build/validation checks passing; GitHub has no review record, and remote
+compatibility/owner acceptance remain open. Do not manually duplicate the
+scheduled watcher. PR #598 now carries the compact snapshot/pending-state
+migration and regression coverage, rebased on current `dev`. Its local-ai
+validation passes 3/3; current-head CI and review remain pending. The last
+read-only render retained 378 snapshots and 173 pending changes at 50,425 bytes.
+
+Pages deployment [40327769060](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40327769060)
+successfully published exact `dev` source; all three live status assets match
+their source bytes. Existing J314S dock/VRR evidence is reused; no hardware or
+image acceptance is implied. The medium `tokio` alert remains open with passing,
+unreviewed PR #585. Next: review the refreshed #598, merge only after current
+checks and required review, then inspect the next scheduled watch run.
+
 ## Owner-priority SDK/T3 qualification queue — 2026-10-25
 
 - #596: first qualify native T3 token monitoring and RepoBar-derived GitHub
