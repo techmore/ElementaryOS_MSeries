@@ -1,5 +1,9 @@
 # elementary OS for Apple Silicon (M-series)
 
+> **Source of truth for apps:** the Rust Pantheon SDK and first-party apps are edited in
+> [techmore/mseries-sdk-apps](https://github.com/techmore/mseries-sdk-apps); their copies here are frozen
+> snapshots guarded by CI. See [mseries/REPO-OWNERSHIP.md](mseries/REPO-OWNERSHIP.md).
+
 elementary OS 9 on an M1/M2-family Mac, alongside macOS: Asahi Alarm as the boot
 layer, elementary (Pantheon) as the system you use, installed with one command,
 full-disk encryption included. Modelled on [omarchy-mac](https://github.com/omarchy-mac/omarchy-mac),
