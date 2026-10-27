@@ -223,6 +223,7 @@ check kernel 'fairydust/usb4/test-*.py' 'for f in mseries/fairydust/usb4/test-*.
 check kernel 'fairydust/usb4/tools/test-staging-tools.py' 'python3 mseries/fairydust/usb4/tools/test-staging-tools.py'
 check kernel 'boot/test-prepare-uki-kernels.py' 'python3 mseries/boot/test-prepare-uki-kernels.py'
 check kernel 'test-kernel-config.py' 'python3 mseries/test-kernel-config.py'
+check kernel 'test-kernel-pin.py' 'python3 mseries/test-kernel-pin.py'
 check kernel 'aurora unit tests' "python3 -m unittest discover -s mseries/aurora -p 'test_*.py'"
 check kernel 'aurora-sep/test_touchid_core.py' 'python3 mseries/aurora-sep/test_touchid_core.py'
 check kernel 'touchid-settings/tests/test-pam-helper.sh' 'bash mseries/touchid-settings/tests/test-pam-helper.sh'
