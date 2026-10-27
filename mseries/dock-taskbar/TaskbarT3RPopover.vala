@@ -66,7 +66,8 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             margin_end = 12
         };
 
-        pages = new Gtk.Stack () { hhomogeneous = false, vhomogeneous = false };
+        // Every tab shares one width so the menu does not resize when switching tabs.
+        pages = new Gtk.Stack () { hhomogeneous = true, vhomogeneous = false };
         var switcher = new Gtk.StackSwitcher () { stack = pages, halign = Gtk.Align.FILL, margin_top = 8, margin_start = 8, margin_end = 8 };
         var shell = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
         shell.append (switcher);
@@ -113,12 +114,12 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
 
         var token_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
         token_card.add_css_class ("taskbar-t3r-card");
-        var token_heading = new Gtk.Label ("Tokens · provider total") { xalign = 0 };
+        var token_heading = new Gtk.Label ("Tokens") { xalign = 0 };
         token_heading.add_css_class ("heading");
         token_total = new Gtk.Label ("Token history unavailable") { xalign = 0 };
         token_total.add_css_class ("title-3");
         token_counts = detail_label ("Input — · Output —\nCached input — · Reasoning —");
-        token_scope = detail_label ("Provider total across all accounts; not selected-account usage.");
+        token_scope = detail_label ("All accounts, not just the selected one");
         token_period = detail_label ("Date window unavailable · Unknown");
         token_source = detail_label ("T3 server token history · not read yet");
         token_cost = detail_label ("");
@@ -135,28 +136,17 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         var usage_heading = new Gtk.Label ("Plan windows · selected account") { xalign = 0 };
         usage_heading.add_css_class ("heading");
         root.append (usage_heading);
+        // The whole menu scrolls; a nested scroller here clipped the second plan window.
         usage_windows = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
-        root.append (new Gtk.ScrolledWindow () {
-            child = usage_windows,
-            hscrollbar_policy = Gtk.PolicyType.NEVER,
-            vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
-            propagate_natural_height = true,
-            max_content_height = 210
-        });
+        root.append (usage_windows);
 
-        var activity_title = new Gtk.Label ("Activity") { xalign = 0 };
+        // "Threads", not "Activity": the Activity button below opens Shiplog, a different view.
+        var activity_title = new Gtk.Label ("Threads") { xalign = 0 };
         activity_title.add_css_class ("heading");
         root.append (activity_title);
+        // At most three threads are listed, so no nested scroller (it hid the running thread).
         activity = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
-        var activity_scroll = new Gtk.ScrolledWindow () {
-            child = activity,
-            hscrollbar_policy = Gtk.PolicyType.NEVER,
-            vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
-            propagate_natural_height = true,
-            min_content_height = 32,
-            max_content_height = 180
-        };
-        root.append (activity_scroll);
+        root.append (activity);
 
         var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
         var usage = new Gtk.Button.with_label ("Usage");
@@ -473,7 +463,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         connection.label = "Pair with a T3 server in Settings";
         token_total.label = "Token history unavailable";
         token_counts.label = "Input — · Output —\nCached input — · Reasoning —";
-        token_scope.label = "Provider total across all accounts; not selected-account usage.";
+        token_scope.label = "All accounts, not just the selected one";
         token_period.label = "Date window unavailable · Unavailable";
         token_source.label = "T3 server token history · not read yet";
         token_cost.visible = false;
@@ -495,7 +485,18 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         if (!usage.has_member (key)) return "—";
         var node = usage.get_member (key);
         if (node.get_value_type () != typeof (int64) || node.get_int () < 0) return "—";
-        return node.get_int ().to_string ();
+        return grouped (node.get_int ());
+    }
+
+    /* 18436221 → "18,436,221": long token counts are unreadable without separators. */
+    private static string grouped (int64 value) {
+        var digits = value.to_string ();
+        var text = new StringBuilder ();
+        for (int i = 0; i < digits.length; i++) {
+            if (i > 0 && (digits.length - i) % 3 == 0) text.append_c (',');
+            text.append_c (digits[i]);
+        }
+        return text.str;
     }
 
     private void render_tokens (Json.Object feed, string selected_id, bool live) {
@@ -504,7 +505,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         if (usage == null || selected_id.length == 0) {
             token_total.label = "Token history unavailable";
             token_counts.label = "Input — · Output —\nCached input — · Reasoning —";
-            token_scope.label = "Provider total across all accounts; not selected-account usage.";
+            token_scope.label = "All accounts, not just the selected one";
             token_period.label = "Date window unavailable · Unavailable";
             token_source.label = "T3 server token history · not read yet";
             return;
@@ -520,18 +521,17 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
             token_count (usage, "cachedInputTokens"), token_count (usage, "reasoningTokens")) :
             "Input — · Output —\nCached input — · Reasoning —";
         string kind = MSeries.JsonBoundary.text (usage, "providerKind");
-        token_scope.label = (kind.length > 0 ? kind + " provider total" : "Provider total") +
-            " · all accounts\nNot selected-account usage.";
+        token_scope.label = (kind.length > 0 ? kind : "Provider") + " · all accounts, not just the selected one";
         string since = MSeries.JsonBoundary.text (usage, "sinceDay");
         string until = MSeries.JsonBoundary.text (usage, "untilDay");
         token_period.label = (since.length > 0 && until.length > 0 ? since + " – " + until :
             "Date window unavailable") + " · " + freshness;
         string read_at = MSeries.JsonBoundary.text (usage, "readAt");
         token_source.label = "T3 server token history · " +
-            (read_at.length > 0 ? "read " + read_at : "not read yet");
+            (read_at.length > 0 ? freshness_text (read_at).replace ("Updated", "read") : "not read yet");
         double cost = MSeries.JsonBoundary.number (usage, "estimatedCostUsd", -1);
         if (known && cost.is_finite () && cost >= 0) {
-            token_cost.label = "Estimated cost · $%.4f USD".printf (cost);
+            token_cost.label = "Estimated cost · $%.2f".printf (cost);
             token_cost.visible = true;
         }
     }
@@ -615,7 +615,8 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         if (!live) {
             clear_activity ();
             append_message (total == 0 ? "No live activity is available while offline." :
-                "Last sync showed %u active item(s). Reconnect to refresh.".printf (total));
+                total == 1 ? "Last sync showed 1 active thread. Reconnect to refresh." :
+                "Last sync showed %u active threads. Reconnect to refresh.".printf (total));
         } else if (total == 0) {
             append_message ("No active work right now.");
         } else if (total > 3) {
@@ -628,9 +629,8 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         string id = item.get_string_member_with_default ("id", "");
         string model = item.get_string_member_with_default ("model", "");
         int64 requests = item.has_member ("count") ? int64.max (1, item.get_int_member ("count")) : 1;
-        string detail = pending ? "Needs approval · %s request(s)".printf (requests.to_string ()) :
-            "Running";
-        if (model.length > 0) detail += " · Model: %s".printf (model);
+        string detail = !pending ? "Running" : requests == 1 ? "Needs approval" :
+            "Needs approval · %s requests".printf (requests.to_string ());
         var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
         var primary = new Gtk.Label (title) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
         var secondary = new Gtk.Label (detail) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
@@ -640,6 +640,7 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         text.append (secondary);
         if (live && id.length > 0) {
             var button = new Gtk.Button () { child = text, hexpand = true };
+            if (model.length > 0) button.tooltip_text = "Model: " + model;
             button.add_css_class ("flat");
             button.clicked.connect (() => open_thread (id));
             activity.append (button);
