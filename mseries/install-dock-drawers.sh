@@ -73,7 +73,7 @@ bash "$repo/mseries/dock-taskbar/prepare-source.sh" "$source_dir"
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 test -x "$build_dir/src/io.elementary.dock"
-for component in DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockTaskbarRepoBar DockTaskbarNotifications DockAppResolver; do
+for component in DockTaskbarT3 DockTaskbarRow DockStartMenu DockTaskbarCodexBar DockTaskbarRepoBar DockTaskbarNotifications DockTaskbarAirDrop MSeriesAirDropPanel DockAppResolver; do
   strings "$build_dir/src/io.elementary.dock" | grep -F "$component" > /dev/null
 done
 glib-compile-schemas --strict --dry-run "$source_dir/data"

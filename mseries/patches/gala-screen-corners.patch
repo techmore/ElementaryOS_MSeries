@@ -17,24 +17,24 @@ new file mode 100644
 index 0000000..8d43d90
 --- /dev/null
 +++ b/src/Widgets/ScreenCorners.vala
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,119 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0-or-later
 + * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries
 + */
 +
 +/**
-+ * Black rounded masks over the four corners of the built-in (laptop) display, so everything
-+ * on the desktop (top bar, dock, maximized and tiled windows) follows the curve of the panel
-+ * the way macOS does. External monitors are left alone. The actor is click-through and sits
-+ * above everything else in the UI group.
++ * Black masks over the four corners of the built-in (laptop) display, so desktop content
++ * follows a continuous superellipse approximation of the panel curve. External monitors are
++ * left alone. The actor is click-through and sits above everything else in the UI group.
 + *
-+ * Radius, in logical pixels, comes from the GALA_SCREEN_CORNER_RADIUS environment variable
-+ * (default 20, 0 disables the masks).
++ * Radius, in logical pixels, comes from GALA_SCREEN_CORNER_RADIUS (default 20; 0 disables).
++ * Its continuous superellipse approximation uses exponent n=4, matching Gala window clipping.
 + */
 +public class Gala.ScreenCorners : CanvasActor {
 +    private const double DEFAULT_RADIUS = 20.0;
-+    private const double FEATHER = 1.0;
++    private const double CURVE_EXPONENT = 4.0;
++    private const int CURVE_SEGMENTS = 64;
 +
 +    public Meta.Display display { get; construct; }
 +
@@ -106,27 +106,34 @@ index 0000000..8d43d90
 +        }
 +    }
 +
-+    /**
-+     * Darkens the corner square between a screen corner (cx, cy) and the quarter circle of
-+     * {@link radius}. The edge is feathered by {@link FEATHER} logical pixels either side of the
-+     * arc, so it reads as a smooth curve instead of a hard one-pixel staircase.
-+     * dx and dy point from the corner towards the inside of the screen (+1 or -1).
-+     */
++    /** Paints the corner outside the shared continuous superellipse as black. */
 +    private void corner (Cairo.Context cr, double cx, double cy, double dx, double dy) {
 +        double centre_x = cx + dx * radius;
 +        double centre_y = cy + dy * radius;
 +
-+        var gradient = new Cairo.Pattern.radial (centre_x, centre_y, double.max (0, radius - FEATHER),
-+                                                 centre_x, centre_y, radius + FEATHER);
-+        gradient.add_color_stop_rgba (0, 0, 0, 0, 0);
-+        gradient.add_color_stop_rgba (1, 0, 0, 0, 1);
-+
-+        // Confine the soft band to the corner square so it never leaks along the screen edge.
++        // Confine both operations to the corner square so the mask never leaks along a screen edge.
 +        cr.save ();
 +        cr.rectangle (dx > 0 ? cx : cx - radius, dy > 0 ? cy : cy - radius, radius, radius);
 +        cr.clip ();
-+        cr.set_source (gradient);
++        cr.set_operator (Cairo.Operator.OVER);
++        cr.set_source_rgba (0, 0, 0, 1);
 +        cr.paint ();
++
++        // Clear the inside of an n=4 superellipse. Cairo antialiases its sampled boundary.
++        cr.set_operator (Cairo.Operator.CLEAR);
++        for (int i = 0; i <= CURVE_SEGMENTS; i++) {
++            double angle = Math.PI * 0.5 * i / CURVE_SEGMENTS;
++            double x = centre_x - dx * radius * Math.pow (Math.cos (angle), 2.0 / CURVE_EXPONENT);
++            double y = centre_y - dy * radius * Math.pow (Math.sin (angle), 2.0 / CURVE_EXPONENT);
++            if (i == 0) {
++                cr.move_to (x, y);
++            } else {
++                cr.line_to (x, y);
++            }
++        }
++        cr.line_to (centre_x, centre_y);
++        cr.close_path ();
++        cr.fill ();
 +        cr.restore ();
 +    }
 +}

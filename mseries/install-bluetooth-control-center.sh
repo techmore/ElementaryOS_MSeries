@@ -41,6 +41,5 @@ if ! grep -aqF 'Bluetooth Settings' "$quick"; then
   exit 1
 fi
 mseries_backup "$plugin" io.elementary.panel.bluetooth
-sudo install -m644 "$built" "$plugin.new"
-sudo mv "$plugin.new" "$plugin"
+mseries_install_indicator 644 "$built" "$plugin"
 echo 'Bluetooth icon hidden in the session; background services and greeter retained. Reload Wingpanel to activate.'

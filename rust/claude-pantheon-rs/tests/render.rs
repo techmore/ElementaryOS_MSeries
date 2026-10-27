@@ -1,8 +1,7 @@
 //! Opens the real Claude window, waits for the offline index and (when a credential is stored) the T3
 //! server, drives it, checks what is shown and optionally writes PNGs. Needs a display:
 //!
-//!   dbus-run-session -- env -u WAYLAND_DISPLAY GDK_BACKEND=x11 GSETTINGS_BACKEND=memory GSK_RENDERER=cairo \
-//!     xvfb-run -a -s "-screen 0 1400x900x24" cargo test --release --test render
+//!   rust/claude-pantheon-rs/tests/run-render-sandbox.sh
 //!
 //! Environment:
 //!   CLAUDE_PANTHEON_SHOT=<file.png>      offline transcript view (milestone 1)
@@ -10,15 +9,101 @@
 //!   CLAUDE_PANTHEON_SHOT_M3=<file.png>   usage page (milestone 3)
 //!   CLAUDE_PANTHEON_SHOT_DIAG=<file.png> diagnostics page (milestone 4g)
 //!   CLAUDE_PANTHEON_SHOT_REPOS=<file.png> repos and issues (milestone 5), pinned repos from workflow.json
-//!   CLAUDE_PANTHEON_LIVE_SEND=1          start a real thread and wait for the answer (costs tokens)
+//!   CLAUDE_PANTHEON_LIVE_RENDER=1        opt in to the real home, keyring, T3 server and transcripts
+//!   CLAUDE_PANTHEON_LIVE_SEND=1           with LIVE_RENDER, send a real prompt (costs tokens)
+//!   CLAUDE_PANTHEON_LIVE_ROTATE=1         with LIVE_RENDER, may move a live runner task
+//!   CLAUDE_PANTHEON_TEST_MICROPHONE=1     start microphone capture during the voice probe
 //!   CLAUDE_PANTHEON_DARK=1               dark style
-//! Plain `main`, not libtest: GTK must stay on one thread.
+//! Plain `main`, not libtest: GTK must stay on one thread. The default run uses a temporary home,
+//! one checked-in transcript, and offline mode; live profile/server access needs explicit opt-in.
 
 use claude_pantheon_rs::app::App;
 use gtk::prelude::*;
 use gtk::{gio, glib};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
+
+struct TestHome(PathBuf);
+
+impl TestHome {
+    fn prepare() -> Self {
+        let home = std::env::temp_dir().join(format!("claude-pantheon-render-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&home);
+        let projects = home.join(".claude/projects/render-fixture");
+        std::fs::create_dir_all(&projects).expect("create temporary Claude project");
+        std::fs::write(
+            projects.join("offline-render-fixture.jsonl"),
+            include_str!("fixtures/offline-render-session.jsonl"),
+        )
+        .expect("write offline transcript fixture");
+        for name in ["config", "cache", "data", "state", "runtime"] {
+            std::fs::create_dir_all(home.join(name)).expect("create isolated XDG directory");
+        }
+        #[cfg(unix)]
+        std::fs::set_permissions(home.join("runtime"), std::os::unix::fs::PermissionsExt::from_mode(0o700))
+            .expect("restrict temporary runtime directory");
+        let tools = home.join("tools");
+        std::fs::create_dir_all(&tools).unwrap();
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../mseries/fleet-shepherd/bin/mseries-fleet");
+        let quoted = serde_json::to_string(&source.to_string_lossy()).unwrap();
+        std::fs::write(tools.join("mseries-fleet"), format!("#!/usr/bin/env python3\nimport os,sys\nos.execv(sys.executable,[sys.executable,{quoted}]+sys.argv[1:])\n")).unwrap();
+        std::fs::write(
+            tools.join("herdr.json"),
+            include_str!("../../../mseries/fleet-shepherd/tests/fixtures/herdr_ok.json"),
+        )
+        .unwrap();
+        std::fs::write(
+            tools.join("omp.json"),
+            include_str!("../../../mseries/fleet-shepherd/tests/fixtures/omp_ok.json"),
+        )
+        .unwrap();
+        for command in ["herdr", "omp", "ssh"] {
+            std::fs::write(tools.join(command), r#"#!/usr/bin/env python3
+import json,os,sys
+from pathlib import Path
+root=Path(__file__).parent
+if root.joinpath('ssh').name == Path(__file__).name:
+ with open(Path(os.environ['XDG_CACHE_HOME'])/'fleet-ssh-argv','a') as stream: stream.write(json.dumps(sys.argv[1:])+'\n')
+kind='herdr' if Path(__file__).name=='herdr' or 'herdr api snapshot' in ' '.join(sys.argv) else 'omp'
+print(root.joinpath(kind+'.json').read_text())
+"#).unwrap();
+        }
+        std::fs::write(
+            tools.join("xdg-terminal-exec"),
+            r#"#!/usr/bin/env python3
+import json,os,sys
+from pathlib import Path
+Path(os.environ['XDG_CACHE_HOME']).joinpath('fleet-terminal-argv').write_text(json.dumps(sys.argv[1:]))
+"#,
+        )
+        .unwrap();
+        #[cfg(unix)]
+        for name in ["mseries-fleet", "herdr", "omp", "ssh", "xdg-terminal-exec"] {
+            std::fs::set_permissions(tools.join(name), std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
+        }
+        // SAFETY: this single-threaded integration harness sets process paths before GTK, GLib, Rayon,
+        // or any application worker is initialized. The process exits after the test.
+        unsafe {
+            std::env::set_var("HOME", &home);
+            std::env::set_var("PATH", format!("{}:{}", tools.display(), std::env::var("PATH").unwrap_or_default()));
+            std::env::set_var("XDG_CONFIG_HOME", home.join("config"));
+            std::env::set_var("XDG_CACHE_HOME", home.join("cache"));
+            std::env::set_var("XDG_DATA_HOME", home.join("data"));
+            std::env::set_var("XDG_STATE_HOME", home.join("state"));
+            std::env::set_var("XDG_RUNTIME_DIR", home.join("runtime"));
+            std::env::set_var("GSETTINGS_BACKEND", "memory");
+            std::env::set_var("GTK_USE_PORTAL", "0");
+            std::env::set_var("CLAUDE_PANTHEON_OFFLINE", "1");
+        }
+        Self(home)
+    }
+}
+
+impl Drop for TestHome {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
 
 fn pump(ms: u64) {
     let ctx = glib::MainContext::default();
@@ -58,7 +143,10 @@ fn shown(app: &App) -> Vec<String> {
     out
 }
 
-fn save_png(window: &gtk::ApplicationWindow, path: &Path) {
+fn save_png(window: &impl IsA<gtk::Window>, path: &Path) {
+    let window = window.as_ref();
+    // Capture settled GtkStack crossfades rather than blending the previous page into evidence.
+    pump(400);
     let mut node = None;
     for _ in 0..100 {
         pump(50);
@@ -80,6 +168,18 @@ fn save_png(window: &gtk::ApplicationWindow, path: &Path) {
 }
 
 fn main() {
+    if std::env::var("CLAUDE_PANTHEON_RENDER_TEST_SANDBOX").as_deref() != Ok("1") {
+        println!("SKIP: run tests/run-render-sandbox.sh for an isolated offline UI render");
+        return;
+    }
+    let live_render = std::env::var("CLAUDE_PANTHEON_LIVE_RENDER").as_deref() == Ok("1");
+    let _test_home = if live_render {
+        // SAFETY: see TestHome::prepare; this runs before GTK or application workers are initialized.
+        unsafe { std::env::remove_var("CLAUDE_PANTHEON_OFFLINE") };
+        None
+    } else {
+        Some(TestHome::prepare())
+    };
     if gtk::init().is_err() {
         eprintln!("FAIL: no display for GTK (run under xvfb-run)");
         std::process::exit(1);
@@ -92,7 +192,7 @@ fn main() {
     let shot = env("CLAUDE_PANTHEON_SHOT");
     let shot_m2 = env("CLAUDE_PANTHEON_SHOT_M2");
     let shot_m3 = env("CLAUDE_PANTHEON_SHOT_M3");
-    let live_send = std::env::var_os("CLAUDE_PANTHEON_LIVE_SEND").is_some();
+    let live_send = live_render && std::env::var("CLAUDE_PANTHEON_LIVE_SEND").as_deref() == Ok("1");
     #[allow(deprecated)]
     gtk::Settings::default()
         .expect("settings")
@@ -101,6 +201,17 @@ fn main() {
     let app = App::build(&application, Instant::now(), false);
     assert!(pump_until("the index and the connection attempt", 60, || !app.is_busy()));
     pump(200);
+    if let Some(out) = env("CLAUDE_PANTHEON_FEATURE_PROBE") {
+        assert!(!live_render, "feature probes use only the isolated offline home");
+        subscription_probe(&app, &out);
+        activity_probe(&app, &out);
+        tstack_probe(&app, &out);
+        fleet_probe(&app, &out);
+        fleet_adapter_probe(&app, &out);
+        app.window().close();
+        pump(100);
+        return;
+    }
     let sessions = app.sessions();
     assert!(!sessions.is_empty(), "no sessions were indexed");
     println!("indexed {} sessions; connected: {}", sessions.len(), app.is_connected());
@@ -208,14 +319,15 @@ fn main() {
         app.insert_transcript("late words", Some("another-thread".into()));
         assert_eq!(app.composer().text(), "note: hello from the mic", "a transcript for another draft is dropped");
         app.composer().set_text("");
-        // The shortcut with nothing installed (or no PipeWire under Xvfb) reports instead of crashing.
-        app.toggle_voice();
-        pump(1200);
-        if app.is_recording() {
+        if std::env::var("CLAUDE_PANTHEON_TEST_MICROPHONE").as_deref() == Ok("1") {
             app.toggle_voice();
-            pump(1500);
+            pump(1200);
+            if app.is_recording() {
+                app.toggle_voice();
+                pump(1500);
+            }
+            assert!(!app.is_recording());
         }
-        assert!(!app.is_recording());
         println!("voice ok");
     }
 
@@ -350,22 +462,22 @@ fn main() {
         }
         println!("sidebar ok");
 
-        // ---- composer: drafts per thread, attachment chips ---------------------------------------------
-        let first = pick.id.clone();
+        // ---- composer: draft slots, attachment chips -------------------------------------------
+        // Use private keys so a live-render pass never overwrites or clears an owner's draft.
+        let first = format!("render-test-{}-first", std::process::id());
+        let other = format!("render-test-{}-other", std::process::id());
+        let composer = app.composer();
+        composer.set_draft_key(Some(first.clone()));
         app.set_entry("half-written thought");
         pump(1300); // the draft saves a second after the last change
-        let other = threads.iter().find(|t| t.id != first).cloned().expect("a second thread");
-        assert!(app.select_id(&other.id));
-        assert!(pump_until("the other thread", 60, || app.live_item_count() > 0 || app.page() == "chat"));
-        pump(300);
-        assert_eq!(app.composer().text(), "", "the other thread starts with an empty draft");
-        assert!(app.select_id(&first));
-        assert!(pump_until("the first thread again", 60, || app.live_item_count() > 0));
-        pump(300);
-        assert_eq!(app.composer().text(), "half-written thought", "the draft came back with its thread");
-        assert_eq!(app.composer().draft_for(&first).as_deref(), Some("half-written thought"));
+        composer.set_draft_key(Some(other));
+        assert_eq!(composer.text(), "", "a fresh draft slot starts empty");
+        composer.set_draft_key(Some(first.clone()));
+        assert_eq!(composer.text(), "half-written thought", "the saved draft comes back with its key");
+        assert_eq!(composer.draft_for(&first).as_deref(), Some("half-written thought"));
         app.set_entry("");
         pump(1300);
+        composer.set_draft_key(Some(pick.id.clone()));
         println!("composer drafts ok");
 
         // ---- terminal pane (the server's PTY) --------------------------------------------------------
@@ -463,11 +575,11 @@ fn main() {
         if let Some(path) = env("CLAUDE_PANTHEON_SHOT_REPOS") {
             save_png(app.window(), &path);
         }
-        // Rotation pass against the live task list (moves nothing unless a runner task sits on a
-        // provider with less capacity than the best one).
-        app.rotate_runners_now();
-        pump(1500);
-        println!("rotation pass ok");
+        if live_render && std::env::var("CLAUDE_PANTHEON_LIVE_ROTATE").as_deref() == Ok("1") {
+            app.rotate_runners_now();
+            pump(1500);
+            println!("rotation pass ok");
+        }
     } else {
         println!("not connected to a T3 server; live checks skipped");
     }
@@ -502,4 +614,266 @@ fn main() {
     }
     app.window().destroy();
     println!("PASS: Claude render test");
+}
+
+fn subscription_probe(app: &std::rc::Rc<App>, out: &Path) {
+    use claude_pantheon_rs::quota;
+    let dir = quota::directory();
+    std::fs::create_dir_all(&dir).unwrap();
+    let stamp = glib::DateTime::now_utc().unwrap().format_iso8601().unwrap().to_string();
+    let mut fixture = serde_json::json!({
+        "schemaVersion":1,"id":"codex-plan","name":"Codex","ready":true,
+        "updatedAt":stamp,"tierLabel":"Two separate subscriptions",
+        "limits":[{"title":"Session · account A","percent":0.25},{"title":"Weekly · account A","percent":1.0},
+                  {"title":"Session · account B with a longer display name","percent":1.0},{"title":"Weekly · account B","percent":0.10}]
+    });
+    std::fs::write(dir.join("codex-plan.json"), fixture.to_string()).unwrap();
+    app.show_usage();
+    assert_eq!(app.page(), "usage", "Usage opens while disconnected");
+    assert!(pump_until("local subscription records", 10, || shown(app)
+        .iter()
+        .any(|s| s.contains("Session · account A · 25%"))));
+    let text = shown(app);
+    assert!(text.iter().any(|s| s.contains("Weekly · account A · 100%")));
+    assert!(text.iter().any(|s| s.contains("paired T3 server · display only")));
+    assert!(text.iter().any(|s| s.contains("Connect to a T3 server for token history")));
+    for width in [820, 1180] {
+        app.window().set_default_size(width, 900);
+        pump(150);
+        save_png(app.window(), &out.join(format!("quota-current-{width}.png")));
+    }
+    fixture["usageStatusText"] = serde_json::json!("Last known usage (broker probe is down)");
+    std::fs::write(dir.join("codex-plan.json"), fixture.to_string()).unwrap();
+    app.show_usage();
+    assert!(pump_until("stale subscription", 10, || shown(app)
+        .iter()
+        .any(|s| s.contains("Stale · last-known values"))));
+    for width in [820, 1180] {
+        app.window().set_default_size(width, 900);
+        pump(150);
+        save_png(app.window(), &out.join(format!("quota-stale-{width}.png")));
+    }
+    fixture["ready"] = serde_json::json!(false);
+    std::fs::write(dir.join("codex-plan.json"), fixture.to_string()).unwrap();
+    app.show_usage();
+    assert!(pump_until("failed subscription", 10, || shown(app).iter().any(|s| s.starts_with("Unavailable ·"))));
+    assert!(!shown(app).iter().any(|s| s.contains("Session · account A · 25%")));
+    std::fs::write(dir.join("codex-plan.json"), "{}").unwrap();
+    app.show_usage();
+    assert!(pump_until("invalid subscription", 10, || shown(app)
+        .iter()
+        .any(|s| s.contains("Invalid subscription JSON"))));
+    assert!(shown(app).iter().any(|s| s.contains("No local subscription reports")));
+    println!("local quota offline, accounts, units, stale, failed and invalid report gates pass");
+}
+
+fn activity_probe(app: &std::rc::Rc<App>, out: &Path) {
+    app.show_activity();
+    assert_eq!(app.page(), "activity");
+    app.activity_page().show_fixture(claude_pantheon_rs::activity_view::fixture_report());
+    pump(150);
+    let text = shown(app);
+    for expected in ["Copy recap", "Include GitHub", "Partial", "Unavailable", "Local commit", "Merged PR"] {
+        assert!(text.iter().any(|s| s.contains(expected)), "activity shows {expected}");
+    }
+    fn find_button(w: &gtk::Widget, title: &str) -> Option<gtk::Button> {
+        if let Some(b) = w.downcast_ref::<gtk::Button>()
+            && b.label().as_deref() == Some(title)
+        {
+            return Some(b.clone());
+        }
+        let mut child = w.first_child();
+        while let Some(c) = child {
+            if let Some(button) = find_button(&c, title) {
+                return Some(button);
+            }
+            child = c.next_sibling();
+        }
+        None
+    }
+    let copy = find_button(app.window().upcast_ref(), "Copy recap").unwrap();
+    assert!(copy.is_sensitive());
+    copy.emit_clicked();
+    pump(100);
+    assert!(shown(app).iter().any(|s| s.contains("Recap copied")));
+    let recap = glib::MainContext::default().block_on(app.window().clipboard().read_text_future()).unwrap().unwrap();
+    assert!(recap.contains("Partial"));
+    assert!(recap.contains("Unavailable"));
+    assert!(recap.contains("do not establish a shipped release"));
+    for width in [820, 1180] {
+        app.window().set_default_size(width, 900);
+        pump(150);
+        save_png(app.window(), &out.join(format!("activity-{width}.png")));
+    }
+    app.zoom_to(1.2);
+    // The real zoom action posts a transient toast over the header; let it expire.
+    pump(3500);
+    app.window().set_default_size(820, 900);
+    pump(150);
+    save_png(app.window(), &out.join("activity-large-text-820.png"));
+    app.zoom_to(1.0);
+    println!("native Activity mixed-source states and factual clipboard recap gates pass");
+}
+
+fn tstack_probe(app: &std::rc::Rc<App>, out: &Path) {
+    use std::{cell::RefCell, rc::Rc};
+    let selected = Rc::new(RefCell::new(String::new()));
+    let record = selected.clone();
+    let window = claude_pantheon_rs::tstack::show(app.window(), move |name| *record.borrow_mut() = name.into());
+    pump(200);
+    let mut labels = Vec::new();
+    texts(window.upcast_ref(), &mut labels);
+    for &(name, _) in claude_pantheon_rs::tstack::WORKFLOWS {
+        assert!(labels.iter().any(|label| label == name), "picker contains {name}");
+    }
+    save_png(&window, &out.join("tstack-workflows.png"));
+    fn prepare_button(widget: &gtk::Widget) -> Option<gtk::Button> {
+        if let Some(button) = widget.downcast_ref::<gtk::Button>()
+            && button.tooltip_text().as_deref() == Some("Prepare full-stop request")
+        {
+            return Some(button.clone());
+        }
+        let mut child = widget.first_child();
+        while let Some(widget) = child {
+            if let Some(button) = prepare_button(&widget) {
+                return Some(button);
+            }
+            child = widget.next_sibling();
+        }
+        None
+    }
+    prepare_button(window.upcast_ref()).expect("prepare button").emit_clicked();
+    pump(100);
+    assert_eq!(&*selected.borrow(), "full-stop");
+    assert!(!window.is_visible(), "picker closes after preparation");
+    println!("PASS tstack picker: nine workflows, prepare callback, no automatic sending");
+}
+
+fn fleet_probe(app: &std::rc::Rc<App>, out: &Path) {
+    app.show_fleet();
+    let mut fixture: serde_json::Value =
+        serde_json::from_str(include_str!("../../../mseries/fleet-shepherd/tests/fixtures/fleet_demo.json")).unwrap();
+    for row in fixture["connectors"].as_array_mut().unwrap() {
+        if row["mode"] == "ssh" {
+            row["focusTarget"] = row["id"].clone();
+        }
+    }
+    app.fleet_page().show_fixture(&fixture);
+    pump(200);
+    let text = shown(app);
+    for expected in [
+        "Remote Machines",
+        "Connector A",
+        "Connector B",
+        "OMP statistics",
+        "Herdr agent status unavailable",
+        "Stale",
+        "Open SSH Terminal",
+    ] {
+        assert!(text.iter().any(|s| s.contains(expected)), "Fleet shows {expected}");
+    }
+    for width in [820, 1180] {
+        app.window().set_default_size(width, 780);
+        pump(150);
+        save_png(app.window(), &out.join(format!("fleet-{width}.png")));
+    }
+    println!(
+        "PASS native Fleet fixture: connector identity, partial/offline/stale states, unavailable metrics and terminal actions"
+    );
+}
+
+fn fleet_adapter_probe(app: &std::rc::Rc<App>, out: &Path) {
+    let config = gtk::glib::user_config_dir().join("fleet-shepherd");
+    std::fs::create_dir_all(&config).unwrap();
+    std::fs::write(config.join("connectors.json"), r#"{"schemaVersion":1,"connectors":[{"id":"local","label":"This machine","mode":"local"},{"id":"fake-remote","label":"Fixture Remote","mode":"ssh","target":"fake-remote"}]}"#).unwrap();
+    let page = claude_pantheon_rs::fleet::FleetPage::new();
+    let window = gtk::ApplicationWindow::builder()
+        .application(&app.window().application().unwrap())
+        .title("Fleet adapter fixture")
+        .default_width(600)
+        .default_height(700)
+        .child(page.widget())
+        .build();
+    window.present();
+    page.open();
+    let status_contains = |text: &str| {
+        let mut labels = Vec::new();
+        texts(window.upcast_ref(), &mut labels);
+        labels.iter().any(|s| s.contains(text))
+    };
+    assert!(pump_until("Fleet settings adapter", 5, || status_contains("Connector settings loaded")));
+    assert!(!gtk::glib::user_cache_dir().join("fleet-ssh-argv").exists(), "opening settings never contacts SSH");
+    fn find_button(widget: &gtk::Widget, name: &str) -> Option<gtk::Button> {
+        if let Some(button) = widget.downcast_ref::<gtk::Button>()
+            && button.label().as_deref() == Some(name)
+        {
+            return Some(button.clone());
+        }
+        let mut child = widget.first_child();
+        while let Some(widget) = child {
+            if let Some(found) = find_button(&widget, name) {
+                return Some(found);
+            }
+            child = widget.next_sibling();
+        }
+        None
+    }
+    fn find_entry(widget: &gtk::Widget, placeholder: &str) -> Option<gtk::Entry> {
+        if let Some(entry) = widget.downcast_ref::<gtk::Entry>()
+            && entry.placeholder_text().as_deref() == Some(placeholder)
+        {
+            return Some(entry.clone());
+        }
+        let mut child = widget.first_child();
+        while let Some(widget) = child {
+            if let Some(found) = find_entry(&widget, placeholder) {
+                return Some(found);
+            }
+            child = widget.next_sibling();
+        }
+        None
+    }
+    find_entry(window.upcast_ref(), "Machine label").unwrap().set_text("Fixture Added");
+    find_entry(window.upcast_ref(), "Existing SSH alias").unwrap().set_text("fake-added");
+    find_button(window.upcast_ref(), "Add Machine").unwrap().emit_clicked();
+    assert!(pump_until("native Add Machine adapter", 5, || status_contains("Fixture Added · fake-added")));
+    fn find_remove(widget: &gtk::Widget) -> Option<gtk::Button> {
+        if let Some(button) = widget.downcast_ref::<gtk::Button>()
+            && button.tooltip_text().as_deref() == Some("Remove Fixture Added from Fleet")
+        {
+            return Some(button.clone());
+        }
+        let mut child = widget.first_child();
+        while let Some(widget) = child {
+            if let Some(found) = find_remove(&widget) {
+                return Some(found);
+            }
+            child = widget.next_sibling();
+        }
+        None
+    }
+    find_remove(window.upcast_ref()).unwrap().emit_clicked();
+    assert!(pump_until("native Remove Machine adapter", 5, || status_contains("Connector settings loaded")
+        && !status_contains("Fixture Added · fake-added")));
+    assert!(!gtk::glib::user_cache_dir().join("fleet-ssh-argv").exists(), "editing connectors never contacts SSH");
+    find_button(window.upcast_ref(), "Refresh Status").unwrap().emit_clicked();
+    assert!(pump_until("actual Fleet adapter snapshot", 10, || status_contains("Snapshot received")));
+    assert!(status_contains("Fixture Remote · Online"));
+    let argv = std::fs::read_to_string(gtk::glib::user_cache_dir().join("fleet-ssh-argv")).unwrap();
+    assert!(
+        argv.contains("StrictHostKeyChecking=yes") && argv.contains("BatchMode=yes") && argv.contains("fake-remote")
+    );
+    save_png(&window, &out.join("fleet-real-adapter-fixture.png"));
+    find_button(window.upcast_ref(), "Open SSH Terminal").unwrap().emit_clicked();
+    assert!(pump_until("inert terminal route", 5, || gtk::glib::user_cache_dir().join("fleet-terminal-argv").exists()));
+    let argv: Vec<String> = serde_json::from_str(
+        &std::fs::read_to_string(gtk::glib::user_cache_dir().join("fleet-terminal-argv")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(argv, vec!["ssh", "-o", "StrictHostKeyChecking=yes", "--", "fake-remote"]);
+    window.close();
+    pump(100);
+    println!(
+        "PASS real Fleet list/add/remove/snapshot adapter through fake SSH and OMP; no contact on open; exact interactive terminal route"
+    );
 }

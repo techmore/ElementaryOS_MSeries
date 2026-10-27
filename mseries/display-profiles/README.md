@@ -51,3 +51,39 @@ Gala falls back to its own saved single-monitor layout, which can differ from yo
 the monitor attached, 1.5 after unplugging). Save the layout you want with only the built-in display attached
 (`mseries-display-profiles save laptop-only`, or "Save layout as profile" in Display Settings); the watcher then
 re-applies it after an unplug. The watcher also logs how long Gala took to drop the external output.
+
+## October 26, 2026 restore correction
+
+The live J314S watcher had been sending `ApplyMonitorsConfig` with a malformed
+GVariant signature, so laptop-only restoration after unplug and saved layout
+application failed before Gala could apply anything. Each logical-monitor
+tuple needs its own final properties dictionary, followed by the method-level
+dictionary; each logical-monitor entry also needs its own properties element.
+The repository source and the owner's installed copy now provide both.
+
+The owner's saved dock profile was for an Insignia TV, while the recorded dock
+monitor is an AOC 24E2QA. The private profile store now has a separate
+identity-matched AOC profile at 1920x1080/60, plus a laptop-only layout matching
+the current built-in 3024x1964/120 mode and 1.25 scale. The settings are backed
+up locally. The current wip3 session lost its DP tunnel after five DCP
+target-validation timeouts. Moving the dock from rear-left to front-left brought
+the AOC back on DP-2 at 1920x1080/60, confirmed by the owner. The watcher then
+exposed the missing logical-monitor properties element. The installed copy now
+includes both corrections and has been restarted. On October 26, an explicit
+`mseries-display-profiles apply aoc-dock` returned success and Gala reported the
+saved 1920x1080/60 layout at x=2419, scale 1.0. The desktop autostart entry is
+enabled and the watcher process is running. The first same-front-left cable cycle
+showed unplug restoring `laptop-only`; on reconnect the kernel brought back
+1920x1080/60 and the owner confirmed picture, but the EDID node was empty and Gala
+reported `Apple:DP-2:Unknown`. The watcher could not match the saved AOC profile on
+that reconnect. The profile source now records each output's connector
+and uses it only as a fallback for this generic missing-EDID identity;
+stable vendor/product/serial matching remains the normal, port-independent path.
+The owner profile records AOC on DP-2 based on the observed pre-disconnect state.
+The watcher now makes up to six apply attempts and logs each retry/final
+failure. Its installed copy matches the repository version, selects `aoc-dock`
+with the missing EDID, and a manual apply restored x=2419. Eight unit tests pass.
+A second same-front-left cycle at 07:52 EDT passed automatically: unplug applied
+`laptop-only`, then reconnect applied `aoc-dock` and restored x=2419 at 1920x1080/60.
+This is one automatic post-fix cycle; repeat cycles and rear-left DCP recovery still
+need hardware qualification.

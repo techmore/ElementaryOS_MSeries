@@ -161,6 +161,49 @@ class WorkModeTest(unittest.TestCase):
         self.helper("--tick")
         self.assertEqual(self.gget("org.gnome.desktop.interface", "icon-theme"), "'Adwaita'")
 
+    def test_window_buttons_default_keeps_the_buttons_on_the_left(self):
+        wm = "org.gnome.desktop.wm.preferences"
+        self.gset(wm, "button-layout", "close,minimize,maximize:")
+        self.assertEqual(self.gget(SCHEMA, "window-buttons"), "'unchanged'")
+        self.gset(SCHEMA, "enabled", True)
+        self.helper("--tick")
+        self.assertEqual(self.gget(wm, "button-layout"), "'close,minimize,maximize:'")
+
+    def test_window_buttons_windows_layout_applied_and_restored(self):
+        wm = "org.gnome.desktop.wm.preferences"
+        self.gset(wm, "button-layout", "close,minimize,maximize:")
+        self.gset(SCHEMA, "window-buttons", "windows")
+        self.gset(SCHEMA, "enabled", True)
+        self.helper("--tick")
+        self.assertEqual(self.gget(wm, "button-layout"), "':minimize,maximize,close'")
+        self.helper("--tick")  # a second tick must keep the first snapshot
+        self.gset(SCHEMA, "enabled", False)
+        self.helper("--tick")
+        self.assertEqual(self.gget(wm, "button-layout"), "'close,minimize,maximize:'")
+
+        self.gset(SCHEMA, "enabled", True)
+        self.helper("--tick")
+        self.helper("--restore")
+        self.assertEqual(self.gget(wm, "button-layout"), "'close,minimize,maximize:'")
+
+    def test_window_buttons_unchanged_keeps_user_layout(self):
+        wm = "org.gnome.desktop.wm.preferences"
+        self.gset(wm, "button-layout", "close,minimize,maximize:")
+        self.gset(SCHEMA, "window-buttons", "unchanged")
+        self.gset(SCHEMA, "enabled", True)
+        self.helper("--tick")
+        self.assertEqual(self.gget(wm, "button-layout"), "'close,minimize,maximize:'")
+
+    def test_window_buttons_choice_switched_while_active_restores(self):
+        wm = "org.gnome.desktop.wm.preferences"
+        self.gset(wm, "button-layout", "close,minimize,maximize:")
+        self.gset(SCHEMA, "window-buttons", "windows")
+        self.gset(SCHEMA, "enabled", True)
+        self.helper("--tick")
+        self.gset(SCHEMA, "window-buttons", "unchanged")
+        self.helper("--tick")
+        self.assertEqual(self.gget(wm, "button-layout"), "'close,minimize,maximize:'")
+
     def test_network_rule_matches_cidr(self):
         self.gset(SCHEMA, "enabled", True)
         self.gset(SCHEMA, "network-trigger", True)

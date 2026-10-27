@@ -76,6 +76,8 @@ jobs:
       - uses: actions/checkout@v7
 
       # Launchpad answers 503 now and then (it broke PR #429's first build); retry before failing.
+      - uses: ./.github/actions/fast-apt
+
       - name: Add elementary daily PPA (build + gate headers)
         run: |
           for attempt in 1 2 3 4 5; do
@@ -209,6 +211,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - uses: ./.github/actions/fast-apt
+
       - name: Install compositor build dependencies
         run: |
           sudo apt-get update
@@ -247,6 +251,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/fast-apt
 
       - name: Add elementary daily PPA (wingpanel-9 for the indicator)
         run: |
@@ -362,6 +368,10 @@ jobs:
             git -C pages remote add origin "$url"
           fi
           echo "AUTH_HEADER=$auth" >> "$GITHUB_ENV"
+
+      # The repository is checked out under src/, and only when the key is present.
+      - uses: ./src/.github/actions/fast-apt
+        if: steps.key.outputs.have == 'true'
 
       - name: Assemble and sign the ${{ steps.suite.outputs.channel }} suite
         if: steps.key.outputs.have == 'true'

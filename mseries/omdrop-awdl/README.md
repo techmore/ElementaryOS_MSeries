@@ -34,7 +34,7 @@ sudo modprobe -r brcmfmac_wcc brcmfmac brcmutil
 sudo modprobe brcmfmac
 ```
 
-Then enable boot-time setup, which creates `awdl0` without enabling AWDL or advertising anything:
+The M-Series integration installer enables boot-time setup, which creates `awdl0` without enabling AWDL or advertising anything. For an upstream package install, enable it manually:
 
 ```bash
 sudo systemctl enable --now awdl0.service
@@ -61,12 +61,12 @@ On a kernel whose own `brcmfmac` already has this AWDL support, DKMS skips the b
 | `/usr/lib/omdrop/awdl-resolve` | Reads a peer's advertised AirDrop service from its action frames |
 | `/usr/lib/omdrop/*.py` | Helpers for the tools above |
 | `/usr/share/polkit-1/actions/org.omarchy.omdrop.policy` | Lets a local desktop session run `omdrop-discoverable` without a password |
-| `/usr/lib/systemd/system/awdl0.service` | Boot-time `awdl0` setup; not enabled by the install |
+| `/usr/lib/systemd/system/awdl0.service` | Boot-time `awdl0` setup; enabled by `mseries/install-omdrop-radio.sh` (upstream package installs leave it disabled) |
 | `/usr/lib/modprobe.d/brcmfmac-awdl.conf` | `debug=0x1000`, the firmware-interface bit of the debug mask; the data-path check doesn't depend on it |
 | `/usr/lib/NetworkManager/conf.d/99-awdl-unmanaged.conf` | Keeps NetworkManager off `awdl0` |
 | `/usr/share/doc/brcmfmac-awdl-dkms/` | This README, and an optional `10-wld0.link` the package doesn't activate |
 
-Boot creates `awdl0` but doesn't enable AWDL. AWDL that is always on makes the radio hop channels on its slot schedule, which costs battery and Wi-Fi throughput, and leaves the machine permanently discoverable. The trade-off is that the first window takes about ten seconds to come up.
+Boot creates `awdl0` but doesn't enable AWDL. AWDL that is always on makes the radio hop channels on its slot schedule, which costs battery and Wi-Fi throughput, and leaves the machine permanently discoverable. The first receiving window enables AWDL on demand and pays the data-path gate instead.
 
 ## Sending and receiving
 

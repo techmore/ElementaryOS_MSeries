@@ -10,6 +10,7 @@ namespace MSeriesWorkMode {
         private Gtk.Button add_button;
         private string? current_ip = null;
         private uint apply_source = 0;
+        private string? original_decoration_layout = null;
 
         public Plug () {
             var supported = new Gee.TreeMap<string, string?> (null, null);
@@ -28,6 +29,7 @@ namespace MSeriesWorkMode {
         public override Gtk.Widget get_widget () {
             if (content == null) {
                 var page = new Adw.PreferencesPage ();
+                apply_window_button_layout ();
                 var mode_group = new Adw.PreferencesGroup () {
                     title = "Windows Work Mode",
                     description = "Use a Windows-inspired wallpaper and app dock while you work."
@@ -70,6 +72,17 @@ namespace MSeriesWorkMode {
                 browse.clicked.connect (() => choose_wallpaper (wallpaper));
                 wallpaper.add_suffix (browse);
                 mode_group.add (wallpaper);
+
+                var buttons = new Adw.ComboRow () {
+                    title = "Window buttons",
+                    subtitle = "Minimize, maximize and close, in Windows order, while the mode is on.",
+                    model = new Gtk.StringList ({ "Windows (right side)", "Keep my layout" })
+                };
+                buttons.selected = settings.get_string ("window-buttons") == "unchanged" ? 1 : 0;
+                buttons.notify["selected"].connect (() => {
+                    settings.set_string ("window-buttons", buttons.selected == 1 ? "unchanged" : "windows");
+                });
+                mode_group.add (buttons);
 
                 var schedule_group = new Adw.PreferencesGroup () {
                     title = "Schedule",
@@ -157,11 +170,39 @@ namespace MSeriesWorkMode {
                 status_group.add (dock_row);
 
                 // A change takes effect immediately; the user timer keeps the rules in sync.
-                settings.changed.connect (() => apply_now ());
+                settings.changed.connect (() => {
+                    apply_window_button_layout ();
+                    apply_now ();
+                });
                 refresh_status ();
-                content = page;
+
+                // Settings hides its own titlebar and puts the plug straight into a navigation page, so the
+                // plug supplies the header bar: drag area, back button and the window buttons.
+                var headerbar = new Adw.HeaderBar () {
+                    show_title = false
+                };
+                headerbar.add_css_class (Granite.STYLE_CLASS_FLAT);
+                page.vexpand = true;
+                var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+                box.append (headerbar);
+                box.append (page);
+                content = box;
             }
             return content;
+        }
+
+        private void apply_window_button_layout () {
+            var gtk_settings = Gtk.Settings.get_default ();
+            if (gtk_settings == null) {
+                return;
+            }
+            if (original_decoration_layout == null) {
+                original_decoration_layout = gtk_settings.gtk_decoration_layout;
+            }
+            var use_windows_buttons = settings.get_string ("window-buttons") == "windows";
+            gtk_settings.gtk_decoration_layout = use_windows_buttons
+                ? ":minimize,maximize,close"
+                : original_decoration_layout;
         }
 
         private static string helper_path () {
@@ -170,8 +211,14 @@ namespace MSeriesWorkMode {
 
         private string service_host () {
             var service = settings.get_string ("public-ip-service");
-            var host = GLib.Uri.peek_scheme (service) != null ? service.split ("/")[2] : null;
-            return host ?? service;
+            if (GLib.Uri.peek_scheme (service) != null) {
+                // Return from inside the scope: the copy must happen before the split array is freed.
+                var parts = service.split ("/");
+                if (parts.length > 2) {
+                    return parts[2];
+                }
+            }
+            return service;
         }
 
         private Adw.EntryRow time_row (string title, string key) {

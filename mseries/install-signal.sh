@@ -41,6 +41,11 @@ else
   appdir="$HOME/.local/lib/signal-desktop-beta"
   mkdir -p "$appdir"
   cp -a "$work/squashfs-root/." "$appdir/"
+  # The theme patcher restores from this pristine bundle. Reset it on every
+  # upstream update so it cannot reapply colors to a previous Signal version.
+  cp -p "$appdir/resources/app.asar" "$appdir/resources/app.asar.orig.tmp"
+  mv -f "$appdir/resources/app.asar.orig.tmp" "$appdir/resources/app.asar.orig"
+  rm -f "$appdir/resources/.mseries-accent"
 fi
 MSERIES_SIGNAL_APPDIR="$appdir" MSERIES_SIGNAL_ATOMIC="$atomic" bash "$repo/mseries/install-signal-integration.sh"
 echo 'Installed Signal Beta. Link your phone when it opens.'

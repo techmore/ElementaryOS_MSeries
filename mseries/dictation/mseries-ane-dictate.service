@@ -1,6 +1,6 @@
 [Unit]
 Description=Dictation on the Apple Neural Engine (hold F5, text typed on release)
-After=ydotool.service
+After=graphical-session.target ydotool.service
 Wants=ydotool.service
 Conflicts=voxtype.service mseries-stream-dictate.service mseries-aop-mic.service
 

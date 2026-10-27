@@ -4,11 +4,11 @@
 # this installs only the userspace that creates awdl0 and opens a bounded visibility window.
 #
 #   install-omdrop-radio.sh preflight    read-only checks, no root (default)
-#   install-omdrop-radio.sh install      sudo: copy the helpers, polkit action and NetworkManager rule into place
+#   install-omdrop-radio.sh install      sudo: install helpers and enable the idle awdl0 setup service
 #   install-omdrop-radio.sh uninstall    sudo: remove exactly what install put there (and destroy awdl0 if present)
 #
-# install does NOT enable awdl0.service, does NOT create awdl0, does NOT start AWDL and does NOT touch the driver.
-# Creating awdl0 and opening a window are separate steps in mseries/omdrop-awdl/TEST-PLAN.md, run with the owner present.
+# install creates awdl0 as an idle, unmanaged interface and enables that setup at boot.
+# It does NOT enable AWDL or open a visibility window; only an explicit `omdrop on` does that.
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 src="$repo/mseries/omdrop-awdl"
@@ -66,6 +66,7 @@ need_root() { [ "$(id -u)" = 0 ] || exec sudo -- "$0" "$@"; }
 
 do_install() {
   need_root install
+  preflight || { say "Refusing to install: preflight failed." >&2; exit 1; }
   [ -f "$src/userspace/omdrop-discoverable" ] || { say "vendored sources missing: $src" >&2; exit 1; }
   # Never take ownership of another package's helpers or system configuration.
   # A prior install must be explicitly uninstalled before replacing its manifest.
@@ -97,9 +98,10 @@ do_install() {
   put 644 "$src/packaging/awdl0.service" /usr/lib/systemd/system/awdl0.service
   put 644 "$src/packaging/99-awdl-unmanaged.conf" /usr/lib/NetworkManager/conf.d/99-awdl-unmanaged.conf
   systemctl daemon-reload
-  say "Installed $(wc -l < "$files_list") files. awdl0.service is NOT enabled and awdl0 was NOT created."
-  say "NetworkManager reads its new unmanaged-devices rule at its next reload (nmcli general reload conf) - not done here."
-  say "Next: mseries/omdrop-awdl/TEST-PLAN.md"
+  if systemctl is-active --quiet NetworkManager; then nmcli general reload conf; fi
+  systemctl enable --now awdl0.service
+  say "Installed $(wc -l < "$files_list") files and enabled awdl0.service."
+  say "awdl0 is configured but idle: AirDrop is not visible until you explicitly turn receiving on."
 }
 
 do_uninstall() {

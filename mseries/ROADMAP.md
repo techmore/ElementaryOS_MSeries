@@ -1,3 +1,1094 @@
+## Files Quick Actions: image conversion — 2026-10-25
+
+Issue #531 implementation: user-local Contractor actions, native conversion
+progress/results, original-preserving collision-safe copies, optional JPEG 2000
+only when writable. Linux codec/GUI/notification probes accompany the change;
+owner Files installation/right-click acceptance remains open. See
+[image-actions](image-actions/README.md). Preview viewer #530 is separate.
+
+## Candidate anchor hover failure — 2026-10-26
+
+SDK desktop-host ARM workflow 40418084280 passed on attempt 2 at 64ca2db, including C/Vala host boundaries, shared T3 menu in hosted and dock modes with synthetic neighbors, and SDK/package checks. Attempt 1 passed host checks but its later private display failed to open; see `sdk-tests/receipts/2026-10-26-desktop-host-ci/`. Real desktop builds, installation, target GTK compatibility and owner acceptance remain open.
+
+SDK desktop-host work: an opt-in Plan usage page now shares the existing T3 menu source between Dock and Wingpanel, via a provisional C/Vala boundary. On a local ARM Ubuntu 26.04 VM with isolated synthetic data, the actual shared menu source passed hosted and dock-mode usage display, page switching and closed-read checks; neighboring indicators were stubs. Full Wingpanel/Dock build, installation, live desktop validation and GTK compatibility on the elementary target remain open. See `sdk-status-host/README.md`.
+
+ARM SDK run 40416161840 at 26a71f7 passed the candidate usage anchor interaction suite, including unpinned pointer exit, plus package lifecycle. The retained synthetic fixture receipt is `sdk-tests/receipts/2026-10-26-usage-anchor-final-pass/`; actual status-host integration and target acceptance remain open.
+
+ARM run 40415797379 at 7fa281f passed the candidate usage anchor synthetic hover travel, pin, outside dismissal and keyboard interactions, and package lifecycle; see `sdk-tests/receipts/2026-10-26-usage-anchor-pass/`. This does not qualify an installed desktop host. An added explicit unpinned pointer-leave check is pending.
+
+ARM run 40412642984 at 98867b8 passed core, generated app, accessibility, lifecycle and usage-refresh steps. The candidate anchor opened and read once, but failed pointer travel; pinning and subsequent steps were not reached. See `sdk-tests/receipts/2026-10-26-usage-anchor-travel-fail/`. X11 surface diagnostics are being added; native interaction validation remains open.
+
+Candidate usage anchor: ARM run 40407270110 did not open on hover; diagnostics showed the test pointer on the X root and no synthetic read. The isolated fixture now exports GTK bounds for pointer placement. GTK documents that changing auto-hide hides a visible popover, so the candidate now closes and reopens on pinning without restarting its read; interaction validation remains pending. This is a reusable candidate, not an installed desktop host. See `sdk-tests/receipts/2026-10-26-usage-anchor-coordinates/`.
+
+SDK run 40406733431 compiled 5c7dcbc but failed the synthetic hover interaction:
+the Usage anchor was present while the popup was not observed. The failure is
+retained under sdk-tests/receipts/2026-10-26-usage-anchor-hover-fail; its cause
+is unproven. The follow-up checks actual popup mapping and adds pointer/read
+diagnostics. It needs source-matched native execution; no host acceptance is
+claimed and no owner desktop was changed.
+
+## Candidate usage status anchor — native validation pending, 2026-10-26
+
+An embeddable GTK UsageAnchor is modeled on the existing taskbar hover/pin
+interaction and owns the UsageControl lifecycle without background polling. A
+private synthetic X11/AT-SPI probe exercises hover focus, pointer travel,
+hover-to-click pinning, outside dismissal, keyboard open/Escape and closed
+no-read behavior. Native compilation and interaction tests are pending. This
+widget is not installed in either real desktop profile; host adapters, real
+provider coverage and owner acceptance remain open. No panel was restarted.
+
+## Usage control keyboard validation — 2026-10-26
+
+Hosted ARM developer-path run 40405964283 passed on 477234a. A private synthetic
+AT-SPI/keyboard probe found `Refresh usage` as a button, used Tab and Space to
+exercise failure and retry, checked stale data and private-stderr exclusion,
+and closed with Ctrl+Q. Four reviewed failure-state frames and the probe
+receipt are in sdk-tests/receipts/2026-10-26-usage-keyboard-pass. Earlier
+private-display and accessible-name failures remain retained. This does not
+qualify keyboard scrolling, actual desktop status-host interactions, real
+accounts or owner visual acceptance.
+
+## Usage accessibility name diagnosis — 2026-10-26
+
+SDK run 40405291097 failed its synthetic keyboard probe on 9dac12e. The
+retained AT-SPI tree shows a button named `Refresh` with role `button`, not the
+expected `Refresh usage`. See sdk-tests/receipts/2026-10-26-usage-accessibility-tree.
+The visible label has been changed to `Refresh usage` to match the intended
+accessible name; GTK, keyboard and visual revalidation remain pending. The
+previous X-display startup failure is separate and remains unexplained.
+
+## Usage keyboard probe failures — 2026-10-26
+
+SDK run 40404146612 on 34a26fa failed twice: attempt 1 could not open the
+private X display; attempt 2 opened the app but the expected accessible refresh
+button was not found. Synthetic receipts are in
+sdk-tests/receipts/2026-10-26-usage-keyboard-failures. Causes are unproven and
+no keyboard acceptance is claimed. The follow-up records a bounded synthetic
+accessibility tree on failure so the actual role/name can be diagnosed.
+
+## Usage keyboard and AT-SPI probe — validation pending, 2026-10-26
+
+A private-session synthetic app and probe exercise the actual UsageControl via
+Tab and Space, inspect the accessible name/role, provoke a failed refresh, retry
+and close with Ctrl+Q. The probe records only synthetic data and checks private
+stderr does not enter the accessible tree. Native execution is pending. This
+standalone fixture does not prove keyboard behavior or focus in either actual
+status host and does not touch real accounts or the owner desktop.
+
+## Usage refresh control validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40403452026 passed on e1c91a8. Native
+synthetic tests cover open/busy/failure/retry and four failure-state light/dark
+Sans 10/15 frames were reviewed and retained under
+sdk-tests/receipts/2026-10-26-usage-control-final. Failure, stale data and the
+Refresh button are visible in the fixture; the footer no longer repeats the
+failure wording. Keyboard/AT-SPI, busy-state visual review, actual status hosts,
+real collectors/accounts and owner approval remain open.
+
+## Usage control initial validation — 2026-10-26
+
+Hosted ARM SDK run 40402684685 passed on a5b0ff2, including synthetic GTK
+success/failure/retry and failure-state captures. Initial review found the
+notice, stale data and refresh button readable, but the failure was repeated in
+both the panel and footer. Four frames and limits are retained under
+sdk-tests/receipts/2026-10-26-usage-control-first. The footer now says “Retry
+when ready”; that follow-up still needs source-matched GTK and visual review.
+Real collectors, keyboard/AT-SPI and actual desktop hosts remain open.
+
+## Usage refresh control — native validation pending, 2026-10-26
+
+A candidate embeddable UsageControl exposes refresh, spinner and status around
+the on-demand monitor. Explicit open starts one read; repeated open does not
+start another, and close/unmap/drop cancel owned work. Native synthetic tests
+exercise success, malformed-output failure and retry; the CI preview captures
+failure state in light/dark at two text sizes. GTK execution and visual review
+are pending. Actual status hosts, keyboard/AT-SPI interaction, real collector
+and accounts remain unqualified; no panel or service was restarted.
+
+## On-demand usage refresh validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40401954793 passed on ee9cd5e after the
+retained 58dd831 strict-lint failure. The native synthetic executable test
+checks no reads while closed or merely opened, duplicate refresh coalescing,
+source-age recheck at delivery, close/cancel, and a new refresh after reopening.
+The fixture does not prove real collector/account behavior, visible refresh
+controls, desktop-host integration or owner acceptance. No scheduled polling
+or owner desktop service was started.
+
+## Refresh controller lint repair — 2026-10-26
+
+SDK developer-path run 40401485674 failed at GTK strict clippy on 58dd831:
+`needless_return` in the expired-reply match arm. The arm now uses unit. Native
+controller tests did not run in that attempt and source-matched validation is
+still required. The earlier failed run remains evidence, not a passing test.
+
+## On-demand usage refresh lifecycle — native validation pending, 2026-10-26
+
+A candidate CodexBarMonitor explicitly opens/closes a UsagePanel, starts one
+bounded read on request, coalesces duplicates, cancels/invalidate on close and
+reports state to its host. It rechecks source age at final GTK delivery; no
+polling is scheduled. Synthetic GTK tests cover closed/open no-read, duplicate
+refresh, age, cancellation and reopen. The 107-test core suite and clippy pass
+on macOS; source-matched GTK compilation and lifecycle execution are pending.
+This does not connect either actual desktop status host or real provider data.
+
+## Scoped usage delivery validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40400566671 passed on 5a6a1e6. Its GTK
+regression executes a synthetic snapshot program, applies a successful result,
+rejects a queued result after a context switch, and checks that a later failure
+shows a generic notice with last-known data marked stale and no private stderr.
+The executable and data are synthetic; real collector/account integration,
+actual desktop host interactions and visual review of the new failure state
+remain open. No background polling or owner desktop service was started.
+
+## Scoped usage delivery — native validation pending, 2026-10-26
+
+UsagePanel can consume the scoped CodexBar read on the GTK/state-owner thread:
+old queued replies are ignored, and current failures retain last-known data as
+stale with a generic notice. A synthetic executable-to-GTK regression covers
+success, a context switch after queueing, failure and private-stderr exclusion.
+Core usage tests and strict clippy pass on macOS; source-matched GTK execution
+is pending. The caller still owns refresh, cancellation and host lifecycle.
+
+## Scoped CodexBar read validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40399879070 passed on 9e8fecc. Its five
+CodexBar tests include an actual synthetic executable with a shell-sensitive
+filename, literal `--snapshot` argument, malformed output and a context switch
+that cancels the owned work and rejects the stale completion. The core test
+also checks literal argv and preserved scope across transformation. These are
+isolated synthetic executable tests, not a live collector or account read.
+Real provider coverage, polling lifecycle and desktop status hosts remain open.
+
+## CodexBar bounded read adapter — native validation pending, 2026-10-26
+
+A scoped direct-executable SDK process API runs literal argv without a shell.
+The CodexBar adapter uses it for one five-second, two-MiB bounded `--snapshot`
+read, retaining context until delivery and leaving polling/service management
+to its caller. Synthetic executable tests cover arguments, malformed output and
+context cancellation. The full 107-test core suite and strict clippy pass on
+macOS; GTK adapter execution/source-matched Linux validation remain pending.
+No live collector, account data, desktop service or daemon was touched.
+## CodexBar snapshot decoder validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40398755850 passed on ee2eb68. Four decoder
+regressions cover aggregate scope and partial coverage, null quota, source-time
+freshness, future/expired values, malformed input, bounds and error redaction;
+a native GTK widget test renders a synthetic v1 snapshot. This validates the
+decoder against fixtures, not execution of a live collector, real accounts,
+account-specific coverage or either actual desktop host. Those remain open.
+
+## CodexBar snapshot decoder — native validation pending, 2026-10-26
+
+A bounded read-only decoder maps the existing CodexBar v1 provider snapshot to
+candidate usage observations, retaining source timestamps and partial coverage.
+It never claims account-specific usage from provider aggregates. Synthetic
+regressions cover unknown, stale, future, expired and malformed data and a GTK
+rendering path. No process, live backend or owner account is touched. GTK
+compilation and source-matched native tests are pending; real collector reads,
+account adapters and status-host integration remain open.
+
+## Usage viewport refresh validation — 2026-10-26
+
+Hosted ARM developer-path run 40397942393 passed on cc2dace. Its native widget
+regression rejects an invalid replacement, applies two valid updates and retains
+a numeric scroll offset with unchanged-height synthetic content. Preview images
+are retained in sdk-tests/receipts/2026-10-26-usage-viewport; reviewed frames
+keep provider overview visible at the top. Semantic anchoring, shorter/changed
+content behavior beyond clamping, keyboard/focus, real providers and both actual
+status-area hosts remain open. No owner desktop or real accounts were touched.
+
+## Usage viewport refresh — validation pending, 2026-10-26
+
+The candidate GTK UsagePanel provides a bounded read-only viewport and validates
+replacement snapshots before display. It restores a prior numeric scroll offset
+when refreshing and coalesces restoration after back-to-back updates. Native
+tests exercise invalid replacement, multiple updates and scroll retention; the
+synthetic preview now embeds this viewport. GTK compilation and execution on
+this exact source remain pending. Semantic row anchoring, focus in interactive
+children, provider refresh/teardown and actual status-host binding remain open.
+
+## Usage provider overview review — 2026-10-26
+
+Hosted ARM SDK run 40397085739 passed on 0951bde, including the native widget
+and scrolling regression. Eight synthetic light/dark Sans 10/15 top/end captures
+are in sdk-tests/receipts/2026-10-26-usage-overview. All four fixture provider
+names and partial coverage are visible on opening in both profiles; cards
+remain separate and scrollable. Compact quota layout, long-label/translation,
+keyboard interaction, real adapters, actual status hosts and owner acceptance
+remain open. The overview is not proof of complete provider coverage.
+
+## Usage provider overview — validation pending, 2026-10-26
+
+The candidate usage view now lists provider names and partial/unknown coverage
+before the provider cards. Repeated sources for one provider remain separate
+cards while the overview lists that provider once. The native regression checks
+that the four-provider overview and partial coverage precede all account rows.
+Source-matched GTK tests, top/end screenshots and visual review remain pending;
+this is not an interactive status host or evidence of complete provider coverage.
+
+## Multi-provider usage fixture review — 2026-10-26
+
+Hosted ARM SDK run 40396405090 passed on 2111eb1. Native synthetic checks cover
+two Codex accounts, two Claude, Grok and OpenCode and a reachable programmatic
+scroll end; eight reviewed top/end light/dark Sans 10/15 frames are retained in
+sdk-tests/receipts/2026-10-26-usage-multiprovider. Existing CodexBar provider
+marks were staged only in the isolated fixture. At large text only two providers
+are visible on opening, so the provider-coverage presentation requirement is
+still unmet. Keyboard scrolling, actual hosts, real adapters and owner visual
+approval remain open.
+
+## Usage provider marks and scrolling fixture — validation pending, 2026-10-26
+
+The candidate usage component can use existing CodexBar symbolic provider marks
+when present and always retains a readable provider label when absent. The
+synthetic preview now includes two Codex accounts, two Claude accounts, one
+Grok and one OpenCode account in a bounded scroll viewport. The CI fixture
+stages existing project icon assets in an isolated data directory and captures
+top and bottom in light/dark Sans 10/15; a native regression checks multiple
+accounts and scroll range. Source-matched GTK build/test, captures and visual
+review remain pending. No provider adapter, real account or host is involved.
+
+## Usage card refinement review — 2026-10-26
+
+Hosted ARM SDK run 40395621853 passed on dd96c00, including native widget
+checks and four synthetic light/dark Sans 10/15 captures. Compared with the
+previous preview, the card and account headings improve hierarchy and avoid
+repeated stale text and awkward reset wrapping in the tested fixture. Evidence
+is in sdk-tests/receipts/2026-10-26-usage-cards. Provider marks, compact quota
+presentation, multi-provider/long-list review, host interactions, real adapters
+and owner approval remain open; this is not full status-module acceptance.
+
+## Usage card hierarchy refinement — validation pending, 2026-10-26
+
+The candidate usage rows now use a scoped, theme-derived card treatment based on
+CodexBar's existing card styling. Account headings have stronger hierarchy;
+stale is shown once per account, and reset text has a separate line for large
+text. The widget regression also checks stale versus expired presentation.
+This is not a provider mark, complete status control or visual acceptance.
+Source-matched native GTK build, tests, new captures and independent review
+are required before claiming an improvement.
+
+## Candidate usage preview review — 2026-10-26
+
+Hosted ARM developer-path run 40395051297 passed on edf7a4e, including native
+widget-tree regression and four synthetic usage screenshots. Review found the
+candidate too flat versus the CodexBar reference: provider/account hierarchy is
+weak, stale is repeated, and large-text wrapping is awkward. Images and scoped
+findings are in sdk-tests/receipts/2026-10-26-usage-preview. The candidate is
+not visually accepted; provider marks, compact hierarchy, interaction/scrolling,
+hosts and real adapters remain open. The earlier d4bd990 compile failure is
+retained above; the Rust orientation fix passed in this run.
+
+## Candidate usage GTK compile repair — 2026-10-26
+
+Developer-path run 40394710018 failed compiling d4bd990 because the candidate
+usage component used the Vala spelling `Orientation::VERTICAL` in Rust. The
+three sites now use the Rust GTK spelling `Orientation::Vertical`. No native
+widget test or screenshot ran in that attempt. Source-matched GTK validation
+and visual review remain required; retain this failed attempt in the record.
+
+## Synthetic usage preview — validation pending, 2026-10-26
+
+An isolated GTK example renders synthetic accounts and saves a window capture;
+the SDK workflow builds it and captures light/dark at Sans 10 and 15 for review.
+This is a candidate component preview, not a real status host or evidence of
+visual acceptance. GTK compilation, all four captures and independent visual
+review remain pending on the exact source. It must not read real account data.
+
+## Candidate usage GTK rows — validation pending, 2026-10-26
+
+`msdk_gtk::usage::render` builds read-only provider/source and account rows from
+validated snapshots with explicit unavailable, stale and expired states. A
+native widget-tree test covers separate accounts, unknown/expired quota and
+partial coverage. The data tests (4), complete macOS core suite (106) and strict
+clippy pass. GTK compilation, native execution, light/dark/large-text visual
+review and real status hosts remain open. This initial widget does not yet meet
+the full CodexBar-derived status standard or implement refresh and actions.
+
+## Usage presentation inputs — 2026-10-26
+
+The candidate usage snapshot now carries separate display labels and selected
+state, and can group validated observations by provider and source while
+preserving every account and separating aggregates. Four usage tests and all
+106 core tests plus strict clippy pass on macOS. This prepares inputs for a
+native control; it is not a widget, provider adapter or status host. The
+source-matched Linux run for the prior commit is still in progress, and this
+local change needs its own Linux, visual and interaction validation.
+
+## Usage observation snapshots — 2026-10-26
+
+The candidate Rust usage data layer now supports explicit coverage and validates
+snapshot identity, duplicate scopes/windows, source timestamps for fresh
+observations and impossible token subsets. Distinct accounts and sources are
+not merged; unknown values remain optional. Full macOS core tests (106) and
+strict clippy pass. This is an in-memory API, not a wire protocol, collector,
+presentation or status host. Source-matched Linux and the remaining status-area
+integration and visual/interaction gates are still required.
+
+## Usage observation semantics — 2026-10-26
+
+The candidate `msdk::usage` data API separates account/provider/source scope,
+used and remaining quota, expired windows, unknown values and token subsets.
+Debug omits scope identifiers. Three focused semantic tests and the complete
+105-test core suite plus strict clippy pass on macOS. This is data groundwork;
+collectors, cross-source deduplication, native presentation, both status hosts,
+real interaction/visual review and source-matched Linux validation remain open.
+The benchmark host is unreachable. See `SDK-USAGE-DATA.md` for the boundary.
+
+## SDK accessibility failure diagnosis — 2026-10-26
+
+The synthetic failure artifact from developer-path run 40392328090 attempt 1
+shows GTK failed to open the display before accessibility registration. The
+reason for the display failure remains unknown; attempt 2 passed. The original
+receipt is retained in sdk-tests/receipts/2026-10-26-accessibility-failure.
+The probe now reports a child exit immediately and preserves stderr, instead of
+waiting for an accessibility-root timeout after the app has already exited.
+Linux execution of this probe change remains to be verified.
+
+## Golden-path fixture validation — 2026-10-26
+
+On dbf4eee, hosted ARM SDK/System Monitor run 40392327560 passed. SDK
+Developer-path run 40392328090 attempt 1 failed because the generated app's
+accessibility root was not observed within the probe timeout. Attempt 2 passed,
+including that probe and the native runtime version-mismatch fixture/no-fallback
+regression, then package lifecycle. The first failure is retained; its cause is
+unknown and one retry does not establish that the probe is reliable. This tests
+SDK extension negotiation, not an OS backend protocol or a timed novice trial.
+
+## Golden-path version injection — validation pending, 2026-10-26
+
+Fixture files may specify an SDK extension `api_version` to exercise a visible
+version mismatch without a real backend; invalid version values are rejected.
+The golden-path guide describes the injection. A native regression checks the
+error and verifies no built-in process fallback executes. GTK compilation and
+source-matched native execution remain pending; this is not an OS backend
+protocol compatibility result or a measured developer trial.
+
+## Context-bound feed validation — 2026-10-26
+
+Hosted ARM SDK developer-path run 40391629479 and SDK/System Monitor run
+40391629511 passed on bb90bf7. The native GTK lifecycle test confirms a
+current feed update reaches host state, an update from an advanced context is
+ignored, rebinding is rejected, and the provider stops on close. This is an
+explicitly bound test provider; legacy providers are unscoped, and cancelling
+backend reads/subscriptions and displaying account identity remain provider
+responsibilities. Physical Pantheon and model-trial gates remain open.
+
+## SDK context-bound feeds — validation pending, 2026-10-26
+
+An opt-in typed feed endpoint carries an app-owned context to GTK delivery and
+rejects stale updates. Legacy feeds remain compatible and unscoped; providers
+must explicitly retire subscriptions and reads on context changes and close.
+A native lifecycle regression covers delivery, context advance, rebinding
+rejection and close. Source-matched Linux GTK compilation and execution are
+required before this feature is claimed as validated; SER8 remains unreachable.
+
+## SDK source-matched ARM and native validation — 2026-10-26
+
+Developer-path run 40391194892 passed for b7b3a99 on hosted ARM Linux:
+core tests/lint, schema checks, generated native build, keyboard/accessibility,
+render matrix, native host lifecycle (including the incompatible provider and
+built-in feed regression), and package install/reinstall/removal. SDK/System
+Monitor run 40391194847 also passed on that source. These are hosted CI checks,
+not physical M-series Pantheon or owner visual acceptance. The model trial and
+other release gates remain open.
+
+## SDK built-in feed compatibility — 2026-10-26
+
+The local GTK host change keeps an incompatible optional service extension from
+blocking the host-owned `windows.list` feed; lifecycle test now exercises that
+combination and verifies the incompatible provider receives no external feed.
+The generated test document and manifest pass the SDK checker with zero warnings.
+This change has not been compiled or run on Linux GTK and is not
+ready to claim as verified. SDK developer-path run 40390669721 passed on prior commit 4909d91, including
+native lifecycle and package operations; SER8 is unreachable. Validate this
+changed source and retain the result before claiming it passes. The current core-only macOS
+suite, including the unread scoped-stream case, passes 102 tests and clippy.
+
+## SDK authoring scenario tool — 2026-10-26
+
+The benchmark worker now accepts a confined scenario-file path for `gate`, so
+model authors can run the same acceptance scenarios supplied by SDK starters.
+Five boundary tests pass; a local worker-to-CLI smoke passed all seven settings
+gates, including four named scenarios. This is not a model trial or isolated
+Linux benchmark preflight; the changed worker/controller still need staging and
+validation on SER8 before admission. Source-matched ARM runs remain pending.
+
+## SDK context-bound process streaming — 2026-10-26
+
+The Rust SDK now offers `spawn_streaming_scoped`: context expiry cancels the
+owned process, and chunks and completion carry their context to the final state
+owner. The test switches context after receiving a real process chunk, verifies
+the queued chunk and completion are rejected, and verifies a new stream works.
+A further macOS regression verifies unread buffered bytes and a completed reply
+are both rejected after the context closes, even after the process exits.
+The complete SDK core suite and strict clippy passed in a macOS SDK-only copy.
+This source change postdates the previous Linux/ARM and GTK qualification;
+source-matched Linux, ARM and release-host validation remain outstanding. It
+does not automatically scope GTK feeds or external backend subscriptions.
+
+## SDK benchmark packaging and quit checks — 2026-10-26
+
+The SDK authoring harness now exposes packaging through its fixed SDK tool
+surface and treats failure to quit on Ctrl+Q as a failed capture. An isolated
+uid2000 smoke built a real .deb and launched the generated settings window;
+a separate window that ignores Ctrl+Q produced the expected failure. Evidence
+is in `sdk-bench/receipts/2026-10-26-pack-preflight`. This smoke did not install
+or remove its package. Four boundary tests pass. The first model trial and
+independent acceptance remain open; the latest attempt to check SER8 timed out,
+so its current model residency is unknown. Native ports of every app are not a
+completion requirement.
+
+## SDK authoring preflight retained; model admission deferred — 2026-10-26
+
+The full offline uid2000 tool preflight succeeds through generation, build,
+actual external capture and Ctrl+Q; the fixture screenshot has visible real
+settings content without clipped primary controls. Four tool-boundary tests
+and the three native suites pass. All 80 SDK source fingerprints match the
+production snapshot. Sanitized configuration, seed/generated source and locks,
+provisioning/prewarm logs and tool results are retained under
+sdk-bench/receipts/2026-10-26-preflight. Benchmark helper boundary tests now run
+in SDK CI; CI never launches the model controller.
+
+The s01 seed17 controller's admission attempt exited before inference because
+qwen3.5:2b was already resident in the existing Ollama service. Residency does
+not prove active inference; the conservative rule avoids replacing that worker.
+No prompts were dispatched, generated model code was run, or model-quality
+score claimed. No daemon or owner workload was stopped/switched. The synthetic
+smoke project/state was archived and cleared; the sandbox is empty for a future
+properly admitted cohort. Keep the admission receipt; do not count it as a
+failed or completed model trial. Full-spec/baseline/repeated-model qualification
+remains open.
+
+SDK ARM developer-path run 40378225258 succeeded on bd002fa, and matching
+SDK/System Monitor run 40378225297 passed. This covers the current production
+Rust context-binding code; newer changes here are benchmark tooling/docs only.
+Native app ports/product feature parity remain outside SDK completion scope.
+
+## SDK model authoring discovery runner and offline preflight — 2026-10-26
+
+Added a bounded SDK JSON-action authoring controller for the frozen benchmark
+specs, plus a fixed project-only tool worker and external window/capture/quit
+probe. Four boundary tests pass. It pins qwen3.5:4b digest
+ d8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04,
+packaged Apache-2.0 license, runtime/options and prompt/spec/source identities.
+The model receives actual app frames; independent audit alone can establish the
+rubric done bar. `done` is a candidate, not a pass. No baseline/repeated-model or
+whole-SDK completion result is claimed by harness preparation.
+
+Prepared a separate ephemeral msdk-bench-20261026 clone with uid2000, zero
+capabilities, loopback-only networking for execution, no owner-data mounts and
+configured CPU/memory/process/disk bounds. Trusted GTK/SQLite/screenshot setup
+and cache warming occurred before the trial timer. Initial provisioning failed
+because networking was disabled too early; no model code/inference ran. Corrected
+order is provision first, disable and verify before generated code. No host
+model daemon was restarted, no second GPU worker launched, and no owner app,
+desktop, accounts or service data changed.
+
+Offline unprivileged native CLI/lifecycle/runtime preflight passes. Fixed
+settings new/gen/build/capture/Ctrl+Q succeeds through the actual tool bridge:
+generation ~0.021s, cold cache-completion build 82.12s, window mapped ~0.283s and
+capture ~0.927s. These are harness/provisioning facts, not model coding times or
+a general performance comparison. Archive/clear that owned smoke project before
+starting the unchanged s01 model cohort. Retain all failures/interventions and
+inspect produced code/GUI/SQLite/shortcuts before scoring. See sdk-bench/RUNNER.md.
+
+## Owner SDK scope clarification: native is not mandatory for every app — 2026-10-26
+
+The owner explicitly said we do not need a native experience for all apps.
+SDK completion covers reusable SDK capabilities and a small set of representative
+consumer/integration flows. Preserve suitable web interfaces, wrappers, webview/
+hybrid architectures and existing clients; do not create a project-wide native
+porting or full app-parity prerequisite. Generic WebView hosting is not currently
+a shipped vocabulary component, so do not imply that integration already exists.
+
+Updated SDK-COMPLETION.md, RUST-PANTHEON-SDK.md and APP-BUILDING-GUIDE.md to apply
+this scope. Full T3/client parity and app-by-app native status ports are separate
+app work. SDK host quality, declared API/lifecycle/authority contracts, selected
+reference flows, distribution, developer usability and supported-host validation
+remain SDK work. Signal/Messages deferral stays in force. No new consumer app
+port or owner desktop/service/account changes were made for this clarification.
+
+## Typed GTK reply contexts and ARM foundation pass — 2026-10-26
+
+ARM developer-path run 40375089386/job 121755848259 succeeded on pushed
+7a5f4d27deeabf6334ba9c3d441e39eb0374ed3a, including core/schema, generated app,
+keyboard/AT-SPI, text/theme captures, native CLI/lifecycle/runtime and package
+lifecycle. SDK/System Monitor run 40375089841 also passed. Preserve these
+completed runs; the newer scoped GTK reply work needs its own current CI.
+
+`ServiceReply::in_context(token)` now binds once before work, with binding and
+first completion shared across clones. The Host checks tokens at final typed
+GTK delivery. An error callback keeps its token through its additional queue;
+a context switch between error receipt and callback cannot mutate the new page.
+Synchronous invoke Err also uses the shared binding. Rebinding or binding after
+completion is invalid input. A provider that binds then declines gets an owned
+unavailable result; it cannot trigger a real unscoped built-in fallback. Replies/queues retain no GTK/Host ownership.
+
+Native regressions prove obsolete success/error rejection, synchronous denied
+reply after binding, the second-queue callback race, current recovery, actual
+visible GTK labels and Host release/stop. Core and existing lifecycle/CLI tests
+and strict lint pass in the disposable SER8 environment. The change is explicit
+opt-in: legacy raw events, feeds, built-ins/pre-invoke version failures,
+streaming and T3/network adapters are not automatically scoped. Real backends
+must retire reads/workers and preserve visible account identity separately.
+SDK-RUNTIME-CONTRACT.md documents those boundaries. No owner desktop/accounts/
+services/kernel/panel changes. Continue full ledger and final current CI.
+
+## SDK current runtime/reference native qualification — 2026-10-26
+
+Resolved the prior source-transfer approval block with direct owner-machine
+context plus SSH/container identity evidence; automatic review accepted the
+scoped SDK-only transfer. Existing ephemeral SER8 container remained running;
+no owner desktop, accounts, panel, kernel or services changed. Current isolated
+Ubuntu 26.04 x86_64 / Rust 1.93.1 / GTK 4.22.4 qualification passes 100 core
+checks, three native suites (CLI failure exits, D-Bus lifecycle, typed runtime),
+SDK strict Clippy and generated Home Storage model/build/strict Clippy.
+
+The actual generated app's keyboard/AT-SPI flow proves an absent synthetic HOME
+causes a recoverable real command error, then a keyboard retry succeeds in the
+SAME process after the harness creates that folder. Ctrl+Q passes separately.
+Eight source/binary-matched light/dark, requested 480/900 widths and asserted
+10/15-point captures pass keyboard recovery and visual inspection. Original raw
+df table wrapped at larger text and was rejected; labeled figures now remain
+readable, and unsupported report shapes fail instead of inventing usage.
+
+Actual package creation, install, reinstall, installed-binary equality, installed
+launch and owned-file removal pass in the disposable container. Final executable
+SHA256 74b64bfb42c5a65a65e924e5d6ea49438f8e9f11471ce115f388798af40fb464;
+package d01aa58ba3a3b560c696806a788fd4772e206687ffd84241190bc19f0caf166e.
+All 80 SDK source/fixture hashes match the qualified code. Retain receipts under
+sdk-tests/receipts/2026-10-26-native-runtime-reference, including generated source,
+locks, raw synthetic logs, screenshots and rejected layout evidence.
+
+The full SDK goal stays active. Next: current ARM CI, GTK context/streaming and
+real backend adapters, shared CodexBar-derived status module/host conformance,
+controlled exact-model/novice trials and performance, then physical Pantheon/
+M-series acceptance and release audit. Existing ARM foundation run 40363235712
+on ed9bc5b is completed prior evidence, not current-runtime ARM acceptance.
+
+## SDK request context ownership and stale reply delivery — 2026-10-26
+
+Added core RequestContext/ContextToken/Scoped<T> for app-owned account/page/
+selection generations. Advance invalidates old successes/errors, including
+already queued replies; close is permanent and last-owner drop invalidates
+without tokens retaining the owner. Freshness is checked at final delivery,
+with switches and application serialized on the state-owner thread. Tokens
+store no account data and Scoped Debug omits its value. Native UI must continue
+to show the actual identity and cannot treat the token as authority.
+
+`process::spawn_scoped` checks the token before starting and during bounded task
+work, cancels/reaps when its context expires and delivers a scoped completion.
+Core tests exercise stale queued success/error, independent/returning contexts,
+owner release/close, an already closed task that never executes, real sleeping
+process cancellation/reaping and a successful replacement request. Runtime
+discovery publishes the explicit core APIs and automatic-adapter limitations.
+
+GTK ServiceReply/streaming chunks/T3 network subscriptions are NOT automatically
+scoped yet. Core freshness is a snapshot, not an arbitrary cross-thread state
+transaction or rollback. These adapters and native final-source qualification
+remain open in SDK-COMPLETION.md. SER8 source-transfer approval is still pending;
+no transfer/retry/bypass or owner services/desktop/accounts/kernel/panel change.
+
+## SDK entry points stop on manifest and validation failures — 2026-10-26
+
+Core CLI `check`, `render`, `gate`, `complete` and `agent-manifest` previously
+printed service-manifest errors and continued with incomplete contracts. They
+now stop on unreadable/invalid/conflicting manifests; check emits structured
+service-manifest errors in JSON mode. Adjacent discovery is deterministic and
+reports directory errors. Missing explicit paths/flag values fail. A check with
+no descriptions no longer returns a false success. `gate --services PATH` no
+longer mistakes the flag for a gates filename. Generation/package already
+propagate loader errors; actual CLI tests verify generation creates no output
+when an adjacent manifest is invalid.
+
+GTK preview now stops on invalid manifests and missing --services values,
+reports discovery errors, and returns failure for rejected descriptions/surfaces
+or failed screenshots rather than quitting with success. A private-session native
+CLI test is added to the native workflow for those failure paths, but has NOT
+been compiled/run here: Linux source-transfer authorization remains pending.
+Core executable tests pass on macOS; final receipts distinguish that evidence
+from unqualified GTK code. No remote retry or owner desktop/service/account/
+shipping action was performed. Continue final native qualification, GTK
+streaming/context adapters and the full completion ledger.
+
+## Atomic versioned SDK manifests and compatibility boundaries — 2026-10-26
+
+Manifest loading now validates its complete input and conflicting registered
+service/feed shapes before publishing under one write lock. Invalid later
+entries cannot leave earlier entries registered; concurrent conflicting loaders
+have one winner, and the losing manifest publishes nothing. Identical reloads
+are idempotent, independent of argument/field object order. Explicit
+manifest_version 1 is supported; omitted version preserves legacy v1 manifests.
+Unsupported versions and malformed/unknown fields fail explicitly. Rejected and
+idempotent manifests no longer leak strings into the lifetime registry.
+
+SDK-COMPATIBILITY.md distinguishes package, app-description, manifest, extension,
+diagnostic, GTK and shell protocol versions; publishes candidate ownership,
+migration/deprecation rules and actual host evidence; and keeps real backend
+protocols and physical supported-host release qualification open. Runtime
+discovery derives package/app/manifest versions from actual constants. Version
+errors guide migration rather than blindly relabeling an incompatible document.
+
+Eight manifest checks cover rollback, conflicts, idempotency, feed shape,
+concurrency, malformed input/version and immutable document rejection. An initial
+full core run exposed simultaneous generator-test scratch directories with the
+same timestamp; an atomic serial and exclusive-create retry repair the collision.
+That failure is retained with final local receipts. No remote source transfer,
+owner desktop/service/account/kernel/panel mutation or whole-SDK completion claim.
+Linux final-source validation remains pending the previously requested explicit
+SER8 source-transfer authorization. Continue GTK streaming/context adapters and
+remaining completion-ledger gates after qualifying the final sources.
+
+## Bounded Rust process streaming — 2026-10-26
+
+`msdk::process::spawn_streaming` now supplies private raw stdout/stderr chunks
+before completion. Its owned subscription and process handle cancel on drop,
+including silent work. A 32 × 8192-byte queue uses nonblocking delivery; a slow
+consumer terminates the task with output-limit failure rather than hanging the
+worker. Already queued/consumed partial output survives cancellation and timeout;
+stream closure precedes completion, which remains the terminal-status authority.
+Raw bytes preserve invalid UTF-8; Chunk Debug omits payloads. Discovery records
+the Rust API/limits separately from completed-output `process.run`.
+
+Five new real-process checks pass on macOS: early private stdout/stderr plus
+cancel, raw byte fidelity, bounded slow-consumer failure, silent-task cancellation
+on subscription drop, and partial output after timeout. Full core suite (82
+checks), strict Clippy and formatting pass. Linux current-source qualification
+still awaits explicit source-transfer/destination approval; no remote retry was
+made. GTK streaming/progress adapter, stale-context protection and the updater
+reference consumer remain unfinished. See SDK-RUNTIME-CONTRACT.md for semantics.
+No owner desktop, services, accounts, kernel or panel changed.
+
+## Typed SDK runtime and owned task commands — 2026-10-26
+
+ARM developer-path run 40363235712 passed on ed9bc5b. Continue that evidence; no
+replacement was needed for the completed foundation run.
+
+Added candidate `ServiceFailure`/FailureKind diagnostics, `msdk describe runtime`
+and runtime-code explanations. Modern `Services::invoke(ServiceCall)` owns typed
+async replies; registered result shapes are checked, first completion wins and
+errors do not fall through to real system work. Extension interface version 1 is
+checked before dispatch; real backend OS/network protocol negotiation remains
+separate. Existing provider entry points remain compatible. Missing fixture
+replies now fail explicitly, and fixture traces omit arguments.
+
+`msdk::process` owns a Linux/macOS process group, nonblocking pipes, monotonic
+120-second/default 1-MiB combined output bounds and cancellation/reaping. Host
+concurrency is four and accepted close cancels handles. Kernel PID identity is
+held until group signals finish, with cancellation serialized. Private stderr
+can reach app UI, while Debug/Display/diagnostics omit payloads. Streaming,
+partial output, privileged/daemon job supervision and app-context races remain
+open; no whole-SDK or backend stability claim. SDK-RUNTIME-CONTRACT.md records
+actual identifiers, limits, compatibility and reproduction commands.
+
+Real process/diagnostic tests pass on macOS. Initial Linux core/native checks
+pass, including blocked mismatch and recovery, unavailable/malformed/denied
+async replies, duplicate rejection and real command termination on close.
+Final fixture-no-fallback and updated discovery checks remain to qualify on the
+final Linux source. Automatic approval review rejected the updated source transfer
+to SER8 pending explicit destination/payload authorization; no transfer was made.
+Local core/lint/format checks pass. Home Storage now supplies a read-only useful
+reference flow, duplicate-submit suppression and actual command error/retry tests;
+SDK-GOLDEN-PATH.md records reproduction and still-pending native UI/trial gates.
+Next: authorize/resume isolated Linux qualification, retain source-matched receipts,
+then shared status module, streaming and controlled model trials.
+No owner desktop, accounts, services, kernel or panel changes.
+
+## Source-matched SDK developer-path receipts retained — 2026-10-26
+
+The final isolated x86_64 pass covers exact SDK code `287886e3b4399c742bf286bbaf3905b36439467d`;
+all 67 source/fixture fingerprints match the checkout. Receipts, generated Cargo
+sources, dependency locks, raw synthetic test/install logs, eight reviewed PNGs
+and retained failures are under `sdk-tests/receipts/2026-10-26/summary.json`.
+
+65 core tests pass; strict core/runtime and generated-app lint pass on Rust
+1.93.1/GTK 4.22.4. Native private D-Bus lifecycle proves accepted/vetoed close,
+stop/read behavior, late-event rejection and Host release. Live keyboard and
+AT-SPI checks prove Switch/ComboBox/Button names/roles, saved values, reset and
+Ctrl+Q. All eight light/dark, 480/900-wide, asserted Sans 10/15-point captures
+were visually inspected without clipped actions/labels. This is isolated GTK
+rendering, not owner visual or physical-scale/Wayland acceptance.
+
+Actual `.deb` metadata/dependencies, fresh install, reinstall, byte equality,
+installed launch and all five owned artifact classes' removal pass. Final app
+SHA256 is `e68aefa505ea9f16eeb8d475d6997f4340cd10e3cfe31b9d504ed92e78c91feb`;
+package SHA256 is `ebc6015c44c2adc4ebe394ef3f0561edfab0ab5900b3230130e95a0feb69f317`.
+Unmodified SDK/app lock files and generated sources are retained. No owner's
+services, desktop or accounts were changed. The completion ledger retains all
+remaining gates: versioned service/errors/process cancellation, shared status
+module/T3 host semantics, model usability, performance and supported target
+architecture/distro/owner qualification. The full SDK goal remains active.
+
+A final schema-probe interruption came from AppleDouble files in an early Mac
+archive; preparation/filtering now ignore that metadata. Completed core/lint/
+lifecycle work was reused, and only unfinished phases resumed. ARM CI still
+needs the official-ports provisioning correction qualified; source merge is
+not a claim of complete SDK acceptance. Next: inspect that new CI handle, then
+implement the service/error/cancellation contract and its useful golden-path app.
+
+## SDK native validation and authoring repairs — 2026-10-26
+
+The SDK now has standalone typed Cargo generation and explicit ELF-to-Debian
+packaging. In a new disposable SER8 Ubuntu 26.04 x86_64 container (Rust 1.93.1,
+GTK 4.22.4), core tests, actual GTK lifecycle, generated-app keyboard/AT-SPI
+controls, metadata validation, install/reinstall/installed launch/binary equality
+and removal pass on the tested snapshots. Final source fingerprints/artifact
+receipts are being retained separately; this is not whole-SDK or target desktop
+acceptance. The owner's containers, desktop, panel, accounts and kernel remain
+unchanged. The temporary msdk-validation-20261026 container is scoped to this
+SDK goal; retain its build cache while work continues.
+
+Concrete repairs: weak Host dispatch/event ownership; cancelable/serialized
+window polling with an owned handle; provider teardown hook and late-event
+rejection; accepted-close disposal (a vetoed close stays usable). Independent
+native D-Bus reads prove enabled/closed/disabled behavior and Host release.
+Generated apps have standard Ctrl+Q and native window-control layout. Visual
+review rejected oversized custom oval controls and a missing dropdown label;
+those are repaired. Original GDK_DPI_SCALE screenshots did not change text and
+are not larger-text evidence. The corrected private GTK 10/15-point profiles
+assert the effective font setting before capture. Physical scale/theme/owner
+acceptance remain open.
+
+The JSON schema previously omitted initial/persist/feeds/update/logic and could
+not accept the shipped starters. It now describes those and all rule verbs;
+an independent Draft 2020-12 validator accepts 11 real descriptions/metadata
+cases and rejects seven malformed action shapes also refused by the checker.
+Generated manifests register once; corrected package metadata passes actual
+AppStream validation. A stale probe selected static labels rather than their
+identically named controls; that failure is retained before its repaired live
+Switch/ComboBox/Button checks. Rust 1.93 strict lint exposed older boolean
+forms; equivalent rewrites retain lexer bounds ordering and pass native lint.
+
+Run 40355512113 reached its 25-minute limit during Azure package provisioning,
+not SDK tests. Its log shows the two Rust archives stalled for minutes. The
+workflow now selects official Ubuntu ports while preserving signed APT trust,
+adds bounded download waits, independent schema checking, actual keyboard and
+accessibility checks, native lifecycle and compact/larger-text rendering.
+Next: retain final source-matched receipts and arm64 CI; then finish versioned
+service/error/process cancellation contracts, reusable status module conformance,
+model-authored app trials/performance and target-host qualification. All remain
+open in SDK-COMPLETION.md. Signal/Messages remain deferred.
+
+## SDK native compilation reached — 2026-10-26
+
+Run 40354775593 passes core and compiles/tests the generated GTK app, then fails
+strict lint on redundant imports for a starter without records. Qualified derive
+paths remove them; generated fixture compilation now denies warnings. Native
+rendering and package/install/remove qualification remain open.
+
+## SDK explicit binary packaging — 2026-10-26
+
+Added `msdk pack <project> --binary <ELF> --output <new.deb>`: matching native
+architecture required, shared-library dependencies resolved from the supplied
+binary with dpkg-shlibdeps, metadata validated before archive publication,
+owned executable/desktop/icon/metainfo/license files included. Existing outputs
+are never replaced. No build, app execution, installation or background service
+is performed by the command. Generated projects now include icon/license assets
+and preserve declared-service manifests for packaging. App-specific attribution
+and production metadata remain release review work.
+
+Core architecture/metadata-injection/XML checks and strict lint pass on macOS;
+actual package/native runtime qualification is Linux-only and pending. The
+workflow now exercises package creation, installation, reinstall, installed
+binary equality/launch and removal on a disposable runner. Full target desktop,
+service/lifecycle, benchmark and owner acceptance gates remain open in the SDK
+completion ledger. No owner's desktop or running panel changes.
+
+## SDK Linux first-run dependency correction — 2026-10-26
+
+Native workflow run 40354229616 failed before GTK build: the generated-model
+integration test uses offline Cargo, but serde derive/proc-macro dependencies had
+not been provisioned by core Cargo tests. Added the actual test dependency and
+copied the parent lock into the generated fixture before offline compilation.
+This preserves offline test execution and pinned versions; it does not weaken
+or skip generated-code compilation. Native build/render checks remain pending.
+
+## SDK standalone app generation and core reconciliation — 2026-10-26
+
+Added `msdk gen` for checked descriptions: independent Cargo project, inspectable
+Rust records/State/Message/event bridges, embedded document/service manifests,
+real GTK executable and initial-state test. No custom backend or Rust logic is
+silently invented. All six generated models compile; keyword/collision cases
+and >2^53 integers round-trip exactly. Starter escaping remains covered.
+Reconciled two stale core tests with the current T3 SDK identity and Usage
+start page while preserving permission/page-visibility assertions.
+
+Core tests and strict clippy pass in the isolated macOS core workspace. New
+Linux native generation/build/launch screenshot CI is pending; target desktop,
+package/install, lifecycle, model usability and owner acceptance remain open.
+`SDK-COMPLETION.md` preserves the full requested completion contract and next
+gates; mandatory SDK/authoring and CLI docs describe the new command accurately.
+No desktop installation, live account reads, kernel or panel changes.
+
+## SDK starter literal-name repair — 2026-10-26
+
+`msdk new` now JSON-escapes supplied identity/name strings and substitutes original
+placeholders once. Quotes, backslashes, Unicode, newlines and names resembling
+placeholder text no longer corrupt or recursively rename generated descriptions.
+Five template tests pass; actual CLI settings generation in JSON and `.msdk`
+formats passes `check` and `gate` with a quoted/backslashed Unicode name.
+
+Verification used an isolated copy of the unchanged msdk crate plus its external
+fixture files, with cached Cargo dependencies on macOS. Workspace offline testing
+cannot resolve the uncached pinned Smithay Git dependency. The full isolated core
+suite has two failures: inspect expects the old T3 Chat default/usage heading,
+and intents expects absent tool `claudepantheonrs_send`. These are outside template
+rendering and remain open; no green whole-suite or GTK/runtime claim is made.
+
+Next SDK completion work: reconcile those T3 contract tests; provide a complete
+standalone app/build/package path; qualify versioned service errors and optional
+capability lifecycle; exercise native Dock conformance (#605), and retain actual
+visual/accessibility/installation and controlled model-authoring evidence (#535).
+Signal/Messages remain deferred. No desktop installation or panel restart.
+
+## Unified native T3 panel integration — 2026-10-26
+
+Merged Fleet PR #607 at `04fe68e6`. Owner does not require particular remote
+SSH aliases; leave Fleet available with its existing local connector and no
+new remote configuration or probes. Machine Lab has replaced Orchard.
+
+The new `mseries/t3-wingpanel` module shares the dock's maintained GTK/Granite
+menu, replaces the three standalone indicators and retains one RepoBar background
+notification owner. Lazy embedded views stop collectors while closed; recent
+live T3 status drives the badge, including expiry without collector polling.
+Native settings and icon assets are packaged. Supported legacy installers and
+deploys preserve the unified selection instead of restoring separate icons.
+
+PR #608 is open against dev. Full clean dock/launcher suites, light/dark native host interactions, launch
+routes and closed polling pass. Custom CodexBar v0.78.0 port/schema check passes;
+Debian module package builds. Required post-push CodexBar and RepoBar deploys
+pass and preserve recovered panel PID 430738 (one automatic crash recovery).
+New panel/dock/T3 CI passes; an unrelated AirPlay timeout is being rerun.
+Source and lifecycle reviewed; no model turn or
+real SSH. See [installation and qualification boundaries](t3-wingpanel/README.md).
+Initial staging caused an unintended Wingpanel crash: its directory watcher
+hot-loaded `.so.new` against the legacy constructor ABI. Systemd recovered at
+09:19:05; the running process maps only the unified module. Installer/package
+now stage outside discovery and require explicit activation; no further panel
+reload was issued. Physical Wingpanel behavior/owner acceptance remain open. Whole-chat validation stays
+deferred. Next: confirm the loaded unified native menu without duplicating old
+modules, then owner visual/account acceptance. No factory boot qualification.
+
+## Native Fleet in T3 and unified-menu dev integration — 2026-10-26
+
+PR #606 is merged into `dev` at `42180692` after all CI checks passed. The unified
+taskbar menu, native Activity route and nine pinned Tstack workflows are on dev;
+chat/delegation and owner live visual/account acceptance remain deferred/open.
+
+Implemented and installed native **Remote Machines** in T3, reachable through
+its menu/palette/desktop action and the unified dock's Fleet button. Explicit
+connector list/add/remove uses existing SSH aliases and private atomic config.
+Opening or editing settings never contacts a machine. Refresh runs bounded
+Herdr/OMP read-only probes; the page separates missing/partial/stale sources
+from real zero measurements. Open SSH Terminal provides an explicit interactive
+route. Machine Lab remains separate and has replaced Orchard; no local app
+replacement or remote provisioning/power controls were added.
+
+Upstream Fleet Shepherd collector is pinned to `b39cf962dcbbae397c1d21f4267c24ab49e5ddbc`,
+MIT notice retained. Native cancellation kills owned probe groups. 69 Python
+collector/adapter tests, 81 T3 library tests, strict clippy, native light/dark
+fixtures and the real GTK settings/add/remove/snapshot/terminal adapters through
+inert SSH/Herdr/OMP tools pass. The unified menu's light/dark desktop-action tests
+also cover Fleet. Release and app-only Debian packaging succeed.
+
+Installed and loaded the dock/T3 front end; no Wingpanel or T3-server restart.
+[Loaded hashes/PIDs](fleet-shepherd/receipts/2026-10-26/loaded.json) match installed
+binaries; panel PID 197327 and server PID 1581 remain unchanged. The live `fleet`
+action opens settings and the installed adapter reads the one existing local
+connector. No real SSH command or model turn was sent. User target aliases and
+live remote compatibility/owner acceptance remain open.
+
+[Native flow, source boundaries and evidence](fleet-shepherd/README.md).
+The current Windows taskbar cutover is loaded. Native top-panel consolidation
+and legacy standalone indicator retirement still need their own installed/loaded
+qualification without routine Wingpanel restarts; existing panel modules remain
+unchanged. Next: integrate this Fleet batch into dev, then finish that native
+panel replacement and validate real aliases when supplied. No factory hardware
+boot claim or deferred Signal/Messages work is part of this delivery.
+
+## Unified T3 dock menu and Tstack workflows — 2026-10-26
+
+Replaced the separate taskbar CodexBar/RepoBar anchors with one native T3
+button: Usage, T3 server and GitHub, plus Activity/Open T3. Custom backend port,
+account helpers and caches remain authoritative. Embedded views are lazy and
+stop snapshot/refresh timers while closed; a longer fixture caught and fixed
+an automatic-refresh watcher leak. Explicit launcher-popover disposal prevents
+orphan popup children. Theme/text scale and bounded scrolling are shared.
+
+Installed and loaded the dock and T3 front end; preserved Wingpanel, T3 server,
+seven running apps, eleven unique pins and the current Work Mode. See the
+[delivery receipt](dock-tests/receipts/2026-10-26-t3-unified/README.md) for commands,
+checks, screenshots, hashes and limits. Full native dock build/launcher suites,
+light/dark interaction and launch routing, closed polling, nested Wayland
+transitions, 78 T3 model tests, clippy, native feature probes and app-only Debian
+packaging pass. Owner live visual/account acceptance remains open; whole-chat
+validation is deferred. Pre-existing dock startup criticals remain documented.
+
+Nine MIT tstack skills at `7de017b3fc9d50c03cf3ecb98fb71e0ca65a78bd` are
+vendored and installed for local Codex/Claude Code. Native T3 menu/palette has a
+request picker; no automatic send or workflow execution. Portable installer,
+package assets, source hashes and license retained. See
+[Tstack receipt](upstream-audits/apps/tstack-2026-10-26.md). Remote servers need
+their own skill installation; Council/Sol delegation is not claimed validated.
+CodexBar pin remains v0.78.0; custom-port check passes. Required post-push
+CodexBar deployment stages the module without restarting the panel or daemon.
+
+Owner clarified **Machine Lab has replaced Orchard**. Historical source names
+and app IDs do not reverse that direction. Fleet belongs inside T3 for remote
+machines/agents, separately from Machine Lab; upstream is read-only and no Fleet
+implementation is claimed yet. [Pinned source review and next
+flow](upstream-audits/apps/fleet-shepherd-2026-10-26.md). Next: dev integration
+and owner menu acceptance, followed by the native remote connector flow.
+
+## Work Mode Settings window controls — 2026-10-26
+
+Merged as PR #602 (`a788b487`) and follow-up PR #604 (`c13a67ca`), then
+installed with `bash mseries/install-work-mode.sh`. The Work Mode page now has
+an in-page Close action and applies GTK window buttons while that page is open.
+The timer is active and enabled; full PR validation and the installer build
+passed. Restarted Settings and opened `settings://personal/work-mode` to load
+the plug. A live visual/click check still needs owner confirmation. See the
+latest OS9 handoff entry.
+## Taskbar alignment follow-up — 2026-10-26
+
+Corrected the geometry repair's omitted GTK shadow extent, which placed controls
+above the taskbar. Before/after nested Wayland screenshots reviewed; four mode
+transitions and open/close tracking still pass. Corrected build installed and
+dock alone reloaded. Owner visual acceptance remains open. See the latest handoff.
+
+## Work Mode / duplicate dock icons — 2026-10-26
+
+Fixed repeated dock initialization on widget remap and duplicate saved pins;
+startup now keeps one app object per desktop ID and normalizes pins in order.
+Repaired complete dock patch composition and made Exit Windows Work Mode apply
+immediately through the existing Desktop Mode helper. Production regression,
+full native build and light/dark launcher interaction checks pass. See
+[detailed evidence](dock-tests/receipts/2026-10-26-work-mode-duplicates.md).
+Also fixed negative Wayland geometry on taskbar -> floating transitions, which
+had triggered stock-dock fallback and lost running-app matching. Actual dock
+passes isolated Wayland open/close + four-transition lifecycle checks; final
+loaded dock reports nine running apps. Broader #593 acceptance and owner visual
+review remain open.
+
+## Public upstream watcher — 2026-10-26
+
+Scheduled run [40327523535](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40327523535)
+on prior `dev` `42180692a9ebac06c0732ec2933e13cb60c6e108` again hit the
+65,000-byte dashboard issue guard; its public branch-head artifact was preserved.
+PR #607 then merged into current `dev` at `04fe68e613a78634fad7dfb4a632719187f18f67`
+with build/validation checks passing; GitHub has no review record, and remote
+compatibility/owner acceptance remain open. Do not manually duplicate the
+scheduled watcher. PR #598 now carries the compact snapshot/pending-state
+migration and regression coverage, rebased on current `dev`. Its local-ai
+validation passes 3/3; current-head CI and review remain pending. The last
+read-only render retained 378 snapshots and 173 pending changes at 50,425 bytes.
+
+Pages deployment [40327769060](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40327769060)
+successfully published exact `dev` source; all three live status assets match
+their source bytes. Existing J314S dock/VRR evidence is reused; no hardware or
+image acceptance is implied. The medium `tokio` alert remains open with passing,
+unreviewed PR #585. Next: review the refreshed #598, merge only after current
+checks and required review, then inspect the next scheduled watch run.
+
+## Owner-priority SDK/T3 qualification queue — 2026-10-25
+
+- #596: first qualify native T3 token monitoring and RepoBar-derived GitHub
+  overview; separate source/account/freshness and provide real SDK adapters.
+  [Source audit](SDK-AUDIT-2026-10-23.md#2026-10-25-t3-monitoring-and-sdk-qualification-addendum)
+  and [observable gates](APP-BUILDING-GUIDE.md#t3-priority-slice-and-sdk-qualification-gates).
+- #593: GUI/Dock usability, lifecycle and both requested modes; owner mode
+  terminology remains unresolved and must not be silently narrowed.
+- #595: Shiplog native integration into existing T3 Activity, not another bar
+  plugin; compare with closed #588 before claiming new/upstream parity.
+- #594: source-pinned Cua/Omarchy computer-use investigation and permissioned
+  SDK boundary; no live enablement.
+- techmore/rupert#543 / #544: Nanbeige4.3-33B SER8 capacity/runtime feasibility,
+  then Rupert adapter/quality/safety evaluation. Investigation issues only.
+
+SDK discovery smoke lists all six actual starters; installed native T3's
+offline first frame succeeds. Neither proves the monitoring slice, a completed
+SDK app/package, moderate-model usability, or owner acceptance. Preserve
+Signal/Messages deferral and qualified release promotion through `dev`.
+
+## Quick Settings appearance and stacked network rates — 2026-10-25
+
+Light/Dark/Automatic now live in the Quick Settings Appearance card, backed
+by the existing appearance helper and its manual-versus-scheduled mode.
+The installer retires the old standalone menu-bar module. Native Quick Settings
+and network builds installed; owner-requested Wingpanel reload activated the
+replacement. Download/upload rates are stacked vertically. The production
+appearance widget passed Automatic → Dark → Automatic against the installed
+backend under Xvfb. Owner visual acceptance remains open.
+
+## Next organization priority: SDK/spec completion — 2026-10-25
+
+Use #535 as the central acceptance track: a moderate LLM must be able to use
+the authoritative SDK/spec alone to build a complete, polished native app.
+Consolidate existing contracts and runnable reference flows; define behavioral
+and visual gates and retain evidence from an actual model-built app without
+expert rescue. SDK completeness, not directory tidiness, is the outcome.
+Keep per-component migration in the candidate lane until parity is proven.
+Integrate qualified batches into `dev`; promote a tested release to `main`.
+Close issues on explicit acceptance criteria, not PR merge alone. Standardize
+implemented/verified/merged/installed/loaded/accepted states and component-owned
+removal so obsolete launchers, services and panel modules cannot survive cutover.
+
+## Apple Dev toolchain status follows current upstream — 2026-10-25
+
+[Upstream refresh](upstream-audits/apps/apple-dev-2026-10-25.md) removes the old
+libXADI blocker from current guidance and makes the native app distinguish
+registered/current SDKs from stale or unverifiable ones. The existing Update
+then Install flow consumes upstream's xtool/runtime repair and Flutter fixes;
+source updates alone do not rebuild tools. ARM64 build/package and isolated
+status renders are required in CI. Real toolchain refresh and phone workflows
+on the M1 Pro still need qualification; no OS hardware benefit is claimed.
+
+## Native T3: activity and supplemental subscription reports — 2026-10-25
+
+Issue #588: native Activity page (pinned checkouts, optional bounded GitHub
+activity, factual Copy recap) and supplemental local subscription reports on
+Usage, including offline access. Keep source completeness and account scope
+explicit. Source/model tests and isolated Linux render/build gates accompany
+the change; live desktop/provider acceptance remains separate. Omi adapter
+waits for a real service API. #523 retains its wider Dock/cache requirements.
+
+## Apple Dev: native window for omarchy-apple-dev — 2026-10-23 (Claude)
+
+New Rust Pantheon app `rust/mseries-apple-dev` (Apple Dev, `org.techmore.mseries.AppleDev`): a
+GTK 4/Granite/VTE front end for joshuaswarren/omarchy-apple-dev (iPhone and Mac apps from Linux,
+no Xcode). Sidebar with Toolchain (probe of Swift, darwin SDK, xtool, Apple ID, pymobiledevice3,
+usbmuxd, Flutter; Install/Repair/Sign In/Download), Devices (sysfs USB scan plus usbmux details,
+run target, pair, details, live log, Tailscale) and Projects (xtool, Flutter, Mac SwiftPM, Xcode
+import); header Build/Run/Stop. Every action runs the toolkit's own script in an embedded VTE
+Activity pane. Details: [rust/mseries-apple-dev/README.md](../rust/mseries-apple-dev/README.md).
+
+Validation: 23 unit tests, strict clippy, fmt; desktop/AppStream metadata validate; Xvfb renders of
+all pages in light and dark; Build run in the Activity pane reports the real exit status. Release
+build installed to `~/.local` with `install-local.sh` and launched on the owner's desktop.
+Not verified: real toolchain install, build, device install and upload (no Swift/xtool/iPhone set
+up on this machine; the installer targets Arch). New CI workflow `rust-pantheon-apple-dev.yml`.
+
+## Audio mute and Mac keyboard mapping — 2026-10-22
+
+The media-key handler had no `volume-mute`, `volume-down` or `volume-up`
+bindings, so the Mac function-row audio keys were ignored. `apply-desktop-settings.py`
+now fills those only when blank, and maps both Command keys to Ctrl with the
+matching right and left XKB swaps. Quick Settings mute now uses the fresh
+PipeWire state and an explicit set-mute value; pending slider writes finish
+before the mute action. Full pinned Quick Settings build succeeds. Live settings
+were applied and the default sink is currently muted; hardware key presses and
+loading the new panel module remain to be confirmed.
+## PolyBagger multi-printer and USB reconnect support — 2026-10-22
+
+`mseries/polybagger-print-manager/` now supports multiple USB printer-class devices,
+per-device raw ZPL CUPS queues, selection among configured CUPS destinations, and USB
+unplug/reconnect status refresh with per-printer label state. Network/shared queues must
+accept raw ZPL. Source is on `codex/polybagger-multi-printer-hotplug`; additional printer
+and physical hotplug qualification remains open. See [OS9-HANDOFF.md](OS9-HANDOFF.md).
+
 ## Bounded Aurora CI dependency downloads — 2026-10-22
 
 The unified72 check spent 47m17s fetching 144 MB from the Azure Ubuntu
@@ -33,24 +1124,813 @@ Next: merge into dev after CI; existing branches need a new PR run using this
 policy. Already-running legacy checks are not retroactively cancelled. This
 removes superseded-run backlog, not contention from legitimate current builds.
 
-## Signal and Messages: INCOMPLETE / DEFERRED — 2026-10-22
+## Owner deferral and app-building workflow correction — 2026-10-22
 
-Owner explicitly deferred both apps and rejected the current combined launcher
-experience. MESSAGING-STATUS.md is the authoritative current status on dev;
-AGENTS.md directs future agents to it. Older scoped successes and installed-client
-reports must not be interpreted as completion. Resume only on a new explicit
-owner request. Existing apps/data remain intact; no unfinished app code is merged
-by this documentation change.
+Owner marked both Signal integration and Rust Messages incomplete and deferred;
+the current Messages & Signal launcher experience was rejected. Build-out remains
+paused. SDK and agent guidance now require an explicit visible outcome, early
+running primary flow, time checkpoints, focused scope and incremental debug builds.
+APP-BUILDING-GUIDE.md provides a reusable prompt and starter requirements. A future
+generator is a requirement, not an implemented command. No compiler or app build
+was run for this documentation update. Task workspace cleanup follows, preserving
+unrelated updater edits and the shared build cache.
 
-## SDK app-building workflow published on dev — 2026-10-22
+## Favorite UI save, reopen and removal qualified privately — 2026-10-22
 
-Owner requested that future agents read the workflow correction from dev rather
-than an unfinished app PR. AGENTS.md now requires APP-BUILDING-GUIDE.md and the
-SDK guidance entry point. They cover early visible outcomes, a running example,
-time checkpoints, reusable prompt/starter requirements, incremental debug builds,
-cache preservation and evidence-based acceptance. No app implementation or draft
-SDK API is promoted. Signal/Messages remain incomplete/deferred. Documentation
-only; no compiler, packaging or tests run for this change.
+The encrypted-keyring runner now also starts Rust Messages on Xvfb with a private
+synthetic BlueFerry API. Toggling the actual GTK star saves the preference and
+updates the strip; closing/rebuilding the app restores both star and strip from
+the encrypted record. Removing the favorite persists an empty local list.
+The fixture exposes no send/star mutation methods; all phone data is synthetic.
+
+Default, explicit elementary light and dark runs pass, together with the SDK
+Python/Rust round-trip and strict all-target Clippy. The same tests pass using
+exact CI-pinned BlueFerry source 60fd7ef1abbd25947981f0cf27a521d82784a75f;
+its module path was verified, avoiding reliance on the owner-installed package.
+Receipts: /tmp/messages-ui-keyring{,-light,-dark,-ci-pin,-clippy}.log.
+The CI keyring step now runs both SDK and UI tests. No runtime code/binary change
+was needed. Live paired-phone identity/behavior and owner UI acceptance remain.
+
+## Successful encrypted Python/Rust favorites interoperability — 2026-10-22
+
+New rust/mseries-messages/test-keyring.sh provisions a private home, runtime,
+D-Bus and unlocked encrypted GNOME Keyring, leaving owner state untouched.
+An ignored SDK test explicitly enabled by this runner verifies Python v2 write →
+Rust read, Rust update → Python read, Rust reload, second-phone isolation, and
+clear → empty state. Imported snapshots, choices, local favorites and hidden
+imports survive. Python UTC serialization uses +00:00; the fixture normalizes to
+that valid representation before equality checks. Full round-trip passes in
+/tmp/messages-rust-keyring.log; strict all-target Clippy passes in
+/tmp/messages-rust-keyring-clippy.log. CI includes dependencies, a pinned BlueFerry
+fixture source and the new check. No runtime code or installed binary changed.
+Live phone/profile switching and application persistence acceptance remain open.
+
+## Rust local favorites and strip parity — 2026-10-22
+
+The Rust header star and row menu now edit shared local pin preferences instead of
+BlueFerry's unordered server star API. The strip and row/header indicators use
+visible imported pins followed by local favorites, resolved against the complete
+inbox so filtering cannot make ambiguous addresses unique. SDK toggles preserve
+Apple snapshots, hide/restore imported pins, follow unique direct-address identity,
+remove duplicate imported/local sources together, and enforce the 64-local limit.
+
+Writes require loaded phone-scoped state, are serialized with import/loading, and
+check current backend UUID plus generation before applying results. Failed saves
+retain previous state/restore the star. Review dialogs reject stale phone generations.
+Failed keyring loads retry on refresh without changing message-operation generation.
+Private GTK checks cover strip/header state, unavailable-keyring rollback and retry;
+SDK toggle/identity/cap tests pass, plus light/dark GUI/badge checks and strict lint.
+Receipts: /tmp/messages-local-favorite-{model-final,ui,rollback,recovery,light,dark,
+clippy-final}.log. Successful private Rust keyring round-trip and live phone
+acceptance still remain; these failure/UI checks do not prove persistence success.
+Optimized ARM64 package rebuilt and installed; no client/session restart.
+
+## Combined Signal/Messages branch and shared pin-state compatibility — 2026-10-22
+
+Merged Signal branch 59cacc64 into the Rust Messages candidate, bringing its
+larger-text/cool-surface transform, cache invalidation, launcher and mature shelf
+retention fixes into the same ancestry. Resolved Python pin code with stable UUID
+identity, generation guards and the shared Secret Service schema preserved.
+
+The merge exposed Python pin-state v2 versus Rust v1 incompatibility. SDK now
+accepts v1/v2 and preserves bounded local_pins/hidden_imports, applies hidden-import
+and local-favorite order, validates duplicates/unknown overrides, and round-trips
+v2. Rust reimport retains local favorites and only relevant hidden overrides.
+Rust favorite editing still uses the backend starred API; local-pin editing/strip
+parity remains a follow-up, distinct from storage compatibility. No owner backend
+or qualified Python runtime was upgraded/restarted.
+
+Combined checks: 12 Python pin tests; private keyring round-trip; 76 Python GUI
+tests (one skipped); 10 Signal transform/cache tests; 13 shelf retention tests;
+Rust library and private GTK/badge tests; strict all-target Clippy and optimized
+ARM64 package all pass. Logs: /tmp/messages-merged-{pins,keyring,python-gui,
+signal,shelf,rust,sdk-final,rust-gui,clippy-direct,package}.log. User Rust preview
+updated without restart. Merged shelf source SHA matches installed helper
+(e87fd98e4a2247939444311d8d4146045b7c458e96253d02e35aed4db3d22c47).
+Physical capture and live phone/client acceptance remain open.
+
+## Read state on window activation — 2026-10-22
+
+Messages now rechecks the selected unread conversation when its window becomes
+active, using the same coalesced per-message request path as selection/refresh.
+Inactive windows and local-only threads remain excluded. A private second GTK
+window plus actual X11 focus switching verifies no inactive request and exactly
+one request on return; full GTK/badge scenario and strict all-target Clippy pass.
+Receipts: /tmp/messages-activation-read.log and -clippy.log. Live phone read-state
+acceptance remains open; synthetic D-Bus read calls do not prove phone state.
+Optimized ARM64 package rebuilt and installed user-locally; clients not restarted.
+
+## Switcher and keyboard-help translation coverage — 2026-10-22
+
+Switcher tab titles, descriptions, launch buttons, accessible names and errors now
+use the app gettext domain; descriptions say Your iPhone/Signal conversations.
+Messages keyboard-help descriptions also use gettext. Template has 87 source
+strings; format validation, strict lint, isolated GTK/badge checks and optimized
+ARM64 packaging pass. Private fake-client tab clicks still activate both correct
+desktop targets; /tmp/messages-switcher-i18n-activation.log passes and the settled
+Signal-page capture was reviewed. Updated preview/switcher installed without
+restarting owner clients. Dynamic/plural/shared SDK strings and reviewed language
+catalogs remain incomplete. Owner confirms no logout/login yet; physical capture
+acceptance remains pending, with installed code staged for the next login.
+
+## Dock badge wire contract verified — 2026-10-22
+
+The isolated Messages runner now also exercises the SDK DockBadge on a second
+private D-Bus session, without the owner dock/display. It verifies coalescing
+before connection, application URI, i64 count bound, count visibility, clamped
+progress, NaN rejection, clearing and suppression of unchanged updates. All
+wire assertions and the complete Messages GTK scenario pass in
+/tmp/messages-dock-wire.log. Visual behavior on the owner dock remains unqualified.
+No runtime implementation or installed binaries changed in this batch.
+
+## Automatic read-request parity — 2026-10-22
+
+Rust Messages now matches the qualified client's per-thread newest-message/read-count
+marker: repeated selection/refresh coalesces automatic MarkThreadRead requests.
+A new marker permits a new request. Failure releases only its own marker so retry
+works without erasing a newer request; existing phone-generation guards remain.
+Markers clear on phone changes and are pruned against refreshed threads. Explicit
+Mark as Read still permits an owner-requested retry. Active-window guard remains.
+The private D-Bus GTK regression counts actual calls for duplicate/new-message and
+failure/retry cases; all pass (/tmp/messages-read-dedup-retry.log). Strict all-target
+Clippy and optimized ARM64 packaging pass; user preview installed without client
+restart. This is fixture evidence, not live phone read-state qualification.
+
+## Accessible strings and catalog release checks — 2026-10-22
+
+Messages now translates static accessible names and tooltips through its app
+gettext domain. The template contains 78 unique source strings. The extractor
+rejects tr() calls it cannot parse rather than silently omitting them, supports
+multiline trailing commas, and produces a msgfmt-valid template. CI now regenerates
+and compares the template and validates its format. Strict all-target Clippy and
+the complete isolated GTK scenario pass (/tmp/messages-i18n-a11y-{clippy,gui}.log).
+ARM64 package rebuilt and installed user-locally without restarting clients.
+Reviewed translations, dynamic accessible names, plural forms and dynamic error
+messages remain incomplete. The compositor still reports PID 1934; the installed
+capture code still awaits a new login and physical acceptance.
+
+## Messages gettext foundation — 2026-10-22
+
+Messages and its switcher now use an explicit app gettext domain for static
+controls/status text, retaining English fallback when catalogs are absent.
+The reproducible po/update.py extractor records 54 unique source strings and
+supports multiline calls; msgfmt --check-format validates the template. Empty
+labels remain untranslated to avoid gettext header lookup. Strict all-target
+Clippy, the isolated GTK scenario and ARM64 packaging pass; user preview updated
+without restarting clients. No reviewed translations ship yet. Dynamic messages,
+plural forms, accessible names and SDK strings remain to migrate; localization
+parity is not complete. Receipts: /tmp/messages-localization-{clippy-final,
+gui-final,package}.log. Catalog workflow is documented in rust/mseries-messages/po.
+
+## Inbox keyboard focus survives refresh — 2026-10-22
+
+Messages now retains the focused conversation row by thread identity when rebuilding
+the inbox, without moving focus out of search. The actual isolated GTK regression
+checks both cases; /tmp/messages-refresh-focus.log passes. Strict all-target Clippy
+and optimized ARM64 package build pass; package installed user-locally without
+restarting either client. Previous CI run 39878146738 completed successfully,
+including packaging. Latest-head checks still await execution. Live hardware,
+screenshot attachments, phone behavior and localization remain incomplete.
+
+## Messages release-check coverage — 2026-10-22
+
+CI now checks formatting, all-target strict Clippy and unit tests for both Messages
+and its shared SDK, plus desktop validation for the Messages & Signal switcher.
+Local formatting and switcher desktop validation pass; the existing local SDK
+library/Clippy receipts cover the same targets. CI run 39878146738 (0966b03a)
+passed lint, unit and isolated GTK recovery steps and was building its package;
+latest-head CI remains queued. A preceding run 39877900306 (49b99b6c) succeeded.
+These results do not replace live owner acceptance.
+
+## Installer owner-bus fix and keyboard menus — 2026-10-22
+
+Owner installed native capture package 0.1.0+gitb2887485 successfully. Its binary
+SHA256 matches the qualified release (321a7371e6f72cc242f0634141f5e6439a1c3d914d5f60f28f58e7f11bfe571e).
+The sudo installer incorrectly addressed root's user manager after dpkg; fixed
+routing to SUDO_USER with the owner's runtime bus. An unavailable bus now warns
+without misreporting a successful package operation as failed. Owner daemon-reload
+completed without changing compositor PID 1934; it still loads the old executable.
+No reinstall needed; next login and physical capture acceptance remain pending.
+Read-only --status now reports known units and active owner compositor.
+
+Shared SDK attach_context_menu provides pointer, touch, Menu and Shift+F10 access.
+Messages conversation/message menus use it; Escape dismisses the popover without
+navigating Back. Light/dark real-input GTK scenarios, 30 library tests, strict
+Clippy and optimized ARM64 packaging pass. The updated user package is installed;
+no running clients were restarted. CI includes Python/libXtst for physical-key
+fixture input. Full live acceptance and screen-reader checks remain open.
+
+## Native capture handoff and desktop activation — 2026-10-22
+
+Added mseries/stage-native-capture.sh and the user command
+mseries-stage-native-capture. --verify checks the exact tested package SHA256,
+package identity and architecture; --install delegates the explicit privileged
+stage operation to the existing installer. Verification passes. No install or
+session restart was performed. The executor still has NoNewPrivs=1 and the
+old compositor is installed; owner installation/next-login acceptance is pending.
+
+The messaging switcher now passes GDK's desktop launch context to GIO, supporting
+normal Wayland activation rather than launching without context. Its status says
+Opening rather than claiming observed window focus. Strict Clippy, optimized
+package build and private fake-client tab activation pass. The updated switcher
+is installed; actual owner-window focus remains unverified. The acceptance ledger
+now includes the switcher and current keyboard/reading-size evidence.
+
+## Pantheon local AI reply drafts — 2026-10-22
+
+Rust Messages now has a first on-demand local Qwen reply-draft integration
+through the shared `mseries-ai` crate. A universal owner-only SQLite store
+provides app preferences and explicit memory APIs; the Messages menu edits the
+local endpoint, writing style, shared-memory use, and shared/Messages-only
+memories. Raw conversation text and generated replies stay out of the database.
+The composer previews the draft and uses Tab to insert at the cursor without
+sending. Other app adapters and Messages live-model/keyboard/visual
+qualification remain open. The ARM64 release package is installed user-locally;
+six `mseries-ai` tests and 17 Messages tests pass (two existing isolated GUI/
+keyring tests are ignored). Tests caught and fixed an invalid SQLite table
+constraint before the final package rebuild. The configured Qwen service is
+currently unavailable, so no live generation was verified. A tabbed agent window
+is not delivered; Signal remains gated on an official supported compose/API
+boundary and will not use a clipboard-only bridge.
+See [`local-ai/PANTHEON-REPLY-DRAFTS.md`](local-ai/PANTHEON-REPLY-DRAFTS.md).
+
+## Merged BlueFerry phone-ID build prepared — 2026-10-22
+
+Live public GetStatus reports API v2 with MAP available, but no phone_profile_id;
+no message history or contacts were read for this check. A local wheel from the
+exact upstream merge ff418298e3e9b71b650e0d72b4b1ba61576cf29f is staged at
+build/blueferry-phone-profile/blueferry-0.8.1+phoneprofile.ff418298-py3-none-any.whl.
+Only version labels differ from upstream. SHA256:
+6b50435d466aa8018ca6d6a44660274e8224bf3d806d126341f9a06682453144.
+187 focused upstream tests pass on a private bus; direct wheel import verifies
+new phone-ID parsing and missing-field compatibility. License/metadata payloads
+were checked. Full provenance is in phone-setup/blueferry-profile-build-20261022.json.
+This development build was not installed into or used to restart the active
+owner backend. Pin import still awaits a qualified backend upgrade and live test.
+
+## New-message picker keyboard parity — 2026-10-22
+
+Actual Ctrl+N/Down/Escape input found the same composite-entry focus bug in the
+new-message To field. Shared SDK has_focus_within now handles widgets with an
+internal focused child; both main search Escape and contact-result Down use it.
+The regression opens the actual modal dialog, selects/focuses a synthetic recent
+contact with Down, and closes with Escape without starting or sending a message.
+Full isolated GTK scenario, 30 SDK/Messages library tests and strict all-target
+Clippy pass. The ARM64 package rebuilt and was installed through install-user.sh.
+No running client or compositor was restarted. Signal must be fully Quit and
+relaunched (not merely have its tray window closed) to load its recent styling.
+
+## Larger reading text and Messages/Signal switcher — 2026-10-22
+
+Owner requested larger text, distinct channel backgrounds and approved a tab-style
+switcher between the existing clients. Messages uses 1.12em root text and a warm
+theme-relative tint; both the Rust preview and installed qualified Python client
+received the scoped styling (the latter only the two requested style edits, with
+backups). Signal now increases legacy 12–16px UI text by 2px, modern body tokens
+by about 11–13%, and uses cool primary surfaces (#eef3fa light / #202936 dark).
+Display pixel scaling is unchanged. The installed Signal archive matches the
+expected selective transform; its other 1503 packed files remain unchanged.
+
+The new Rust SDK-based mseries-conversations binary installs as Messages & Signal.
+Its tab bar uses normal desktop-app activation for the two existing windows and
+changes its own warm/cool surface with the selected tab. Initial display does not
+launch either client until a tab or Show button is used. This is a switcher, not
+an embedded or combined Signal conversation view. Default cargo run still opens
+Messages. Debian/user installation includes and validates both launchers.
+
+Validation: strict all-target Clippy; full Messages light/dark GUI runs; two Python
+stylesheet tests; ten Signal palette/typography/cache tests. Warm Messages and cool
+switcher captures were reviewed. A private Xvfb/D-Bus probe with fake desktop apps
+verified both actual tab clicks launched only their respective fixture commands
+(receipt /tmp/messaging-switcher-probe). Installed clients were not restarted.
+Reopening them loads the text/background changes; actual owner-window activation
+and visual preference still require acceptance. Other existing live gates remain.
+
+## GTK accessibility contract checks — 2026-10-22
+
+The private Messages GUI harness now enables GTK_A11Y=test rather than disabling
+accessibility. Eight critical controls (search, conversation list, editor, Send,
+Back, Latest Messages, favorite and recipient-copy) are asserted to expose explicit
+accessible Label properties; Send and Latest expose Button roles. The complete
+GTK scenario and strict all-target Clippy pass with this backend. This verifies
+GTK accessibility metadata, not screen-reader narration or complete keyboard order.
+No production binary changed in this batch. The compositor remains the old
+installed version and requires privileged installation/next login. Messages CI
+run 39876315164 was confirmed pending with no assigned jobs at inspection.
+## Signal theme cache upgrade and rollback — 2026-10-22
+
+Signal accent synchronization previously skipped work whenever the color matched,
+including after helper changes. The stamp now includes helper SHA256 and both
+archive identities, so old color-only stamps, helper updates and archive changes
+invalidate the cache. Nine tests pass, including real synthetic CLI migration,
+unchanged no-op, exact original restore and read-only --check behavior. The suite
+is now included in validate-mseries.yml. Reinstalled the helper; --sync confirms
+the unchanged installed archive is skipped. Source/installed helper SHA256:
+319f9b63f800d1f8b89b1e52ca28ee6951de48ad7da61147ec313a576c64d784.
+Signal remains running with its prior loaded resources; live reopen/visual and
+attachment acceptance remain open. No account or conversation data was accessed.
+
+## Signal elementary palette deployment verified — 2026-10-22
+
+The installed accent helper was older than the reviewed PR #525 version. Ran
+install-signal-integration.sh against the existing legacy official ARM64 install.
+Source/installed helper SHA256 now both:
+86f78748a12bf4a515f82822bd451a8d491a5ca25ef3d1a3f3d7ad880c6619f4.
+All six accent tests pass. Installed app.asar was compared entry-by-entry with
+the preserved app.asar.orig and expected selective transformation: 201 matches
+in main.js (1), preload/main.js (24), manifest.css (149), tailwind.css (27);
+all 1503 other packed files are byte-identical. Modified entry integrity hashes
+match recomputed SHA256 blocks. The desktop launcher validates. Signal was not
+restarted; reopening is required for owner visual acceptance. This does not
+qualify actual compose attachments, tray behavior or atomic-update deployment.
+
+## Messages refresh viewport parity — 2026-10-22
+
+Conversation refresh preserves the reading position when away from the bottom,
+shows an accessible Latest Messages action when history grows, and follows new
+history when already near the bottom. A render generation cancels stale viewport
+callbacks. Sidebar refresh no longer forces every selected conversation to the
+bottom. Automatic read acknowledgement now requires the app window to be active;
+read errors show a concise recovery message with technical detail in the tooltip.
+The private GTK regression exercises actual sidebar rebuilding, position retention,
+Latest activation and bottom following. Light/dark runs and strict all-target
+Clippy pass; captures in /tmp/messages-refresh-{light,dark} were reviewed.
+The private service now implements MarkThreadRead; live read state is unqualified.
+The optimized ARM64 package rebuilt and was installed via install-user.sh.
+Existing app instances were left running; reopening the preview loads this build.
+
+## Messages navigation parity — 2026-10-22
+
+Source comparison with the qualified Python client is recorded in MESSAGES-PARITY.md.
+Rust selection now scrolls to newest history after allocation, using a bounded
+two-frame callback guarded by phone generation and selected conversation. Back
+restores focus to search instead of leaving it in hidden/destroyed content.
+A 30-item synthetic history regression exposed the previous idle-before-layout
+race and now passes, together with the full private GTK scenario and strict
+all-target Messages Clippy. Refresh-follow/jump behavior, gettext integration,
+assistive technology and live acceptance remain open. The optimized ARM64 package
+rebuilt successfully and was installed through install-user.sh; existing running
+app instances were not restarted.
+
+## User-level native client installation — 2026-10-22
+
+Installed the verified Messages release as Messages (Rust Preview), alongside
+the qualified Python app, using the new rust/mseries-messages/install-user.sh
+--deb command. The launcher uses an absolute quoted executable path and passes
+desktop-file-validate. Installed binary SHA256:
+7991e9a1020b7c3e5921deec2d963476d710df27ed22d80c299cac54ba5e4f94,
+matching the release artifact. This is installation evidence, not live-phone
+or owner-session UI acceptance.
+
+Also installed/restarted only the PR #525 screenshot shelf helper. Source and
+installed SHA256 e87fd98e4a2247939444311d8d4146045b7c458e96253d02e35aed4db3d22c47;
+PID 1427825 watches Downloads/Screenshots. The running compositor was not
+restarted or replaced. Its privileged installation/next-login gate remains.
+
+## Native screenshot shelf backend capability — 2026-10-22
+
+Pantheon-R now advertises ScreenshotShelfPlacementVersion=1 on its existing
+DesktopIntegration D-Bus interface. The shelf queries the running service with
+NO_AUTO_START and a 500 ms bound, selects native Wayland when supported, and
+retains the Gala/XWayland fallback and explicit backend override. This closes
+an integration gap: the old detector recognized only patched Gala. Native-DRM
+cargo check and both shelf regression suites pass, including capability absence,
+invalid versions and explicit override. The PR #525 suite has 13 tests.
+The optimized release and full nested screenshot/shelf workflow pass without
+forcing the shelf backend; capability selection is asserted explicitly. Receipt:
+/tmp/pantheon-capture-probe.Q3z0AQ. New package:
+build/screenshot-native-capability/pantheon-rust-compositor_0.1.0+gitb2887485_arm64.deb
+(package revision was selected before the capability source commit 427aebae).
+Package SHA256: 4ef4a735610980e0d67085a6577ef9ddcc7969d5e29e02e8d0cb0d03e4d520a7.
+Binary SHA256: 321a7371e6f72cc242f0634141f5e6439a1c3d914d5f60f28f58e7f11bfe571e.
+Live loading/DRM/Signal attachment acceptance remains open.
+
+## Messages keyboard acceptance — 2026-10-22
+
+Actual X11 Ctrl+F/Escape input exposed GTK SearchEntry child-focus handling.
+The window shortcut controller now handles capture phase and recognizes focus
+inside the search widget; Ctrl+F focuses search and Escape clears its text.
+The full isolated GTK regression passes, as do 30 SDK/Messages library tests
+and strict all-target Clippy. The latest ARM64 Debian package rebuilt successfully
+at build/mseries-messages-rs-deb/mseries-messages-rs_0.1.0-1~mseries1_arm64.deb.
+This does not prove screen-reader or live-phone
+acceptance. Keep SDK expansion and other app ports outside the current client
+release gates. Preserve unrelated updater changes.
+
+## Messages long-content layout correction — 2026-10-22
+
+Long/unbroken message text initially expanded the compact fixture to 2308 pixels
+and clipped regular content. Message labels now wrap by word or character. The
+updated real GTK regression renders long names, multiline text, accented text and
+unbroken tokens, asserts compact window width <=520 and editor horizontal bounds,
+and settles layout even when PNG capture is disabled. Light/dark captures in
+/tmp/messages-long-{light,dark}-fixed were inspected: text wraps, title ellipsizes,
+and composer/actions remain visible. The fixture and strict Messages Clippy pass.
+This batch also adds the explicit acceptance ledger; live/assistive-technology
+acceptance remains open. Unrelated updater edits are preserved.
+
+## Native-client acceptance ledger — 2026-10-22
+
+See NATIVE-CLIENT-ACCEPTANCE.md for explicit remaining gates instead of subjective
+completion percentages. The private Messages GTK test passes under elementary
+blueberry light and dark themes; regular/compact captures were inspected at
+/tmp/messages-review-light and /tmp/messages-review-dark. The short synthetic
+conversation and composer are unclipped/readable in these four captures; long
+content, broader state coverage and assistive technology remain open. This
+local evidence batch is retained without another CI-cancelling push.
+
+## Screenshot release package ready; privileged install blocked — 2026-10-22
+
+Built build/screenshot-native-release/pantheon-rust-compositor_0.1.0+git0de7b82e_arm64.deb.
+Its embedded binary exactly matches the tested native release SHA-256
+0401af12e75e9d406cc5f6b78e8f7ca4a8adb224ad336c30bda50830db264ad6;
+package SHA-256 2310fdce7418bfd2206210e178fdf821e059c95841d4ea762a9a17a9023831c4.
+Installed package is 0.1.0+git75c2c3df, unmodified according to dpkg -V, with
+75c2c3df confirmed an ancestor of this source. The existing session is active.
+The package has not been installed: sudo -n is denied by the process’s no-new-privileges
+flag. This is a privilege boundary, not a failed build or automatic review rejection.
+Owner must run the installer from their terminal; it stages the new package without
+restarting the running compositor. A later login and live acceptance are required.
+
+## Native release screenshot regression passes — 2026-10-22
+
+The optimized native-drm binary now passes the complete nested screenshot/shelf
+batch, including a failing canberra stub and successful pw-play fallback request.
+Receipt /tmp/pantheon-capture-probe.WSwBbB. The host has pw-play and the freedesktop
+camera-shutter asset; audible playback remains unverified. Session lock now clears
+selection/pending region requests (source/build checked, not lock integration).
+Packaging now honors Cargo metadata’s configured target directory and uses locked
+resolution; runtime dependencies include pipewire-bin and sound-theme-freedesktop.
+Native release rebuilt after these fixes; no running compositor was restarted.
+Next: package and stage the exact binary, then owner-session acceptance after login.
+
+## Screenshot workflow milestone: nested batch passes — 2026-10-22
+
+Implemented modal selection-key handling, Space capture of the hovered window,
+blue region/window outlines, and native Wayland shelf placement at bottom-right
+with a 16-logical-pixel margin. Shelf windows do not activate/steal keyboard focus.
+The combined private-Xvfb test passes on the rebuilt compositor: actual +3 key,
+upright/channel-checked pixels, +4 200x150 drag, 400x300 hovered-window Space
+capture, Escape cancellation, private PNG publication, stubbed shutter request,
+real shelf appearance, retained app active state, three-second expiry and all four
+originals retained. Receipt /tmp/pantheon-capture-probe.e8GfBR; shelf-visible.png
+is synthetic. Native-drm check passes. An earlier test accidentally started before
+the new binary finished building and failed; the fresh-binary repeats pass.
+No live compositor installation/restart. Remaining: native-session capture and
+audio, multi-output/rotated/scaled capture, input/grab/lock edge cases, shelf drag
+into actual Signal, and release/install qualification. Earlier source-only and
+unwired notes are historical and superseded only by these scoped results.
+
+## Command+Shift+4 region source wiring — 2026-10-22
+
+Added selection state to the compositor, +4 entry, crosshair cursor override,
+pointer drag tracking, consumed selection buttons, Escape cancellation and
+selected-region cropping before the existing PNG worker. +3 clears region mode.
+The native-drm check passes. This has not yet passed an end-to-end drag test;
+selection/hover overlays, Space/window capture, complete modal-input handling,
+lock/grab interruption and transformed/multi-output crop acceptance remain open.
+No live binary installed; owner shortcuts are not fixed in the running session.
+
+## Screenshot region-to-pixel crop mapping — 2026-10-22
+
+Added crop mapping from global logical selection bounds to an upright output
+image, using actual image/logical-size ratios for fractional scales and clipping
+at output boundaries. A compositor regression verifies negative output origins,
+1.5x pixel scale, clipped selections and nonintersecting outputs; all three pixel
+tests pass. This is a prerequisite for +4, not completed input wiring. Selection
+input interception, crosshair/blue overlay, window capture and region end-to-end
+qualification remain open. Nothing installed or restarted.
+
+## Screenshot orientation regression fixed — 2026-10-22
+
+An asymmetric Wayland fixture exposed vertically inverted nested captures despite
+valid PNG dimensions. Corrected the mapping.flipped interpretation. A fresh
+capture was visually inspected upright; the harness now decodes pixels with
+system Pillow and asserts substantial red/blue regions with red above blue,
+catching orientation and channel errors. The updated end-to-end test passes;
+receipt /tmp/pantheon-capture-probe.eg5Psc (earlier inverted receipt TgefcJ retained).
+The fixture is synthetic and no live desktop was captured. Requires system
+python3-gi/GTK4/Cairo and python3-pil. Native DRM orientation, multiple outputs,
+selection/+4 and shelf behavior remain unqualified. No compositor installed.
+
+## Nested full-screen screenshot acceptance — 2026-10-22
+
+`SCREENSHOT_TEST_BIN=/path/to/pantheon-compositor bash
+mseries/pantheon-rust-compositor/screenshot-tests/run.sh` now runs a private
+Xvfb/D-Bus compositor with temporary HOME/XDG directories. It sends the actual
+Super+Shift+3 key chord and verifies one complete 1280x800 PNG with 0600 permissions
+and a shutter-sound request (sound player stubbed). This passes on the newly built
+binary; receipt: /tmp/pantheon-capture-probe.X7Zvgz. The first probe exited before
+the nested X11 window was visible; explicit window readiness fixed that harness
+race. No live desktop screenshot was taken. Pixel/transform review, native DRM
+capture, shelf observation and +4 selection remain open; nothing installed.
+
+## Command+Shift+3 source wiring — 2026-10-22
+
+The full-screen shortcut now queues a compositor-owned capture request. Native
+and nested render paths compose active outputs offscreen, perform bounded readback,
+and save PNGs on a single guarded worker to ~/Downloads/Screenshots; successful
+saves request the camera-shutter sound. Locked sessions reject capture, and busy
+requests are dropped rather than spawning concurrent encoding work. The native-drm
+build check passes, including concrete multi-GPU renderer trait instantiation.
+This is source wiring only: no nested end-to-end render/capture test, GPU orientation
+qualification, sound or shelf observation has passed yet. No live binary installed
+or compositor restart. Command+Shift+4 input/selection overlays remain unwired.
+
+## Screenshot PNG publication — 2026-10-22
+
+Added bounded PNG saving for the capture worker: private 0600 files, completed
+encoding/flush/sync before atomic same-directory publication, unique names,
+no replacement of existing captures, and cleanup of temporary files. The real
+compositor test decodes saved synthetic pixels, checks permissions, distinct
+paths and absence of leftover temporary files; it passes. Native-drm check also
+passes. This helper has no render-loop caller yet. Capture requests/shortcuts,
+worker lifecycle, selection overlays, sound and shelf handoff remain unwired;
+Command+Shift+3/4 are still unfixed in the live session. No desktop restart.
+
+## Screenshot offscreen output composition — 2026-10-22
+
+Added a generic renderer path that composes desktop elements into an owned
+ABGR8888 texture, waits for rendering completion and reads it through the bounded
+pixel adapter. It rejects locked sessions and invalid/oversized output modes.
+The native-drm build check passes. No caller is wired yet, so this does not prove
+actual GPU capture, transform/color correctness or direct-scanout coverage.
+Next: save publication, capture requests and nested-renderer acceptance, followed
+by native renderer/selection integration. No live compositor changes.
+
+## Native screenshot framebuffer readback core — 2026-10-22
+
+Added bounded renderer-owned framebuffer readback in ABGR8888/RGBA byte layout,
+with returned format/dimension checks and row-orientation conversion. The five
+screenshot selection/pixel tests pass in the actual compositor test executable;
+the native-drm build check passes. These are synthetic conversion tests, not
+GPU readback/image-orientation acceptance. Test linking completed in 6m30s under
+heavy host memory pressure (swap full); no duplicate build was started. Input,
+selection overlays, offscreen composition/native frame integration, PNG saving,
+sound and shelf publication remain to be wired. Nothing installed or restarted.
+
+## Pantheon-R screenshot selection core — 2026-10-22
+
+Added the compositor screenshot selection model: normalized drag regions in
+logical desktop coordinates (including negative output positions), zero-area
+rejection, cancellation and hovered-window bounds. Three standalone Rust tests
+pass via `rustc --edition 2024 --test rust/pantheon-compositor/src/screenshot.rs`.
+The module is included in the compositor but input routing, crosshair/highlight
+rendering, framebuffer readback, sound and saved-image publication are not yet
+wired. Command+Shift+3/4 remain unfixed in the live session. No compositor restart.
+
+## Live screenshot shelf repair — 2026-10-22
+
+Owner reports screenshot capture is not working. Read-only session inspection
+finds pantheon-compositor running, no Gala process, and no screenshot/screencopy
+implementation in this branch’s compositor source. The installed October 18
+shelf was also stale. PR #525’s shelf passes all ten retention regressions and
+was installed/restarted alone; installed/source SHA-256 match
+`ccd40eeba0531eab67e54bc0d70f8398eddb88203fc4a77f68a89e38a79213ec`.
+The new process is running and logs the correct watch directory. Originals now
+remain saved after drags. No compositor/panel restart or live capture occurred.
+The installer’s broad pkill matched the invoking shell command (exit 143), but
+independent checks confirm successful installation/start. Narrow that process
+match next. Native compositor capture/keybinding integration remains missing;
+updating the shelf alone does not fix capture. Owner symptom clarification is
+pending.
+
+## Reproducible Messages GTK test harness — 2026-10-22
+
+Run `bash rust/mseries-messages/test-gui.sh` to exercise the offline widget test
+under Xvfb/Cairo, temporary XDG directories and a private D-Bus with no service
+activation directories. The script cleans its temporary files and passes locally;
+the Messages CI workflow now installs Xvfb/xauth/D-Bus and runs it explicitly.
+The GTK test now awaits the actual failed startup refresh and Retry completion,
+asserts the warning/recovery state and disabled sending, and verifies the draft
+survives retry. No offline flags are forced by the test. This extended test passes
+locally. Expected missing-portal/software-display warnings do not affect this
+widget-state check. The same passing test now publishes a synthetic
+Messages1 service on the private bus and verifies Retry transitions to connected,
+clears the warning, retains the draft and keeps Send disabled without a selection.
+The fixture uses one synthetic read conversation
+and an empty inbox. The passing GTK test selects that conversation, checks
+composer readiness and message-widget creation, edits the actual text buffer,
+and verifies its draft survives Back and re-selection.
+The same passing GTK/private-D-Bus test now switches valid phone UUIDs A → B → A
+and verifies drafts with identical thread keys stay separate and restore correctly.
+It also switches identity inside ListRecent: the mixed refresh is rejected, send
+readiness is cleared, the old draft/profile remain intact, and a clean retry
+loads the new profile and its draft. This private-service GTK regression passes.
+The fixture now handles checked sends locally with success, known-failure and
+unknown-outcome responses. The passing test verifies Transferred outbox state
+and cleared draft on success, removal of the failed bubble with draft retention,
+and retention of the uncertain bubble and draft. No real phone or recipient is
+reachable through this private-bus fixture.
+The passing GTK fixture also advertises unsupported API v99, verifies the API-v2
+error, disabled sending and preserved draft, then restores v2 and verifies recovery.
+Strict combined SDK/Messages Clippy across all targets passes.
+A delayed-send GTK scenario also passes: the fixture holds a response, the app
+switches phones, and the old success response leaves the active phone’s same-key,
+same-body draft/outbox untouched. The parked send remains OutcomeUnknown. The
+post-response check now waits for a test-only completion counter incremented
+inside the real send callback, with a five-second failure deadline. It proves
+the response was processed before asserting isolation; the fixed delay has been
+removed. The GTK scenario and strict all-target Messages Clippy pass.
+The GTK scenario also passes compact list/detail/Back visibility and regular
+two-pane restoration while retaining the composer draft. It also resizes the visible X11 app window to 520 and 1040 pixels and awaits
+the SDK’s compact/regular classes and matching pane visibility. The test passes
+on bare private Xvfb; xdotool is now a harness/CI dependency. An initial probe
+selected an auxiliary title-matching X11 window; restricting the search to
+visible windows resolved the false failure. Both Paned children now preserve their minimum widths rather than shrinking
+visible controls below their usable size. Compact navigation still hides the
+inactive child explicitly. The same private-Xvfb resize test passes without
+the prior zero-width GtkBox warnings. The same test increases GTK’s font to
+Sans 18 at a 1040-pixel window, verifies increased text metrics and automatic
+compact navigation, restores the prior font, and verifies regular two-pane
+layout returns. This private-session font-change regression passes.
+Set `MSERIES_MESSAGES_GUI_CAPTURE_DIR` when running the GUI script to save
+regular/compact GTK render snapshots. The fixture now installs SDK CSS as main
+does. Captures in /tmp/messages-fixture-review were inspected: the dark fixture
+shows conversation, history, Back, composer and Send without clipping at
+1040/520 pixels. This is one short synthetic conversation, not light/dark,
+long-content or owner-theme qualification. Comprehensive
+allocated content bounds, visual review and assistive technology remain unqualified. CI execution, visual/accessibility and connected-phone acceptance remain
+unverified. The locally built Debian package remains uninstalled under build/.
+
+## Messages isolated GTK recovery regression — 2026-10-22
+
+An opt-in ignored GTK test now constructs the real App, verifies offline compose
+controls are disabled and confirms Back clears selection while retaining a draft.
+It passes under Xvfb/Cairo with a private D-Bus configuration containing no service
+activation directories and temporary config/cache/data paths. This checks widget
+state, not visual rendering, accessibility or a connected phone. An initial run
+using the standard private-session configuration activated host-installed portal
+helpers; the retained validation was rerun with activation disabled. Next: make
+this isolated harness reproducible in CI and add synthetic connected-service cases.
+
+## SDK phone identity validation — 2026-10-22
+
+The public status parser now rejects malformed supplied phone UUIDs before any
+app can use them for session/cache keys. Missing IDs remain compatible with
+released BlueFerry. A focused SDK regression checks valid/missing IDs, malformed
+values, API version rejection and omission of invalid identity values from the
+error. The focused test passes; live service acceptance remains open.
+
+## Messages avatar cache isolation — 2026-10-22
+
+A reported phone change invalidates the stored photo revision before the normal
+revision update clears cached avatars/requested addresses and increments the
+photo generation. Matching revision numbers on different phones can no longer
+retain old photos or accept old-generation results. Strict Messages Clippy,
+formatting and diff checks pass; delayed-photo GUI acceptance remains open.
+
+## Messages contact-picker phone guard — 2026-10-22
+
+New-message dialogs capture the phone generation. Activating a contact, starting
+a direct conversation or searching after an observed switch is rejected with
+reopen guidance; in-flight contact search results from the previous generation
+are discarded. Strict locked Clippy across all Messages targets, formatting
+and diff checks pass. GTK interaction/delayed-service tests remain open.
+
+## Messages refresh identity consistency — 2026-10-22
+
+Refresh now rereads public status after inbox/history calls and rejects results
+when phone identity or MAP readiness changed during the request. Failed refresh
+also clears send readiness, preventing keyboard sends from bypassing the disabled
+button. All 17 Messages library tests pass, including identity/disconnect rejection.
+Formatting and diff checks pass. Endpoint checks cannot detect an A-to-B-to-A
+switch or distinguish phones on old releases without UUIDs; a backend snapshot
+identity/generation contract is still needed for that guarantee. Delayed D-Bus
+integration and live phone acceptance remain open.
+
+## Messages phone-state regression coverage — 2026-10-22
+
+The production phone-state transition is now exercised by tests covering A/B
+phones with identical thread keys, separate draft restoration, cleared selection
+and pending flags, and unresolved sends restored as OutcomeUnknown. A second
+case verifies unidentified drafts are never assigned to a newly identified phone.
+All 16 Messages library tests pass. GTK callback/delayed-service interaction and
+live acceptance remain open; these tests qualify the state transition only.
+
+## Messages per-phone session state — 2026-10-22
+
+On an observed phone change, Messages parks identified phones' in-memory drafts
+and outbox separately and restores them when that UUID returns. Selection is
+cleared, old inbox-only rows are removed, and unresolved Sending entries become
+OutcomeUnknown; no retry is dispatched. Unknown-identity state is not assigned
+to a newly identified phone. Existing 14 library tests pass; dedicated synthetic
+switch/delayed-response tests remain required. Released BlueFerry without phone
+UUIDs cannot provide this isolation. Live phone qualification remains open.
+
+## Messages confirmation and read callback guards — 2026-10-22
+
+Group confirmation refuses to dispatch after an observed phone-profile change
+and asks the user to review the conversation again. Retained Mark as Read row
+actions reject a changed profile; both read callback paths ignore old-phone
+results. The existing 14 Messages library tests pass, with formatting and diff
+checks clean; they do not exercise these GTK callbacks. Synthetic delayed-response
+and dialog interaction coverage, per-phone draft/outbox retention and live
+phone acceptance remain open. No messages were sent during validation.
+
+## Messages stale send/favorite responses — 2026-10-22
+
+Send and favorite completion callbacks now capture the phone-profile generation
+and ignore results after an observed profile change. An old send response can
+no longer clear a new profile's matching-key draft or edit its outbox/UI.
+This does not cancel an already dispatched backend operation. Locked Messages
+check, formatting and diff checks pass. Remaining phone-switch work includes
+per-profile draft/outbox retention, confirmation dialogs, contact searches,
+history/read callbacks and synthetic delayed-response regressions.
+
+## Messages inbox cache on phone changes — 2026-10-22
+
+A reported phone-profile change now forces a recent-inbox fetch and discards
+the previous inbox snapshot, timestamp, warning and synthesized inbox-only
+rows before merging the new phone data. A failed new inbox read cannot reuse
+the old snapshot. Locked `cargo check -p mseries-messages`, formatting and
+diff checks pass. This is a partial phone-switch correction: draft/outbox,
+in-flight operations and backend identity changes during requests still need
+a dedicated review and synthetic-service regression coverage before live
+phone-switch acceptance. No owner conversations were accessed.
+
+## Rust app package runtime requirements — 2026-10-22
+
+Messages, System Monitor and T3 Debian packages now require GTK 4.20 and
+Granite 7.8, matching the enabled Cargo API features and shared SDK. Previously
+the package metadata allowed GTK 4.12 and unversioned Granite, which could
+permit installation on unsupported runtimes. Both Granite package-name
+alternatives retain the same minimum version. Shell syntax and dependency
+version comparisons pass; this metadata correction does not qualify a live
+phone or desktop. Next: finish current build/package CI and the outstanding
+visual, keyboard/accessibility and owner-phone acceptance.
+## Screenshot shelf capability detection — 2026-10-22
+
+The shelf queries the running compositor's ScreenshotShelfPlacementVersion
+property without D-Bus activation. Pantheon-R support selects native Wayland;
+older sessions retain Gala/XWayland detection and explicit override behavior.
+All 13 private shelf tests pass. Matching compositor source is PR #526; older
+installed binaries lack the property. Live attachment acceptance is still open.
+
+## Screenshot shortcut gap and shelf repair — 2026-10-22
+
+Owner confirms Command+Shift+3/4 currently do nothing under Pantheon-R. Required:
++3 full-screen capture with camera sound and a three-second bottom-right shelf;
++4 crosshair drag selection, plus window hover/Space blue highlight and capture.
+The running session is pantheon-compositor, not Gala; the audited branch has no
+screenshot/screencopy path. Capture remains unimplemented/unqualified here.
+The shelf default now matches three seconds, and its installer stops only exact
+shelf argv matches instead of killing parent shells mentioning the path. All ten
+retention tests and shell syntax pass. The helper alone was deployed, source and
+installed hashes match, and a new process is running. The compositor/panel were
+not restarted; no live screenshot or message was taken/sent. Next: implement
+native compositor capture, selection and keybindings before attachment acceptance.
+
+## Signal system accent refresh and Messages local favorites — 2026-10-22
+
+Signal's installed launcher now checks the active elementary accent each time
+the official ARM64 Electron client opens and refreshes its user-level `app.asar`
+patch when the preference changed. The opt-in atomic installer keeps its signed
+release tree immutable and therefore retains upstream colors. This is only the
+current Signal transition path. The target is Rust GTK4/Granite first-party apps,
+with `claude-pantheon-rs` (T3 Code) as the reference: port Messages over
+BlueFerry's versioned session D-Bus API first; Signal needs a supported secure
+client/backend boundary before a Rust UI can replace Electron. The [Rust app
+plan](SIGNAL-PANTHEON-DESIGN.md) records the staged route. The actual shelf-to-compose drop
+preview, logged-in Signal appearance and owner desktop acceptance still need a
+real-session check; issue #227 remains open.
+
+Native Messages now supports local Add/Remove from Favorites in each conversation
+menu. Local favorites are stored in the desktop keyring per connected phone,
+follow a unique address through direct-chat promotion, and remain separate from
+the imported Apple pin snapshot. The Mac snapshot and iPhone are never changed.
+The local app integration has not been installed or exercised in this change.
+
+## J314S wip3 dock incident and wip4 build status — 2026-10-22
+
+The October 21 wip2 trial produced owner-confirmed WD22TB4 picture on all three
+USB-C ports at 1080p/60 in one observed cycle per port. On October 22, one wip3
+plug on dcpext1 produced no picture; same-port replug did not recover, while a
+different port restored 1080p/60. This is one incident, not sustained or
+all-port wip3 qualification. Preserve the immutable
+[wip3 report at source 3ca5888](https://github.com/techmore/ElementaryOS_MSeries/blob/3ca5888000e9fa47df29d058d0cfbc033bbc749e/mseries/aurora/hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md).
+
+The current wip4 source/build candidate is open [PR #533](https://github.com/techmore/ElementaryOS_MSeries/pull/533)
+at head `de375f38acdc8fb3bc88ed65982c09f619e1034d`. ARM64 candidate, unified72
+and eGPU build/payload checks passed in
+[run 39860520050](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39860520050);
+M-series validation passed in
+[run 39860519355](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39860519355).
+This is source/build evidence only. DCP KUnit, attended J314S boot, WD22TB4
+recovery/repeatability, suspend, long-run stability and paired power qualification
+remain open. No wip4 package was installed or armed; the persistent boot selection
+was not changed.
+
+Older results remain scoped: PR #518's source-preparation run failed after a
+codeload 429, and PR #528's fallback build produced wip3, not wip4; PR #527's
+SIGHUP change only fixes the dock-test harness. These do not supersede PR #533's
+wip4 build result. PR #519 carries the public status correction and remains
+unpublished pending review, merge and a successful Pages deployment. Current
+`origin/dev` is `1692134966206c8d9d008f27c9f9a31247f3813b`; its Pages workflow
+run 39939630433 succeeded, but that does not publish PR #519's unmerged changes.
+No kernel, boot payload, display, power, audio or desktop state changed in this
+maintenance pass.
+
 
 ## Image Studio backend port — 2026-10-22
 
@@ -154,6 +2034,133 @@ next login, not currently loaded; no measured speedup. Actual .20 recovery,
 suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
+
+## AirDrop availability in Windows Work Mode — 2026-10-22
+
+Quick Settings has a receive switch in its collapsed AirDrop row. The Windows
+taskbar status area now opens the same panel and backend, keeping AirDrop
+available while Work Mode hides the top panel. The complete private dock build
+was installed and restarted in the active Work Mode session; see
+[OS9-HANDOFF.md](OS9-HANDOFF.md). Native visual and hardware receive acceptance
+remain open.
+
+The AWDL setup service had been disabled, leaving the panel with a misleading
+“radio not running” readiness message after reboot. The idle interface is now
+enabled at boot; it does not advertise. The installer persists this setup, and
+the AirDrop panel explains that a radio-only blocker will be recovered when the
+user turns receiving on. See [OS9-HANDOFF.md](OS9-HANDOFF.md).
+
+The native receive-notification fallback is installed and pushed in PR #529;
+its click action still needs a live transfer check. There is no general preview
+pane in the current source (the screenshot shelf handles screenshots only), so
+AirDrop files in Downloads are not previewed there. Track the Files-integrated
+Preview panel and metadata fallback in [#530](https://github.com/techmore/ElementaryOS_MSeries/issues/530),
+and right-click conversions in [#531](https://github.com/techmore/ElementaryOS_MSeries/issues/531).
+## Dock Launcher binding lifecycle backport — 2026-10-21
+
+Backported elementary/dock `1f55ec4c5fda41b41f6c92e31e80122608500ce7` against
+the pinned 8.3.3 source. Canonical source preparation applies the adaptation
+after app tracking while retaining the complete taskbar, Start menu, CodexBar,
+RepoBar and notification stack. Clean build completed 425/425 steps; private
+Launcher pointer/keyboard checks and light/dark screenshots passed. App identity
+and running lifecycle tests passed 5/5. The CodexBar hover fixture remains
+intermittent; no live dock deployment or memory measurement. Source pin remains
+unchanged for task 03 coordination. [Audit and receipts](upstream-audits/desktop/2026-10-21T22-29-10-0400.md).
+## Pinned Aurora source fetch follow-up — 2026-10-22
+
+Both #518 run 39770268111 and #528 run 39836069576 received repeated HTTP 429 responses from the pinned codeload URL;
+the retry policy exhausted before unified72 source preparation. The candidate profile passed prep and entered its isolated
+CI build. The current follow-up retains archive SHA-256 verification, retries transient responses, then uses the exact
+Git URL, commit and tree SHA-1 pinned in `aurora/unified72/series.json` only after a retryable HTTP error. Mocked checks
+cover both paths, and the preparation receipt records the acquisition method and archive digest; the remote fallback and
+wip4 build still need CI evidence. No local source fetch or hardware/kernel
+installation occurred. #518 remains conflicted with `dev` and unreviewed; verify updated CI before considering its refresh.
+## Rust Pantheon SDK and app migration — 2026-10-22
+
+Started `rust/mseries-pantheon-kit`, a shared Rust GTK 4 / Granite SDK modeled
+on T3. T3, Messages, Disk Space, and Software Updates now depend on it. Shared
+text-line-relative spacing, responsive width observation, accessibility names,
+and a shared 12 logical-pixel content-surface radius are in place. The current
+GTK CSD, Gala clip source and display-mask target use a separate provisional 20
+logical-pixel radius, independent of text scale. A per-user Gala override was
+changed to 20 pixels for the next Gala session; the currently running Gala was
+not reloaded. The value and superellipse curve still need visual calibration
+against the physical panel, so they are not yet qualified as MacBook-matched.
+Initial window sizes remain logical app choices. The SDK contract adopts Apple
+HIG usability principles through native Pantheon patterns.
+The project-wide inventory, scaling policy and staged migration order are in
+[Rust Pantheon SDK](RUST-PANTHEON-SDK.md).
+
+The SDK now includes nonblocking Pantheon dock badges via LauncherEntry,
+including an optional progress indicator. Rust Messages reports the aggregate
+unread count, and T3 uses the same API for running-thread count/progress instead
+of keeping a private D-Bus implementation. The API coalesces state until the
+session bus connects and emits no background polling.
+
+Disk Space's first SDK consistency pass now scales persistent spacing and row
+padding with text metrics and names its icon-only actions for assistive
+technology. Its fixed three-pane minimum widths and compact-window navigation
+remain open for a later interaction pass.
+
+Messages is still an optional API v2 prototype beside the qualified Python
+client; its typed BlueFerry D-Bus client and response models now live in the
+shared SDK, with opt-in contact photos decoded to bounded in-memory avatars
+and text-form Tapbacks folded onto the messages they quote. The Rust preview
+also has a contact picker, explicit recipient copy, conversation-list quick
+actions, search across loaded message text, refresh/new-message shortcuts,
+Ctrl+Enter send with plain Enter reserved for newlines, locally formatted
+timestamps, a retry action for startup failure, and SDK-driven message grouping
+with sender labels and date/time headings. Outgoing messages appear immediately
+and remain visible until BlueFerry history confirms the echo; uncertain sends
+keep the draft and are labeled as unknown. A keyboard-shortcuts sheet now lists
+the app's shortcuts; F5 and Alt+Left match the existing client, and Back/Escape
+clear the selected conversation while preserving its draft. These source/build
+changes start with no conversation selected, avoiding an automatic open/read on
+refresh. They still need private GUI, accessibility, phone and owner acceptance.
+The shared SDK now calls BlueFerry's released API v2 `Messages1.ListRecent` for
+the bounded phone inbox: startup, manual refresh, reconnect and resume trigger
+catch-up; ordinary connected polling checks it at five-minute intervals. The
+merge deduplicates handles, avoids ambiguous direct matches and groups, and
+retains the last successful snapshot on read errors. Owner-session inbox
+interaction acceptance remains open.
+Imported Apple pin review now uses BlueFerry's optional stable phone UUID and
+the shared Secret Service item in both Rust and Python clients. BlueFerry PR
+[#277](https://github.com/erikwb/blueferry/pull/277) merged on 2026-10-22, but
+the latest public release remains v0.8.1 from 2026-09-15 and omits the field.
+Pin import stays unavailable until a release/package containing the merged API
+is available. The Python client can migrate its prior keyring item after that
+release; a direct switch to Rust may require re-importing the snapshot. Feature
+parity and owner phone acceptance remain open. Signal's selected official-client path
+is tracked in ready PR [#525](https://github.com/techmore/ElementaryOS_MSeries/pull/525);
+the screenshot shelf-to-compose acceptance remains open in
+[issue #227](https://github.com/techmore/ElementaryOS_MSeries/issues/227).
+Torrential is
+already Rust/GTK4/Granite and now consumes the SDK from its private `mseries-native`
+branch; continue its UI/accessibility migration and keep it private until its
+license permits redistribution. Orchard and the other Vala/Python apps need
+bounded ports against their current backend contracts. Signal remains on its
+signed official client until an upstream-supported backend/API exists;
+`libsignal` does not support external client use. The shared radius defaults
+still need hardware visual qualification; see the system-level issue in
+`BUG-FIX-ROADMAP.md`.
+
+The SDK rollout includes the existing Rust Software Updates app and its typed
+`mseries-update-core` OS contract; the app-facing CLI adapter now lives in the
+Apps SDK, while privileged transaction policy remains in the OS. A new System
+Monitor preview uses SDK CPU/memory polling and embeds btop through
+VTE; compositor counters await a versioned OS API. Apps can release
+independently after native acceptance, with SDK/API compatibility and pinned
+artifacts recorded by the project hub. The staged Kernel, OS and Apps
+repository model and release flow are in
+[Repository Topology](REPOSITORY-TOPOLOGY.md).
+
+## Dock launcher regression harness startup race — 2026-10-22
+
+The #518 PR validation run [39770268132](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39770268132)
+found that the fake dock child PID file could exist before its contents were written. The SIGHUP test now waits for a
+numeric PID and detects an early wrapper exit; the focused suite passes 8/8. This changes test synchronization only and
+does not qualify the wip4 kernel candidate. PR #518 remains conflicted with `dev`, and its unified72 source preparation
+needs a fresh successful pinned-source fetch before kernel build or payload inspection can run.
 
 ## Factory speaker protection wired into ARM64 images — 2026-10-21
 
@@ -2974,8 +4981,11 @@ Performance work stays measured: use `mseries/benchmarks/` before and after each
 9. **Torrential ARM64 native app port and optimization.** Native GTK/Granite
     package installed on the desktop; official Ubuntu torrent data transfer
     and full-ISO SHA-256 verified; RPC pause/resume checks passed. UI interaction,
-    close/reopen state restoration, and measured optimization remain. Upstream source and packages stay local pending a
-    license grant. See [`TORRENTIAL-PORT.md`](TORRENTIAL-PORT.md).
+    close/reopen state restoration, and measured optimization remain. The private
+    Rust/Relm4 `mseries-native` fork now consumes the shared SDK layout and
+    accessibility helpers and passes `cargo check --locked`; GUI and populated-
+    list performance acceptance remain. Upstream source and packages stay local
+    pending a license grant. See [`TORRENTIAL-PORT.md`](TORRENTIAL-PORT.md).
 10. **Report upstream bugs** (Wingpanel crash: draft in `upstream/`). ~~PipeWire missing LV2 plugin in Ubuntu~~: not a bug. Ubuntu ships `libspa-filter-graph-plugin-lv2.so` in `libspa-0.2-modules-extra` (checked 2026-10-13, 1.6.2-1ubuntu1.2, the same version as the installed PipeWire). The notes saying Ubuntu omits it missed that package. Next step: install it instead of building the plugin in `install-pipewire-lv2.sh`, and add it to the factory image. Not yet tested with the Asahi audio chain.
 
 Not realistic here: macOS 27 guests (`MACOS-VM.md`), Mac mini M4 (Asahi has no M4 support: no installer, no GPU
@@ -3523,3 +5533,16 @@ compatibility path before any service upgrade or hardware acceptance claim.
 Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
 only owned synthetic peers. No application behavior or VM acceptance change.
 See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
+
+### SDK dock anchoring — 2026-10-23
+
+Pantheon panel protocol adapter implemented in msdk-gtk; dock builds with bottom anchor, size and hide mode. Next: live placement review and pin editing.
+
+### GitHub Pages current wip4 candidate status — 2026-10-23
+
+The public home and build monitor now point to PR #533 head
+`266d54af49ca6dede2492f11b4fe830cafa7228a` and successful same-head build/payload
+run `39944207967` and validation run `39944207727`. PR #533 is still open and
+conflicts with `dev`; refresh/review remains required. Wip4 hardware acceptance
+remains open. The current live site byte-matches `dev` `7053069f` from Pages run
+`39954620306`; this correction is prepared in a PR and awaits publication.

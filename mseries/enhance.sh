@@ -355,13 +355,13 @@ mod_payload() {
            install-network-throughput.sh install-quick-settings-brightness.sh install-bluetooth-control-center.sh \
            install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh install-calendar-agenda.sh \
            install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh install-battery-eta.sh \
-           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py codexbar_claude_history.py codexbar_claude_handoff.py codexbar_cache.py codexbar-wingpanel-watch.py codexbar_history.py codexbar_tokens.py codexbar-sessions.py codexbar-opencode-login.py deploy-codexbar.sh lib-codexbar.sh \
+           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py codexbar_claude_history.py codexbar_claude_handoff.py codexbar_cache.py codexbar-wingpanel-watch.py codexbar_history.py codexbar_tokens.py codexbar-sessions.py codexbar-opencode-login.py deploy-codexbar.sh lib-codexbar.sh lib-t3-panel.sh install-t3-wingpanel.sh activate-t3-panel.sh \
            codexbar-opencode-wrapper.py user-enhance.sh install-dark-mode.sh \
            dark-mode/mseries-dark-mode dark-mode/mseries-dark-mode.service dark-mode/mseries-dark-mode.timer \
            netspeed/netusage/install.sh netspeed/netusage/netusage.py \
            netspeed/netusage/netusage.service netspeed/netusage/49-mseries-netusage.rules \
            quick-settings/ScreenBrightness.vala quick-settings/KeyboardBrightness.vala \
-           quick-settings/ChargeLimit.vala quick-settings/Bluetooth.vala quick-settings/AudioOutputModel.vala quick-settings/AudioOutput.vala quick-settings/AirPlayOutputs.vala quick-settings/Controls.vala \
+           quick-settings/ChargeLimit.vala quick-settings/Bluetooth.vala quick-settings/AudioOutputModel.vala quick-settings/AudioOutput.vala quick-settings/AirPlayOutputs.vala quick-settings/Controls.vala quick-settings/Appearance.vala \
            gala-daemon-fix/build.py \
            netspeed/panel-network.patch netspeed/wire-network-usage.py; do
     copy 0755 "$here/$f" "$prefix/mseries/$f"
@@ -376,7 +376,7 @@ mod_payload() {
   # Keep factory/update payloads on the same complete taskbar path as a repo checkout.
   # Preserve executable bits for helpers invoked directly by another installer.
   local tree
-  for tree in dock-taskbar dock-tests codexbar-wingpanel repobar-wingpanel teams-web; do
+  for tree in dock-taskbar dock-tests codexbar-wingpanel repobar-wingpanel t3-wingpanel teams-web; do
     while IFS= read -r -d '' f; do
       copy "$(stat -c %a "$f")" "$f" "$prefix/mseries/${f#"$here"/}"
     done < <(find "$here/$tree" -type d \( -name __pycache__ -o -name build \) -prune -o -type f ! -name '*.pyc' -print0)

@@ -24,8 +24,8 @@ are off unless named with `--with`.
 filters installed apps as you type: Enter launches, Up/Down select, Esc or
 clicking away closes, and pressing the shortcut again closes it. The setup
 script installs it to `~/.local/bin/mseries-launcher` and binds `<Control>space`
-(physical left Command, since Command is remapped to Ctrl) and `<Super>space`
-(right Command) as custom shortcuts. It clears Pantheon's default Super+Space
+(either physical Command key, since both map to Ctrl) and `<Super>space`
+(either physical Ctrl key) as custom shortcuts. It clears Pantheon's default Super+Space
 input-source switch; Alt+Shift still switches layouts. Alt+F2 still opens
 Slingshot. Gala cannot place Wayland windows, so the launcher runs through
 XWayland and moves itself: centered horizontally, top edge 80% of the screen
@@ -40,10 +40,14 @@ and removing the two `mseries-launcher` entries from
 ## Command shortcuts and brightness
 
 Run `python3 mseries/apply-desktop-settings.py` as the desktop user.
-It preserves existing XKB options and adds `ctrl:swap_lwin_lctl`: left
-Command becomes Ctrl (C/V/A/Z/S etc.), and physical left Ctrl becomes Super.
-Right Command is unchanged. Remove that option from
-`org.gnome.desktop.input-sources xkb-options` to undo the keyboard change.
+It preserves existing XKB options and adds `ctrl:swap_lwin_lctl` and
+`ctrl:swap_rwin_rctl`: both Command keys become Ctrl (C/V/A/Z/S etc.), and both
+physical Ctrl keys become Super. It fills blank media-key bindings with the
+standard mute, volume-down and volume-up keys while preserving existing custom
+bindings. To undo the keyboard change, remove both options from
+`org.gnome.desktop.input-sources` → `xkb-options`; restore prior values for the
+`volume-mute`, `volume-down` and `volume-up` keys in
+`org.gnome.settings-daemon.plugins.media-keys` to undo the media-key setup.
 The script also uses title-bar layout `close:minimize,maximize`, adding a
 Minimize button beside Maximize. Restore `close:maximize` to undo this.
 Apps drawing their own decorations may need to be reopened or may ignore it.
@@ -134,11 +138,17 @@ Signal's unread badge and activates the app when clicked. Install the optional
 Wingpanel StatusNotifier host with `bash mseries/install-signal-wingpanel.sh`;
 log out and back in to load the indicator. New message notifications continue
 to use elementary's Notification Center. The AppImage requires FUSE and
-supports automatic updates. `mseries/signal-accent.py` recolours Signal's blue to the
-elementary accent (system accent by default; `--accent`, `--check`, `--restore`); the integration
-step runs it, so a Signal update plus `install-signal-integration.sh` re-applies it. Restart
-Signal to see a change. Not applied to `--atomic` releases. Phone linking remains a user step: open Signal,
-then scan its QR code from Signal on your phone.
+supports automatic updates. `mseries/signal-accent.py` recolours Signal's blue to
+the elementary stylesheet palette (system accent by default; `--accent`, `--check`, `--restore`).
+The installed launcher checks the system accent each time Signal opens and
+reapplies it when needed. If Signal was already running when the preference
+changed, quit and reopen it to see the new colors. The optional `--atomic`
+release mode keeps its verified app tree immutable, so it retains Signal's
+upstream colors. This is the official Electron client with Pantheon integration,
+not a GTK or Granite replacement. Phone linking remains a user step: open Signal,
+then scan its QR code from Signal on your phone. The [Signal on Pantheon design
+note](SIGNAL-PANTHEON-DESIGN.md) records the maintainable integration boundary
+and remaining acceptance gates.
 Source: https://community.signalusers.org/t/beta-test-signal-desktop-for-linux-arm64/76184
 
 **Moving from the Flatpak.** `bash mseries/migrate-signal-flatpak.sh` copies the Flatpak account
@@ -435,8 +445,10 @@ the Compact model pair. See [local AI setup and verification](local-ai/README.md
 rounded corners that the Linux desktop ignores. This builds Gala (pinned to the commit matching the
 installed 8.6.2) with `mseries/patches/gala-screen-corners.patch`, which adds a click-through overlay that
 draws black rounded masks over the four corners of the *built-in* display only (external monitors are
-left square), above the top bar, dock, windows and lock screen. Default radius 10 logical px
-(`GALA_SCREEN_CORNER_RADIUS` in the drop-in; 0 hides it).
+left square), above the top bar, dock, windows and lock screen. The source default is 20 logical px
+(`GALA_SCREEN_CORNER_RADIUS`); the matching window clip and GTK CSD radius also default to 20 logical
+px. This is a shared starting value, not a measured hardware claim; confirm the curve against the panel
+after login. Set either environment value to 0 to disable its mask.
 
 Safety: the patched Gala lives in `/usr/local/lib/mseries/gala`; `/usr/bin/gala` and the login screen are
 untouched. Only your user session is pointed at it (systemd drop-in under `~/.config`). The launcher falls
@@ -450,8 +462,8 @@ so the patch points them at `meta/meta-monitor.h` / `meta/meta-logical-monitor.h
 
 **Colours and window radius** (`bash mseries/install-theme-tweaks.sh`): user stylesheets
 (`mseries/theme/gtk-4.0.css`, `gtk-3.0.css`) override the theme's named colours `BLUEBERRY_*` and
-`STRAWBERRY_*` (the accent, selection and error colours are derived from them) with softer tones, and raise the
-window corner radius from 0.5rem to 0.8rem. `ghostty.config` sets a muted 16-colour palette. `--uninstall`
+`STRAWBERRY_*` (the accent, selection and error colours are derived from them) with softer tones, and use a
+20 logical-pixel CSD radius aligned with the Gala window clip. `ghostty.config` sets a muted 16-colour palette. `--uninstall`
 restores backups.
 
 ## System audit, 2026-10-12: findings and fixes
@@ -730,19 +742,26 @@ libadwaita, Flatpak apps (through the settings portal) and Chromium-based browse
 (1 dark, 2 light) and `org.gnome.desktop.interface color-scheme`. It never touches brightness,
 refresh rate or power.
 
+Quick Settings contains **Appearance → Light / Dark / Automatic**. Its installer
+(`bash mseries/install-quick-settings-brightness.sh`) also removes the obsolete
+standalone Dark/Auto menu-bar module, keeping a rollback copy outside Wingpanel's
+plugin directory. Reload Wingpanel explicitly to activate; in the Rust session:
+`systemctl --user restart pantheon-wingpanel.service`.
+
 ```bash
 mseries/install-dark-mode.sh              # install to ~/.local/bin
 mseries-dark-mode on | off | toggle | status
-mseries/install-dark-mode.sh --schedule  # user timer runs `auto` at login and every 15 minutes
+mseries/install-dark-mode.sh --schedule  # user timer runs `tick` at login and every 15 minutes
 mseries-dark-mode schedule 20:00 06:30   # fixed hours instead of sunset/sunrise
 mseries-dark-mode schedule sun           # back to sunset/sunrise (default)
 mseries-dark-mode location LAT LON       # override the stored Night Light coordinates
 ```
 
-`auto` is the macOS-style cut-over: dark from sunset to sunrise, computed from the coordinates
-Night Light already stores (NOAA solar maths, checked against Philadelphia: 07:10/18:21 on
-2026-10-16). It acts only when day/night changes, so a manual toggle sticks until the next
-transition, and it books a one-shot timer for that moment.
+`mseries-dark-mode appearance light|dark|auto` selects the persistent mode.
+Light and Dark pause automatic switching until Automatic is selected again.
+Automatic follows sunset/sunrise using Night Light coordinates (NOAA solar
+maths), or the configured fixed hours, and books a one-shot timer for the next
+transition. `status --json` exposes the selected mode and effective appearance.
 
 The pastel accent overrides in `theme/gtk-*.css` already use dark label text on pale fills, so they
 read in both schemes. Verified 2026-10-16: the settings portal reports dark (`org.freedesktop.appearance color-scheme` = 1), which is what Brave and Flatpak apps read. Not covered yet: Qt apps (`adwaita-qt` is not installed and no Qt style is forced) and Ghostty

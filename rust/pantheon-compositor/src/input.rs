@@ -14,8 +14,8 @@ use smithay::{
         pointer::{
             AxisFrame, ButtonEvent, GestureHoldBeginEvent, GestureHoldEndEvent,
             GesturePinchBeginEvent, GesturePinchEndEvent, GesturePinchUpdateEvent,
-            GestureSwipeBeginEvent, GestureSwipeEndEvent, GestureSwipeUpdateEvent, MotionEvent,
-            RelativeMotionEvent,
+            GestureSwipeBeginEvent, GestureSwipeEndEvent, GestureSwipeUpdateEvent,
+            GrabStartData as PointerGrabStartData, MotionEvent, RelativeMotionEvent,
         },
     },
     utils::{Logical, Point, SERIAL_COUNTER},
@@ -23,6 +23,9 @@ use smithay::{
 
 use crate::gestures::ActiveGesture;
 use crate::state::PantheonCompositor;
+
+/// BTN_LEFT from linux/input-event-codes.h.
+const SUPER_DRAG_BUTTON: u32 = 0x110;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct StartupKeyboardConfig {
@@ -133,6 +136,58 @@ impl PantheonCompositor {
                     time,
                     |state, modifiers, keysym| {
                         if key_state == smithay::backend::input::KeyState::Pressed
+                            && state.screenshot_selection.borrow().active()
+                            && keysym.modified_sym().raw() == smithay::input::keyboard::xkb::keysyms::KEY_Escape
+                        {
+                            state.screenshot_selection.borrow_mut().cancel();
+                            state.request_native_redraw(); state.request_winit_redraw();
+                            return FilterResult::Intercept(());
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
+                            && !state.session_locked && modifiers.logo && modifiers.shift
+                            && !modifiers.ctrl && !modifiers.alt
+                            && matches!(keysym.modified_sym().raw(), smithay::input::keyboard::xkb::keysyms::KEY_4 | smithay::input::keyboard::xkb::keysyms::KEY_dollar)
+                        {
+                            let point = state.seat.get_pointer().unwrap().current_location();
+                            state.screenshot_selection.borrow_mut().begin((point.x.round() as i32, point.y.round() as i32));
+                            state.request_native_redraw(); state.request_winit_redraw();
+                            return FilterResult::Intercept(());
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
+                            && !state.session_locked && modifiers.logo && modifiers.shift
+                            && !modifiers.ctrl && !modifiers.alt
+                            && matches!(keysym.modified_sym().raw(),
+                                smithay::input::keyboard::xkb::keysyms::KEY_3 |
+                                smithay::input::keyboard::xkb::keysyms::KEY_numbersign)
+                        {
+                            state.screenshot_selection.borrow_mut().cancel();
+                            state.screenshot_region.set(None);
+                            state.screenshot_requested.set(true);
+                            state.request_native_redraw();
+                            state.request_winit_redraw();
+                            return FilterResult::Intercept(());
+                        }
+                        if state.screenshot_selection.borrow().active() {
+                            if state.session_locked {
+                                state.screenshot_selection.borrow_mut().cancel();
+                            } else if key_state == smithay::backend::input::KeyState::Pressed
+                                && keysym.modified_sym().raw() == smithay::input::keyboard::xkb::keysyms::KEY_space
+                            {
+                                let pointer = state.seat.get_pointer().unwrap().current_location();
+                                let bounds = state.window_under(pointer).and_then(|window| {
+                                    let location = state.space.element_location(&window)?;
+                                    let size = window.geometry().size;
+                                    Some(crate::screenshot::Region { x: location.x, y: location.y, width: size.w as u32, height: size.h as u32 })
+                                });
+                                if let Some(crate::screenshot::CaptureTarget::Window(region)) = state.screenshot_selection.borrow_mut().capture_hovered_window(bounds) {
+                                    state.screenshot_region.set(Some(region));
+                                    state.screenshot_requested.set(true);
+                                }
+                                state.request_native_redraw(); state.request_winit_redraw();
+                            }
+                            return FilterResult::Intercept(());
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
                             && state.gesture_animation.is_some()
                         {
                             state.cancel_active_gesture(time);
@@ -222,6 +277,13 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                if self.screenshot_selection.borrow().active() {
+                    self.screenshot_selection
+                        .borrow_mut()
+                        .motion((new_location.x.round() as i32, new_location.y.round() as i32));
+                    self.request_native_redraw();
+                    self.request_winit_redraw();
+                }
                 self.snap_assist_hover(new_location);
                 self.refresh_panel_visibility();
                 pointer.frame(self);
@@ -258,6 +320,13 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                if self.screenshot_selection.borrow().active() {
+                    self.screenshot_selection
+                        .borrow_mut()
+                        .motion((pos.x.round() as i32, pos.y.round() as i32));
+                    self.request_native_redraw();
+                    self.request_winit_redraw();
+                }
                 self.snap_assist_hover(pos);
                 self.refresh_panel_visibility();
                 pointer.frame(self);
@@ -271,6 +340,26 @@ impl PantheonCompositor {
                 let button = event.button_code();
 
                 let button_state = event.state();
+                if self.screenshot_selection.borrow().active() {
+                    let point = pointer.current_location();
+                    let point = (point.x.round() as i32, point.y.round() as i32);
+                    if self.session_locked {
+                        self.screenshot_selection.borrow_mut().cancel();
+                    } else if button == 0x110 {
+                        if button_state == ButtonState::Pressed {
+                            self.screenshot_selection.borrow_mut().press(point);
+                        } else if let Some(crate::screenshot::CaptureTarget::Region(region)) =
+                            self.screenshot_selection.borrow_mut().release(point)
+                        {
+                            self.screenshot_region.set(Some(region));
+                            self.screenshot_requested.set(true);
+                        }
+                    }
+                    self.request_native_redraw();
+                    self.request_winit_redraw();
+                    return;
+                }
+
                 if button_state == ButtonState::Pressed {
                     self.cancel_active_gesture(event.time());
                 }
@@ -310,6 +399,21 @@ impl PantheonCompositor {
                                 toplevel.send_pending_configure();
                             }
                         });
+                        // Super + left drag moves the window from anywhere on
+                        // it, so one whose title bar is off screen can still
+                        // be pulled back. The grab takes the click; the app
+                        // never sees it.
+                        if !panel_surface
+                            && button == SUPER_DRAG_BUTTON
+                            && keyboard.modifier_state().logo
+                        {
+                            let start_data = PointerGrabStartData {
+                                focus: None,
+                                button,
+                                location: pointer.current_location(),
+                            };
+                            self.start_move_grab(&pointer, start_data, window, serial);
+                        }
                     } else {
                         self.end_popup_grab_unless(None);
                         self.set_x11_keyboard_focus(None, serial);
@@ -336,6 +440,9 @@ impl PantheonCompositor {
                 pointer.frame(self);
             }
             InputEvent::PointerAxis { event, .. } => {
+                if self.screenshot_selection.borrow().active() {
+                    return;
+                }
                 let source = event.source();
 
                 let horizontal_amount = event.amount(Axis::Horizontal).unwrap_or_else(|| {

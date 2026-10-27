@@ -6,24 +6,9 @@ name: Validate M-series wiring
 
 on:
   workflow_dispatch:
+  # No path filter: branch protection requires these jobs, and a skipped required
+  # check blocks the PR forever (e.g. Cargo.lock-only Dependabot bumps, #585).
   pull_request:
-    paths:
-      - "rust/claude-pantheon-rs/**"
-      - "Justfile"
-      - "assemble-iso.sh"
-      - "mkosi.conf"
-      - "mkosi.images/**"
-      - "mkosi.conf.d/**"
-      - "mkosi.bump"
-      - "repos/**"
-      - "packages.arm64"
-      - "transform/**"
-      - "bin/**"
-      - "mseries/**"
-      - "docs/build-status.*"
-      - "docs/capabilities.*"
-      - "docs/local-build-status.html"
-      - ".github/workflows/**"
 
 # New commits replace only checks for this workflow and PR. Publishing is not preempted.
 concurrency:
@@ -34,8 +19,11 @@ jobs:
   teams-web:
     name: Teams desktop launcher contracts
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install desktop integration test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi desktop-file-utils
       - name: Test without browsers, accounts or network
@@ -46,8 +34,11 @@ jobs:
   speech-release:
     name: English F5 release contracts (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install private GTK test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-ibus-1.0 gir1.2-atspi-2.0 dbus-x11 xvfb xauth
       - name: Verify source-only release, rollback and host checks
@@ -63,8 +54,11 @@ jobs:
   ui-scale:
     name: Size system ladder and Quick Settings text size (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native GTK and private D-Bus test dependencies
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-gi gsettings-desktop-schemas libglib2.0-bin dbus-x11 xvfb xauth
       - name: Planner, dock token and size-lint unit tests
@@ -82,8 +76,11 @@ jobs:
   bluetooth:
     name: Quick Settings Bluetooth controls (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native GTK and private D-Bus test dependencies
         run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-dbus python3-gi dbus-x11 xvfb xauth
       - name: Keep all Quick Settings builds on shared source preparation
@@ -98,8 +95,11 @@ jobs:
   native-ui-responsiveness:
     name: Native UI asynchronous backends (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install private GTK fixture dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-3.0 gir1.2-gtk-4.0 xvfb xauth dbus-x11 ffmpeg xdotool gir1.2-pango-1.0 python3-gi-cairo
       - name: Check responsiveness, error recovery and scale in both themes
@@ -113,8 +113,11 @@ jobs:
   orchard:
     name: Orchard GTK output and lifecycle regressions (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install GTK and Granite test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth dbus-x11 git meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libgee-0.8-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev
       - name: Test without a daemon or real guests
@@ -126,6 +129,9 @@ jobs:
 
       - name: Preserve screenshot originals across drag outcomes
         run: bash mseries/screenshot-shelf/test-retention.sh
+
+      - name: Verify Signal palette, cache migration and restore
+        run: python3 -B mseries/test-signal-accent.py
 
       - name: Prepare native indicator API
         run: bash mseries/codexbar-wingpanel/probe/ci-build-deps.sh "$RUNNER_TEMP/orchard-prefix" >> "$GITHUB_ENV"
@@ -139,8 +145,11 @@ jobs:
   work-mode:
     name: Windows Work Mode schedule and work-network rules (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install GSettings test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-gi libglib2.0-bin gsettings-desktop-schemas iproute2
       - name: Test with keyfile GSettings, a local IP service and no user services
@@ -149,8 +158,11 @@ jobs:
   dock-startup:
     name: Dock startup and launcher regressions (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native test dependencies
         run: sudo apt-get update && sudo apt-get install -y git valac libglib2.0-dev
       - name: Verify activation, delayed Gala readiness and session stops
@@ -162,8 +174,11 @@ jobs:
   desktop-space:
     name: Native top-bar scale and notch GTK allocation (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install GTK test dependencies
         run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev libgranite-7-dev xvfb xauth build-essential python3-gi libglib2.0-bin
       - name: Test top-bar 130 percent measurement and allocation
@@ -176,8 +191,11 @@ jobs:
   orchard-app:
     name: Orchard app build, tests, metadata and Debian package (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install build dependencies
         run: sudo apt-get update && sudo apt-get install -y meson ninja-build valac gcc pkg-config libgtk-4-dev libgranite-7-dev libjson-glib-dev libsoup-3.0-dev libsecret-1-dev python3 appstream desktop-file-utils xvfb xauth dbus-x11 genisoimage curl qemu-utils
       - name: Build and run the tests (machines, QMP, clipboard, display, Incus, Podman, window)
@@ -200,8 +218,11 @@ jobs:
   codexbar-wingpanel:
     name: CodexBar Wingpanel module, render and interaction probes (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install native build and headless test dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config
@@ -215,6 +236,9 @@ jobs:
           meson setup "$RUNNER_TEMP/codexbar" mseries/codexbar-wingpanel
           ninja -C "$RUNNER_TEMP/codexbar"
           meson test -C "$RUNNER_TEMP/codexbar" --print-errorlogs
+          meson setup "$RUNNER_TEMP/t3-panel" mseries/t3-wingpanel
+          ninja -C "$RUNNER_TEMP/t3-panel"
+          bash mseries/t3-wingpanel/test.sh "$RUNNER_TEMP/t3-panel" "$RUNNER_TEMP/t3-panel-receipts"
           bash mseries/dock-taskbar/test-build.sh
       - name: RepoBar resolved-account cache and private indicator race/error probes
         run: |
@@ -228,6 +252,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install build and headless EDS test dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config gettext sassc
@@ -248,6 +274,7 @@ jobs:
   validate:
     name: mkosi summary + script checks (arm64)
     runs-on: ubuntu-26.04-arm
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -257,6 +284,8 @@ jobs:
           audit_revision=$(python3 -c 'import json; print(json.load(open("docs/capabilities.json"))["source_revision"])')
           [[ "$audit_revision" =~ ^[0-9a-f]{40}$ ]] || exit 1
           git fetch --no-tags --depth=1 origin "$audit_revision"
+
+      - uses: ./.github/actions/fast-apt
 
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck dpkg-dev -y
@@ -330,6 +359,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/fast-apt
+
       - name: Install offline test tools
         run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck python3-libarchive-c keyutils
       - name: Validate hardware ports without target hardware
@@ -360,6 +391,8 @@ jobs:
       # The crate pins gtk4 0.11 (v4_20) and granite-rs 3.3 (v7_8); Ubuntu's libgranite-7-dev is 7.8, enough
       # for the bindings, so no PPA is needed here (RUST-UPSTREAM-MAINTENANCE.md). The indicator needs the
       # wingpanel-9 API, which the daily PPA ships.
+      - uses: ./.github/actions/fast-apt
+
       - name: Add elementary daily PPA (wingpanel-9 for the indicator)
         run: |
           for attempt in 1 2 3 4 5; do
@@ -400,6 +433,7 @@ jobs:
           cd rust
           cargo build --release -p claude-pantheon-rs
           cargo test --release -p claude-pantheon-rs --lib
+          python3 -B -m unittest discover -s ../mseries/fleet-shepherd/tests
       # Upstream moves daily; a drift here is a note to run scripts/refresh-contracts.sh, not a red build.
       - name: Contracts drift against pingdotgg/t3code main (advisory)
         continue-on-error: true
@@ -413,6 +447,19 @@ jobs:
         run: |
           desktop-file-validate rust/claude-pantheon-rs/data/io.github.techmore.ClaudePantheonRs.desktop
           appstreamcli validate --no-net rust/claude-pantheon-rs/data/io.github.techmore.ClaudePantheonRs.metainfo.xml
+      - name: Native T3 activity and subscription render gates (isolated offline home)
+        run: |
+          CLAUDE_PANTHEON_RENDER_RELEASE=1 CLAUDE_PANTHEON_FEATURE_PROBE="$RUNNER_TEMP/t3-features/light" \
+            bash rust/claude-pantheon-rs/tests/run-render-sandbox.sh
+          CLAUDE_PANTHEON_DARK=1 CLAUDE_PANTHEON_RENDER_RELEASE=1 \
+            CLAUDE_PANTHEON_FEATURE_PROBE="$RUNNER_TEMP/t3-features/dark" \
+            bash rust/claude-pantheon-rs/tests/run-render-sandbox.sh
+      - name: Upload native T3 feature renders
+        uses: actions/upload-artifact@v7
+        with:
+          name: t3-feature-renders-${{ github.run_id }}
+          path: ${{ runner.temp }}/t3-features/
+          if-no-files-found: error
       - name: Indicator probe (headless)
         run: |
           meson setup "$RUNNER_TEMP/indicator" rust/claude-pantheon-rs/wingpanel-indicator

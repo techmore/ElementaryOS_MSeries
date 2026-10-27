@@ -55,6 +55,8 @@ jobs:
           docker-images: true
           swap-storage: false
 
+      - uses: ./.github/actions/fast-apt
+
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install just podman zstd -y
 

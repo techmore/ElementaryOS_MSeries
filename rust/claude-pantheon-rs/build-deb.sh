@@ -26,7 +26,7 @@ fi
 
 version="$(grep -m1 -oP '^version = "\K[0-9.]+' "$here/Cargo.toml")"
 arch="$(dpkg --print-architecture)"
-debver="${version}-1~mseries1"
+debver="${version}-1~mseries2"
 
 rm -rf "$out"
 mkdir -p "$stage"
@@ -35,6 +35,18 @@ mkdir -p "$stage"
 (cd "$here" && cargo build --release --locked 2>/dev/null || cargo build --release)
 target_dir="$(cd "$here" && cargo metadata --format-version 1 --no-deps | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')"
 install -Dm755 "$target_dir/release/claude-pantheon-rs" "$stage/usr/bin/claude-pantheon-rs"
+install -Dm755 "$target_dir/release/claude-pantheon-sdk" "$stage/usr/bin/claude-pantheon-sdk"
+install -Dm755 "$repo_root/mseries/install-tstack-skills.py" "$stage/usr/bin/mseries-install-tstack-skills"
+for skill in full-send full-stop council sol-loop file-pr takeover babysit-pr modernize leaving-pr-comments; do
+  install -d "$stage/usr/share/mseries/tstack/$skill"
+  cp -a "$repo_root/.agents/skills/$skill/." "$stage/usr/share/mseries/tstack/$skill/"
+done
+install -Dm644 "$repo_root/.agents/skills/TSTACK-LICENSE.txt" "$stage/usr/share/mseries/tstack/TSTACK-LICENSE.txt"
+install -Dm755 "$repo_root/mseries/fleet-shepherd/bin/mseries-fleet" "$stage/usr/bin/mseries-fleet"
+install -Dm755 "$repo_root/mseries/fleet-shepherd/bin/fleet-snapshot" "$stage/usr/lib/mseries/fleet/fleet-snapshot"
+install -Dm644 "$repo_root/mseries/fleet-shepherd/LICENSE" "$stage/usr/share/doc/claude-pantheon-rs/fleet-shepherd-MIT.txt"
+install -Dm755 "$repo_root/mseries/repobar.py" "$stage/usr/bin/mseries-repobar"
+install -Dm644 "$here/data/io.github.techmore.ClaudePantheonSdk.desktop" "$stage/usr/share/applications/io.github.techmore.ClaudePantheonSdk.desktop"
 install -Dm644 "$here/data/$id.desktop" "$stage/usr/share/applications/$id.desktop"
 install -Dm644 "$here/data/$id.metainfo.xml" "$stage/usr/share/metainfo/$id.metainfo.xml"
 install -d "$stage/usr/share/dbus-1/services"
@@ -49,9 +61,10 @@ done
 # ---- the Wingpanel indicator -------------------------------------------------------------------
 if ((with_indicator)); then
   work="$out/indicator"
-  meson setup "$work" "$here/wingpanel-indicator" --prefix=/usr --buildtype=release >/dev/null
+  meson setup "$work" "$here/../../mseries/t3-wingpanel" --prefix=/usr --buildtype=release >/dev/null
   meson compile -C "$work"
   DESTDIR="$stage" meson install -C "$work" >/dev/null
+  install -Dm755 "$repo_root/mseries/activate-t3-panel.sh" "$stage/usr/bin/mseries-activate-t3-panel"
 fi
 find "$stage" -type d -exec chmod 0755 {} +
 find "$stage/usr/share" -type f -exec chmod 0644 {} +
@@ -59,7 +72,7 @@ find "$stage/usr/share" -type f -exec chmod 0644 {} +
 # ---- control -----------------------------------------------------------------------------------
 installed_kb="$(du -sk "$stage" | cut -f1)"
 install -d "$stage/DEBIAN"
-depends="libgtk-4-1 (>= 4.12), libgranite-7-7 | libgranite7, libglib2.0-0, libgtksourceview-5-0, libvte-2.91-gtk4-0, libwebkitgtk-6.0-4, librsvg2-common, secret-tool | libsecret-tools, gh"
+depends="libgtk-4-1 (>= 4.20), libgranite-7-7 (>= 7.8) | libgranite7 (>= 7.8), libglib2.0-0, libgtksourceview-5-0, libvte-2.91-gtk4-0, libwebkitgtk-6.0-4, librsvg2-common, secret-tool | libsecret-tools, gh, git, python3"
 if ((with_indicator)); then
   depends="$depends, libjson-glib-1.0-0, libgee-0.8-2, wingpanel | io.elementary.wingpanel"
 fi

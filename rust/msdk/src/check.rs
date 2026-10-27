@@ -123,6 +123,7 @@ pub fn check(doc: &Value) -> Vec<Diagnostic> {
         "update",
         "logic",
         "surfaces",
+        "agent",
     ];
     for key in root.keys() {
         if !TOP.contains(&key.as_str()) {
@@ -135,7 +136,11 @@ pub fn check(doc: &Value) -> Vec<Diagnostic> {
             "/sdk",
             "unsupported-sdk-version",
             format!("`sdk` must be {}", crate::FORMAT_VERSION),
-            Some(format!("add \"sdk\": {}", crate::FORMAT_VERSION)),
+            Some(if root.contains_key("sdk") {
+                "use a compatible SDK or migrate the document; do not change only its version number".into()
+            } else {
+                format!("add \"sdk\": {}", crate::FORMAT_VERSION)
+            }),
         ),
     }
     cx.caps = root
@@ -152,6 +157,10 @@ pub fn check(doc: &Value) -> Vec<Diagnostic> {
     check_messages(root.get("messages"), &mut cx);
     check_feeds(root.get("feeds"), root.get("capabilities"), &mut cx);
     check_logic(root, &mut cx);
+    for f in crate::intents::diagnose(root) {
+        let sev = if f.error { Severity::Error } else { Severity::Warning };
+        cx.out.push(Diagnostic { severity: sev, path: f.path, code: f.code, message: f.message, fix: f.fix });
+    }
     check_persist(root.get("persist"), &mut cx);
     check_initial(root.get("initial"), &mut cx);
     match root.get("surfaces").and_then(Value::as_object) {
@@ -944,6 +953,14 @@ fn check_actions(v: &Value, path: &str, payload: Payload, cx: &mut Cx) {
             }
         }
         let target = obj.get(verb.as_str()).and_then(Value::as_str);
+        if matches!(verb.as_str(), "add" | "toggle" | "toast" | "open" | "close" | "when") && target.is_none() {
+            cx.err(&format!("{ap}/{verb}"), "wrong-type", format!("`{verb}` needs a text target"), None);
+            continue;
+        }
+        if verb.as_str() == "quit" && obj.get("quit") != Some(&Value::Bool(true)) {
+            cx.err(&format!("{ap}/quit"), "wrong-type", "`quit` must be true".into(), None);
+            continue;
+        }
         let state_ty = |cx: &mut Cx, key: &str| -> Option<String> {
             let t = cx.state.get(key).cloned();
             if t.is_some() {
@@ -1138,6 +1155,14 @@ fn check_actions(v: &Value, path: &str, payload: Payload, cx: &mut Cx) {
                 }
             }
             "call" => {
+                if obj.get("args").is_some_and(|args| !args.is_object()) {
+                    cx.err(&format!("{ap}/args"), "wrong-type", "`args` must be an object".into(), None);
+                }
+                for slot in ["then", "error"] {
+                    if obj.get(slot).is_some_and(|message| !message.is_string()) {
+                        cx.err(&format!("{ap}/{slot}"), "wrong-type", format!("`{slot}` names a message"), None);
+                    }
+                }
                 let Some(name) = target else {
                     cx.err(&ap, "wrong-type", "`call` names a service".into(), None);
                     continue;

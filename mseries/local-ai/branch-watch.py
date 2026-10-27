@@ -24,7 +24,7 @@ def tracked_tip(get, repo, branch):
         return None
 
 
-def pages(get, path, limit=5):
+def pages(get, path, limit=20):
     result = []
     for page in range(1, limit + 1):
         join = '&' if '?' in path else '?'

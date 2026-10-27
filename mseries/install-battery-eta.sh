@@ -5,6 +5,8 @@
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=mseries/lib-backup.sh
+source "$repo/mseries/lib-backup.sh"
 commit=e05723d8cba82b596a5efc259b4e0d15ad9a2bc4
 target_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
 target="$target_dir/libpower.so"
@@ -15,8 +17,7 @@ if [[ ${1:-} == --uninstall ]]; then
     echo "No saved Power indicator at $backup" >&2
     exit 1
   fi
-  sudo install -m 0644 "$backup" "$target.new"
-  sudo mv "$target.new" "$target"
+  mseries_install_indicator 0644 "$backup" "$target"
   sudo rm -f "$backup"
   python3 "$repo/mseries/local-ai/repair-panel.py"
   echo 'Restored the original elementary Power indicator.'
@@ -71,7 +72,6 @@ fi
 if [[ ! -f $backup ]]; then
   sudo install -D -m 0644 "$target" "$backup"
 fi
-sudo install -m 0644 "$staged_module" "$target.new"
-sudo mv "$target.new" "$target"
+mseries_install_indicator 0644 "$staged_module" "$target"
 python3 "$repo/mseries/local-ai/repair-panel.py"
 echo 'Installed the native battery ETA, watt meter, Battery History button and level-aware battery gauge. Wingpanel shows the live power draw (and the time to full while charging).'

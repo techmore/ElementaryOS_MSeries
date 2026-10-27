@@ -14,11 +14,11 @@
 @define-color STRAWBERRY_700 #c47e86;
 @define-color error_color #f0b5ba;
 
-/* window corners: was 0.5rem (~8px), closer to macOS */
+/* Keep GTK client-side corners aligned with the built-in panel mask and Gala's window clip. */
 window.csd,
 bottom-sheet sheet,
 floating-sheet sheet {
-  border-radius: 0.8rem;
+  border-radius: 20px;
 }
 
 /* Muted rose feedback: retain a visible error cue without a vivid red edge. */

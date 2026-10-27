@@ -10,6 +10,47 @@ the standalone checkout at `~/Projects/claude-pantheon-rs` is a retired pointer.
 
 ![Milestone 2: a live thread](docs/screenshot-m2.png)
 
+## Read-only monitoring and Dock status
+
+The existing T3 Dock dropdown shows token history alongside selected-account
+plan windows using native GTK/Granite controls. Token totals are provider-wide
+across accounts, not selected-account consumption or remaining subscription
+quota. Date windows, observation time and stale/unknown/unavailable states remain
+visible; only fresh, valid percentages become live gauges. Estimated history
+cost is not actual billed cost.
+
+`--usage` opens the detailed usage page; `--repositories` opens the read-only
+RepoBar-derived overview. GitHub host/login and observation coverage remain
+separate from the T3 server/provider identity. An unchecked Actions repository
+is not a successful-empty result. The Dock watches the native client's local
+status snapshot rather than making another server connection; history refresh
+uses the existing connection and configuration-refresh cadence.
+
+The native launcher must actually be pinned: installing the binary and desktop
+entry alone does not add a Dock item. The Electron `com.anthropic.Claude.desktop`
+launcher is a different application and does not expose this dropdown. Add the
+native launcher through the running Dock without replacing existing pins:
+
+```sh
+gdbus call --session --dest io.elementary.dock \
+  --object-path /io/elementary/dock \
+  --method io.elementary.dock.items.AddLauncher \
+  io.github.techmore.ClaudePantheonRs.desktop
+```
+
+Use `io.elementary.dock.items.ListLaunchers` on the same object to verify that
+the running Dock includes the native ID; binary/feed checks alone are insufficient.
+
+The separate SDK executable supplies real monitoring service/feed adapters;
+this does not establish full chat/Work parity or completed SDK qualification.
+Issue #596 retains visual, keyboard, lifecycle and owner-acceptance gates.
+
+Integration evidence (2026-10-26): strict release Clippy with all targets and
+warnings-as-errors passed; 77 library tests passed; rebuilt native client drew
+its first frame in an isolated offline session. A real read-only RepoBar
+snapshot returned 87 repositories and explicitly partial Actions coverage.
+These observations do not substitute for remote package CI or owner acceptance.
+
 ## Build and run
 
 ```sh
@@ -57,6 +98,24 @@ and Issues, Changes, Diagnostics, Import Sessions, Hand Off to Repo, Open Offlin
 Forget Pairing and About (version, server, providers ready).
 
 ## Sidebar
+
+Activity is available from the app menu or command palette in this same window.
+It reads today's commits from explicitly pinned local checkouts (Repositories),
+with GitHub searches only when Include GitHub is checked. Source rows identify
+partial, unavailable and last-known results. Copy recap copies factual Markdown;
+it does not submit a prompt or publish a report. Local commits do not prove a
+push or release, and closed authored issues are not necessarily closed by you.
+GitHub commands use the account already signed into `gh` on this computer.
+
+Usage (Ctrl+Shift+U) also opens offline. Below server token history it reads
+existing schemaVersion 1 subscription JSON records under
+`$XDG_STATE_HOME/omarchy/agents/usage` (normally
+`~/.local/state/omarchy/agents/usage`). Read reports reads those local files only.
+Configure collectors separately; this app does not install them or obtain their
+credentials. Reports are separate from the selected T3 server and do not affect
+provider selection. Use per-account collectors; already-merged upstream records
+cannot recover identities. See the
+[source and compatibility audit](../../mseries/upstream-audits/apps/agent-usage-more-2026-10-25.md).
 
 Threads sit under their project with the provider's accent dot, a spinner while a turn runs, a
 "?" badge when a prompt waits and a blue dot for activity since the last visit (the server's

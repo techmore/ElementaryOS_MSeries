@@ -4,6 +4,7 @@
 #
 #   mseries_backup  FILE PACKAGE   save the packaged FILE before it is replaced
 #   mseries_restore FILE PACKAGE   put the packaged FILE back
+#   mseries_install_indicator MODE SRC DEST   replace a Wingpanel indicator without a temp file in its directory
 #
 # Why not just keep one "*.original": a package upgrade rewrites FILE with the
 # new version, but an old backup still holds the previous one. Restoring that
@@ -44,4 +45,22 @@ mseries_restore() {
     echo "No saved original for $pkg ${version:-?}; reinstalling the package to restore $file." >&2
     sudo apt-get install --reinstall -y "$pkg"
   fi
+}
+
+# Wingpanel watches its indicators directory and loads anything containing
+# ".so", including a "*.so.new" temp file (that crashed it at 09:19 on 2026-10-26).
+# Stage in a sibling directory on the same filesystem, then rename: the running
+# panel sees one complete file appear and never a partial or duplicate module.
+mseries_install_indicator() {
+  local mode=$1 src=$2 dest=$3 dir stage tmp
+  dir=$(dirname "$dest")
+  stage="$dir/../mseries-pending-indicators"
+  sudo install -d -m 0755 "$stage"
+  if [[ $(stat -c %d "$dir") != "$(stat -c %d "$stage")" ]]; then
+    echo "Refusing to stage $dest: $stage is on another filesystem, so the rename would not be atomic." >&2
+    return 1
+  fi
+  tmp="$stage/$(basename "$dest").$$.staging"
+  sudo install -m "$mode" "$src" "$tmp"
+  sudo mv -f "$tmp" "$dest"
 }
