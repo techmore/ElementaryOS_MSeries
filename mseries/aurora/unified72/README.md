@@ -16,7 +16,7 @@ boot where it was plugged in at boot. All three failing boots (2026-10-22, 10-26
 `289c00000` after the port was changed. That pattern is consistent with, not proof of, a post-resume DCP state problem.
 
 Checked: `candidate.py prepare --profile unified72` applied all five patches to the full pinned source (exit 0),
-`candidate.py check` passed, 83 aurora tests pass. **Not done:** kernel build (CI), KUnit, any boot; the upstream test
+`candidate.py check` passed, 83 aurora tests pass. **Native build:** passed in [CI run 40498010695](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40498010695) (job *ARM64 unified72 build and payload inspection*, 2026-10-27; the 293 MB / 297 MB artifacts were not downloaded or audited here). **Not done:** KUnit, any boot; the upstream test
 report did not hot-plug a dock. 0002 and 0003/0004 both edit `dcp-fabric.c`; they apply in order but their semantic
 interaction is unreviewed. Receipt: [review-wip4-2026-10-27.json](review-wip4-2026-10-27.json). wip3 stays installed;
 nothing is staged or armed.
