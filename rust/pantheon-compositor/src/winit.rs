@@ -138,6 +138,7 @@ pub fn init_winit(
                 }
                 WinitEvent::Redraw => {
                     tracing::trace!("rendering nested compositor frame");
+                    state.cancel_screenshot_on_output_change();
                     state.update_fractional_scale_preferences();
                     let size = backend.window_size();
                     let damage = Rectangle::from_size(size);

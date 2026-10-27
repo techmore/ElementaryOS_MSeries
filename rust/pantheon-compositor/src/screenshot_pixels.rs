@@ -78,7 +78,7 @@ where
     if size.w <= 0 || size.h <= 0 || i64::from(size.w) * i64::from(size.h) > MAX_PIXELS as i64 {
         return Err("Screenshot dimensions exceed the capture limit".into());
     }
-    let elements = crate::cursor::render_desktop_elements(renderer, state, output)
+    let elements = crate::cursor::render_desktop_elements_with(renderer, state, output, false)
         .map_err(|error| format!("Could not collect screenshot surfaces: {error}"))?;
     let mut target = renderer
         .create_buffer(Fourcc::Abgr8888, size)
@@ -136,73 +136,6 @@ pub fn crop_output(
     let end_y = pixel(bottom, output.y, output.height, image.height(), true);
     (end_x > x && end_y > y)
         .then(|| image::imageops::crop_imm(image, x, y, end_x - x, end_y - y).to_image())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn preserves_channels_and_corrects_bottom_up_rows() {
-        let bytes = [255, 0, 0, 255, 0, 0, 255, 128];
-        let upright = rgba_image(1, 2, &bytes, false).unwrap();
-        assert_eq!(upright.get_pixel(0, 0).0, [255, 0, 0, 255]);
-        let flipped = rgba_image(1, 2, &bytes, true).unwrap();
-        assert_eq!(flipped.get_pixel(0, 0).0, [0, 0, 255, 128]);
-        assert_eq!(flipped.get_pixel(0, 1).0, [255, 0, 0, 255]);
-    }
-    #[test]
-    fn region_crop_handles_negative_origins_fractional_scale_and_clipping() {
-        use crate::screenshot::Region;
-        let image =
-            image::RgbaImage::from_fn(150, 120, |x, y| image::Rgba([x as u8, y as u8, 0, 255]));
-        let output = Region {
-            x: -100,
-            y: -80,
-            width: 100,
-            height: 80,
-        };
-        let selected = Region {
-            x: -90,
-            y: -70,
-            width: 20,
-            height: 20,
-        };
-        let cropped = crop_output(&image, output, selected).unwrap();
-        assert_eq!(cropped.dimensions(), (30, 30));
-        assert_eq!(cropped.get_pixel(0, 0).0, [15, 15, 0, 255]);
-        let clipped = crop_output(
-            &image,
-            output,
-            Region {
-                x: -110,
-                y: -90,
-                width: 20,
-                height: 20,
-            },
-        )
-        .unwrap();
-        assert_eq!(clipped.dimensions(), (15, 15));
-        assert!(
-            crop_output(
-                &image,
-                output,
-                Region {
-                    x: 1,
-                    y: 1,
-                    width: 10,
-                    height: 10
-                }
-            )
-            .is_none()
-        );
-    }
-
-    #[test]
-    fn rejects_empty_oversized_and_truncated_buffers() {
-        assert!(rgba_image(0, 1, &[], false).is_err());
-        assert!(rgba_image(u32::MAX, u32::MAX, &[], false).is_err());
-        assert!(rgba_image(1, 1, &[0; 3], false).is_err());
-    }
 }
 
 /// Consume one explicit request; encoding and file I/O run off the render loop.
@@ -304,6 +237,73 @@ pub fn process_request<R>(
     if let Err(error) = worker {
         state.screenshot_busy.store(false, Ordering::Release);
         tracing::warn!(%error, "Could not start screenshot worker");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn preserves_channels_and_corrects_bottom_up_rows() {
+        let bytes = [255, 0, 0, 255, 0, 0, 255, 128];
+        let upright = rgba_image(1, 2, &bytes, false).unwrap();
+        assert_eq!(upright.get_pixel(0, 0).0, [255, 0, 0, 255]);
+        let flipped = rgba_image(1, 2, &bytes, true).unwrap();
+        assert_eq!(flipped.get_pixel(0, 0).0, [0, 0, 255, 128]);
+        assert_eq!(flipped.get_pixel(0, 1).0, [255, 0, 0, 255]);
+    }
+    #[test]
+    fn region_crop_handles_negative_origins_fractional_scale_and_clipping() {
+        use crate::screenshot::Region;
+        let image =
+            image::RgbaImage::from_fn(150, 120, |x, y| image::Rgba([x as u8, y as u8, 0, 255]));
+        let output = Region {
+            x: -100,
+            y: -80,
+            width: 100,
+            height: 80,
+        };
+        let selected = Region {
+            x: -90,
+            y: -70,
+            width: 20,
+            height: 20,
+        };
+        let cropped = crop_output(&image, output, selected).unwrap();
+        assert_eq!(cropped.dimensions(), (30, 30));
+        assert_eq!(cropped.get_pixel(0, 0).0, [15, 15, 0, 255]);
+        let clipped = crop_output(
+            &image,
+            output,
+            Region {
+                x: -110,
+                y: -90,
+                width: 20,
+                height: 20,
+            },
+        )
+        .unwrap();
+        assert_eq!(clipped.dimensions(), (15, 15));
+        assert!(
+            crop_output(
+                &image,
+                output,
+                Region {
+                    x: 1,
+                    y: 1,
+                    width: 10,
+                    height: 10
+                }
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn rejects_empty_oversized_and_truncated_buffers() {
+        assert!(rgba_image(0, 1, &[], false).is_err());
+        assert!(rgba_image(u32::MAX, u32::MAX, &[], false).is_err());
+        assert!(rgba_image(1, 1, &[0; 3], false).is_err());
     }
 }
 

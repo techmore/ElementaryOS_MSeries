@@ -648,12 +648,33 @@ where
     R: Renderer + ImportAll + ImportMem + CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
+    render_desktop_elements_with(renderer, state, output, true)
+}
+
+/// `screen_mask` draws the built-in display's rounded corners over everything.
+/// Screenshots pass false: the mask is a property of the panel, not of the
+/// desktop, so a capture keeps full square content (as on macOS) while window
+/// rounding stays.
+pub fn render_desktop_elements_with<R>(
+    renderer: &mut R,
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+    screen_mask: bool,
+) -> Result<Vec<CursorRenderElement<R>>, smithay::output::OutputNoMode>
+where
+    R: Renderer + ImportAll + ImportMem + CornerRenderer,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
     use crate::gesture_animation::PreviewKind;
     use smithay::backend::renderer::element::{
         AsRenderElements,
         utils::{Relocate, RelocateRenderElement, RescaleRenderElement},
     };
-    let mut elements = render_screen_mask_elements(renderer, state, output);
+    let mut elements = if screen_mask {
+        render_screen_mask_elements(renderer, state, output)
+    } else {
+        Vec::new()
+    };
     elements.extend(render_cursor_elements(renderer, state, output));
     // Selection feedback sits above windows and below the pointer. Capture
     // starts only after the selection ends, so it never lands in the image.
