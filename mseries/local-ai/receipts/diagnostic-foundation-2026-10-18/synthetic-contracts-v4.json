@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-10-18T19:16:33+00:00",
+  "complete": true,
+  "passed": true,
+  "scope": "synthetic contract tests only; no actual dedicated diagnosis generation or lifecycle qualification",
+  "test_count": 152,
+  "elapsed_s": 3.423,
+  "private_log_sha256": "412d17f6751050e1506f86d7d75e03b1c731824eb54bc5757fe03ea20680bca1",
+  "warnings": {
+    "unclosed_worker_lock": 4,
+    "sqlite_connection_warning_in_this_run": 0,
+    "earlier_sqlite_resourcewarnings_retained_not_proven_fixed": true
+  },
+  "historical_attempts": [
+    {
+      "name": "diagnostic-experimental-contracts-private.log",
+      "sha256": "8b0d710b33dd89c1751ec74dfc78b29bc4d6cf41dbb62f2085bba1edf2900a19",
+      "tests": 134,
+      "failures": 1
+    },
+    {
+      "name": "diagnostic-experimental-contracts-v2-private.log",
+      "sha256": "7ae11161cc3aa073a33ed8aa213488d9d0bc8d12af9543100673e0c4e3b4bfe7",
+      "tests": 136,
+      "failures": 1
+    },
+    {
+      "name": "diagnostic-experimental-contracts-v3-private.log",
+      "sha256": "352dbfd6a5ca74b2763ea647f10741f92ac31d897c52a4dcc6e21625437a6d9a",
+      "tests": 136,
+      "failures": 0
+    }
+  ],
+  "hard_runtime_gate": "OWNED_START_READY=False before all service mutation",
+  "independent_review": "disabled draft only; fixed-name startup attribution unresolved",
+  "real_model_inference": false,
+  "real_journal_collected": false,
+  "owner_windows_opened": false,
+  "services_changed": false,
+  "qualified": false
+}

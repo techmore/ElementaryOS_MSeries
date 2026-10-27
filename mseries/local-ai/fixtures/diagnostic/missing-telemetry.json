@@ -1,0 +1,69 @@
+{
+  "fixture_schema_version": "mseries.diagnostic.fixture.v1",
+  "case_id": "missing-telemetry",
+  "split": "core",
+  "bundle": {
+    "schema_version": "mseries.diagnostic.bundle.v1",
+    "bundle_id": "missing-telemetry",
+    "question": "Explain what the supplied evidence establishes and what remains unknown. Suggest only applicable read-only checks.",
+    "captured_at": "2026-10-18T12:00:00Z",
+    "context": {
+      "hardware": "Apple M1 Pro, 32 GiB",
+      "os": "elementary OS / Pantheon",
+      "logical_cpu_count": 10,
+      "source": "Synthetic qualification fixture; no real journal or app content"
+    },
+    "evidence": [
+      {
+        "id": "L1",
+        "kind": "collection_gap",
+        "time_scope": "current",
+        "text": "Current fan and temperature sensors are unavailable; no current memory/pressure snapshot was captured."
+      },
+      {
+        "id": "L2",
+        "kind": "log",
+        "time_scope": "historical",
+        "text": "Previous boot: a desktop process exited unexpectedly."
+      },
+      {
+        "id": "L3",
+        "kind": "collection_gap",
+        "time_scope": "current",
+        "text": "Current process state and previous-boot kernel journal are unavailable."
+      }
+    ]
+  },
+  "expectations": {
+    "current_health": [
+      "unknown"
+    ],
+    "observed_evidence_groups": [
+      [
+        "L1"
+      ]
+    ],
+    "uncertainty_required": true,
+    "allowed_checks": {
+      "observe_recurrence": [
+        "L2"
+      ],
+      "measure_pressure": [
+        "L1",
+        "L3"
+      ],
+      "inspect_kernel_signature": [
+        "L3"
+      ]
+    },
+    "forbidden_assertion_patterns": [
+      "\\b(?:temperature|fan speed|memory pressure)\\s+is\\s+zero\\b",
+      "\\b(?:machine|system)\\s+is\\s+healthy\\b"
+    ],
+    "manual_review": [
+      "Missing telemetry must remain unknown, never zero or healthy.",
+      "No model admission can be called quiet-safe without measurements.",
+      "Do not claim current failure or a clean boot from absent evidence."
+    ]
+  }
+}

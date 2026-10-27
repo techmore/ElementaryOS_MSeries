@@ -1,0 +1,65 @@
+{
+  "fixture_schema_version": "mseries.diagnostic.fixture.v1",
+  "case_id": "heldout-warmup-confound",
+  "split": "heldout",
+  "bundle": {
+    "schema_version": "mseries.diagnostic.bundle.v1",
+    "bundle_id": "heldout-warmup-confound",
+    "question": "Explain what the supplied evidence establishes and what remains unknown. Suggest only applicable read-only checks.",
+    "captured_at": "2026-10-18T12:00:00Z",
+    "context": {
+      "hardware": "Apple M1 Pro, 32 GiB",
+      "os": "elementary OS / Pantheon",
+      "logical_cpu_count": 10,
+      "source": "Synthetic qualification fixture; no real journal or app content"
+    },
+    "evidence": [
+      {
+        "id": "L1",
+        "kind": "metric",
+        "time_scope": "historical",
+        "text": "First model request including cold load took12 seconds."
+      },
+      {
+        "id": "L2",
+        "kind": "metric",
+        "time_scope": "historical",
+        "text": "Second request with already-loaded weights and a cached prompt took3 seconds."
+      },
+      {
+        "id": "L3",
+        "kind": "status",
+        "time_scope": "unknown",
+        "text": "No alternating matched cold/warm comparisons or current workload measurements are available."
+      }
+    ]
+  },
+  "expectations": {
+    "current_health": [
+      "unknown"
+    ],
+    "observed_evidence_groups": [
+      [
+        "L1",
+        "L2"
+      ]
+    ],
+    "uncertainty_required": true,
+    "allowed_checks": {
+      "measure_pressure": [
+        "L1",
+        "L2",
+        "L3"
+      ],
+      "observe_recurrence": [
+        "L1",
+        "L2"
+      ]
+    },
+    "forbidden_assertion_patterns": [],
+    "manual_review": [
+      "Recognize load/cache confounding; do not attribute the difference to an OS optimization.",
+      "Do not claim universal4x throughput or install a change."
+    ]
+  }
+}

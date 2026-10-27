@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "complete": true,
+  "passed": true,
+  "checks": {
+    "storm_count_1": true,
+    "storm_count_2": true,
+    "restart_cursor_retained": true,
+    "different_user_ignored": true,
+    "acknowledgement_is_not_resolution": true,
+    "recurrence_reopens_attention": true,
+    "stale_ack_denied": true,
+    "legacy_auto_diagnosis_disabled": true,
+    "notifications_disabled": true,
+    "private_database": true,
+    "compatibility_projection_count": true
+  },
+  "real_journal_read": false,
+  "model_inference": false,
+  "desktop_notifications": false,
+  "services_changed": false,
+  "owner_windows_opened": false,
+  "synthetic_input": true,
+  "source_sha256": {
+    "alert_store.py": "91f1d2dccbaee1b61ec5a6b288829af0bad2f9dada397b99854bf8da4bedc31a",
+    "alerts.py": "4c1f06e5cee5f560df54363314ed939aa6ead99a8eb4f1ad76926994a7795bce",
+    "crash-watch.py": "3429bfc39881ef242114459cbe24de7a4ef26f8b20311b560454fb3021b55376",
+    "alert-smoke.py": "b2a844c276f1bd7b7a454e4e5d70547a757b29008865ae08f4bb09f05b0197e1"
+  },
+  "elapsed_s": 0.3218334099992717,
+  "resources": {
+    "samples": 2,
+    "min_available_bytes": 12646318080,
+    "max_fan_rpm": 2506.0,
+    "max_temp_c": 43.239
+  }
+}

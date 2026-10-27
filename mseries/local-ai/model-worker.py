@@ -3,6 +3,7 @@
 import argparse
 import fcntl
 import json
+import math
 import os
 from pathlib import Path
 import signal
@@ -13,12 +14,79 @@ import time
 from machine import DEFAULT_POLICY, GIB, snapshot, violations, cooling_action, runtime_prefix
 
 
+def load_config(path, home):
+    standard = home / '.config/mseries-ai/profiles.json'
+    selected = standard if path is None else path
+    config = json.loads(selected.read_text())
+    if selected != standard and standard.is_file():
+        # An isolated profile must still honor stricter owner-wide limits.
+        baseline = dict(DEFAULT_POLICY)
+        baseline.update(json.loads(standard.read_text()).get('policy', {}))
+        for key, value in config.get('policy', {}).items():
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+                raise ValueError('Invalid isolated quiet policy: ' + key)
+            baseline[key] = max(6, baseline.get(key, 6), value) if key == 'reserve_gib' else min(baseline.get(key, value), value)
+        config['policy'] = baseline
+    return config
+
+
+def profile_policy(config, profile, name):
+    """Profile overrides can tighten resource limits, never relax global ones."""
+    policy = dict(DEFAULT_POLICY)
+    policy.update(config.get('policy', {}))
+    override = profile.get('policy', {})
+    for key, value in override.items():
+        if key not in {'reserve_gib', 'max_fan_rpm', 'max_temp_c', 'cool_fan_rpm',
+                       'resume_fan_rpm', 'cool_temp_c', 'resume_temp_c', 'sample_s',
+                       'admission_fan_rpm', 'admission_temp_c', 'stop_after_samples'}:
+            raise ValueError('Unsupported per-profile policy: ' + key)
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+            raise ValueError('Invalid per-profile quiet policy: ' + key)
+        if key == 'reserve_gib':
+            policy[key] = max(6, policy.get(key, 6), value)
+        else:
+            policy[key] = min(policy.get(key, value), value)
+    policy['reserve_gib'] = max(6, policy.get('reserve_gib', 6))
+    if name == 'diagnostic':
+        # Dedicated diagnosis always has a strict first-sample stop. A custom
+        # config cannot weaken these ceilings or the six-GiB desktop reserve.
+        for key, ceiling in {'max_fan_rpm': 2700, 'max_temp_c': 63,
+                             'cool_fan_rpm': 2600, 'resume_fan_rpm': 2520,
+                             'cool_temp_c': 58, 'resume_temp_c': 55,
+                             'admission_fan_rpm': 2600, 'admission_temp_c': 58,
+                             'sample_s': 1, 'stop_after_samples': 1}.items():
+            policy[key] = min(policy.get(key, ceiling), ceiling)
+    return policy
+
+
+def policy_violations(sample, policy, extra_bytes=0, *, admission=False, strict=False):
+    reasons = violations(sample, policy, extra_bytes)
+    if strict or admission:
+        fan_limit = policy.get('admission_fan_rpm', policy['max_fan_rpm']) if admission else policy['max_fan_rpm']
+        temp_limit = policy.get('admission_temp_c', policy['max_temp_c']) if admission else policy['max_temp_c']
+        if max(sample['fans_rpm'].values(), default=0) >= fan_limit:
+            reasons.append('fan RPM reached the diagnostic quiet limit')
+        if max(sample['temperatures_c'].values(), default=0) >= temp_limit:
+            reasons.append('temperature reached the diagnostic quiet limit')
+    return list(dict.fromkeys(reasons))
+
+
+def diagnostic_speech_busy():
+    """Dictation wins priority; absence of a verifiable idle state fails closed."""
+    try:
+        from diagnostic_runtime import speech_idle
+        return not speech_idle()
+    except (OSError, ValueError, ImportError, subprocess.SubprocessError):
+        return True
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('profile', choices=['everyday', 'quality', 'coder9', 'compact', 'personal', 'coder', 'coder7', 'coder-large', 'liquid', 'bonsai', 'compact35'])
+    parser.add_argument('profile', choices=['everyday', 'quality', 'coder9', 'compact', 'personal', 'coder', 'coder7', 'coder-large', 'liquid', 'bonsai', 'compact35', 'diagnostic'])
+    parser.add_argument('--config', type=Path, help='Read a separate profile file; never rewrite global assistant settings')
     args = parser.parse_args()
     home = Path.home()
-    config = json.loads((home / '.config/mseries-ai/profiles.json').read_text())
+    config = load_config(args.config, home)
     lock_dir = home / '.local/state/mseries-ai'
     lock_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
     lock = (lock_dir / 'worker.lock').open('a')
@@ -28,11 +96,15 @@ def main():
         print('ADMISSION REFUSED: another managed model is running', flush=True)
         return 3
     profile = config['profiles'][args.profile]
-    policy = dict(config.get('policy', DEFAULT_POLICY))
+    policy = profile_policy(config, profile, args.profile)
     initial = snapshot()
-    reasons = violations(initial, policy, int(profile['admission_gib'] * GIB))
+    reasons = policy_violations(initial, policy, int(max(9, profile['admission_gib']) * GIB) if args.profile == 'diagnostic' else int(profile['admission_gib'] * GIB),
+                                admission=args.profile == 'diagnostic')
     if reasons:
         print('ADMISSION REFUSED: ' + '; '.join(reasons), flush=True)
+        return 3
+    if args.profile == 'diagnostic' and diagnostic_speech_busy():
+        print('ADMISSION REFUSED: F5 priority; speech is busy or idle state is unavailable', flush=True)
         return 3
     baseline = max(initial['fans_rpm'].values())
     policy.setdefault('cool_fan_rpm', min(baseline + 300, policy['max_fan_rpm'] - 200))
@@ -91,9 +163,13 @@ def main():
     try:
         while child.poll() is None and not stopping:
             measured = snapshot()
-            reasons = violations(measured, policy)
+            reasons = policy_violations(measured, policy, strict=args.profile == 'diagnostic')
+            if args.profile == 'diagnostic' and diagnostic_speech_busy():
+                print('QUIET POLICY STOP: F5 priority; diagnostic inference interrupted (unscored)', flush=True)
+                stop()
+                break
             consecutive = consecutive + 1 if reasons else 0
-            if consecutive >= 3:
+            if consecutive >= policy.get('stop_after_samples', 3):
                 print('QUIET POLICY STOP: ' + '; '.join(reasons), flush=True)
                 stop()
                 break
