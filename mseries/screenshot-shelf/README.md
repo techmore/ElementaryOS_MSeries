@@ -36,6 +36,27 @@ Install: `bash mseries/install-screenshot-shelf.sh` (adds `swappy` if missing, s
 
 Implementation: a GTK4 helper that watches `~/Pictures/Screenshots` (Gala's save folder, linked to `~/Downloads/Screenshots`), runs through XWayland so it can place itself bottom-right (the launcher uses the same trick), and offers the staged copy as the drag source.
 
+## Markup: Close, Print and Save as PDF (patched Swappy)
+
+Stock Swappy (1.5.1, MIT, built for wlroots) has no window Close button and no print or PDF export.
+`bash mseries/screenshot-shelf/build-swappy.sh` builds upstream tag `v1.5.1` (commit `a996b2c`, checked
+before building) with `swappy-print-close.patch` and installs it to `~/.local/bin/swappy`: no sudo.
+It adds a header-bar **Close** button, **Print…** (Ctrl+P, the system print dialog including *Print to File*
+and PDF) and **Save as PDF…** (Ctrl+Shift+P: A4, orientation follows the image, fitted and centred, never
+scaled up). Esc, `q` and Ctrl+W already closed it upstream. `mseries-markup` prefers `~/.local/bin/swappy`
+when it exists. Because `~/.local/bin` comes first in `PATH`, an `apt upgrade` of the `swappy` package
+(which only changes `/usr/bin/swappy`) cannot replace this; rerun the script to rebuild after changing the patch.
+Originals are never touched: the annotated image is still saved as `<name> (markup).png`.
+
+Test (local, needs Xvfb, xdotool, ImageMagick, poppler-utils): `bash mseries/screenshot-shelf/test-swappy-xvfb.sh`.
+It is not in CI because the binary comes from a network clone. Checked live in the session that wrote the patch:
+buttons visible, Ctrl+Shift+P gave a valid one-page A4 landscape PDF, Ctrl+P opened the print dialog, Close exits.
+
+Upstream offer (jtheoof/swappy): a wlroots-first tool does not need window controls, so a PR would need to
+make them optional, e.g. a `show_window_controls` config key defaulting to off, plus `print`/`save_pdf`
+actions. Suggested issue text: "Add optional window controls and Print/Save-as-PDF for desktops without
+server-side decorations; patch attached (GtkPrintOperation, ~200 lines, MIT)."
+
 ## Checked on the M1 Pro (2026-10-14)
 
 Watcher picks up a new screenshot and shows the thumbnail; an ignored thumbnail expired after 7 seconds in the original version and the file is kept; the card renders correctly offscreen; Swappy starts through the wrapper.
