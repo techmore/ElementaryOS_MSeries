@@ -16,6 +16,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+permissions:
+  contents: read
+
 jobs:
   call-reusable-build:
     # Reusable-workflow permissions are validated before the repository gate.
@@ -36,6 +39,7 @@ jobs:
     name: Comment Installer URLs
     needs: call-reusable-build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       pull-requests: write
 
