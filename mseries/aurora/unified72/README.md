@@ -1,5 +1,26 @@
 # Unified Aurora 7.2.10 build candidate
 
+## wip4 revision 6 — October 27, 2026 (build-only, not booted)
+
+Revision 6 adds the three commits of unmerged upstream [PR #186](https://github.com/omacom/linux-aurora/pull/186)
+(`patches/0003`-`0005`, tested upstream head `2a37f6f2`): take over a pipeline held by a port whose sink never asserted
+HPD, **route a DP-alt port only once its sink asserts HPD**, and treat `-ENOSPC` as a taken display on every SoC. Commit 2
+reports that routing before HPD left the firmware's DPTX service on that DCP answering `-110` until reboot, the same
+symptom as `dcpext1` (`28cc00000`) here. It complements local patch 0002 (which recovers after a DCP goes silent).
+[#163](https://github.com/omacom/linux-aurora/pull/163) is **not** carried: it fixes the same tipd bug as 0005 by a
+different change and conflicts with it.
+
+Why now: across the retained journals (Oct 20-27) the dock produced no DPTX failures on `.20` and wip2, or on a wip3
+boot where it was plugged in at boot. All three failing boots (2026-10-22, 10-26, 10-27) were wip3 with the dock
+**first plugged within about 4 s of resuming from s2idle**; each landed on `28cc00000`, timed out six times, then worked on
+`289c00000` after the port was changed. That pattern is consistent with, not proof of, a post-resume DCP state problem.
+
+Checked: `candidate.py prepare --profile unified72` applied all five patches to the full pinned source (exit 0),
+`candidate.py check` passed, 83 aurora tests pass. **Not done:** kernel build (CI), KUnit, any boot; the upstream test
+report did not hot-plug a dock. 0002 and 0003/0004 both edit `dcp-fabric.c`; they apply in order but their semantic
+interaction is unreviewed. Receipt: [review-wip4-2026-10-27.json](review-wip4-2026-10-27.json). wip3 stays installed;
+nothing is staged or armed.
+
 ## wip4 candidate — October 22, 2026 (build-only, not booted)
 
 **Revision 5 pins `7.2.11-elementary-aurora72-wip4`:** the same #158 source and #157 patch as wip3, plus one local

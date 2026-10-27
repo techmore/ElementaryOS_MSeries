@@ -1,0 +1,88 @@
+From 4da4932b130b21d7367d56859f558c4e8a8f101f Mon Sep 17 00:00:00 2001
+From: Andreas Fernandez <andreas.fernandez@hotmail.com>
+Date: Fri, 23 Oct 2026 11:10:03 +0200
+Subject: [PATCH 1/3] drm/apple: dcp: let a Type-C port with HPD take over a
+ pipeline held without it
+
+The PD controllers on the M1 Pro/Max laptops report a DP alt mode state
+at probe for ports that have no display behind them, for example an
+empty port or a dock without a display.  Whichever port is routed first
+gets a Type-C pipeline.  If that is the wrong one, the port with the
+display finds every pipeline taken (-ENOSPC) and stays dark until the
+other port is unplugged, which can also put the LUKS prompt on the
+internal panel of a closed laptop.
+
+When a port whose sink asserts HPD finds no free pipeline, release one
+held by a direct DP-alt port whose sink never asserted HPD and take it.
+Tunnels, ports with a pending safe state and pipelines whose fixed
+output is in use are left alone.  The released port drops its applied
+state so its next update is routed again once a pipeline is free.
+
+Link: https://github.com/omacom/omarchy-pkgs/issues/1037
+Signed-off-by: Andreas Fernandez <andreas.fernandez@hotmail.com>
+---
+ drivers/gpu/drm/apple/dcp-fabric.c | 43 ++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
+
+diff --git a/drivers/gpu/drm/apple/dcp-fabric.c b/drivers/gpu/drm/apple/dcp-fabric.c
+index 29321f8032a490..afdeaa974fe165 100644
+--- a/drivers/gpu/drm/apple/dcp-fabric.c
++++ b/drivers/gpu/drm/apple/dcp-fabric.c
+@@ -1378,6 +1378,45 @@ static int dcp_typec_port_busy(struct apple_dcp_typec_port *port,
+ 	return -ENOSPC;
+ }
+ 
++/*
++ * PD controllers report a DP state at probe for ports with no display behind
++ * them, an empty port or one with a dock that has none, and whichever port is
++ * routed first wins the pipeline.  A port whose sink asserts HPD and finds no
++ * free pipeline takes one over from a direct DP-alt port whose sink never
++ * did.  Tunnels, ports in a SAFE transition and pipelines whose fixed output
++ * is in use are left alone.  The released port drops its applied state, so
++ * its next update is routed again once a pipeline is free.
++ */
++static struct apple_dcp_typec_route *
++dcp_typec_take_over_without_hpd(struct apple_dcp_typec_port *port)
++{
++	struct apple_dcp_typec_route *candidate;
++
++	list_for_each_entry(candidate, &port->routes, port_link) {
++		struct apple_dcp_typec_route *held =
++			candidate->dcp->active_typec_route;
++		int ret;
++
++		if (!held || held->tunnel || held->port == port ||
++		    held->port->hpd || held->port->dp_hpd ||
++		    held->port->safe_pending ||
++		    dcp_typec_route_busy(candidate))
++			continue;
++
++		ret = dcp_typec_route_deactivate(held);
++		if (ret)
++			return ERR_PTR(ret);
++		held->port->owner = NULL;
++		held->port->applied_valid = false;
++		dev_info(candidate->dcp->dev,
++			 "released Type-C DPTX PHY %u held without HPD\n",
++			 held->dptx_phy);
++		return candidate;
++	}
++
++	return NULL;
++}
++
+ static int dcp_typec_route_set(struct typec_mux_dev *mux,
+ 			       struct typec_mux_state *state)
+ {
+@@ -1519,6 +1558,10 @@ static int dcp_typec_route_set(struct typec_mux_dev *mux,
+ 
+ 	if (!port->owner) {
+ 		best = dcp_typec_free_route(port);
++		if (!best && hpd)
++			best = dcp_typec_take_over_without_hpd(port);
++		if (IS_ERR(best))
++			return PTR_ERR(best);
+ 		/* Every pipeline is driving another port's display. */
+ 		if (!best)
+ 			return hpd ? dcp_typec_port_busy(port, route->dcp) : -ENOSPC;
+

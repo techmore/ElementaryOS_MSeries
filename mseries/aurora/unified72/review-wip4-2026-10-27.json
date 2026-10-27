@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "reviewed_on": "2026-10-27",
+  "source": "bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+  "previous_source": "bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+  "upstream_pr": "https://github.com/omacom/linux-aurora/pull/158",
+  "upstream_status": "unchanged from wip3: #158 and #157 still open at review time; this lane adds one local patch only",
+  "patches": [
+    {
+      "file": "0001-drm-apple-srgb-external-display-colour.patch",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/157",
+      "head": "9d3aeb24cb864d5f99a7172e9004884bf3c1a9a0",
+      "base_of_pr": "44d5afc79da79bb3b17a3ee7494cb8d07a1f1aaa",
+      "files": [
+        "drivers/gpu/drm/apple/dcp-internal.h",
+        "drivers/gpu/drm/apple/dcp.c",
+        "drivers/gpu/drm/apple/iomfb_template.c",
+        "drivers/gpu/drm/apple/parser.c",
+        "drivers/gpu/drm/apple/plane.c"
+      ],
+      "applicability": "patch(1) dry run against the five files at #158 head: clean, offsets +5 (iomfb_template.c) and +89 (plane.c); also clean against integration/aurora faed71028. Full-tree git apply --check runs in candidate.py prepare and in CI."
+    },
+    {
+      "file": "0002-drm-apple-free-dp-tunnel-route-from-silent-dcpext.patch",
+      "upstream": null,
+      "files": [
+        "drivers/gpu/drm/apple/dcp-fabric-core.c",
+        "drivers/gpu/drm/apple/dcp-fabric-core.h",
+        "drivers/gpu/drm/apple/dcp-fabric-test.c",
+        "drivers/gpu/drm/apple/dcp-fabric.c",
+        "drivers/gpu/drm/apple/dcp-internal.h",
+        "drivers/gpu/drm/apple/dcp.c"
+      ],
+      "applicability": "git apply --check passes on a tree holding the pinned #158 versions of the six files with 0001 applied (the six blobs were read from GitHub at bd526b3c, not from a full archive). Full-tree apply runs in candidate.py prepare and CI.",
+      "evidence": "mseries/aurora/hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md"
+    },
+    {
+      "file": "0003-drm-apple-dcp-let-a-typec-port-with-hpd-take-over-a-held-pipeline.patch",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/186",
+      "head": "4da4932b130b21d7367d56859f558c4e8a8f101f",
+      "base_of_pr": "42672ed79dead511ecf65e96d988a98a0f94b5bb",
+      "files": [
+        "drivers/gpu/drm/apple/dcp-fabric.c"
+      ],
+      "applicability": "Applied in order after 0001 and 0002 to the pinned #158 (bd526b3c) versions of the eleven touched files, read from GitHub (not a full archive): git apply --check and apply succeeded for all five patches with no conflict. Not compiled, not KUnit-run, not booted. Full-tree apply runs in candidate.py prepare and CI."
+    },
+    {
+      "file": "0004-drm-apple-dcp-route-a-dp-alt-port-only-once-its-sink-asserts-hpd.patch",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/186",
+      "head": "bd1ad7b9b2795b7d3b3c7e616a54b78f9c92c6e0",
+      "base_of_pr": "42672ed79dead511ecf65e96d988a98a0f94b5bb",
+      "files": [
+        "drivers/gpu/drm/apple/dcp-fabric.c"
+      ],
+      "applicability": "Applied in order after 0001 and 0002 to the pinned #158 (bd526b3c) versions of the eleven touched files, read from GitHub (not a full archive): git apply --check and apply succeeded for all five patches with no conflict. Not compiled, not KUnit-run, not booted. Full-tree apply runs in candidate.py prepare and CI."
+    },
+    {
+      "file": "0005-usb-typec-tipd-treat-enospc-as-a-taken-display-on-every-soc.patch",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/186",
+      "head": "2a37f6f206456462970b3bbb3bf9bf8bd8944acd",
+      "base_of_pr": "42672ed79dead511ecf65e96d988a98a0f94b5bb",
+      "files": [
+        "drivers/usb/typec/tipd/cd321x-pm-test.c",
+        "drivers/usb/typec/tipd/cd321x-pm.h"
+      ],
+      "applicability": "Applied in order after 0001 and 0002 to the pinned #158 (bd526b3c) versions of the eleven touched files, read from GitHub (not a full archive): git apply --check and apply succeeded for all five patches with no conflict. Not compiled, not KUnit-run, not booted. Full-tree apply runs in candidate.py prepare and CI."
+    }
+  ],
+  "not_rerun": [
+    "kernel build (no compile of dcp.c or dcp-fabric.c was possible here; CI decides)",
+    "KUnit run of fabric_unresponsive_pipeline_test (the same scenario ran as a userspace harness against the real dcp-fabric-core.c with stub headers: passes, and fails when the availability change is removed)",
+    "64-fix semantic parity",
+    "host tests listed in series.json against the source",
+    "any hardware test"
+  ],
+  "known_interactions": [
+    "#158 changes apple_plane_init() to take both supports_xrgb2101010 and an interchange argument; #157 edits plane.c nearby. The dry run is clean but the build is the real check.",
+    "#158 does not advertise Interchange framebuffer formats on H17P firmware; not relevant to the J314S.",
+    "0002 touches dcp.c and dcp-internal.h, which 0001 also edits; the hunks do not overlap but apply order is 0001 then 0002.",
+    "0002 changes dcp_tb_release_locked(): a timed-out release is now treated as complete. This is the riskiest line; it relies on the firmware being unreachable, not merely slow (the failure seen was six consecutive 1 s timeouts, then every later call timing out).",
+    "0002 (skip a DCP whose DPTX times out) and 0003/0004 (route a DP-alt port only after HPD / take over a pipeline held without it) both modify dcp-fabric.c. They apply cleanly in order; semantic interaction and KUnit coverage are unreviewed.",
+    "Upstream PR #163 is not carried: it fixes the same tipd bug as 0005 and conflicts with it."
+  ],
+  "archive_verification": {
+    "sha256": "881d5a061efa212ed28489311cc97ab6d9bf52891a6c7a00b18f0bbaff131957",
+    "bytes": 270217582,
+    "method": "Entire codeload gzip downloaded and hashed locally (trust on first use: the pin is this digest); tar root read from the archive listing; Makefile reads VERSION 7, PATCHLEVEL 2, SUBLEVEL 11.",
+    "archive_root": "linux-aurora-bd526b3c11ccf8e91d6240261beb3219d8f17f03"
+  }
+}
