@@ -793,6 +793,7 @@ impl NativeKmsDevice {
         state: &PantheonCompositor,
     ) -> Result<usize, Box<dyn std::error::Error>> {
         crate::metrics::render_pass();
+        state.cancel_screenshot_on_output_change();
         if state.displays_off {
             return Ok(0);
         }

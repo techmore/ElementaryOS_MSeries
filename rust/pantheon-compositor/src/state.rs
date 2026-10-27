@@ -595,6 +595,62 @@ impl PantheonCompositor {
         })
     }
 
+    /// Hash of the output layout; a selection that outlives it is cancelled.
+    pub(crate) fn output_signature(&self) -> u64 {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        let mut layout: Vec<_> = self
+            .space
+            .outputs()
+            .map(|output| {
+                let area = self.space.output_geometry(output).unwrap_or_default();
+                (output.name(), area.loc.x, area.loc.y, area.size.w, area.size.h)
+            })
+            .collect();
+        layout.sort();
+        layout.hash(&mut hasher);
+        hasher.finish()
+    }
+
+    /// Start the region selector. A one-shot timer cancels it after
+    /// `IDLE_TIMEOUT` without input, so it can never hold the grab forever.
+    pub(crate) fn begin_screenshot_selection(&mut self, pointer: (i32, i32)) {
+        let signature = self.output_signature();
+        {
+            let mut selection = self.screenshot_selection.borrow_mut();
+            selection.begin(pointer);
+            selection.set_outputs(signature);
+        }
+        let timer = Timer::from_duration(crate::screenshot::IDLE_TIMEOUT);
+        if let Err(error) = self.loop_handle.insert_source(timer, |_, _, state| {
+            let now = std::time::Instant::now();
+            let remaining = state.screenshot_selection.borrow().idle_remaining(now);
+            match remaining {
+                None => TimeoutAction::Drop,
+                Some(left) if left.is_zero() => {
+                    state.screenshot_selection.borrow_mut().cancel();
+                    state.request_native_redraw();
+                    state.request_winit_redraw();
+                    TimeoutAction::Drop
+                }
+                Some(left) => TimeoutAction::ToDuration(left),
+            }
+        }) {
+            tracing::warn!(%error, "could not arm the screenshot idle timeout");
+        }
+    }
+
+    /// Cancel the selector if outputs were added, removed or moved.
+    pub(crate) fn cancel_screenshot_on_output_change(&self) {
+        if !self.screenshot_selection.borrow().active() {
+            return;
+        }
+        let signature = self.output_signature();
+        self.screenshot_selection
+            .borrow_mut()
+            .cancel_if_outputs_changed(signature);
+    }
+
     /// Any input from the user: reset idle time and wake blanked displays.
     pub(crate) fn note_user_activity(&mut self) {
         self.cancel_idle_lock();
