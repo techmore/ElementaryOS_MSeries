@@ -221,11 +221,23 @@ pub enum CaptureTarget {
     Window(Region),
 }
 
+/// With no input for this long, selecting cancels itself.
+pub const IDLE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Phase {
+    Idle,
+    Selecting,
+    Dragging,
+}
+
 #[derive(Default, Debug)]
 pub struct Selection {
     active: bool,
     anchor: Option<(i32, i32)>,
     pointer: (i32, i32),
+    last_input: Option<std::time::Instant>,
+    outputs: u64,
 }
 
 impl Selection {
@@ -233,6 +245,48 @@ impl Selection {
         self.active = true;
         self.anchor = None;
         self.pointer = pointer;
+        self.last_input = Some(std::time::Instant::now());
+    }
+
+    pub fn phase(&self) -> Phase {
+        match (self.active, self.anchor) {
+            (false, _) => Phase::Idle,
+            (true, None) => Phase::Selecting,
+            (true, Some(_)) => Phase::Dragging,
+        }
+    }
+
+    /// Remember the output layout the selection started on.
+    pub fn set_outputs(&mut self, signature: u64) {
+        self.outputs = signature;
+    }
+
+    /// Cancel and report true when the output layout is not the one the
+    /// selection started on.
+    pub fn cancel_if_outputs_changed(&mut self, signature: u64) -> bool {
+        if self.active && self.outputs != signature {
+            self.cancel();
+            return true;
+        }
+        false
+    }
+
+    /// Time left before the idle timeout, or None when not selecting.
+    pub fn idle_remaining(&self, now: std::time::Instant) -> Option<std::time::Duration> {
+        if !self.active {
+            return None;
+        }
+        let last = self.last_input?;
+        Some(IDLE_TIMEOUT.saturating_sub(now.saturating_duration_since(last)))
+    }
+
+    /// Cancel and report true when idle for the whole timeout.
+    pub fn cancel_if_idle(&mut self, now: std::time::Instant) -> bool {
+        if self.idle_remaining(now) == Some(std::time::Duration::ZERO) {
+            self.cancel();
+            return true;
+        }
+        false
     }
 
     pub fn active(&self) -> bool {
@@ -243,12 +297,14 @@ impl Selection {
         if self.active {
             self.anchor = Some(point);
             self.pointer = point;
+            self.last_input = Some(std::time::Instant::now());
         }
     }
 
     pub fn motion(&mut self, point: (i32, i32)) {
         if self.active {
             self.pointer = point;
+            self.last_input = Some(std::time::Instant::now());
         }
     }
 
@@ -279,6 +335,7 @@ impl Selection {
     pub fn cancel(&mut self) {
         self.active = false;
         self.anchor = None;
+        self.last_input = None;
     }
 }
 
@@ -411,5 +468,69 @@ mod tests {
         assert!(flipped.1 + bg.h <= 600);
         let clamped = label_origin(Px::new(0, 0, 20, 20), area, bg.w, bg.h);
         assert_eq!(clamped.0, 0);
+    }
+
+    #[test]
+    fn every_exit_returns_to_idle() {
+        let mut s = Selection::default();
+        assert_eq!(s.phase(), Phase::Idle);
+        s.begin((0, 0));
+        assert_eq!(s.phase(), Phase::Selecting);
+        s.press((1, 1));
+        assert_eq!(s.phase(), Phase::Dragging);
+        // Cancel (Esc, right-click, repeat shortcut, lock) at any phase.
+        s.cancel();
+        assert_eq!(s.phase(), Phase::Idle);
+        s.begin((0, 0));
+        s.cancel();
+        assert_eq!(s.phase(), Phase::Idle);
+        // Zero-size click, real drag and window pick all end idle.
+        s.begin((0, 0));
+        s.press((3, 3));
+        assert_eq!(s.release((3, 3)), None);
+        assert_eq!(s.phase(), Phase::Idle);
+        s.begin((0, 0));
+        s.press((3, 3));
+        assert!(s.release((9, 9)).is_some());
+        assert_eq!(s.phase(), Phase::Idle);
+        s.begin((0, 0));
+        let w = Region {
+            x: 0,
+            y: 0,
+            width: 5,
+            height: 5,
+        };
+        assert!(s.capture_hovered_window(Some(w)).is_some());
+        assert_eq!(s.phase(), Phase::Idle);
+        // Input after cancel does nothing.
+        s.press((1, 1));
+        s.motion((2, 2));
+        assert_eq!(s.phase(), Phase::Idle);
+        assert_eq!(s.preview(), None);
+    }
+
+    #[test]
+    fn idle_timeout_cancels_only_after_sixty_quiet_seconds() {
+        let mut s = Selection::default();
+        let now = std::time::Instant::now();
+        assert_eq!(s.idle_remaining(now), None);
+        s.begin((0, 0));
+        assert!(!s.cancel_if_idle(now + std::time::Duration::from_secs(59)));
+        assert!(s.active());
+        assert!(s.cancel_if_idle(now + IDLE_TIMEOUT + std::time::Duration::from_secs(1)));
+        assert_eq!(s.phase(), Phase::Idle);
+        assert!(!s.cancel_if_idle(now + std::time::Duration::from_secs(500)));
+    }
+
+    #[test]
+    fn output_change_cancels_an_active_selection_only() {
+        let mut s = Selection::default();
+        assert!(!s.cancel_if_outputs_changed(7));
+        s.begin((0, 0));
+        s.set_outputs(1);
+        assert!(!s.cancel_if_outputs_changed(1));
+        assert!(s.active());
+        assert!(s.cancel_if_outputs_changed(2));
+        assert_eq!(s.phase(), Phase::Idle);
     }
 }

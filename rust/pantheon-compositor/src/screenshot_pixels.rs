@@ -42,7 +42,11 @@ pub fn read_framebuffer<R: ExportMem>(
     if TextureMapping::format(&mapping) != Fourcc::Abgr8888 || mapping.size() != size {
         return Err("Screenshot renderer returned an unexpected pixel format or size".into());
     }
-    let bottom_up = mapping.flipped();
+    // Smithay renders into textures y-down, so ReadPixels already returns the
+    // top row first. `TextureMapping::flipped()` is a hard-coded `true` in the
+    // GLES backend and must not be used here: it turned every capture upside
+    // down on the hardware renderer (see `gpu_orientation`).
+    let bottom_up = false;
     let bytes = renderer
         .map_texture(&mapping)
         .map_err(|error| format!("Could not map screenshot pixels: {error}"))?;
@@ -298,5 +302,126 @@ pub fn process_request<R>(
     if let Err(error) = worker {
         state.screenshot_busy.store(false, Ordering::Release);
         tracing::warn!(%error, "Could not start screenshot worker");
+    }
+}
+
+/// Orientation through the exact renderer stack the native session uses
+/// (GbmGles multi-GPU renderer, offscreen texture, damage-tracker render,
+/// `read_framebuffer`). Needs a hardware render node; skipped without one.
+#[cfg(all(test, feature = "native-drm"))]
+mod gpu_orientation {
+    use super::*;
+    use smithay::{
+        backend::{
+            allocator::gbm::GbmDevice,
+            drm::{DrmDeviceFd, DrmNode},
+            egl::{EGLContext, EGLDisplay, context::ContextPriority},
+            renderer::{
+                Bind, Offscreen, Renderer,
+                damage::OutputDamageTracker,
+                element::{
+                    Kind,
+                    solid::{SolidColorBuffer, SolidColorRenderElement},
+                },
+                gles::{GlesRenderer, GlesTexture},
+                multigpu::{GpuManager, gbm::GbmGlesBackend},
+            },
+        },
+        output::{Mode, Output, PhysicalProperties, Subpixel},
+        utils::{DeviceFd, Scale, Transform},
+    };
+
+    #[test]
+    fn red_top_left_stays_at_the_top_through_the_native_renderer() {
+        let Ok(path) = std::fs::read_dir("/dev/dri").map(|d| {
+            d.flatten()
+                .map(|e| e.path())
+                .find(|p| p.to_string_lossy().contains("renderD"))
+        }) else {
+            return;
+        };
+        let Some(path) = path else { return };
+        let Ok(file) = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&path)
+        else {
+            return;
+        };
+        let drm_fd = DrmDeviceFd::new(DeviceFd::from(std::os::fd::OwnedFd::from(file)));
+        let gbm = GbmDevice::new(drm_fd).unwrap();
+        let display = unsafe { EGLDisplay::new(gbm.clone()).unwrap() };
+        let node = DrmNode::from_path(&path).unwrap();
+        let mut gpus = GpuManager::new(GbmGlesBackend::<GlesRenderer, DrmDeviceFd>::with_factory(
+            |display| {
+                let context = EGLContext::new_with_priority(display, ContextPriority::High)?;
+                let capabilities = unsafe { GlesRenderer::supported_capabilities(&context)? };
+                Ok(unsafe { GlesRenderer::with_capabilities(context, capabilities)? })
+            },
+        ))
+        .unwrap();
+        drop(display);
+        gpus.as_mut().add_node(node, gbm).unwrap();
+        let mut renderer = gpus.single_renderer(&node).unwrap();
+
+        let output = Output::new(
+            "test".into(),
+            PhysicalProperties {
+                size: (0, 0).into(),
+                subpixel: Subpixel::Unknown,
+                make: "t".into(),
+                serial_number: "t".into(),
+                model: "t".into(),
+            },
+        );
+        let mode = Mode {
+            size: (128, 128).into(),
+            refresh: 60_000,
+        };
+        output.change_current_state(
+            Some(mode),
+            Some(Transform::Normal),
+            Some(smithay::output::Scale::Integer(1)),
+            Some((0, 0).into()),
+        );
+        output.set_preferred(mode);
+        let buffer = SolidColorBuffer::new((64, 32), [1.0, 0.0, 0.0, 1.0]);
+        let element = SolidColorRenderElement::from_buffer(
+            &buffer,
+            (0, 0),
+            Scale::from(1.0),
+            1.0,
+            Kind::Unspecified,
+        );
+        let mut target = Offscreen::<GlesTexture>::create_buffer(
+            &mut renderer,
+            Fourcc::Abgr8888,
+            (128, 128).into(),
+        )
+        .unwrap();
+        let mut framebuffer = renderer.bind(&mut target).unwrap();
+        let mut damage = OutputDamageTracker::from_output(&output);
+        let rendered = damage
+            .render_output(
+                &mut renderer,
+                &mut framebuffer,
+                0,
+                &[element],
+                [0.0, 0.0, 1.0, 1.0],
+            )
+            .unwrap();
+        renderer.wait(&rendered.sync).unwrap();
+        let image = read_framebuffer(&mut renderer, &framebuffer, (128, 128).into()).unwrap();
+        println!(
+            "top-left {:?} bottom-left {:?}",
+            image.get_pixel(10, 10),
+            image.get_pixel(10, 120)
+        );
+        assert_eq!(
+            image.get_pixel(10, 10).0,
+            [255, 0, 0, 255],
+            "red element must be at the top"
+        );
+        assert_eq!(image.get_pixel(10, 120).0, [0, 0, 255, 255]);
     }
 }

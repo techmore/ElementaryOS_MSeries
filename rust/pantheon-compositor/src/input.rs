@@ -175,19 +175,24 @@ impl PantheonCompositor {
                             state.request_native_redraw(); state.request_winit_redraw();
                             return FilterResult::Intercept(());
                         }
+                        // Command is Ctrl here (ctrl:swap_lwin_lctl), so Ctrl or Super works.
                         if key_state == smithay::backend::input::KeyState::Pressed
-                            && !state.session_locked && modifiers.logo && modifiers.shift
-                            && !modifiers.ctrl && !modifiers.alt
+                            && !state.session_locked && (modifiers.logo != modifiers.ctrl) && modifiers.shift
+                            && !modifiers.alt
                             && matches!(keysym.modified_sym().raw(), smithay::input::keyboard::xkb::keysyms::KEY_4 | smithay::input::keyboard::xkb::keysyms::KEY_dollar)
                         {
-                            let point = state.seat.get_pointer().unwrap().current_location();
-                            state.screenshot_selection.borrow_mut().begin((point.x.round() as i32, point.y.round() as i32));
+                            if state.screenshot_selection.borrow().active() {
+                                state.screenshot_selection.borrow_mut().cancel();
+                            } else {
+                                let point = state.seat.get_pointer().unwrap().current_location();
+                                state.begin_screenshot_selection((point.x.round() as i32, point.y.round() as i32));
+                            }
                             state.request_native_redraw(); state.request_winit_redraw();
                             return FilterResult::Intercept(());
                         }
                         if key_state == smithay::backend::input::KeyState::Pressed
-                            && !state.session_locked && modifiers.logo && modifiers.shift
-                            && !modifiers.ctrl && !modifiers.alt
+                            && !state.session_locked && (modifiers.logo != modifiers.ctrl) && modifiers.shift
+                            && !modifiers.alt
                             && matches!(keysym.modified_sym().raw(),
                                 smithay::input::keyboard::xkb::keysyms::KEY_3 |
                                 smithay::input::keyboard::xkb::keysyms::KEY_numbersign)
@@ -389,6 +394,9 @@ impl PantheonCompositor {
                     let point = pointer.current_location();
                     let point = (point.x.round() as i32, point.y.round() as i32);
                     if self.session_locked {
+                        self.screenshot_selection.borrow_mut().cancel();
+                    } else if button == 0x111 {
+                        // Right-click leaves the selector.
                         self.screenshot_selection.borrow_mut().cancel();
                     } else if button == 0x110 {
                         if button_state == ButtonState::Pressed {
