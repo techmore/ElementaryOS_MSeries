@@ -16,9 +16,12 @@ source "$repo/mseries/lib-backup.sh"
 commit=8685ec8e55a45e48da0c12931a353cd440d11664   # matches io.elementary.panel.network 8.0.1+r1290
 
 reload_panel() {
-  # Gala starts Wingpanel as a shell client and respawns it, so this loads the new plugin
-  # without logging out. Harmless if the panel is not running.
-  pkill -x io.elementary.w 2>/dev/null || true
+  # The Rust session owns Wingpanel through systemd, not Gala's respawn loop.
+  if systemctl --user is-active --quiet pantheon-wingpanel.service; then
+    systemctl --user restart pantheon-wingpanel.service
+  else
+    pkill -x io.elementary.w 2>/dev/null || true
+  fi
 }
 
 if [[ ${1:-} == --uninstall ]]; then

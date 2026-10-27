@@ -10,6 +10,7 @@ namespace MSeriesWorkMode {
         private Gtk.Button add_button;
         private string? current_ip = null;
         private uint apply_source = 0;
+        private string? original_decoration_layout = null;
 
         public Plug () {
             var supported = new Gee.TreeMap<string, string?> (null, null);
@@ -28,6 +29,7 @@ namespace MSeriesWorkMode {
         public override Gtk.Widget get_widget () {
             if (content == null) {
                 var page = new Adw.PreferencesPage ();
+                apply_window_button_layout ();
                 var mode_group = new Adw.PreferencesGroup () {
                     title = "Windows Work Mode",
                     description = "Use a Windows-inspired wallpaper and app dock while you work."
@@ -39,6 +41,22 @@ namespace MSeriesWorkMode {
                 };
                 settings.bind ("enabled", enabled, "active", GLib.SettingsBindFlags.DEFAULT);
                 mode_group.add (enabled);
+
+                var close_row = new Adw.ActionRow () {
+                    title = "Close Settings",
+                    subtitle = "Close this window"
+                };
+                var close_button = new Gtk.Button.with_label ("Close") {
+                    valign = Gtk.Align.CENTER
+                };
+                close_button.clicked.connect (() => {
+                    var window = page.get_root () as Gtk.Window;
+                    if (window != null) {
+                        window.close ();
+                    }
+                });
+                close_row.add_suffix (close_button);
+                mode_group.add (close_row);
 
                 var wallpaper = new Adw.ActionRow () {
                     title = "Work wallpaper",
@@ -168,11 +186,28 @@ namespace MSeriesWorkMode {
                 status_group.add (dock_row);
 
                 // A change takes effect immediately; the user timer keeps the rules in sync.
-                settings.changed.connect (() => apply_now ());
+                settings.changed.connect (() => {
+                    apply_window_button_layout ();
+                    apply_now ();
+                });
                 refresh_status ();
                 content = page;
             }
             return content;
+        }
+
+        private void apply_window_button_layout () {
+            var gtk_settings = Gtk.Settings.get_default ();
+            if (gtk_settings == null) {
+                return;
+            }
+            if (original_decoration_layout == null) {
+                original_decoration_layout = gtk_settings.gtk_decoration_layout;
+            }
+            var use_windows_buttons = settings.get_string ("window-buttons") == "windows";
+            gtk_settings.gtk_decoration_layout = use_windows_buttons
+                ? ":minimize,maximize,close"
+                : original_decoration_layout;
         }
 
         private static string helper_path () {

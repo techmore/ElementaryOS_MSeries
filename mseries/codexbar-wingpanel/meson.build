@@ -15,7 +15,7 @@ libcodexbar = shared_module(
   'codexbar',
   indicator_sources,
   dependencies: [libwingpanel_dep, granite_dep, json_dep],
-  install: true,
+  install: get_option('install_indicator'),
   install_dir: indicators_dir,
 )
 

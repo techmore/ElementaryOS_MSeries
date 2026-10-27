@@ -1,4 +1,30 @@
-# Windows taskbar and CodexBar
+# Unified native T3 taskbar menu
+
+`TaskbarT3.vala` replaces the separate CodexBar and RepoBar taskbar anchors with
+one T3 button in the existing status group. It reuses the custom CodexBar native
+usage/accounts/sessions/spend view and RepoBar's native repository view; their
+helpers, account boundaries and settings remain authoritative. This consolidates
+the UI rather than removing the maintained backend port.
+
+Usage and GitHub are created on demand. Embedded snapshot timers stop when the
+page closes, and the embedded GitHub view does not emit duplicate notifications.
+The shared CodexBar collector keeps its existing lifecycle. The T3 server tab
+keeps selected-account plan windows separate from provider-wide token history.
+Old/missing feed timestamps cannot claim live data. Activity routes directly to
+the existing native Shiplog-inspired page; Open T3 raises the full window.
+
+Hover opens after 250 ms without stealing typing focus; click pins/toggles;
+leaving waits 450 ms. Native buttons provide keyboard activation and Escape or
+outside-click dismisses an interactive menu. All pages share one theme/text scale
+and a bounded scroll viewport. The floating Dock's T3 launcher uses the same menu.
+The native top-panel host now shares this menu; see [T3 Wingpanel](../t3-wingpanel/README.md) for staged installation and legacy module retirement.
+
+`test-build.sh` compiles the whole pinned dock and runs the production launcher
+qualification plus `test-unified.sh`, using private buses, HOME and fake helpers.
+The latter checks hover focus, click/pin/toggle, delayed close and lazy GitHub
+activation in light/dark modes, retaining screenshots in its output directory.
+
+## Historical taskbar implementation notes
 
 `install-dock-drawers.sh` uses `prepare-source.sh` as its canonical source path.
 It applies the pinned upstream dock, drawers, startup, **Windows taskbar**, then
@@ -80,6 +106,26 @@ Live Wayland hover/placement acceptance remains distinct from fixture results.
 
 Running markers and identity matching: see [`../DOCK-APP-TRACKING.md`](../DOCK-APP-TRACKING.md).
 
+## T3 token dropdown
+
+The existing T3 launcher dropdown displays provider-wide token history (total,
+input, output, cached input, reasoning and available estimated cost), its date
+window and freshness. Provider totals include all accounts and are explicitly
+distinguished from the selected account's plan windows. Unknown or stale quota
+data never becomes a zero-percent or live gauge.
+
+The native T3 connection writes the local status snapshot; the Dock only watches
+that file and opens no second server connection. Native GTK/Granite controls
+follow the desktop theme. Hover, click pinning and launcher actions are retained
+in floating and taskbar layouts.
+
+The updated native producer and private Dock were built, installed and loaded
+on 2026-10-26. A connected snapshot supplied nonzero token totals with its source
+correctly marked stale. Native Rust tests passed (77), RepoBar tests passed (26),
+and the complete patched Dock linked successfully. Both-mode pointer acceptance
+and a physical reboot remain separate checks, not implied by these results.
+
+
 ## Reboot and update persistence
 
 The session unit starts `pantheon-rust-dock`, which selects the user wrapper and
@@ -116,3 +162,21 @@ the TaskbarNotifications linked type so partial taskbar builds are rejected.
 See `../desktop-notifications/README.md` for protocol, insets and history limits.
 
 GTK performance rules shared by every app here: [GTK-PERFORMANCE-ASAHI.md](../GTK-PERFORMANCE-ASAHI.md).
+
+## Duplicate launcher repair (2026-10-26)
+
+Canonical preparation applies `dock-unique-launchers.patch`. AppSystem loads
+once even if ItemManager maps again, keeps one object per desktop ID and saves
+only the completed restored pin list. Existing duplicate pins collapse to their
+first occurrence without reordering distinct apps. Both taskbar and floating
+layouts use this model. The Work Mode Exit action invokes the existing
+`mseries-desktop-mode elementary` helper for immediate restoration.
+
+See [regression and deployment evidence](../dock-tests/receipts/2026-10-26-work-mode-duplicates.md).
+
+`dock-mode-geometry.patch` couples new-layout measurement, requested surface
+size and shadow geometry so Wayland mode switches cannot reuse stale taskbar
+allocation as floating shadow extents. `dock-tests/test-wayland-transition.py`
+qualifies four transitions plus app open/close on a private nested compositor.
+`io.elementary.dock.items.ListRunningApps` returns tracked desktop IDs for
+read-only runtime verification independently of pins.

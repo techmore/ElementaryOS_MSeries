@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """RepoBar multi-account behaviour, against a fake `gh` so no real sign-in or network is used."""
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HELPER = Path(__file__).resolve().with_name("repobar.py")
 
@@ -214,6 +216,115 @@ class RepoBarAccountsTest(unittest.TestCase):
         self.run_helper("settings", "set", "show-in-panel", "false")
         self.assertFalse(json.loads(self.settings.read_text())["showInPanel"])
         self.assertEqual(self.run_helper("settings", "set", "show-in-panel", "maybe", check=False).returncode, 1)
+
+
+class RepoBarSnapshotTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        spec = importlib.util.spec_from_file_location("repobar_snapshot_tests", HELPER)
+        cls.helper = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.helper)
+        cls.now = 1_800_000_000
+        cls.recent = cls.helper.datetime.fromtimestamp(cls.now, cls.helper.timezone.utc).isoformat().replace("+00:00", "Z")
+
+    def repository(self, name, **extra):
+        return {"name": name, "repoState": "visible", "archived": False, "fork": False,
+                "updatedAt": self.recent, **extra}
+
+    def run_record(self, number):
+        return {"id": number, "name": "Build", "head_branch": "feature", "event": "pull_request",
+                "status": "in_progress", "created_at": self.recent, "updated_at": self.recent,
+                "html_url": f"https://github.com/team/app/actions/runs/{number}"}
+
+    def test_successful_empty_is_distinct_from_failed_and_not_checked(self):
+        def query(argv):
+            if "team/failed/" in argv[0]:
+                raise RuntimeError("private credential diagnostic must not escape")
+            return subprocess.CompletedProcess(argv, 0, json.dumps({"total_count": 0, "workflow_runs": []}))
+        repos = [self.repository("team/empty"), self.repository("team/failed"),
+                 self.repository("team/hidden", repoState="hidden")]
+        with mock.patch.object(self.helper, "_run_gh", side_effect=query) as run:
+            result = self.helper._workflow_runs(repos, self.now)
+        observations = {o["repo"]: o for o in result["observations"]}
+        self.assertEqual(run.call_count, 2)
+        self.assertEqual(result["checkedRepos"], 2)
+        self.assertEqual(observations["team/empty"]["state"], "empty")
+        self.assertEqual(observations["team/empty"]["totalCount"], 0)
+        self.assertFalse(observations["team/empty"]["queryTruncated"])
+        self.assertEqual(observations["team/failed"]["state"], "error")
+        self.assertIsNone(observations["team/failed"]["totalCount"])
+        self.assertEqual(observations["team/hidden"]["state"], "not_checked")
+        self.assertIsNone(observations["team/hidden"]["fetchedAt"])
+        self.assertNotIn("credential", json.dumps(result))
+
+    def test_query_and_snapshot_caps_are_reported_per_repository(self):
+        payload = {"total_count": 20, "workflow_runs": [self.run_record(i + 1) for i in range(15)]}
+        with mock.patch.object(self.helper, "_run_gh", return_value=subprocess.CompletedProcess([], 0, json.dumps(payload))):
+            result = self.helper._workflow_runs([self.repository(f"team/app{i}") for i in range(4)], self.now)
+        self.assertEqual(len(result["running"]), 50)
+        self.assertTrue(result["snapshotTruncated"])
+        self.assertTrue(all(o["queryTruncated"] for o in result["observations"]))
+        self.assertEqual([o["returnedCount"] for o in result["observations"]], [15] * 4)
+        self.assertEqual(sum(o["displayedCount"] for o in result["observations"]), 50)
+        self.assertTrue(any(o["snapshotTruncated"] for o in result["observations"]))
+        self.assertEqual(result["running"][0]["branch"], "feature")
+        self.assertEqual(result["running"][0]["event"], "pull_request")
+
+    def test_repository_bound_and_skipped_reasons_are_explicit(self):
+        repos = [self.repository(f"team/app{i}") for i in range(31)]
+        repos += [self.repository("team/fork", fork=True), self.repository("team/archive", archived=True),
+                  self.repository("team/old", updatedAt="2000-01-01T00:00:00Z")]
+        payload = json.dumps({"total_count": 0, "workflow_runs": []})
+        with mock.patch.object(self.helper, "_run_gh", return_value=subprocess.CompletedProcess([], 0, payload)) as run:
+            result = self.helper._workflow_runs(repos, self.now)
+        self.assertEqual(run.call_count, 30)
+        self.assertEqual([o["reason"] for o in result["observations"][-4:]],
+                         ["repository_limit", "fork", "archived", "inactive"])
+
+    def test_malformed_actions_response_is_not_a_successful_empty(self):
+        for payload in [{"workflow_runs": None}, {"total_count": 0, "workflow_runs": [self.run_record(1)]},
+                        {"workflow_runs": [None]}, []]:
+            with self.subTest(payload=payload), mock.patch.object(self.helper, "_run_gh",
+                    return_value=subprocess.CompletedProcess([], 0, json.dumps(payload))):
+                result = self.helper._workflow_runs([self.repository("team/app")], self.now)
+            self.assertEqual(result["observations"][0]["state"], "error")
+            self.assertEqual(result["observations"][0]["reason"], "invalid_response")
+        with mock.patch.object(self.helper, "_run_gh",
+                return_value=subprocess.CompletedProcess([], 0, '{"workflow_runs": []}')):
+            result = self.helper._workflow_runs([self.repository("team/app")], self.now)
+        self.assertEqual(result["observations"][0]["state"], "success")
+        self.assertIsNone(result["observations"][0]["totalCount"])
+        self.assertIsNone(result["observations"][0]["queryTruncated"])
+
+    def test_absent_malformed_and_zero_graphql_counts_survive_normalization(self):
+        nodes = [{"nameWithOwner": "team/missing"},
+                 {"nameWithOwner": "team/invalid", "openIssues": {"totalCount": "2"},
+                  "openPullRequests": {"totalCount": -1}},
+                 {"nameWithOwner": "team/zero", "openIssues": {"totalCount": 0},
+                  "openPullRequests": {"totalCount": 3}}]
+        with mock.patch.multiple(self.helper,
+                _identity=mock.Mock(return_value=("github.com", "alice")),
+                _repository_ids=mock.Mock(return_value=("alice", ["a"])),
+                _repository_details=mock.Mock(return_value=nodes),
+                _pages_repositories=mock.Mock(return_value=set()),
+                _for_you=mock.Mock(return_value={}), _contributions=mock.Mock(return_value={}),
+                load_settings=mock.Mock(return_value={}), _api_json=mock.Mock(return_value=({}, self.now)),
+                _workflow_runs=mock.Mock(return_value={})):
+            result = self.helper.fetch_snapshot()
+        repos = {repo["name"]: repo for repo in result["repos"]}
+        self.assertIsNone(repos["team/missing"]["openIssues"])
+        self.assertIsNone(repos["team/missing"]["openPullRequests"])
+        self.assertIsNone(repos["team/invalid"]["openIssues"])
+        self.assertIsNone(repos["team/invalid"]["openPullRequests"])
+        self.assertEqual(repos["team/zero"]["openIssues"], 0)
+        self.assertEqual(repos["team/zero"]["openPullRequests"], 3)
+        for invalid in [None, True, -1, 2.5, "3"]:
+            self.assertIsNone(self.helper._optional_count(invalid))
+        # Presentation/sorting must remain usable with unknown measurements.
+        selected = self.helper.filter_repositories(
+            {"repos": result["repos"], "settings": {"showArchived": True}}, scope="all", sort="issues")
+        self.assertEqual(selected[0]["name"], "team/zero")
+        self.assertIn("?", self.helper._human_table(result["repos"]))
 
 
 if __name__ == "__main__":

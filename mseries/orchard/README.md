@@ -1,3 +1,8 @@
+> Owner naming correction (2026-10-26): Machine Lab has replaced Orchard.
+> This directory name and the historical implementation notes below do not
+> reverse that product direction. Fleet work belongs in T3 for remote machines,
+> separately from Machine Lab. This dock batch does not rename app binaries.
+
 # Orchard
 
 Machines, containers and pods on this Mac, with the look and feel of an elementary OS app

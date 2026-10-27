@@ -107,7 +107,9 @@ pub struct App {
     // pages
     usage_page: usage::UsagePage,
     activity_page: Rc<crate::activity_view::ActivityPage>,
+    fleet_page: Rc<crate::fleet::FleetPage>,
     repos_page: Rc<repos::ReposPage>,
+    repo_monitor: Rc<crate::repo_monitor_view::RepoMonitorView>,
     diagnostics_page: Rc<diagnostics::DiagnosticsPage>,
     changes_page: Rc<changes::ChangesPage>,
     terminal_pane: Rc<terminal::TerminalPane>,
@@ -120,6 +122,12 @@ pub struct App {
     live: RefCell<Option<Live>>,
     draft: RefCell<Option<Draft>>,
     providers: RefCell<Vec<Provider>>,
+    selected_provider_id: RefCell<String>,
+    updating_provider_selection: Cell<bool>,
+    usage_summary: RefCell<Option<crate::t3::model::UsageSummary>>,
+    usage_refreshing: Cell<bool>,
+    usage_refresh_failed: Cell<bool>,
+    connection_generation: Cell<u64>,
     handoff: RefCell<Option<handoff::Pending>>,
     generation: Cell<u64>,
     syncing: Cell<bool>,
@@ -251,6 +259,9 @@ impl App {
             &section(&[
                 ("Usage", "win.usage"),
                 ("Activity", "win.activity"),
+                ("Remote Machines", "win.fleet"),
+                ("Tstack Workflows", "win.tstack"),
+                ("Repository Overview", "win.repository-overview"),
                 ("Repos and Issues", "win.repos"),
                 ("Changes in This Thread", "win.changes"),
                 ("Diagnostics", "win.diagnostics"),
@@ -381,7 +392,9 @@ impl App {
 
         let usage_page = usage::UsagePage::new();
         let activity_page = crate::activity_view::ActivityPage::new();
+        let fleet_page = crate::fleet::FleetPage::new();
         let repos_page = Rc::new(repos::ReposPage::new());
+        let repo_monitor = crate::repo_monitor_view::RepoMonitorView::new();
         let diagnostics_page = Rc::new(diagnostics::DiagnosticsPage::new());
         let changes_page = changes::ChangesPage::new();
 
@@ -393,7 +406,9 @@ impl App {
         stack.add_named(&chat_page, Some("chat"));
         stack.add_named(usage_page.widget(), Some("usage"));
         stack.add_named(activity_page.widget(), Some("activity"));
+        stack.add_named(fleet_page.widget(), Some("fleet"));
         stack.add_named(repos_page.widget(), Some("repos"));
+        stack.add_named(repo_monitor.widget(), Some("repository-overview"));
         stack.add_named(diagnostics_page.widget(), Some("diagnostics"));
         stack.add_named(&changes_page.root, Some("changes"));
         stack.set_vexpand(true);
@@ -478,7 +493,9 @@ impl App {
             pair_button,
             usage_page,
             activity_page,
+            fleet_page,
             repos_page,
+            repo_monitor,
             diagnostics_page,
             changes_page,
             terminal_pane,
@@ -490,6 +507,12 @@ impl App {
             live: RefCell::new(None),
             draft: RefCell::new(None),
             providers: RefCell::new(Vec::new()),
+            selected_provider_id: RefCell::new(String::new()),
+            updating_provider_selection: Cell::new(false),
+            usage_summary: RefCell::new(None),
+            usage_refreshing: Cell::new(false),
+            usage_refresh_failed: Cell::new(false),
+            connection_generation: Cell::new(0),
             handoff: RefCell::new(None),
             generation: Cell::new(0),
             syncing: Cell::new(false),
@@ -591,7 +614,17 @@ impl App {
         let a = self.clone();
         self.pair_entry.connect_activate(move |_| a.pair());
         let a = self.clone();
-        self.provider_dd.connect_selected_notify(move |_| a.fill_models());
+        self.provider_dd.connect_selected_notify(move |dd| {
+            if a.updating_provider_selection.get() {
+                return;
+            }
+            let id = a.providers.borrow().get(dd.selected() as usize).map(|p| p.instance_id.clone());
+            if let Some(id) = id {
+                *a.selected_provider_id.borrow_mut() = id;
+            }
+            a.fill_models();
+            a.write_status_feed();
+        });
 
         // Window actions with their HIG accelerators; the menu shows the labels automatically.
         type Action = Box<dyn Fn(&Rc<App>)>;
@@ -608,6 +641,9 @@ impl App {
             ("send", &["<Control>Return", "<Control>KP_Enter"], Box::new(|a| a.send())),
             ("usage", &["<Control><Shift>u"], Box::new(|a| a.show_usage())),
             ("activity", &[], Box::new(|a| a.show_activity())),
+            ("fleet", &[], Box::new(|a| a.show_fleet())),
+            ("tstack", &[], Box::new(|a| a.show_tstack())),
+            ("repository-overview", &[], Box::new(|a| a.show_repository_overview())),
             ("repos", &[], Box::new(|a| a.show_repos())),
             ("changes", &[], Box::new(|a| a.show_changes())),
             ("diagnostics", &[], Box::new(|a| a.show_diagnostics())),
@@ -725,6 +761,8 @@ impl App {
         for (title, page) in [
             ("Open Usage", "usage"),
             ("Open Activity", "activity"),
+            ("Remote Machines", "fleet"),
+            ("Open Repository Overview", "repository-overview"),
             ("Open Repos and Issues", "repos"),
             ("Open Diagnostics", "diagnostics"),
             ("Changes in this thread", "changes"),
@@ -732,6 +770,7 @@ impl App {
             out.push(Entry { title: title.into(), kind: "Page".into(), action: Action::Page(page.into()) });
         }
         for (title, action) in [
+            ("Tstack Workflows", "tstack"),
             ("Pair with a T3 environment", "pair"),
             ("Import sessions from Claude Code and Codex", "import"),
             ("Hand off to repo", "handoff"),
@@ -803,6 +842,8 @@ impl App {
             Action::Page(page) => match page.as_str() {
                 "usage" => self.show_usage(),
                 "activity" => self.show_activity(),
+                "fleet" => self.show_fleet(),
+                "repository-overview" => self.show_repository_overview(),
                 "repos" => self.show_repos(),
                 "diagnostics" => self.show_diagnostics(),
                 "changes" => self.show_changes(),
@@ -1142,6 +1183,18 @@ impl App {
         self.providers.borrow().clone()
     }
 
+    pub fn update_plan_providers(&self, providers: Vec<Provider>) {
+        // Refresh observations only; never select a provider or start a task.
+        if let Some(conn) = self.conn.borrow_mut().as_mut() {
+            conn.config.providers = providers.clone();
+            *self.providers.borrow_mut() = providers;
+        }
+        if self.conn.borrow().is_some() {
+            self.fill_providers();
+        }
+        self.write_status_feed();
+    }
+
     pub fn live_item_count(&self) -> usize {
         self.live.borrow().as_ref().map(|l| l.view.items.len()).unwrap_or(0)
     }
@@ -1198,6 +1251,9 @@ impl App {
     }
 
     pub fn show_page(&self, name: &str) {
+        if self.page() == "usage" && name != "usage" {
+            self.usage_page.invalidate();
+        }
         if self.page() == "diagnostics"
             && name != "diagnostics"
             && let Some(c) = self.conn.borrow().as_ref()
@@ -1246,9 +1302,10 @@ impl App {
         let delay = std::time::Duration::from_secs(2u64.pow(attempt.min(5)).max(2));
         self.set_status(&format!("Disconnected; retrying in {} s", delay.as_secs()), false);
         let app = self.clone();
+        let generation = self.connection_generation.get();
         glib::spawn_future_local(async move {
             glib::timeout_future(delay).await;
-            if app.conn.borrow().is_some() {
+            if app.conn.borrow().is_some() || app.connection_generation.get() != generation {
                 return;
             }
             let reopen = app.live.borrow().as_ref().map(|l| l.thread_id.clone());
@@ -1257,6 +1314,9 @@ impl App {
                 return;
             }
             let Some(cred) = auth::load_for(&app.current_server()).await else { return };
+            if app.connection_generation.get() != generation {
+                return;
+            }
             if app.connecting.replace(true) {
                 return;
             }
@@ -1499,6 +1559,8 @@ impl App {
     }
 
     fn reconnect_current(self: &Rc<Self>) {
+        self.invalidate_usage_source(true);
+        crate::status::mark_stale();
         self.usage_page.offline();
         let app = self.clone();
         glib::spawn_future_local(async move {
@@ -1580,6 +1642,9 @@ impl App {
     }
 
     async fn connect_with(self: &Rc<Self>, cred: auth::Credential) {
+        self.invalidate_usage_source(true);
+        let generation = self.connection_generation.get();
+        let environment = self.current_environment_id();
         self.set_status(&format!("Connecting to {}…", cred.server), false);
         let rpc = match t3::connect(&cred).await {
             Ok(r) => r,
@@ -1615,8 +1680,16 @@ impl App {
                 return;
             }
         };
+        if self.connection_generation.get() != generation || self.current_environment_id() != environment {
+            rpc.close().await;
+            return;
+        }
         let app = self.clone();
         rpc.on_close(move |reason| {
+            if app.connection_generation.get() != generation {
+                return;
+            }
+            app.invalidate_usage_source(false);
             app.usage_page.offline();
             *app.conn.borrow_mut() = None;
             app.set_env_state(environments::State::Offline);
@@ -1638,15 +1711,20 @@ impl App {
         }
         self.offer_local_claude();
         self.subscribe_shell();
-        // Plan windows move; re-read the provider snapshot every five minutes (one small RPC).
+        self.refresh_usage_history();
+        // The existing five-minute snapshot timer also refreshes provider token history.
         let app = self.clone();
         glib::timeout_add_local(std::time::Duration::from_secs(300), move || {
-            if app.conn.borrow().is_none() {
+            if app.conn.borrow().is_none() || app.connection_generation.get() != generation {
                 return glib::ControlFlow::Break;
             }
             let app2 = app.clone();
             glib::spawn_future_local(async move {
                 app2.reload_config().await;
+                if app2.connection_generation.get() != generation {
+                    return;
+                }
+                app2.refresh_usage_history();
                 if app2.page() == "usage" {
                     app2.usage_page.render_windows(&app2.providers());
                 }
@@ -1655,13 +1733,92 @@ impl App {
         });
     }
 
+    fn invalidate_usage_source(&self, clear: bool) {
+        self.connection_generation.set(self.connection_generation.get().wrapping_add(1));
+        self.usage_refreshing.set(false);
+        self.usage_refresh_failed.set(true);
+        if clear {
+            self.usage_summary.borrow_mut().take();
+        }
+    }
+
+    pub(crate) fn usage_source_generation(&self) -> u64 {
+        self.connection_generation.get()
+    }
+
+    /// One in-flight history read on the existing transport, shared by Dock and Usage refresh.
+    /// The 31-day request and retained response bound keep this cache independent of UI lifetime.
+    pub(crate) fn refresh_usage_history(self: &Rc<Self>) {
+        let rpc = match self.conn.borrow().as_ref() {
+            Some(conn) => conn.rpc.clone(),
+            None => return,
+        };
+        if self.usage_refreshing.replace(true) {
+            return;
+        }
+        let generation = self.connection_generation.get();
+        let environment = self.current_environment_id();
+        let server = self.current_server();
+        let today = glib::DateTime::now_local().unwrap();
+        let since = today.add_days(-30).unwrap();
+        let fmt = |d: &glib::DateTime| d.format("%Y-%m-%d").unwrap().to_string();
+        let payload = json!({"sinceDay": fmt(&since), "untilDay": fmt(&today),
+            "timeZone": today.timezone().identifier().to_string()});
+        let last7: Vec<String> = (0..7).rev().map(|i| fmt(&today.add_days(-i).unwrap())).collect();
+        let app = self.clone();
+        glib::spawn_future_local(async move {
+            let response = rpc.call("server.getUsageSummary", payload).await;
+            if app.connection_generation.get() != generation
+                || app.current_environment_id() != environment
+                || app.current_server() != server
+                || app.conn.borrow().is_none()
+            {
+                return;
+            }
+            app.usage_refreshing.set(false);
+            let decoded =
+                response.map_err(|e| e.message()).and_then(crate::usage_monitor::decode_history).and_then(|summary| {
+                    if summary.buckets.len() > 16_384 || summary.sources.len() > 4_096 {
+                        Err("Server history exceeds the bounded desktop cache".to_string())
+                    } else {
+                        Ok(summary)
+                    }
+                });
+            match decoded {
+                Ok(summary) => {
+                    app.usage_refresh_failed.set(false);
+                    if app.page() == "usage" {
+                        app.usage_page.render(&summary, &last7);
+                    }
+                    *app.usage_summary.borrow_mut() = Some(summary);
+                }
+                Err(message) => {
+                    app.usage_refresh_failed.set(true);
+                    if app.page() == "usage" {
+                        app.usage_page.history_failed(&format!("refresh failed: {message}"));
+                    }
+                }
+            }
+            app.write_status_feed();
+        });
+    }
+
     /// Writes the indicator feed (status.json) from what the window knows now.
     pub fn write_status_feed(&self) {
-        let (connected, label_text, threads) = match self.conn.borrow().as_ref() {
-            Some(c) => (true, c.cred.label.clone(), c.shell.threads.clone()),
-            None => (false, String::new(), Vec::new()),
+        let conn = self.conn.borrow();
+        let (connected, label_text, threads): (bool, &str, &[ThreadShell]) = match conn.as_ref() {
+            Some(c) => (true, &c.cred.label, &c.shell.threads),
+            None => (false, "", &[]),
         };
-        crate::status::write(&crate::status::build(connected, &label_text, &self.providers.borrow(), &threads));
+        crate::status::write(&crate::status::build(
+            connected,
+            label_text,
+            &self.selected_provider_id.borrow(),
+            &self.providers.borrow(),
+            threads,
+            self.usage_summary.borrow().as_ref(),
+            self.usage_refresh_failed.get(),
+        ));
     }
 
     fn refresh_status(&self) {
@@ -1710,12 +1867,16 @@ impl App {
     }
 
     async fn reload_config(&self) {
+        let generation = self.connection_generation.get();
+        let environment = self.current_environment_id();
         let rpc = match self.conn.borrow().as_ref() {
             Some(c) => c.rpc.clone(),
             None => return,
         };
         if let Ok(v) = rpc.call("server.getConfig", json!({})).await
             && let Ok(config) = serde_json::from_value::<ServerConfig>(v)
+            && self.connection_generation.get() == generation
+            && self.current_environment_id() == environment
         {
             *self.providers.borrow_mut() = config.providers.clone();
             if let Some(c) = self.conn.borrow_mut().as_mut() {
@@ -1845,6 +2006,9 @@ impl App {
     }
 
     fn forget(self: &Rc<Self>) {
+        self.invalidate_usage_source(true);
+        self.selected_provider_id.borrow_mut().clear();
+        crate::status::clear();
         self.usage_page.offline();
         let app = self.clone();
         glib::spawn_future_local(async move {
@@ -1857,6 +2021,8 @@ impl App {
             app.set_env_state(environments::State::Idle);
             app.show_page("pair");
             app.rebuild_list();
+            app.providers.borrow_mut().clear();
+            crate::status::clear();
         });
     }
 
@@ -2762,12 +2928,26 @@ impl App {
             })
             .collect();
         let refs: Vec<&str> = names.iter().map(String::as_str).collect();
+        let selected = self.selected_provider_id.borrow().clone();
+        let index = providers
+            .iter()
+            .position(|p| p.instance_id == selected)
+            .or_else(|| providers.iter().position(Provider::ready));
+        drop(providers);
+        self.updating_provider_selection.set(true);
         self.provider_dd.set_model(Some(&gtk::StringList::new(&refs)));
-        if let Some(i) = providers.iter().position(Provider::ready) {
+        if let Some(i) = index {
             self.provider_dd.set_selected(i as u32);
         }
-        drop(providers);
+        self.updating_provider_selection.set(false);
+        *self.selected_provider_id.borrow_mut() = self
+            .providers
+            .borrow()
+            .get(self.provider_dd.selected() as usize)
+            .map(|p| p.instance_id.clone())
+            .unwrap_or_default();
         self.fill_models();
+        self.write_status_feed();
     }
 
     fn fill_models(&self) {
@@ -3075,6 +3255,36 @@ impl App {
 
     // ---- repos, issues, runner -----------------------------------------------------------------
 
+    pub fn show_fleet(self: &Rc<Self>) {
+        self.leave_live();
+        self.list.unselect_all();
+        self.title.set_text("Remote Machines");
+        self.window.set_title(Some("Remote Machines - T3"));
+        self.subtitle.set_text("Fleet Shepherd · configured SSH aliases · read-only monitoring");
+        self.subtitle.set_visible(true);
+        self.show_page("fleet");
+        self.fleet_page.open();
+    }
+    pub fn fleet_page(&self) -> &Rc<crate::fleet::FleetPage> {
+        &self.fleet_page
+    }
+
+    pub fn show_tstack(self: &Rc<Self>) {
+        let weak = Rc::downgrade(self);
+        crate::tstack::show(&self.window, move |name| {
+            let Some(app) = weak.upgrade() else { return };
+            if app.live.borrow().is_none() && app.draft.borrow().is_none() {
+                app.toast("Open a live thread or prepare a new thread before choosing a workflow.");
+                return;
+            }
+            let draft = app.entry.text();
+            app.entry.set_text(&crate::tstack::prepare(name, &draft));
+            app.show_page("chat");
+            app.entry.view.grab_focus();
+            app.toast("Workflow request prepared. Review it, then send when ready.");
+        });
+    }
+
     pub fn show_activity(self: &Rc<Self>) {
         self.leave_live();
         self.list.unselect_all();
@@ -3088,6 +3298,21 @@ impl App {
 
     pub fn activity_page(&self) -> &Rc<crate::activity_view::ActivityPage> {
         &self.activity_page
+    }
+
+    pub fn show_repository_overview(self: &Rc<Self>) {
+        self.leave_live();
+        self.list.unselect_all();
+        self.title.set_text("Repository Overview");
+        self.window.set_title(Some("Repository Overview - Claude"));
+        self.subtitle.set_text("Read-only RepoBar GitHub status · separate account from T3");
+        self.subtitle.set_visible(true);
+        self.show_page("repository-overview");
+        self.repo_monitor.refresh();
+    }
+
+    pub fn repository_overview(&self) -> &Rc<crate::repo_monitor_view::RepoMonitorView> {
+        &self.repo_monitor
     }
 
     pub fn show_repos(self: &Rc<Self>) {
@@ -3182,7 +3407,9 @@ impl App {
             }
         };
         let Some((provider, model, reason)) = workflow::runner_selection(&self.providers()) else {
-            self.toast("Every provider's window is full; try again after the earliest reset.");
+            self.toast(
+                "No provider has fresh, known quota below the routing limit. Refresh usage or check provider status.",
+            );
             return;
         };
         let app = self.clone();
@@ -3225,7 +3452,9 @@ impl App {
             }
         };
         let Some((provider, model, reason)) = workflow::runner_selection(&self.providers()) else {
-            self.toast("Every provider's window is full; try again after the earliest reset.");
+            self.toast(
+                "No provider has fresh, known quota below the routing limit. Refresh usage or check provider status.",
+            );
             return;
         };
         let app = self.clone();
