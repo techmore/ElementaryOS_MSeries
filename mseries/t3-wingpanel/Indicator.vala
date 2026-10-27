@@ -19,8 +19,8 @@ namespace MSeries {
             menu = new Dock.TaskbarT3RPopover (display, 28, true);
             menu.request_close.connect (() => close ());
             menu.status_changed.connect ((live, pending, running) => {
-                badge.label = live && pending > 0 ? pending.to_string () :
-                    live && running > 0 ? running.to_string () : "";
+                // A number only when something needs you; running work stays quiet (tooltip says it).
+                badge.label = live && pending > 0 ? pending.to_string () : "";
                 badge.visible = badge.label.length > 0;
                 set_status (!live ? "No live server status" :
                     pending == 1 ? "1 thread needs approval" :

@@ -148,21 +148,6 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         activity = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
         root.append (activity);
 
-        var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
-        var usage = new Gtk.Button.with_label ("Usage");
-        usage.clicked.connect (() => run_action ("usage"));
-        var repositories = new Gtk.Button.with_label ("Repositories");
-        repositories.clicked.connect (() => run_action ("repositories"));
-        var settings = new Gtk.Button.with_label ("Settings");
-        settings.clicked.connect (() => run_action ("settings"));
-        var shiplog = new Gtk.Button.with_label ("Activity");
-        shiplog.tooltip_text = "Shiplog · today's commits, merged PRs and closed issues";
-        shiplog.clicked.connect (() => run_action ("activity"));
-        actions.append (usage);
-        actions.append (repositories);
-        actions.append (settings);
-        root.append (actions);
-
         freshness = new Gtk.Label ("No status snapshot yet") { xalign = 0 };
         freshness.add_css_class ("caption");
         freshness.add_css_class ("dim-label");
@@ -174,20 +159,15 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         error_label.margin_start = 12;
         error_label.margin_end = 12;
 
-        var open_full = new Gtk.Button.with_label ("Open T3");
-        open_full.add_css_class ("suggested-action");
-        open_full.clicked.connect (() => run_action ("open-full"));
-        var footer = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
-            margin_start = 12, margin_end = 12, margin_bottom = 10
-        };
-        shiplog.hexpand = true;
-        open_full.hexpand = true;
-        var machines = new Gtk.Button.with_label ("Fleet");
-        machines.tooltip_text = "Remote machine and agent status over SSH";
-        machines.clicked.connect (() => run_action ("fleet"));
-        footer.append (shiplog);
-        footer.append (machines);
-        footer.append (open_full);
+        // Like Sound or Network: content first, then plain menu items, settings last.
+        // The tabs above already cover Usage and GitHub, so no duplicate buttons for them.
+        var footer = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { margin_bottom = 3 };
+        footer.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
+        footer.append (menu_item ("Open T3", "open-full", null));
+        footer.append (menu_item ("Activity", "activity", "Shiplog · today's commits, merged PRs and closed issues"));
+        footer.append (menu_item ("Fleet", "fleet", "Remote machine and agent status over SSH"));
+        footer.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
+        footer.append (menu_item ("T3 Settings…", "settings", null));
         shell.append (footer);
         content = new Gtk.ScrolledWindow () {
             child = shell, hscrollbar_policy = Gtk.PolicyType.NEVER,
@@ -258,6 +238,15 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     }
 
     public Gtk.Widget get_host_widget () { return content; }
+
+    private Gtk.Button menu_item (string label, string action, string? tooltip) {
+        var item = new Gtk.Button.with_label (label) { tooltip_text = tooltip };
+        item.add_css_class (Granite.STYLE_CLASS_MENUITEM);
+        item.add_css_class ("flat");
+        ((Gtk.Label) item.child).xalign = 0;
+        item.clicked.connect (() => run_action (action));
+        return item;
+    }
 
     public void open_host () {
         if (!hosted) return;
@@ -358,7 +347,6 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         if (style_installed) return;
         var style = new Gtk.CssProvider ();
         style.load_from_string ("""
-            .taskbar-t3r-popup { font-size: 1.2em; }
             .taskbar-t3r-popup .mseries-codexbar,
             .taskbar-t3r-popup .mseries-repobar { font-size: 1em; }
             popover.taskbar-t3r-popup > contents {

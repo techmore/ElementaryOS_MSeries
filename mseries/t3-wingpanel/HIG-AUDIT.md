@@ -22,46 +22,21 @@ Line numbers refer to `origin/dev` after the fix PR unless marked.
 | F5 | **Two different things called "Activity".** The thread list heading and the footer button (which opens Shiplog) shared one name. | thread list heading | Heading renamed to "Threads". |
 | F6 | **Machine-style wording.** "2 request(s)", "1 active item(s)", "Tokens · provider total" plus a two-line repeat of the same scope, and "· Model: claude-opus-…" truncating every thread subtitle. | `append_thread`, `render_activity`, token card | Real plurals, "Tokens" heading with one scope line ("Claude · all accounts, not just the selected one"), model moved to the row tooltip. |
 
-## Needs the owner's call (not changed)
+## Owner-approved layout changes (H1–H5, done)
 
-Ordered by impact. Each one changes layout or behaviour you have seen and may have chosen.
+The owner approved these the same day; they are in the same PR.
 
-### High
+| # | Was | Now |
+|---|-----|-----|
+| H1 | Two stacked tab bars on the Usage tab (Usage/T3 server/GitHub, then Quota/Sessions/Spend) and three button rows. | One tab bar. Embedded CodexBar shows Quota only (its switcher is hidden when `on_demand`); Sessions and Spend open from its Usage details / Spending details buttons. The footer is a separator and plain menu items: Open T3, Activity, Fleet, then a separator and "T3 Settings…". The duplicate Usage / Repositories buttons are gone (M2). |
+| H2 | 36 px icons in the embedded CodexBar row. | 16 px when embedded (`dock_icon_size ()`); the standalone double-size dropdown keeps 36 px. Its 300 px minimum height is also dropped when embedded. |
+| H3 | Menu text at 1.2em. | System text size, like Sound and Network. |
+| H4 | Blue suggested-action "Open T3" button. | Plain menu item (`Granite.STYLE_CLASS_MENUITEM` + `flat`). |
+| H5 | Badge showed the running-thread count. | Badge only for approvals waiting; running work shows in the tooltip only. |
 
-**H1. Two stacked tab bars and three button rows.** The Usage tab shows Usage/T3 server/GitHub,
-then Quota/Sessions/Spend directly under it, then a row of five icon buttons, then
-Activity/Fleet/Open T3. That is four rows of navigation before or around any content.
-Wingpanel menus (Sound, Network, Power) show content first and end with one plain
-"… Settings…" item. Where: `TaskbarT3RPopover.vala:71` (outer switcher),
-`codexbar-wingpanel/Indicator.vala:139` (inner switcher), `:165–169` (icon row),
-`TaskbarT3RPopover.vala:150–190` (two button rows).
-Fix: keep one switcher (the outer one). In embedded mode hide CodexBar's inner switcher and show
-Quota only, with Sessions/Spend reachable through the existing "Usage details" action. Replace the
-footer rows with a separator and flat menu items (`Granite.STYLE_CLASS_MENUITEM` or
-`Gtk.Button` + `flat`, full width): "Activity", "Fleet", "Open T3…".
+The GitHub tab's Dashboard / Pinned / Attention / All row is a list filter, not page navigation, so it stays.
 
-**H2. Oversized icon row in the Usage tab.** The CodexBar icon row uses fixed 36 px icons
-(`codexbar-wingpanel/Indicator.vala:115, 308`) and the empty state uses a 64 px icon (`:2479`).
-These were sized for CodexBar's "double text size" mode (`:251`, `font-size: 2em`), but inside the
-T3 menu that text size is reset to 1em (`TaskbarT3RPopover.vala:362`) while the icons stay at 36 px.
-Result: heavy black glyphs dominating a calm menu (see `usage-light.png`).
-Fix: in embedded mode use 16 px symbolic icons, or drop the row per H1.
-
-**H3. Menu text is enlarged to 1.2em** (`TaskbarT3RPopover.vala:361`). No other Wingpanel menu does
-this, so the T3 menu looks out of family next to Sound or Network. If larger text is wanted, the
-system Text Size setting does it for every menu at once.
-Fix: remove the rule. (Kept for now because the CodexBar dropdown was enlarged on request in
-`ce116294`.)
-
-**H4. "Open T3" is a blue suggested-action button.** In Wingpanel menus the bottom item is a plain
-menu item; a suggested-action button reads as "the thing you must do now", which it is not.
-Where: `TaskbarT3RPopover.vala:178`. Fix: plain flat item as part of H1.
-
-**H5. The panel badge shows a running-thread count all the time.** A number next to the icon
-whenever any thread runs makes the panel busy. Native indicators change the icon or add a dot only
-when something needs the user (Notifications uses a different icon for unread).
-Where: `t3-wingpanel/Indicator.vala:22–24`. Fix: number only for pending approvals; nothing (or a
-subtle dot) while running. The probe asserts the badge for a pending prompt, which stays true.
+## Still open
 
 ### Medium
 
@@ -70,7 +45,7 @@ fresh install), the menu opens to "No quota data yet" with a centred 64 px icon,
 live with threads waiting. Fix: open on "T3 server" (status first), or switch to it when a thread
 needs approval.
 
-**M2. Duplicate actions.** The row "Usage / Repositories / Settings" on the T3 server tab opens app
+**M2. (Done with H1.) Duplicate actions.** The row "Usage / Repositories / Settings" on the T3 server tab opens app
 pages that duplicate the Usage and GitHub tabs one click above. Fix: drop "Usage" and
 "Repositories"; keep "Settings…" (with an ellipsis, because it opens a window) as a menu item.
 
