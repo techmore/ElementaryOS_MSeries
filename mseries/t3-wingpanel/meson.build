@@ -2,11 +2,21 @@ project('mseries-t3-wingpanel', 'vala', 'c', version: '0.1.0', meson_version: '>
 wingpanel = dependency('wingpanel-9')
 deps = [wingpanel, dependency('granite-7', version: '>= 7.7.0'), dependency('json-glib-1.0'), meson.get_compiler('c').find_library('m')]
 python = find_program('python3')
+sdk_prefix = get_option('msdk_prefix')
+sdk_vala_args = []
+if sdk_prefix != ''
+  deps += declare_dependency(compile_args: ['-I' + sdk_prefix / 'include'],
+    link_args: ['-L' + sdk_prefix / 'lib', '-lmsdk_gtk', '-Wl,-rpath,' + sdk_prefix / 'lib'])
+  sdk_vala_args = ['--define=MSDK_STATUS_HOST', '--vapidir=' + meson.current_source_dir() / '../sdk-status-host', '--pkg=msdk-usage']
+endif
 source_paths = ['Indicator.vala', '../dock-taskbar/TaskbarT3RPopover.vala',
   '../codexbar-wingpanel/JsonBoundary.vala', '../codexbar-wingpanel/HelperProcess.vala',
   '../codexbar-wingpanel/AccountDialog.vala', '../codexbar-wingpanel/PanelPreferences.vala',
   '../codexbar-wingpanel/RefreshPolicy.vala', '../codexbar-wingpanel/QuotaEta.vala',
   '../codexbar-wingpanel/Presentation.vala']
+if sdk_prefix != ''
+  source_paths += ['../sdk-status-host/UsagePage.vala']
+endif
 sources = []
 foreach path : source_paths
   sources += configure_file(input: path, output: path.split('/')[-1], copy: true)
@@ -15,9 +25,9 @@ foreach component : ['codexbar', 'repobar']
   sources += custom_target(component + '-embedded', input: '../' + component + '-wingpanel/Indicator.vala',
     output: component + '.vala', command: [python, files('embedded-source.py'), '@INPUT@', '@OUTPUT@'])
 endforeach
-shared_module('mseries-t3', sources, dependencies: deps, install: true,
+shared_module('mseries-t3', sources, dependencies: deps, vala_args: sdk_vala_args, install: true,
   install_dir: wingpanel.get_variable(pkgconfig: 'indicatorsdir') / '../mseries-pending-indicators')
-probe = executable('probe', sources, 'probe.vala', dependencies: deps)
+probe = executable('probe', sources, 'probe.vala', dependencies: deps, vala_args: sdk_vala_args)
 
 # Keep native account/repository settings available in both local and Debian installs.
 settings_model = configure_file(input: '../codexbar-wingpanel/settings/SettingsModel.vala', output: 'SettingsModel.vala', copy: true)

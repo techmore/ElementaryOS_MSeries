@@ -15,6 +15,10 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     private Gtk.Stack pages;
     private Gtk.Box github_page;
     private Gtk.Box accounts_page;
+#if MSDK_STATUS_HOST
+    private Gtk.Box sdk_usage_page;
+    private MSeries.SdkUsagePage? sdk_usage;
+#endif
     private MSeries.CodexBarIndicator? accounts_indicator;
     private MSeries.RepoBarIndicator? repositories_indicator;
     private string status_path;
@@ -69,6 +73,10 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         shell.append (pages);
         accounts_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
         pages.add_titled (accounts_page, "usage", "Usage");
+#if MSDK_STATUS_HOST
+        sdk_usage_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        pages.add_titled (sdk_usage_page, "sdk-usage", "Plan usage");
+#endif
         pages.add_titled (root, "server", "T3 server");
         github_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
         pages.add_titled (github_page, "github", "GitHub");
@@ -235,6 +243,9 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
                 stop_freshness_timer ();
                 if (repositories_indicator != null) repositories_indicator.closed ();
                 if (accounts_indicator != null) accounts_indicator.closed ();
+#if MSDK_STATUS_HOST
+                if (sdk_usage != null) sdk_usage.closed ();
+#endif
             });
             anchor.unmap.connect (() => {
                 cancel_open ();
@@ -271,6 +282,9 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
         stop_freshness_timer ();
         if (accounts_indicator != null) accounts_indicator.closed ();
         if (repositories_indicator != null) repositories_indicator.closed ();
+#if MSDK_STATUS_HOST
+        if (sdk_usage != null) sdk_usage.closed ();
+#endif
     }
 
     private bool menu_visible () { return hosted ? host_open : popup.visible; }
@@ -305,6 +319,18 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     }
 
     private void update_repository_page () {
+#if MSDK_STATUS_HOST
+        if (menu_visible () && pages.visible_child_name == "sdk-usage") {
+            if (sdk_usage == null) {
+                var executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-linux");
+                sdk_usage = new MSeries.SdkUsagePage (executable);
+                sdk_usage_page.append (sdk_usage.get_widget ());
+            }
+            sdk_usage.opened ();
+        } else if (sdk_usage != null) {
+            sdk_usage.closed ();
+        }
+#endif
         if (menu_visible () && pages.visible_child_name == "usage") {
             if (accounts_indicator == null) {
                 accounts_indicator = new MSeries.CodexBarIndicator (true);
@@ -730,6 +756,13 @@ public class Dock.TaskbarT3RPopover : GLib.Object {
     public override void dispose () {
         if (status_expiry != 0) { Source.remove (status_expiry); status_expiry = 0; }
         cancel_timers ();
+#if MSDK_STATUS_HOST
+        if (sdk_usage != null) {
+            sdk_usage.closed ();
+            sdk_usage_page.remove (sdk_usage.get_widget ());
+            sdk_usage = null;
+        }
+#endif
         if (accounts_indicator != null) accounts_indicator.closed ();
         if (repositories_indicator != null) repositories_indicator.closed ();
         if (app_watch_id != 0) {

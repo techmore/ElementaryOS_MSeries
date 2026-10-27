@@ -1,0 +1,1 @@
+option('msdk_prefix', type: 'string', value: '', description: 'Optional SDK usage host prefix (lib and include directories)')
