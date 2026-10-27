@@ -1,3 +1,11 @@
+## Files Quick Actions: image conversion — 2026-10-25
+
+Issue #531 implementation: user-local Contractor actions, native conversion
+progress/results, original-preserving collision-safe copies, optional JPEG 2000
+only when writable. Linux codec/GUI/notification probes accompany the change;
+owner Files installation/right-click acceptance remains open. See
+[image-actions](image-actions/README.md). Preview viewer #530 is separate.
+
 ## Candidate anchor hover failure — 2026-10-26
 
 SDK desktop-host ARM workflow 40418084280 passed on attempt 2 at 64ca2db, including C/Vala host boundaries, shared T3 menu in hosted and dock modes with synthetic neighbors, and SDK/package checks. Attempt 1 passed host checks but its later private display failed to open; see `sdk-tests/receipts/2026-10-26-desktop-host-ci/`. Real desktop builds, installation, target GTK compatibility and owner acceptance remain open.

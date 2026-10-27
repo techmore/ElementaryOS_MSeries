@@ -1,0 +1,62 @@
+name: Files image conversion actions
+
+on:
+  pull_request:
+    paths:
+      - "mseries/image-actions/**"
+      - ".github/workflows/files-image-actions.yml"
+  push:
+    branches: [dev]
+    paths:
+      - "mseries/image-actions/**"
+      - ".github/workflows/files-image-actions.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  native:
+    name: Files conversion codecs, contracts and GTK states (arm64)
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Parse every utility and probe source
+        run: python3 -c 'import ast, pathlib; [ast.parse(p.read_text(), filename=str(p)) for p in pathlib.Path("mseries/image-actions").glob("*.py")]'
+      - name: Install native runtime and isolated display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-granite-7.0 \
+            gir1.2-gdkpixbuf-2.0 desktop-file-utils xvfb xauth dbus-x11 heif-gdk-pixbuf \
+            libheif-examples libheif-plugin-x265 libheif-plugin-libde265
+      - name: Real codec and file-safety tests
+        run: |
+          /usr/bin/python3 -c 'import gi; gi.require_version("GdkPixbuf", "2.0"); from gi.repository import GdkPixbuf, Gio'
+          /usr/bin/python3 -B -m unittest discover -s mseries/image-actions -p 'test_*.py' -v
+      - name: Native progress, completion and notification probes
+        run: |
+          for theme in light dark; do
+            for width in 420 560; do
+              private=$(mktemp -d)
+              mkdir -p "$private/home" "$private/runtime" "$private/config" "$private/data" "$private/cache"
+              chmod 700 "$private/runtime"
+              theme_args=()
+              if [[ "$theme" == dark ]]; then theme_args+=(--dark); fi
+              HOME="$private/home" XDG_RUNTIME_DIR="$private/runtime" XDG_CONFIG_HOME="$private/config" \
+                XDG_DATA_HOME="$private/data" XDG_CACHE_HOME="$private/cache" GSETTINGS_BACKEND=memory \
+                GDK_BACKEND=x11 GSK_RENDERER=cairo \
+                xvfb-run -a dbus-run-session -- /usr/bin/python3 -B mseries/image-actions/probe.py \
+                  "$RUNNER_TEMP/image-actions/$theme-$width" --width "$width" "${theme_args[@]}"
+              rm -rf "$private"
+            done
+          done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: files-image-action-renders-${{ github.run_id }}
+          path: ${{ runner.temp }}/image-actions/
+          if-no-files-found: error
