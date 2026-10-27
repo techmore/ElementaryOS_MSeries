@@ -4,7 +4,7 @@ Owner request: window title-bar buttons always on the left. Live `button-layout`
 
 ## Upstream watch: retry transient GitHub errors — 2026-10-27
 
-After #598/#610 the dashboard renders and the 03:40 manual run passed, but the 05:06 scheduled run exited 1 because one source (`aurora-silicon/linux`) returned HTTP 500 (shown under "Fetch failures" in issue #51). `people-watch.get` had no retry, so any transient upstream 5xx failed the job. It now retries 5xx, 429, URL errors and timeouts up to 3 times (1 s, 3 s, 8 s); 404 still returns None and other 4xx (401/403/422) are not retried; a persistent failure still raises and still fails the run. 5 new tests in `test_github_watch.py`; 93 local-ai tests pass. Not yet observed on a scheduled run.
+After #598/#610 the dashboard rendered and the 03:40 manual run passed, but the 05:06 scheduled run exited 1 because one source (`aurora-silicon/linux`) returned HTTP 500 (shown under "Fetch failures" in issue #51). `people-watch.get` had no retry, so any transient upstream 5xx failed the job. It now retries 5xx, 429, URL errors and timeouts up to 3 times (1 s, 3 s, 8 s); 404 still returns None and other 4xx (401/403/422) are not retried; a persistent failure still raises and still fails the run. 5 new tests in `test_github_watch.py`; 93 local-ai tests pass. PR #618 merged as `5267e1be7cea5d37d49e8c1f6630e3401274560a`; scheduled run `40502016600` completed successfully on `dev` revision `7478f2fe9ce2230e8f21666cffcc9d8b4232c3bd`. Issue #51 remains open with public upstream changes awaiting review; the watcher does not import changes or qualify hardware.
 
 ## Wingpanel indicator staging hazard — 2026-10-27
 

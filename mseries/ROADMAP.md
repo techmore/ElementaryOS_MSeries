@@ -1,3 +1,11 @@
+## Public upstream watch: scheduled retry verified — 2026-10-27
+
+PR #618 merged as `5267e1be7cea5d37d49e8c1f6630e3401274560a`. Scheduled run
+`40502016600` completed successfully against `dev` revision
+`7478f2fe9ce2230e8f21666cffcc9d8b4232c3bd`, verifying the retry fix in the
+scheduled watcher. Issue #51 remains open with public changes awaiting review;
+no upstream changes were imported and no hardware qualification is implied.
+
 ## Files Quick Actions: image conversion — 2026-10-25
 
 Issue #531 implementation: user-local Contractor actions, native conversion
