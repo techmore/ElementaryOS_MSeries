@@ -1,6 +1,6 @@
 [Unit]
 Description=Streaming dictation on F5 (words typed while you talk)
-After=ydotool.service
+After=graphical-session.target ydotool.service
 Wants=ydotool.service
 Conflicts=voxtype.service mseries-aop-mic.service
 
