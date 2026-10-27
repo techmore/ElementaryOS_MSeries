@@ -369,7 +369,9 @@ jobs:
           fi
           echo "AUTH_HEADER=$auth" >> "$GITHUB_ENV"
 
-      - uses: ./.github/actions/fast-apt
+      # The repository is checked out under src/, and only when the key is present.
+      - uses: ./src/.github/actions/fast-apt
+        if: steps.key.outputs.have == 'true'
 
       - name: Assemble and sign the ${{ steps.suite.outputs.channel }} suite
         if: steps.key.outputs.have == 'true'
