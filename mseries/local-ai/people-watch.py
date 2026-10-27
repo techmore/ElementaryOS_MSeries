@@ -39,18 +39,28 @@ def token_value():
     return _TOKEN[0]
 
 
-def get(path):
+RETRY_DELAYS = (1, 3, 8)  # seconds between attempts; transient upstream failures only
+
+
+def get(path, sleep=time.sleep):
     headers = {'User-Agent': 'mseries-people-watch', 'Accept': 'application/vnd.github+json'}
     token = token_value()
     if token:
         headers['Authorization'] = 'Bearer ' + token
-    try:
-        with urllib.request.urlopen(urllib.request.Request(API + path, headers=headers), timeout=15) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as error:
-        if error.code == 404:
-            return None
-        raise
+    for attempt in range(len(RETRY_DELAYS) + 1):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(API + path, headers=headers), timeout=15) as response:
+                return json.load(response)
+        except urllib.error.HTTPError as error:
+            if error.code == 404:
+                return None
+            # 5xx and 429 are transient on GitHub's side; anything else (401/403/422) is not.
+            if error.code < 500 and error.code != 429 or attempt == len(RETRY_DELAYS):
+                raise
+        except (urllib.error.URLError, TimeoutError, OSError):
+            if attempt == len(RETRY_DELAYS):
+                raise
+        sleep(RETRY_DELAYS[attempt])
 
 
 def snapshot_entry(entry):

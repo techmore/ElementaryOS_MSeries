@@ -8,6 +8,9 @@ HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location('github_watch', HERE / 'github-watch.py')
 watch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(watch)
+people_spec = importlib.util.spec_from_file_location('people_watch', HERE / 'people-watch.py')
+people = importlib.util.module_from_spec(people_spec)
+people_spec.loader.exec_module(people)
 
 
 class GitHubWatchState(unittest.TestCase):
@@ -133,6 +136,69 @@ class GitHubWatchState(unittest.TestCase):
         self.assertEqual(len(state['snapshots']), 378)
         self.assertEqual(len(state['pending']), 173)
         self.assertLess(len(body.encode()), 65000)
+
+
+class PeopleWatchRetry(unittest.TestCase):
+    class Response:
+        def __init__(self, data): self.data = data
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+        def read(self, *args): return self.data
+
+    def run_get(self, outcomes):
+        import io, urllib.error
+        calls, delays = [], []
+        queue = list(outcomes)
+
+        def fake_urlopen(request, timeout=0):
+            calls.append(request.full_url)
+            outcome = queue.pop(0)
+            if isinstance(outcome, int):
+                raise urllib.error.HTTPError(request.full_url, outcome, 'x', {}, io.BytesIO(b''))
+            if isinstance(outcome, Exception):
+                raise outcome
+            return self.Response(outcome)
+
+        original = people.urllib.request.urlopen
+        people.urllib.request.urlopen = fake_urlopen
+        try:
+            try:
+                return people.get('/repos/x/y', sleep=delays.append), calls, delays, None
+            except Exception as error:
+                return None, calls, delays, error
+        finally:
+            people.urllib.request.urlopen = original
+
+    def test_transient_500_is_retried_then_succeeds(self):
+        value, calls, delays, error = self.run_get([500, 502, b'{"ok": true}'])
+        self.assertIsNone(error)
+        self.assertEqual(value, {'ok': True})
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(delays, [1, 3])
+
+    def test_persistent_500_still_raises_after_bounded_attempts(self):
+        _, calls, delays, error = self.run_get([500, 500, 500, 500])
+        self.assertIsNotNone(error)
+        self.assertEqual(len(calls), len(people.RETRY_DELAYS) + 1)
+        self.assertEqual(delays, list(people.RETRY_DELAYS))
+
+    def test_client_errors_are_not_retried(self):
+        for code in (401, 403, 422):
+            _, calls, delays, error = self.run_get([code])
+            self.assertIsNotNone(error, code)
+            self.assertEqual((len(calls), delays), (1, []), code)
+
+    def test_404_returns_none_without_retry(self):
+        value, calls, delays, error = self.run_get([404])
+        self.assertIsNone(error)
+        self.assertIsNone(value)
+        self.assertEqual(len(calls), 1)
+
+    def test_network_timeouts_are_retried(self):
+        value, calls, _, error = self.run_get([TimeoutError(), b'{"a": 1}'])
+        self.assertIsNone(error)
+        self.assertEqual(value, {'a': 1})
+        self.assertEqual(len(calls), 2)
 
 
 if __name__ == '__main__':
