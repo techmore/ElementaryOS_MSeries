@@ -1,3 +1,7 @@
+## Dictation unit ordering cycle — 2026-10-27
+
+Boot journal (Oct 26 22:58) showed `graphical-session.target: Found ordering cycle` and `Job mseries-stream-dictate.service/start deleted`. Cause: systemd orders a target after every unit it wants unless that unit already says `After=<target>`; `mseries-stream-dictate.service` is wanted by `graphical-session.target` and ordered after `mseries-dictation-input.service` (which is `After=graphical-session.target`) but did not declare `After=graphical-session.target` itself. Fix: add it to the base units (`mseries-stream-dictate`, `mseries-ane-dictate`) and to the drop-in `install-dictation-input.py` writes, plus `mseries/dictation/test_unit_ordering.py`. Verified with `systemd-analyze --user verify graphical-session.target` against an isolated unit path including the target's wants links: old text reports the cycle (control), fixed text reports none. 163 dictation tests pass. Not deployed: the installed `40-universal-input.conf` on the owner machine still has the old text until the installer next runs; no unit, panel or service was restarted. No speech benchmark was run or repeated.
+
 ## Files image conversion actions — 2026-10-25 (Codex)
 
 Issue #531 now has a user-local Contractor implementation at
