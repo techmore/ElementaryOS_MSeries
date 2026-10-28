@@ -1,3 +1,6 @@
+## wip4 revision 6: DP routing candidate — 2026-10-27
+
+Owner report: dock HDMI and Ethernet not working on wip3; HDMI worked after moving the dock to another port. Journals show `apple-dcp 28cc00000` timing out the DPTX validate call (-110 x6, "Type-C DPTX reconnect failed after 5 retries") on every failing boot, each time on the first plug within ~4 s of resuming from s2idle; the same dock then worked on `289c00000`. wip2 used `28cc00000` successfully; wip3 never did. Ethernet (RTL8153, `r8152`) enumerated but had no carrier this boot (it had carrier on the previous wip3 boot with the identical missing-`rtl8153b-2.fw` message), so that looks physical/cable, not kernel. Candidate: wip4 revision 6 = wip3 source + #157 + local 0002 + upstream #186 (0003-0005; #163 excluded as conflicting duplicate). Full-tree `candidate.py prepare`/`check` and 83 aurora tests pass; kernel build, KUnit and boot are NOT done. Nothing installed, staged, armed or rebooted. `thunderbolt_apple.s2idle_teardown/resume_recovery/router_sleep` remain at the default N (upstream did not test them with a real dock).
 ## Rapid prompt cache and ANE references — 2026-10-27
 
 On Qwen3.8 distill, 80k vs 20k Rapid HTTP budget A/B gave a 1.74% median reduction (three pairs; one slower). At 20k, three 586-token cold/repeat requests showed 50.93% median shorter repeat time, 571 tokens cached and identical paired outputs; this is a repeat-prompt cache result, not general decode. maderix/ANE and fork solatticus/ANE add macOS/iOS ANE training references, not the missing Linux converter. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
@@ -2681,6 +2684,21 @@ receipt predates this change; it does not validate speaker protection. Next:
 fix the repart/signature failure and fail-closed recipe, rebuild, inspect both
 payloads, then install and boot that exact image in an isolated VM. Physical
 Apple boot and speaker acceptance remain open.
+## Dock monitor dark on wip3: dcpext1 DPTX stall, wip4 draft patch — 2026-10-22 (Claude Code)
+
+Owner plugged the WD22TB4 on the running wip3 trial kernel; no picture. Dock USB/Thunderbolt fine; `28cc00000` (dcpext1) never
+answered `validate DPTX target` (six attempts), its release then timed out too, and replugging the same port failed again
+(`DP tunnel setup failed: -110`). Moving the dock to another USB-C port routed it to `289c00000` and gave 1080p/60 at once.
+Full timeline, what is and is not shown: `mseries/aurora/hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md`.
+
+- **Cause (partly shown).** The pinned source keeps a Thunderbolt route owned when its release is refused; a timeout is
+  treated as a refusal, so the port stays on the dead pipeline. Why `28cc00000` was picked first and why it went silent: not shown.
+- **Draft.** wip4 candidate (`unified72/series.json` revision 5, `patches/0002-...`). Build-only: patch applies on the pinned
+  files, routing logic exercised in userspace; kernel build, KUnit and every boot are open. wip3 untouched, nothing staged.
+- **Workaround on wip3.** Use a different USB-C port; reboot clears a pinned port.
+- **Side note.** Audio blips on dock plug/unplug coincide with `mseries-power` re-applying the CPU profile on each AC flip; one logged
+  ALSA underrun at the first plug. Not investigated further.
+- **Next.** CI native build of the PR, then owner decides on unarmed staging; design the same-plug re-request on the Thunderbolt side.
 
 ## Orchard: Machine Lab and Orchard for Incus merged into one app — 2026-10-21 (Claude Code)
 

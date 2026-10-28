@@ -224,20 +224,35 @@ class QualificationTests(unittest.TestCase):
         self.assertRegex(data["source"]["sha256"], r"^[a-f0-9]{64}$")
         self.assertTrue(data["kernel_release"]["unified72"].startswith("7.2.11-"))
         lane = candidate.HERE / "unified72"
-        # wip3 carries exactly the reviewed #157 display patch on the #158 source.
+        # wip4 carries the reviewed #157 display patch, one local DPTX-stall patch, and the
+        # three commits of upstream PR #186 (route DP-alt ports only once their sink asserts HPD).
         self.assertEqual([patch["file"] for patch in data["patches"]],
-                         ["0001-drm-apple-srgb-external-display-colour.patch"])
+                         ["0001-drm-apple-srgb-external-display-colour.patch",
+                          "0002-drm-apple-free-dp-tunnel-route-from-silent-dcpext.patch",
+                          "0003-drm-apple-dcp-let-a-typec-port-with-hpd-take-over-a-held-pipeline.patch",
+                          "0004-drm-apple-dcp-route-a-dp-alt-port-only-once-its-sink-asserts-hpd.patch",
+                          "0005-usb-typec-tipd-treat-enospc-as-a-taken-display-on-every-soc.patch"])
+        # #163 fixes the same tipd bug as 0005 and conflicts with it; it must not be carried as well.
+        self.assertFalse(any(patch["upstream"] and patch["upstream"].endswith("/pull/163")
+                             for patch in data["patches"]))
+        self.assertEqual({patch["upstream"] for patch in data["patches"][2:]},
+                         {"https://github.com/omacom/linux-aurora/pull/186"})
+        self.assertEqual(data["patches"][4]["head"], "2a37f6f206456462970b3bbb3bf9bf8bd8944acd")
+        for entry in data["patches"]:
+            self.assertEqual(entry["profile"], "candidate")
+            self.assertEqual(candidate.sha256(lane / "patches" / entry["file"]), entry["sha256"])
         patch = data["patches"][0]
-        self.assertEqual(patch["profile"], "candidate")
-        self.assertEqual(candidate.sha256(lane / "patches" / patch["file"]), patch["sha256"])
+        self.assertIsNone(data["patches"][1]["upstream"])
         self.assertEqual(data["superseded_patches"][0]["head"],
                          "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7")
         retired = data["superseded_patches"][0]
         self.assertEqual(candidate.sha256(lane / "patches" / retired["file"]),
                          retired["sha256"])
         self.assertEqual(data["kernel_release"]["unified72"],
-                         "7.2.11-elementary-aurora72-wip3")
-        self.assertEqual(data["debian_package"], "linux-image-elementary-aurora72-wip3")
+                         "7.2.11-elementary-aurora72-wip4")
+        self.assertEqual(data["debian_package"], "linux-image-elementary-aurora72-wip4")
+        # The installed wip3 and wip2 packages must stay distinct from this one.
+        self.assertNotEqual(data["debian_package"], "linux-image-elementary-aurora72-wip3")
         self.assertNotEqual(data["debian_package"], "linux-image-elementary-aurora72-wip2")
         receipt = json.loads((lane / data["review_receipt"]).read_text())
         self.assertEqual(receipt["source"], data["source"]["commit"])
@@ -245,6 +260,8 @@ class QualificationTests(unittest.TestCase):
         self.assertEqual(receipt["archive_verification"]["archive_root"],
                          data["source"]["archive_root"])
         self.assertEqual(receipt["patches"][0]["head"], patch["head"])
+        self.assertEqual([entry["file"] for entry in receipt["patches"]],
+                         [entry["file"] for entry in data["patches"]])
         self.assertIn("not_rerun", receipt)
         self.assertEqual(candidate.settings(data, "unified72")["DRM_AMDGPU"], "n")
 

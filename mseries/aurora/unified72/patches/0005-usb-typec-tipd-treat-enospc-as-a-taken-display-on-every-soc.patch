@@ -1,0 +1,57 @@
+From 2a37f6f206456462970b3bbb3bf9bf8bd8944acd Mon Sep 17 00:00:00 2001
+From: Andreas Fernandez <andreas.fernandez@hotmail.com>
+Date: Fri, 23 Oct 2026 11:10:03 +0200
+Subject: [PATCH 3/3] usb: typec: tipd: treat -ENOSPC as a taken display on
+ every SoC
+
+The DCP fabric now reports a port without a pipeline as -ENOSPC on every
+SoC, but cd321x_display_taken() only accepts it on H17 and expects -EBUSY
+elsewhere.  On an M1 Pro, a dock in DP alt mode with both pipelines
+driving other displays gets "failed to configure Type-C connection: -28"
+three times, the cable revalidation fails and the USB role is never set,
+so everything behind the dock is gone.
+
+Accept -ENOSPC as a taken display everywhere and keep -EBUSY as one
+outside H17 for older fabrics.
+
+Signed-off-by: Andreas Fernandez <andreas.fernandez@hotmail.com>
+---
+ drivers/usb/typec/tipd/cd321x-pm-test.c | 2 +-
+ drivers/usb/typec/tipd/cd321x-pm.h      | 8 +++++---
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/usb/typec/tipd/cd321x-pm-test.c b/drivers/usb/typec/tipd/cd321x-pm-test.c
+index aef346d7bb4d8b..51d6d86f39e58a 100644
+--- a/drivers/usb/typec/tipd/cd321x-pm-test.c
++++ b/drivers/usb/typec/tipd/cd321x-pm-test.c
+@@ -713,7 +713,7 @@ static void cd321x_display_taken_test(struct kunit *test)
+ 	KUNIT_EXPECT_FALSE(test, cd321x_display_taken(0, true));
+ 	/* Other SoCs keep -EBUSY as the taken display. */
+ 	KUNIT_EXPECT_TRUE(test, cd321x_display_taken(-EBUSY, false));
+-	KUNIT_EXPECT_FALSE(test, cd321x_display_taken(-ENOSPC, false));
++	KUNIT_EXPECT_TRUE(test, cd321x_display_taken(-ENOSPC, false));
+ 	KUNIT_EXPECT_FALSE(test, cd321x_display_taken(-EAGAIN, false));
+ 	KUNIT_EXPECT_FALSE(test, cd321x_display_taken(0, false));
+ }
+diff --git a/drivers/usb/typec/tipd/cd321x-pm.h b/drivers/usb/typec/tipd/cd321x-pm.h
+index 8260e559b0c87f..b3f1bc8fad8567 100644
+--- a/drivers/usb/typec/tipd/cd321x-pm.h
++++ b/drivers/usb/typec/tipd/cd321x-pm.h
+@@ -355,12 +355,14 @@ static inline void cd321x_pm_remove(struct cd321x_pm_state *pm)
+ /*
+  * A display mux reports -ENOSPC when every display pipeline is driving
+  * another port.  That lasts until the other display goes away, so the port's
+- * USB path is set up without the display and nothing is retried.  Any other
+- * error, such as -EBUSY from a PHY in the middle of a transition, is retried.
++ * USB path is set up without the display and nothing is retried.  The DCP
++ * fabric reports it as -ENOSPC on every SoC now; older trees used -EBUSY
++ * outside H17, which is still accepted there.  Any other error, such as
++ * -EBUSY from an H17 PHY in the middle of a transition, is retried.
+  */
+ static inline bool cd321x_display_taken(int ret, bool enospc)
+ {
+-	return ret == (enospc ? -ENOSPC : -EBUSY);
++	return ret == -ENOSPC || (!enospc && ret == -EBUSY);
+ }
+ 
+ enum cd321x_dp_send {

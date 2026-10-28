@@ -1,0 +1,59 @@
+From bd1ad7b9b2795b7d3b3c7e616a54b78f9c92c6e0 Mon Sep 17 00:00:00 2001
+From: Andreas Fernandez <andreas.fernandez@hotmail.com>
+Date: Fri, 23 Oct 2026 11:10:03 +0200
+Subject: [PATCH 2/3] drm/apple: dcp: route a DP-alt port only once its sink
+ asserts HPD
+
+Outside compositor pairing order, a direct DP-alt port takes the lowest
+free pipeline as soon as it enters DP mode, whether or not a display is
+behind it.  A USB-C dock without a display does exactly that, and on an
+M1 Pro with two pipelines it leaves one display dark when it is plugged
+in before them.  The previous patch can take the pipeline back, but a
+hand-over 6 ms after the dock's route was set left the firmware's DPTX
+service on that DCP answering -110 until reboot.
+
+Leave a port that owns no pipeline and has no HPD unrouted, and route it
+when the port controller reports HPD as a new status.  A port that
+already owns a pipeline keeps it across an HPD drop, as before, and the
+compositor-ordered path is unchanged.
+
+Signed-off-by: Andreas Fernandez <andreas.fernandez@hotmail.com>
+---
+ drivers/gpu/drm/apple/dcp-fabric.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/drm/apple/dcp-fabric.c b/drivers/gpu/drm/apple/dcp-fabric.c
+index afdeaa974fe165..41f8fdacebf3bb 100644
+--- a/drivers/gpu/drm/apple/dcp-fabric.c
++++ b/drivers/gpu/drm/apple/dcp-fabric.c
+@@ -1557,14 +1557,27 @@ static int dcp_typec_route_set(struct typec_mux_dev *mux,
+ 	}
+ 
+ 	if (!port->owner) {
++		/*
++		 * Nothing behind the port asserts HPD yet, a dock without a
++		 * display for one: leave the pipelines to ports with a display.
++		 * The port controller reports HPD as a new status when a sink
++		 * appears, and the port is routed then.  A port that already
++		 * owns a pipeline keeps it across an HPD drop, as before.
++		 */
++		if (!hpd) {
++			port->hpd = false;
++			port->applied_valid = true;
++			return 0;
++		}
++
+ 		best = dcp_typec_free_route(port);
+-		if (!best && hpd)
++		if (!best)
+ 			best = dcp_typec_take_over_without_hpd(port);
+ 		if (IS_ERR(best))
+ 			return PTR_ERR(best);
+ 		/* Every pipeline is driving another port's display. */
+ 		if (!best)
+-			return hpd ? dcp_typec_port_busy(port, route->dcp) : -ENOSPC;
++			return dcp_typec_port_busy(port, route->dcp);
+ 
+ 		ret = dcp_typec_route_activate(best, best->xbar);
+ 		if (ret)
+
