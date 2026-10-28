@@ -127,6 +127,27 @@ release. The speed step is the submit-batching build (`a8b888dd`, referenced in 
 `tensorfold-vulkan.sh build`, then `test`, `gpu`, `contract`; then
 `engine-compare.py`'s `tensorfold` arm for a 1544 row.
 
+### PR 1544 on the M1 Pro (G13S), owner-run 2026-10-28
+
+`tensorfold-vulkan.sh` at `92bb49db5c31`, Honeykrisp `9323171c12`, kernel
+`7.2.11-elementary-aurora72-wip4`. First device run of this engine's kernel contract on G13S
+(upstream covered M1, M1 Max and M2 Max). Every line below is the runner's own summary.
+
+| Check | Result on M1 Pro |
+| --- | --- |
+| Host tests | PASS: 111/111 build steps, 273/278 tests, 5 skipped (device- or checkpoint-gated). The "Spec … expected 2048, found 2049" and "failed command:" lines are passing negative tests; Zig 0.17 prints their stderr under a red header. |
+| GPU stage gates 1-5 | PASS: 13/13, 9/9, 4/4, 6/6, 7/7 |
+| Contract QMM | 1 kernel passes gates 1-4; 6 of 6 planted controls caught; 0 limit failures |
+| Contract GDN | 8 kernels pass gates 1-4; 6 of 6 controls caught; 0 limit failures |
+| Contract datamove | 7 of 7 kernels pass |
+| Contract attention | 15 of 15, including decode and prefill at the full 7,168-token context |
+| Contract greedy | 1 kernel passes; 1 control red as planted |
+| Contract pointwise | 16 pass, 1 KNOWN: Honeykrisp reports `preserve32=false` and flushes fp32 denormals, so one bf16 subnormal sum reads as zero (the same finding upstream records on all three chips) |
+
+Device limits match upstream's: subgroup 32, 1024 invocations, 32 KiB shared memory, storage
+range 2147483647, offset alignment 16. So G13S behaves like the chips upstream tested. Speed is
+still the unbatched engine; an `engine-compare.py` tensorfold row on 1544 is optional.
+
 ## Compiler completion and `metal::exp` test
 
 The pinned clspv build subsequently completed on the M1 Pro. Source:
