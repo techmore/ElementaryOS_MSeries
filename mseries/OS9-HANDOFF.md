@@ -13607,3 +13607,10 @@ contract for all six kernel groups, and a rebase onto TensorFold main. No speed 
 batching build is still unpublished. `tensorfold-vulkan.sh` now pins 1544 and its `contract`
 mode runs all six groups from one tree; we carry no TensorFold patches. Owner runs the build.
 Receipt: `local-ai/receipts/2026-10-27-tensorfold-vulkan.md`.
+
+First token, round 4 (2026-10-28): on Honeykrisp omarchy's quantized matmul for 2+ rows costs a
+flat ~0.7 ms per call (one row ~0.1 ms), so every multi-token prompt pass paid ~140 ms on the 4B.
+A fourth server patch (`serve_small_rows.py`) sends 2-6 row passes through omarchy's batched
+one-row kernel (bit-identical rows). First token: Qwen 4B 0.51 -> 0.39 s, 2B 0.25 -> 0.20 s,
+identical text; Rapid-MLX 0.18 s. Off with `MSERIES_SERVE_SMALL_ROWS=0`. Receipt:
+`local-ai/receipts/2026-10-28-serve-patch.md`.

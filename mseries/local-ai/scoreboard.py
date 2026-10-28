@@ -18,7 +18,7 @@ ARM_SETTINGS = {
     'serve-120k': ('mlx-omarchy-serve, mlx-lm backend, stock (HTTP server)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'serve-nolp-120k': ('mlx-omarchy-serve + skip-logprob-read patch only (HTTP server)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'serve-single-120k': ('experiment: serve-nolp-120k + Rapid-MLX singleton module loaded from its checkout', 'MLX_OMARCHY_BATCH_WORK=120000', None),
-    'serve-patched-120k': ('mlx-omarchy-serve + our three server patches + batching of 4 (HTTP server; runs the everyday model)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
+    'serve-patched-120k': ('mlx-omarchy-serve + our four server patches + batching of 4 (HTTP server; runs the everyday model)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'tensorfold': ('TensorFold Vulkan (HTTP server)', 'serve --backend vulkan --context 1024 --no-thinking', None),
 }
 # Receipts record the TensorFold revision they ran; name the PR it came from.
