@@ -227,6 +227,9 @@ def main():
     if not arms or any(x not in ARMS for x in arms):
         p.error(f'--arms must be a subset of {",".join(ARMS)}')
     prompt_text, max_tokens = (LONG_PROMPT, 256) if a.long else (PROMPT, a.max_tokens)
+    global DEADLINE_S
+    if a.long:
+        DEADLINE_S = 600  # TensorFold's unbatched decode needs ~100 s per 256-token request
     with (MODEL / 'model.safetensors').open('rb') as f:
         if hashlib.file_digest(f, 'sha256').hexdigest() != WEIGHTS_SHA:
             raise SystemExit('Qwen weights do not match the pinned checkpoint')
