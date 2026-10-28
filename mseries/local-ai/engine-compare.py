@@ -19,11 +19,23 @@ from pathlib import Path
 from machine import GIB, snapshot, violations
 
 HOME = Path.home()
-MODEL = HOME / '.cache/mseries-metal2vk/qwen35-2b'
-WEIGHTS_SHA = '713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5'
-MODEL_ID = 'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3'
+# name: (dir, weights sha256, id@revision, admission GiB, MLX python, arms it can run)
+MODELS = {
+    'qwen2b': (HOME / '.cache/mseries-metal2vk/qwen35-2b',
+               '713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5',
+               'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3', 4.5,
+               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'tensorfold')),
+    'qwen4b': (HOME / '.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3',
+               '5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db',
+               'mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3', 6.5,
+               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k')),
+    'lfm3': (HOME / '.cache/mseries-metal2vk/lfm3-8bit',
+             '2b06cea98d75527c248a0b04383f7cf0a1c72fb4ed7b45096618fc4e59d015ad',
+             'LiquidAI/LFM3-1.7B-MLX-8bit@ee7667f3cfccb2a41725f91820531823fcabc6b7', 4.5,
+             HOME / '.local/share/mseries-ai/lfm3-audio-venv/bin/python', ('mlx-5k', 'mlx-120k')),
+}
+MODEL, WEIGHTS_SHA, MODEL_ID, ALLOWANCE_GIB, MLX_PY, MODEL_ARMS = MODELS['qwen2b']
 ICD = HOME / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json'
-MLX_PY = HOME / '.local/share/mlx-omarchy/venv/bin/python'
 RAPID_PATH = f"{HOME}/.cache/mseries-metal2vk/rapid-python:{HOME}/.cache/mseries-metal2vk/rapid-src"
 RAPID_REV = '1d09cdb684bbf58fac130f5804b08ee2e1f56558'
 TF_BIN = HOME / '.cache/mseries-tensorfold/src/zig-out/native/bin/tensorfold-native-vulkan'
@@ -33,8 +45,13 @@ LONG_PROMPT = ('Explain in detail how a rainbow forms, including refraction, ref
                'and viewing angle. Write at least 350 words.')
 ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'tensorfold')
 POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
-ALLOWANCE_GIB = 4.5
 DEADLINE_S = 300
+MODEL_NAME = 'qwen2b'
+
+
+def select_model(name):
+    global MODEL, WEIGHTS_SHA, MODEL_ID, ALLOWANCE_GIB, MLX_PY, MODEL_ARMS
+    MODEL, WEIGHTS_SHA, MODEL_ID, ALLOWANCE_GIB, MLX_PY, MODEL_ARMS = MODELS[name]
 
 
 def mlx_worker(prompt_text, max_tokens, output):
@@ -121,7 +138,7 @@ def run_arm(arm, prompt_text, max_tokens, tmp):
     log = tempfile.TemporaryFile(mode='w+t', dir=tmp)
     if arm.startswith('mlx'):
         out = Path(tmp) / f'{arm}.json'
-        cmd = [str(MLX_PY), __file__, '--worker', '--max-tokens', str(max_tokens),
+        cmd = [str(MLX_PY), __file__, '--worker', '--model', MODEL_NAME, '--max-tokens', str(max_tokens),
                '--prompt', prompt_text, '--worker-output', str(out)]
     else:
         with socket.socket() as s:
@@ -214,6 +231,7 @@ def main():
     p.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     p.add_argument('--worker-output', type=Path, help=argparse.SUPPRESS)
     p.add_argument('--prompt', help=argparse.SUPPRESS)
+    p.add_argument('--model', choices=list(MODELS), default='qwen2b')
     p.add_argument('--max-tokens', type=int, default=32)
     p.add_argument('--long', action='store_true', help='256 tokens from the long-form prompt')
     p.add_argument('--rounds', type=int, default=3)
@@ -221,11 +239,14 @@ def main():
     p.add_argument('--admission-wait-seconds', type=int, default=0)
     p.add_argument('--output', type=Path)
     a = p.parse_args()
+    global MODEL_NAME
+    MODEL_NAME = a.model
+    select_model(a.model)
     if a.worker:
         return mlx_worker(a.prompt, a.max_tokens, a.worker_output)
-    arms = [x for x in a.arms.split(',') if x]
-    if not arms or any(x not in ARMS for x in arms):
-        p.error(f'--arms must be a subset of {",".join(ARMS)}')
+    arms = [x for x in a.arms.split(',') if x and x in MODEL_ARMS]
+    if not arms:
+        p.error(f'no runnable arms for {a.model}; it supports {",".join(MODEL_ARMS)}')
     prompt_text, max_tokens = (LONG_PROMPT, 256) if a.long else (PROMPT, a.max_tokens)
     global DEADLINE_S
     if a.long:
@@ -236,10 +257,10 @@ def main():
     if 'tensorfold' in arms and not TF_BIN.exists():
         raise SystemExit('TensorFold server missing: run tensorfold-vulkan.sh build')
     out = a.output or Path(__file__).resolve().parent / 'receipts' / (
-        f"{time.strftime('%Y-%m-%d')}-engine-compare-{'long' if a.long else 'short'}.json")
+        f"{time.strftime('%Y-%m-%d')}-engine-compare-{a.model}-{'long' if a.long else 'short'}.json")
     lock = (HOME / '.local/state/mseries-ai/worker.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    report = {'status': 'running', 'model': MODEL_ID, 'weights_sha256': WEIGHTS_SHA, 'kernel': os.uname().release,
+    report = {'status': 'running', 'model_key': a.model, 'model': MODEL_ID, 'weights_sha256': WEIGHTS_SHA, 'kernel': os.uname().release, 'driver': 'Honeykrisp Mesa ' + (ICD.parent / 'mesa-git-sha').read_text().strip(),
               'tensorfold_rev': TF_REV, 'rapid_rev': RAPID_REV, 'prompt_sha256': hashlib.sha256(prompt_text.encode()).hexdigest(),
               'max_tokens': max_tokens, 'policy': {**POLICY, 'max_fan_rpm': None}, 'allowance_gib': ALLOWANCE_GIB,
               'arms': arms, 'runs': []}
