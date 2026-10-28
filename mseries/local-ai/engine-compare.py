@@ -105,7 +105,9 @@ def mlx_worker(prompt_text, max_tokens, output):
 
 def served_model(port):
     with urllib.request.urlopen(f'http://127.0.0.1:{port}/v1/models', timeout=10) as r:
-        return json.load(r)['data'][0]['id']
+        ids = [m['id'] for m in json.load(r)['data']]
+    # A server that lists several models (oMLX scans folders) must serve the one under test.
+    return next((i for i in ids if i == MODEL.name or i.endswith('/' + MODEL.name)), ids[0])
 
 
 def stream_chat(port, prompt_text, max_tokens, model):
@@ -170,7 +172,8 @@ def server_command(arm, port, tmp):
         # settings and SSD cache in the run's temp folder.
         models = Path(tmp) / 'omlx-models'
         models.mkdir(exist_ok=True)
-        (models / MODEL.name).symlink_to(MODEL)
+        if not (models / MODEL.name).is_symlink():  # each rotation of the arm reuses the folder
+            (models / MODEL.name).symlink_to(MODEL)
         return [str(OMLX_BIN), 'serve', '--model-dir', str(models), '--host', '127.0.0.1', '--port', str(port),
                 '--paged-ssd-cache-dir', str(Path(tmp) / 'omlx-cache')]
     if arm.startswith('serve-'):
@@ -208,7 +211,9 @@ def env_for(arm, tmp):
     if arm == 'serve-patched-120k':
         env.update(MSERIES_SERVE_CONCURRENCY=SERVE_CONCURRENCY, MSERIES_SERVE_KV_BYTES_PER_TOKEN=str(kv_bytes_per_token(MODEL)))
     if arm == 'omlx-120k':
-        env.update(HOME=f'{tmp}/omlx-home', HF_HUB_CACHE=str(HOME / '.cache/huggingface/hub'))
+        # An empty hub cache: oMLX also serves every model it finds there, which put Qwen 4B next to the
+        # 2B under test on 2026-10-28.
+        env.update(HOME=f'{tmp}/omlx-home', HF_HUB_CACHE=f'{tmp}/omlx-hf', HF_HUB_OFFLINE='1')
     if arm == 'rapid-120k':
         env.update(PYTHONPATH=RAPID_PATH, RAPID_MLX_TELEMETRY='0', DO_NOT_TRACK='1',
                    RAPID_MLX_PREFIX_CACHE_AUTOLOAD='0', XDG_CONFIG_HOME=f'{tmp}/config',
