@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Guarded, alternating Qwen 2B Vulkan submission-budget experiment."""
+"""Guarded, alternating Qwen Vulkan submission-budget experiment."""
 import argparse
 import ctypes
 import fcntl
@@ -74,6 +74,7 @@ def worker(model, output, long_run):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=Path, required=True)
+    parser.add_argument('--checkpoint', choices=['qwen2b', 'qwen4b'], default='qwen2b')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--candidate', type=int, choices=[10000, 20000, 40000, 80000, 120000], default=10000)
     parser.add_argument('--worker', action='store_true')
@@ -87,20 +88,27 @@ def main():
     if args.worker:
         worker(args.model, args.output, args.long_run)
         return
+    checkpoints = {
+        'qwen2b': ('713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5', 4.5,
+                   'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3'),
+        'qwen4b': ('5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db', 6.5,
+                   'mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3'),
+    }
+    expected_digest, allowance_gib, model_id = checkpoints[args.checkpoint]
     weights = args.model / 'model.safetensors'
     if not weights.is_file():
-        raise SystemExit('Expected pinned Qwen 2B weights are missing')
+        raise SystemExit('Expected pinned Qwen weights are missing')
     with weights.open('rb') as handle:
         digest = hashlib.file_digest(handle, 'sha256').hexdigest()
-    if digest != '713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5':
-        raise SystemExit('Qwen 2B weights do not match the pinned checkpoint')
+    if digest != expected_digest:
+        raise SystemExit('Qwen weights do not match the selected pinned checkpoint')
     home = Path.home()
     lock = (home / '.local/state/mseries-ai/worker.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     policy = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
     rows = []
     report = {'status': 'running', 'prompt_sha256': hashlib.sha256((LONG_PROMPT if args.long_run else PROMPT).encode()).hexdigest(),
-              'model': 'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3',
+              'model': model_id, 'weights_sha256': digest, 'admission_gib': allowance_gib,
               'sequence': [5000, args.candidate, args.candidate, 5000, 5000, args.candidate],
               'max_tokens': 256 if args.long_run else 32, 'wave_ab': args.wave_ab, 'runs': rows}
     if args.wave_ab:
@@ -112,7 +120,7 @@ def main():
                 deadline = time.monotonic() + args.admission_wait_seconds
                 while True:
                     initial = snapshot()
-                    reasons = violations(initial, policy, extra_bytes=int(4.5 * GIB))
+                    reasons = violations(initial, policy, extra_bytes=int(allowance_gib * GIB))
                     if not reasons:
                         break
                     if time.monotonic() >= deadline:

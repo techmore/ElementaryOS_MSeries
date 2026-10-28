@@ -1,3 +1,7 @@
+## Qwen 4B batching qualification — 2026-10-27
+
+Memory rose naturally; guarded Qwen 4B smoke passed at 12.69 GiB admission. Three matched 20k vs 5k 32-token pairs gave median 12.86% lower request time, 19.46 → 23.29 reported tokens/s, 823 → 249 submissions and identical outputs. One candidate GTK callback gap was 50.49 ms; sustained presentation/input and numerical fidelity remain open. No default changed. ANE still needs compiled assets and converter ABI resolution. [4B receipt](local-ai/receipts/2026-10-27-qwen4b-20k.md).
+
 ## Qwen ANE preflight — 2026-10-27
 
 Inspected current public ane-linux-experiments and omarchy-ane: Qwen staged decoder needs 38 compiled ANE programs, a guarded manifest and matched model assets not found locally. Upstream reports 8.38 GB peak RSS; available desktop memory was about 10.26 GiB, insufficient alongside the 6 GiB reserve. Host-only Qwen contract/reference suite passed 18 tests; five converter header-geometry tests failed because source uses 512-byte units while tests expect 16-KiB units, with ABI correctness unresolved. No ANE model or comparison ran; no driver/system changes. [Preflight](local-ai/receipts/2026-10-27-ane-qwen-preflight.md).
