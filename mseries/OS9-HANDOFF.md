@@ -13359,6 +13359,10 @@ ungrabbing, and a same-client regrab-then-release left the key held. Not verifie
 installed session (needs a compositor reload, i.e. the next login). Separate, unaddressed: `gsd-media-keys` logs
 `Unable to get default sink` when pressed before PipeWire's default sink exists.
 
+## Qwen ANE binding audit — 2026-10-27
+
+Offline audit identifies six incorrectly packed 128-byte surfaces, 18 surfaces not named in decoded selectors and 20 extended `0x300` descriptors requiring T6000 validation. No Qwen ANE execution or speed comparison yet; available memory remains below the admission estimate. The reproducible audit and next steps are in `local-ai/receipts/2026-10-27-ane-binding-handoff.md`.
+
 ## Qwen ANE conversion — 2026-10-27
 
 The Mac mini built and converted all 38 H13 Qwen programs; transfer hashes match and the converter and group-state fixes pass 70 targeted tests. Execution remains gated on memory reserve, descriptor safety, and surface binding validation; no Linux ANE timing or fidelity result is claimed. Details and reference hashes: `local-ai/receipts/2026-10-27-ane-qwen-conversion.md`.

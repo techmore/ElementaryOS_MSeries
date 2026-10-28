@@ -5554,6 +5554,10 @@ Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
 only owned synthetic peers. No application behavior or VM acceptance change.
 See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
 
+### Qwen ANE binding audit — 2026-10-27
+
+Offline analysis found six surface-packing mismatches and unverified T6000 descriptor sizes; the full model run and matched MLX/Rapid-MLX comparison remain outstanding. See `local-ai/receipts/2026-10-27-ane-binding-handoff.md`.
+
 ### Qwen ANE conversion — 2026-10-27
 
 38 H13 programs converted and hash-verified; Linux ANE submission and comparison remain gated on safe descriptor and surface bindings and sufficient desktop memory. See `local-ai/receipts/2026-10-27-ane-qwen-conversion.md`.
