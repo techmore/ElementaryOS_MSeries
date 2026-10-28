@@ -784,15 +784,38 @@ HOOK
 # Model gate. Stock Asahi Alarm does not boot M4-family Macs; they need the
 # Aurora kernel (linux-aurora, from aurora-silicon/linux). Say so, and make the
 # user opt in, rather than letting a build run on a machine nobody has tested.
-apple_model() {
-  tr '\0' '\n' </proc/device-tree/compatible 2>/dev/null | grep -m1 '^apple,j' || true
+# Device-tree matching after omarchy's omarchy-hw-match-device-tree (MIT,
+# omacom/omarchy): each NUL-separated compatible entry is compared whole, case
+# folded, never as a pattern. ELEMENTARY_DT_COMPATIBLE points tests at a fixture.
+DT_COMPATIBLE=${ELEMENTARY_DT_COMPATIBLE:-/proc/device-tree/compatible}
+
+dt_match() {
+  local entry wanted
+  [[ -r $DT_COMPATIBLE ]] || return 1
+  while IFS= read -r -d '' entry; do
+    entry=$(printf '%s' "$entry" | tr '[:upper:]' '[:lower:]')
+    for wanted in "$@"; do
+      [[ $entry == "$(printf '%s' "$wanted" | tr '[:upper:]' '[:lower:]')" ]] && return 0
+    done
+  done <"$DT_COMPATIBLE"
+  return 1
 }
 
+apple_model() {
+  local entry
+  [[ -r $DT_COMPATIBLE ]] || return 0
+  while IFS= read -r -d '' entry; do
+    if [[ $entry == apple,j* ]]; then
+      printf '%s\n' "$entry"
+      return 0
+    fi
+  done <"$DT_COMPATIBLE"
+}
+
+# M4-family boards and SoCs this installer treats as experimental.
 is_m4_family() {
-  case $(apple_model) in
-    apple,j773* | apple,j713*) return 0 ;;
-  esac
-  grep -Faq -e 't8132' -e 't6040' -e 't6041' /proc/device-tree/compatible 2>/dev/null
+  dt_match apple,j773g apple,j773s apple,j713 apple,j715 apple,j604 apple,j623 apple,j624 \
+    apple,t8132 apple,t6040 apple,t6041
 }
 
 check_model_gate() {
