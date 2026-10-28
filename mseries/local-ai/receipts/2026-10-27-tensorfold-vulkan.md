@@ -45,8 +45,9 @@ model run.
 * omarchy-cluster PR 39: Honeykrisp reports one heap of 50% of RAM by default;
   allocations past it fail with `VK_ERROR_OUT_OF_DEVICE_MEMORY` even when RAM is
   free, and the kernel never refuses. `HK_SYSMEM=<bytes>` raises it. On our
-  16 GiB M1 Pro this likely caps any Vulkan model near 8 GiB regardless of our
-  admission guard. The script leaves `HK_SYSMEM` unset to keep the desktop
+  32 GB M1 Pro the default heap would be about 15 GiB. That is above every current
+  admission allowance, so it is not the cause of the 4B refusals, which come from
+  our own guard. The script leaves `HK_SYSMEM` unset to keep the desktop
   reserve.
 * omarchy-mlx PRs 288/289: a storage-buffer-range test skip and a full-logit
   quantized matmul split by output columns. These are runtime changes for a later
