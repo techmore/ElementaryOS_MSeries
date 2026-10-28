@@ -1,5 +1,54 @@
 # TensorFold Vulkan feasibility — 2026-10-27
 
+## Compiler build status
+
+The metal2vk compiler build is **incomplete**. Cloned clspv at upstream's
+documented `f2b01dd6dce7058585eb4bcdb5326997cfeebfd4`, fetched its pinned
+dependencies, and applied metal2vk `de6faa02c42455963645ac55cbc8191e15b3ac68`
+patches in `~/.cache/mseries-metal2vk/clspv`. CMake configured a Release Ninja
+build with tests, examples and benchmarks disabled. A two-job build was
+restarted at four jobs; it reached 332/3350 remaining tasks before being
+interrupted to reduce fan load. Afterwards, while the compiler was stopped,
+the second fan rose above the project's 3500 RPM hard limit (3673 RPM on the
+last sample). No compiler build or test remains running. The build tree is
+retained for resumption. `metal::exp` is still untested through metal2vk, and
+the compiler was not installed. Root filesystem had 13 GiB free at last
+check; preserve the 5 GiB disk floor and the existing memory/thermal guard.
+
+When the Mac is cool and has capacity, resume with `ninja -C
+~/.cache/mseries-metal2vk/clspv/build -j2 clspv clang opt` under continuous
+guard, then point `CLANG`, `OPT`, `CLSPV` and
+`MLX_OMARCHY_M2V_COMPILE` at the isolated tools and metal2vk checkout. Repeat
+the `metal::exp` fixture with a fresh private AOT directory, require m2v=1 and
+fallbacks=0, and compare to the independent reference. Check tool versions,
+cache paths, and numerical result before claiming success.
+
+
+## LFM3 1.7B 8-bit model smoke
+
+The user-selected [LiquidAI LFM3 1.7B MLX 8-bit](https://huggingface.co/LiquidAI/LFM3-1.7B-MLX-8bit)
+checkpoint at `ee7667f3cfccb2a41725f91820531823fcabc6b7` was downloaded into
+an isolated cache. `model.safetensors` SHA-256:
+`2b06cea98d75527c248a0b04383f7cf0a1c72fb4ed7b45096618fc4e59d015ad`.
+The installed mlx-lm 0.31.3 lacks LFM3. An isolated copy of the single model
+file from [mlx-lm PR 2016](https://github.com/ml-explore/mlx-lm/pull/2016)
+head `9027ac5b062175fba890c612c3905d5d8d5b5294`, SHA-256
+`a4096cddc8f0d3f7923008b2e6afb896dabc9aef963a5ebe7d76d13a6069b0c4`,
+was loaded via Python module injection; no installed package was changed.
+Its unmerged upstream implementation is not qualified against a reference.
+
+With the private ICD and MLX `auto` selected, the worker acquired the shared
+AI lock and passed admission at 11.59 GiB available with 4.5 GiB model
+allowance and 6 GiB desktop reserve. A one-second resource guard used the
+existing 6 GiB, 3500 RPM and 80 C limits. The model loaded in 2.74 s and
+answered `19` to “What is 12 plus 7? Reply with the number only.”, then exited
+successfully after 5.03 s. Its route summary produced no custom-kernel entries:
+this shows a short whole-model Vulkan inference run, **not** metal2vk execution
+within LFM3, correctness qualification, throughput, or an 8-bit/4-bit comparison.
+No network code from the model repository was enabled deliberately; the
+tokenizer displayed a trust-remote-code prompt and continued without approval.
+
+
 ## MLX route follow-up
 
 The shipped AOT entry matches the oMLX probe's `metal::precise::exp` variant;
