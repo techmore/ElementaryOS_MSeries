@@ -193,7 +193,12 @@ def status(data):
         print(line)
         for p in up["patches"]:
             pr = p.get("upstream_pr")
-            tag = f"upstream PR {pr}" if pr else ("not sent upstream yet" if p["kind"] == "ours" else p["kind"])
+            if p.get("drop_when"):
+                tag = f"{p['kind']}, drop when {p['drop_when']}"
+            elif pr:
+                tag = f"upstream PR {pr}"
+            else:
+                tag = "not sent upstream yet" if p["kind"] == "ours" else p["kind"]
             print(f"    {Path(p['file']).name}: {tag}")
 
 

@@ -27,12 +27,15 @@
           "file": "patches/mlx-lm-0.31.3-server-singleton-cache.patch",
           "kind": "vendored",
           "origin": "Rapid-MLX singleton_cache_fastpath.py (Apache-2.0), see serve_singleton_cache.py",
-          "extra_files": ["serve_singleton_cache.py"]
+          "extra_files": [
+            "serve_singleton_cache.py"
+          ]
         },
         {
           "file": "patches/mlx-lm-0.31.3-detokenizer-tokenmap-cache.patch",
           "kind": "ours",
-          "upstream_pr": null
+          "upstream_pr": "not needed",
+          "drop_when": "our mlx-lm pin reaches v0.32.0, where TokenizerWrapper.detokenizer copies one prebuilt detokenizer"
         }
       ]
     },
