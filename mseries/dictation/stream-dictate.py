@@ -352,7 +352,8 @@ class Dictation:
                         log('focused field not verifiable; typing through ydotool for this session')
                     else:
                         self.error = 'InputUnavailable'
-                        log('dictation input refused before microphone capture')
+                        reason = ((getattr(refusal, 'stderr', '') or '').strip().splitlines() or [''])[-1][:120]
+                        log('dictation input refused before microphone capture' + (f': {reason}' if reason else ''))
                         notify('Dictation needs a supported editable text field. Focus the editor and try F5 again.')
                         return
             if self.stop_evt.is_set(): return
