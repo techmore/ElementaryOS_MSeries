@@ -1,24 +1,20 @@
 # Paths whose writable source of truth is techmore/mseries-sdk-apps.
 # One repo-relative path per line; a directory covers everything below it.
 # See mseries/REPO-OWNERSHIP.md. FROZEN.md files are exempt from the guard.
-rust/granite-smoke
 rust/claude-pantheon-rs
 rust/msdk
 rust/msdk-gtk
 rust/mseries-ai
 rust/mseries-apple-dev
 rust/mseries-broker
-rust/mseries-diskspace
 rust/mseries-dock
 rust/mseries-greeter
 rust/mseries-messages
 rust/mseries-pantheon-kit
-rust/mseries-power
 rust/mseries-reply
 rust/mseries-signal-import
 rust/mseries-system-monitor
 rust/mseries-update-core
-rust/mseries-updates
 mseries/sdk-tests
 mseries/sdk-bench
 mseries/sdk-status-host
@@ -26,8 +22,6 @@ mseries/phone-setup
 mseries/battery
 mseries/polybagger-print-manager
 mseries/messages-mcp
-mseries/diskspace-app
-mseries/updates-app
 mseries/fleet-shepherd
 mseries/APP-BUILDING-GUIDE.md
 mseries/DOCK-SDK-SPEC.md

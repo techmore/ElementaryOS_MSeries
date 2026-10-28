@@ -39,7 +39,8 @@ git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-unique-launchers.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-mode-geometry.patch"
 git -C "$source_dir" apply --unidiff-zero "$repo/mseries/patches/dock-launcher-binding-lifecycle.patch"
-# Attach T3's existing local-feed dropdown to its launcher in both Dock layouts.
+# The T3 launcher opens the app window; the unified Wingpanel menu remains available.
+# No extra status-area button is added. Menu sources stay linked for their tests.
 git -C "$source_dir" apply "$repo/mseries/patches/dock-taskbar-t3r-popup.patch"
 python3 - "$source_dir/src/AppSystem/Launcher.vala" <<'PY'
 import pathlib, sys
@@ -56,8 +57,8 @@ for token in ('private Binding current_count_binding;', 'current_count_binding.u
         raise SystemExit(f'Launcher retains the old binding lifecycle: {token}')
 PY
 sha256sum --check --status "$source_dir/.mseries-preserved.sha256"
-# Replace the two taskbar status entries with one native T3 menu. Keep their
-# sources linked for the shared JSON boundary and embedded repository view.
+# Remove the CodexBar and RepoBar status entries; their views now live in the T3 window (Usage,
+# Repositories). Keep their sources linked for the shared JSON boundary and the menu tests.
 python3 - "$source_dir" <<'PYUNIFIED'
 from pathlib import Path
 import sys
@@ -66,7 +67,7 @@ p = root / 'src/Taskbar.vala'
 s = p.read_text()
 old = '        codexbar_group.append (new TaskbarCodexBar ());\n        var repobar = new TaskbarRepoBar () { margin_start = 6 };\n        codexbar_group.append (repobar);'
 assert s.count(old) == 1, 'Unified T3 anchor replacement mismatch'
-p.write_text(s.replace(old, '        codexbar_group.append (new TaskbarT3 ());'))
+p.write_text(s.replace(old, '        // T3 usage and repositories live in the T3 window; no status-area button.\n        codexbar_group.visible = false;'))
 p = root / 'src/meson.build'
 p.write_text(p.read_text().replace("    'TaskbarT3RPopover.vala',", "    'TaskbarT3RPopover.vala',\n    'TaskbarT3.vala',"))
 PYUNIFIED
@@ -76,8 +77,7 @@ import pathlib, sys
 root = pathlib.Path(sys.argv[1])
 for filename, required in {
     'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala', 'TaskbarT3RPopover.vala'],
-    'src/Taskbar.vala': ['new TaskbarT3', 'new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)'],
-    'src/AppSystem/Launcher.vala': ['new TaskbarT3RPopover (this, app)', 't3r_popup.toggle_from_icon ()'],
+    'src/Taskbar.vala': ['new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)'],
     'src/TaskbarT3RPopover.vala': ['"tokenUsage"', '"usedPercent"', '"settings"', 'Timeout.add (250', 'Timeout.add (450'],
     'src/TaskbarAirDrop.vala': ['new MSeries.AirDropPanel'],
     'src/AirDropPanel.vala': ['Receive Files'],
@@ -90,14 +90,17 @@ for filename, required in {
             raise SystemExit(f'Incomplete Windows taskbar source: {filename} lacks {token}')
 PY
 
-python3 - "$source_dir/src/AppSystem/Launcher.vala" <<'PYCODE'
+# Neither the launcher nor the taskbar status area may host the T3 dropdown.
+python3 - "$source_dir" <<'PYONE'
 from pathlib import Path
 import sys
-p = Path(sys.argv[1])
-s = p.read_text()
-assert s.count('new TaskbarT3RPopover (this, app)') == 1
-p.write_text(s.replace('new TaskbarT3RPopover (this, app)', 'new TaskbarT3RPopover (this, ItemManager.get_icon_size () * 7 / 12)'))
-PYCODE
+root = Path(sys.argv[1])
+for f in ('src/AppSystem/Launcher.vala', 'src/Taskbar.vala'):
+    text = (root / f).read_text()
+    for token in ('new TaskbarT3RPopover', 'new TaskbarT3 ('):
+        if token in text:
+            raise SystemExit(f'{f} still attaches the T3 dropdown ({token})')
+PYONE
 
 # Opt-in SDK status page. Default builds retain the existing status experience.
 # The prefix contains include/msdk-usage.h and lib/libmsdk_gtk.so.

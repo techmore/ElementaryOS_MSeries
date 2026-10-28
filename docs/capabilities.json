@@ -1466,17 +1466,14 @@
       "next_step": "Provision the chosen signed repository, then qualify a staged boot/apply/confirm/rollback sequence on an attended target.",
       "source": [
         "mseries/update/mseries-update.py",
-        "rust/mseries-update-core/src",
-        "rust/mseries-updates/src"
+        "rust/mseries-update-core/src"
       ],
       "checks": [
         "mseries/update/test_real_tools.py",
-        "mseries/update/test_mseries_update.py",
-        "mseries/updates-app/test.sh"
+        "mseries/update/test_mseries_update.py"
       ],
       "evidence": [
-        "mseries/UPDATER-DESIGN.md",
-        "mseries/updates-app/README.md"
+        "mseries/UPDATER-DESIGN.md"
       ],
       "priority": "P1",
       "delivery": "Off-by-default source and GUI; real repository/hardware acceptance open"
@@ -1643,14 +1640,11 @@
       "limitation": "Owner-session use, very large/slow/network trees and screen-reader acceptance are open. Btrfs shared extents are not individually reclaimable totals; the default scan excludes other filesystems/subvolumes.",
       "next_step": "Qualify an attended read-only home/system scan and accessibility before any real cleanup workflow.",
       "source": [
-        "rust/mseries-diskspace/src",
-        "mseries/diskspace-app/install.sh"
+        "mseries/OS9-HANDOFF.md"
       ],
-      "checks": [
-        "mseries/diskspace-app/test.sh"
-      ],
+      "checks": [],
       "evidence": [
-        "mseries/diskspace-app/README.md"
+        "mseries/OS9-HANDOFF.md"
       ],
       "priority": "P2",
       "delivery": "Optional source/app installer; not recorded installed on owner session"

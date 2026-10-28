@@ -246,6 +246,11 @@ def stage(payload, manager, engine, *, model_source=None, download=False, mlx_mo
     manager.install_panel(payload, speech_only=speech_only)
     payload.install(HOME / ".config/systemd/user" / engine.INPUT_SERVICE,
                     (SOURCE / engine.INPUT_SERVICE).read_bytes(), 0o644)
+    # Ship unit ordering fixes too (#614): a stale stream unit without
+    # After=graphical-session.target forms a login ordering cycle and systemd
+    # silently drops the F5 service's start job.
+    payload.install(HOME / ".config/systemd/user" / engine.SERVICE,
+                    (SOURCE / engine.SERVICE).read_bytes(), 0o644)
     if not speech_only and (SOURCE / "voice-assistant.py").is_file():
         def quote(value):
             return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"').replace("`", "\\`").replace("$", "\\$") + '"'

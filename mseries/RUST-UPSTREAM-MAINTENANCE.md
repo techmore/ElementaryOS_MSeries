@@ -74,7 +74,7 @@ in to pick it up.
   Worth reporting upstream (owner decides).
 - `granite::prelude::*` together with `gtk::prelude::*` makes `Box::append` ambiguous; import the specific
   Granite traits instead (for example `granite::prelude::PlaceholderExt`).
-- To update: bump versions in `rust/granite-smoke/Cargo.toml`, `cargo update`, then
+- To update (the crate now lives in `techmore/mseries-sdk-apps`, `rust/granite-smoke`): bump versions in its `Cargo.toml`, `cargo update`, then
   `CARGO_TARGET_DIR=<scratch> cargo build -p granite-smoke` and run it under
   `dbus-run-session -- env -u WAYLAND_DISPLAY GDK_BACKEND=x11 GSETTINGS_BACKEND=memory xvfb-run -a <scratch>/debug/granite-smoke`.
   Expect `PASS: Granite widgets built from Rust …`. Match granite-rs `v7_N` to the installed Granite minor version.

@@ -57,7 +57,7 @@ class EngineSelection(unittest.TestCase):
         data = engine.DROPIN.read_text()
         self.assertIn('"STREAM_MODE=toggle"', data)
         self.assertIn('"STREAM_THREADS=4"', data)
-        self.assertIn('"STREAM_UNVERIFIED_FALLBACK=0"', data)
+        self.assertIn('"STREAM_UNVERIFIED_FALLBACK=1"', data)
         self.assertIn('"STREAM_OUTPUT=ibus"', data)
         self.assertEqual(self.calls, [])
         self.assertEqual(self.other.read_text(), "Owner ANE preferences\n")
@@ -233,6 +233,7 @@ class InstallerContracts(unittest.TestCase):
             fake.active.return_value = False
             fake.NEMOTRON = engine.NEMOTRON
             fake.INPUT_SERVICE = engine.INPUT_SERVICE
+            fake.SERVICE = engine.SERVICE
             fake.systemctl.return_value = subprocess.CompletedProcess([], 0)
             panel = Mock()
             payload = manager.Payload(Path(directory) / 'checkpoint')
@@ -243,6 +244,8 @@ class InstallerContracts(unittest.TestCase):
             names = set(Path(name).name for name in payload.data['files'])
             self.assertFalse({'voice-assistant.py', 'dictation_voice.py', 'org.techmore.VoiceAssistant.desktop'} & names)
             self.assertTrue({'stream-dictate.py', 'dictation-panel.py', 'dictation-input.py'} <= names)
+            # The English update path must also ship unit ordering fixes (#614).
+            self.assertIn(engine.SERVICE, names)
 
     def test_speech_only_rejects_non_cpu_and_optional_asset_arguments(self):
         for args in (['--activate', 'mlx'], ['--mlx-model-dir', '/synthetic/assets'], ['--mlx-modules', '/synthetic/modules']):
@@ -271,7 +274,7 @@ class InstallerContracts(unittest.TestCase):
 
 class ActivationHealth(unittest.TestCase):
     def test_ready_before_keyboard_failure_is_not_deployment_success(self):
-        with patch.object(engine, "active", return_value=True), patch.object(engine, "systemctl", side_effect=[subprocess.CompletedProcess([], 0, "123\n"), subprocess.CompletedProcess([], 0, "124\n")]), patch.object(engine, "lifecycle", return_value={"pid": 123, "phase": "ready", "output": "ibus"}), patch.object(engine, "environment", return_value={"STREAM_ENGINE": "nemotron", "STREAM_UNVERIFIED_FALLBACK": "0"}), patch.object(engine, "bridge_ready"), patch.object(engine.time, "sleep"):
+        with patch.object(engine, "active", return_value=True), patch.object(engine, "systemctl", side_effect=[subprocess.CompletedProcess([], 0, "123\n"), subprocess.CompletedProcess([], 0, "124\n")]), patch.object(engine, "lifecycle", return_value={"pid": 123, "phase": "ready", "output": "ibus"}), patch.object(engine, "environment", return_value={"STREAM_ENGINE": "nemotron", "STREAM_UNVERIFIED_FALLBACK": "1"}), patch.object(engine, "bridge_ready"), patch.object(engine.time, "sleep"):
             with self.assertRaisesRegex(ValueError, "opening its keyboard"):
                 engine.wait_ready("nemotron")
 

@@ -22,7 +22,7 @@ DEFAULT_MODEL = ('nemotron-speech-streaming-en-0.6b-Q8_0.gguf'
 MODEL = os.environ.get('STREAM_MODEL', str(Path.home()/'.local/share/mseries/stream/models'/DEFAULT_MODEL))
 UNVERIFIED_FALLBACK = os.environ.get("STREAM_UNVERIFIED_FALLBACK", "0") == "1"  # ydotool when the focused app exposes no accessible field
 TOGGLE = os.environ.get("STREAM_MODE", "hold") == "toggle"  # toggle: press F5 once to start, again to finish
-ENGINE = os.environ.get("STREAM_ENGINE", "nemotron")  # ane/mlx: optional resident Parakeet rolling pipelines
+ENGINE = os.environ.get("STREAM_ENGINE", "nemotron")  # ane/mlx: resident Parakeet rolling pipelines; lfm3: shared assistd model
 SOURCE = os.environ.get("STREAM_SOURCE", "direct")  # "direct" = ALSA hw capture, or a PipeWire node name
 CARD = os.environ.get("STREAM_CARD", "hw:1,0")
 # shift, ctrl, alt, super, caps lock, fn: pressing these alone is not typing
@@ -284,6 +284,9 @@ class Dictation:
         if ENGINE == 'mlx':
             from dictation_mlx import MlxModel
             return MlxModel()
+        if ENGINE == 'lfm3':
+            from dictation_lfm import LfmModel
+            return LfmModel()
         if ENGINE not in ('stream', 'nemotron'): raise ValueError('Unknown speech engine')
         import transcribe_cpp as t
         return t.Model(MODEL, backend='cpu' if ENGINE == 'nemotron' else os.environ.get('STREAM_BACKEND', 'cpu'))
@@ -292,6 +295,8 @@ class Dictation:
     def speech_policy():
         policy = load_policy()
         policy['reserve_gib'] = max(6, policy.get('reserve_gib',6))
+        if ENGINE == 'lfm3':  # the model lives in assistd, which keeps its own reserve; match it
+            policy['reserve_gib'] = float(os.environ.get('MSERIES_ASSIST_RESERVE_GIB', '6'))
         policy['max_fan_rpm'] = min(2700, policy.get('max_fan_rpm',2700))
         policy['max_temp_c'] = min(63, policy.get('max_temp_c',63))
         return policy
@@ -347,7 +352,8 @@ class Dictation:
                         log('focused field not verifiable; typing through ydotool for this session')
                     else:
                         self.error = 'InputUnavailable'
-                        log('dictation input refused before microphone capture')
+                        reason = ((getattr(refusal, 'stderr', '') or '').strip().splitlines() or [''])[-1][:120]
+                        log('dictation input refused before microphone capture' + (f': {reason}' if reason else ''))
                         notify('Dictation needs a supported editable text field. Focus the editor and try F5 again.')
                         return
             if self.stop_evt.is_set(): return
@@ -355,7 +361,7 @@ class Dictation:
                 status('loading')
                 if not test: notify('Preparing speech model… Microphone is off. Wait for Listening.')
             with self.models.use(lambda extra: not resource_reasons(self.policy,
-                    max(extra, (6 if ENGINE == 'mlx' else 2)*1024**3) if not self.models.loaded else extra)) as model:
+                    max(extra, (6 if ENGINE == 'mlx' else 0 if ENGINE == 'lfm3' else 2)*1024**3) if not self.models.loaded else extra)) as model:
                 if self.stop_evt.is_set(): return
                 if self.input_token:
                     # Loading can outlast the user's focus. Check the original
@@ -585,6 +591,66 @@ class Dictation:
             if flight and flight[0].is_alive():
                 self.abort_model(); flight[0].join(2)
 
+    def run_lfm(self, model, cap, pending):
+        """LFM3-Audio: cut phrases at pauses, transcribe each in order on one worker, type as they return."""
+        from dictation_lfm import PhraseCutter, LfmUnavailable
+        cutter = PhraseCutter()
+        phrases = queue.Queue()
+        typed = []
+        t0 = time.time()
+
+        def worker():
+            while True:
+                pcm = phrases.get()
+                if pcm is None: return
+                if self.error or self.cancelled or self.interrupted: continue
+                try:
+                    text = model.transcribe(pcm)
+                except LfmUnavailable as e:
+                    log('lfm3 transcription failed:', e)
+                    self.error = 'SpeechUnavailable'; self.stop_evt.set()
+                    notify(f'Dictation: {e}')
+                    continue
+                if text and not (self.error or self.cancelled or self.interrupted):
+                    text = text + ' '
+                    typed.append(text)
+                    if DRY: print(text, flush=True)
+                    else: self.typer.submit(text, self.input_token, getattr(self, 'output_epoch', None))
+
+        w = threading.Thread(target=worker, daemon=True); w.start()
+        try:
+            buf = pending; stopped_at = None; next_guard = 0
+            while True:
+                now = time.monotonic()
+                if now >= next_guard:
+                    next_guard = now + 1
+                    if resource_reasons(self.policy):
+                        self.error = 'ResourceGuard'; self.stop_evt.set()
+                if self.error or self.cancelled or self.interrupted: break
+                if self.stop_evt.is_set() and stopped_at is None: stopped_at = time.time()
+                if stopped_at and time.time() - stopped_at > 0.15: break
+                if not select.select([cap.stdout], [], [], .1)[0]: continue
+                data = cap.stdout.read1(CHUNK * 2)
+                if not data: break
+                buf += data
+                while len(buf) >= CHUNK * 2:
+                    done = cutter.feed(bytes(buf[:CHUNK * 2])); buf = buf[CHUNK * 2:]
+                    if done: phrases.put(done)
+            if not (self.error or self.cancelled or self.interrupted):
+                rest = cutter.flush()
+                if rest: phrases.put(rest)
+        except Exception as e:
+            self.error = type(e).__name__
+            log('lfm3 stream error:', repr(e))
+        finally:
+            self.close_capture(cap)
+            phrases.put(None)
+            w.join(timeout=180)
+        chars = sum(map(len, typed))
+        log(f'dictated {chars} chars in {time.time() - t0:.1f}s with lfm3 ({len(typed)} phrases)')
+        if not chars and not self.error and not self.cancelled and not DRY:
+            notify("Didn't catch that")
+
     def run(self, model):
         test = os.environ.get("STREAM_TEST_WAV")  # offline test: play a file instead of the mic
         raw = os.environ.get("STREAM_TEST_RAW")  # offline test: a raw AOP capture (3ch f32 48 kHz) through CHAIN
@@ -609,6 +675,8 @@ class Dictation:
             return
         if ENGINE in ('ane', 'mlx'):
             return self.run_ane(model, cap, pending)
+        if ENGINE == 'lfm3':
+            return self.run_lfm(model, cap, pending)
         typed = ""
         t0 = time.time()
         kept = bytearray()

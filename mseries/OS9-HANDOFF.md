@@ -33,6 +33,9 @@ M1 Pro Qwen3.5 2B process-local submission-budget experiment: 20,000 versus the 
 Qwen3.5 2B initial MLX and Rapid-MLX timings, identical 64-token output, admission refusals and measurement limits: [`local-ai/receipts/2026-10-27-qwen2b-timing.md`](local-ai/receipts/2026-10-27-qwen2b-timing.md). Rapid's isolated loopback server smoke and dependency snapshot: [`local-ai/RAPID-MLX-INVESTIGATION-2026-10-27.md`](local-ai/RAPID-MLX-INVESTIGATION-2026-10-27.md). The test helper now requires an explicit model-specific admission allowance; guard refusals report available, model allowance and reserve. The six-GiB reserve remains in force. Timing surfaces and warmups differ, so the one pair is not a speed ranking.
 
 The private Honeykrisp ICD enumerates the M1 Pro on the running Aurora wip4 kernel. The metal2vk compiler build completed in `~/.cache/mseries-metal2vk`; both the shipped `metal::precise::exp` and freshly compiled `metal::exp` SiLU probes ran through MLX metal2vk without fallback and matched a bounded independent reference. LFM3 1.7B 8-bit answered a short prompt on the Mac with an isolated unmerged mlx-lm PR; it did not invoke a metal2vk custom kernel. Qwen 4B admission was refused with 12.22 GiB available against the 12.5 GiB requirement. No model or compiler job remains running. Full-model correctness, TensorFold batching and speed improvements are unqualified. Exact results: [`local-ai/receipts/2026-10-27-tensorfold-vulkan.md`](local-ai/receipts/2026-10-27-tensorfold-vulkan.md).
+## T3 Dock launcher and Wingpanel — 2026-10-27
+
+The owner chose to retain the unified Wingpanel menu. The Dock launcher opens the T3 window and its taskbar status area does not add a second T3 menu. The Dock source-preparation guard checks these boundaries; the Wingpanel module is not retired. Source preparation is verified against the pinned upstream Dock, with live desktop acceptance still outstanding.
 
 ## T3 panel menu HIG audit — 2026-10-27
 

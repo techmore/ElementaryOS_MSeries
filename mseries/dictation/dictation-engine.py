@@ -170,9 +170,14 @@ def bridge_ready():
                    check=True, capture_output=True, timeout=5)
 
 
+# Mac-style F5: type into whatever field has focus. Apps that hide their fields from accessibility (Electron,
+# some Qt) get the ydotool path; password, card and other sensitive fields they do report stay refused.
+UNVERIFIED_FALLBACK = "1"
+
+
 def render(engine, mode, additions, warm_seconds=60):
     values = {"STREAM_ENGINE": engine, "STREAM_MODE": mode, "STREAM_THREADS": "4",
-              "STREAM_BACKEND": "cpu", "STREAM_OUTPUT": "ibus", "STREAM_UNVERIFIED_FALLBACK": "0",
+              "STREAM_BACKEND": "cpu", "STREAM_OUTPUT": "ibus", "STREAM_UNVERIFIED_FALLBACK": UNVERIFIED_FALLBACK,
               "STREAM_IDLE_SECONDS": str(warm_seconds), **additions}
     def quote(value):
         # systemd syntax, not shell syntax; percent is a systemd specifier.
@@ -214,7 +219,7 @@ def wait_ready(engine):
         row = lifecycle()
         if row and row.get("pid") == pid and row.get("phase") == "ready" and row.get("output") == "ibus":
             actual = environment()
-            if actual.get("STREAM_ENGINE") == engine and actual.get("STREAM_UNVERIFIED_FALLBACK") == "0":
+            if actual.get("STREAM_ENGINE") == engine and actual.get("STREAM_UNVERIFIED_FALLBACK") == UNVERIFIED_FALLBACK:
                 bridge_ready()
                 # The daemon publishes Ready immediately before opening evdev.
                 # A permission/device failure must not look like deployment.
