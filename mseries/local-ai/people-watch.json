@@ -208,5 +208,11 @@
     "who": "Joshua Warren",
     "why": "ANE on Linux primitives and cross-Mac receipts; our ANE decoder patches target it",
     "group": "omarchy-m"
+  },
+  {
+    "repo": "joshuaswarren/coreglass",
+    "who": "Joshua Warren",
+    "why": "Profiler and daily ledger of local inference on M1/M1 Max/M2 Max under Linux; its release-vs-main rows show which MLX wheel and Honeykrisp driver are faster before we test them. Pinned in install.sh",
+    "group": "omarchy-m"
   }
 ]

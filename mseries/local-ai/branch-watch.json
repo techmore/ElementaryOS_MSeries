@@ -124,6 +124,12 @@
       "base": "main",
       "open_prs": true,
       "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/coreglass",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
     }
   ]
 }

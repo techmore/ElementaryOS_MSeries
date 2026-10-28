@@ -31,7 +31,9 @@ HOME = Path.home()
 HERE = Path(__file__).resolve().parent
 MODEL = HOME / '.cache/mseries-metal2vk/qwen35-2b'
 WEIGHTS_SHA = '713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5'
-ICD = HOME / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json'
+# MSERIES_HK_ICD selects a candidate driver built by honeykrisp-candidate.sh.
+ICD = Path(os.environ.get('MSERIES_HK_ICD') or HOME / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json')
+DRIVER = (ICD.parent / 'mesa-git-sha').read_text().strip() if (ICD.parent / 'mesa-git-sha').exists() else 'unknown'
 MLX_PY = HOME / '.local/share/mlx-omarchy/venv/bin/python'
 REF_DIR = HOME / '.cache/mseries-mlx-gate/reference-v1'
 POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
@@ -298,9 +300,10 @@ def main():
     if 'baseline' in names:
         names.remove('baseline')
     names.insert(0, 'baseline')
-    out = a.output or HERE / 'receipts' / f"{time.strftime('%Y-%m-%d')}-mlx-gate-sweep.json"
+    out = a.output or HERE / 'receipts' / (f"{time.strftime('%Y-%m-%d')}-mlx-gate-sweep"
+                                          + ('' if DRIVER == '7faf04c065' else f'-hk{DRIVER}') + '.json')
     report = {'model': 'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4', 'weights_sha256': WEIGHTS_SHA,
-              'kernel': os.uname().release, 'steps': STEPS, 'tie_margin': TIE_MARGIN,
+              'kernel': os.uname().release, 'driver': 'Honeykrisp Mesa ' + DRIVER, 'steps': STEPS, 'tie_margin': TIE_MARGIN,
               'margins': {'pooled': POOLED_MARGIN, 'case': CASE_MARGIN}, 'cases': list(CASES), 'configs': {}}
     base = None
     with tempfile.TemporaryDirectory(prefix='mlx-gate-', dir=HOME / '.cache') as tmp:
