@@ -357,8 +357,7 @@ impl PantheonCompositor {
         // Override-redirect and no-input X11 windows are raised, never activated.
         let activate = activate
             && crate::xwayland::window_accepts_focus(window)
-            && self.window_app_id(window).as_deref()
-                != Some("org.techmore.mseries.ScreenshotShelf");
+            && !crate::overlays::is_no_focus_overlay(self.window_app_id(window).as_deref());
         // Snap groups come forward together, the raised member on top.
         self.raise_group_siblings(window);
         self.space.raise_element(window, activate);

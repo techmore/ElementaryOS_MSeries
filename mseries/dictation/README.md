@@ -197,6 +197,24 @@ Offline through the real controller (clip played at real time): a 10.4 s sentenc
 
 Typing any non-modifier key while dictating (ANE engine) ends dictation at once and drops words not yet typed, so nothing lands in the middle of your sentence (Escape still cancels). Latency was measured offline on the pinned 10.4 s clip with `STREAM_ANE_TRACE=1`: lag = audio time when a word was typed minus the earliest audio prefix whose decode contained it. Every pass costs about 0.5 s whatever the length (the encoder window is a fixed 30 s), so the submit interval does not matter below that (0.3, 0.4 and 0.6 s all gave a 2.0 s median lag with 1 held-back word). Typing from a single pass (`STREAM_ANE_AGREE=1`) gives median lag 0.6-1.3 s but typed hallucinated words from truncated audio ("Well, I'm World War"), so two agreeing passes stay. Holding back no extra word (`STREAM_ANE_HOLD=0`, now the default) gives a 1.5 s median (3 runs, p90 about 2.9 s, includes the cold start of the first words). Idle release of the ANE worker is 180 s instead of 60 s. A fourth back-to-back test run was refused by the resource guard, as designed.
 
+## Mac-style feedback and engine choice — 2026-10-28
+
+F5 is pinned to **Parakeet streaming** (`STREAM_ENGINE=nemotron`, NVIDIA Nemotron Speech Streaming 0.6B, GGUF Q8_0,
+CPU) via `dictation-engine.py --select nemotron --mode toggle --warm-seconds 600`. Same 10.4 s LibriSpeech clip through
+the real controller (dry run): Parakeet streaming typed word by word, first word 1.8 s after start including model load,
+then each word about 0.5-1 s behind the audio. The ANE build of Parakeet TDT v3 (`ane`) transcribes faster in bulk
+(10.4 s in 0.58 s) but, re-decoding a rolling window, typed 1-6 word chunks every 0.6 s about 1.5-2 s behind, first text
+at 4.6 s. LFM3 (`lfm3`) waits for each pause. Streaming feels closest to macOS, so it is the default.
+
+- **Sounds:** `chime('start')` / `chime('stop')` play two soft bell notes, rising when the microphone opens and falling
+  when it closes. The stop sound now plays the moment F5 or Escape is pressed, not after typing drains.
+- **Microphone indicator:** `dictation-indicator.py` shows a dark pill with a microphone and a live level meter,
+  bottom-centre above the dock, while the microphone is open. The compositor recognises its application ID
+  (`org.techmore.mseries.DictationIndicator`) and never focuses it, and advertises
+  `DictationIndicatorPlacementVersion=1` on `org.pantheon.gala.DesktopIntegration`. On a compositor without that, the
+  indicator exits with status 3 and a "Listening…" notification with the microphone icon is shown instead, so focus is
+  never taken from the field being dictated into.
+
 ## LFM3-Audio engine (`STREAM_ENGINE=lfm3`)
 
 F5 can use the shared on-device assistant (`mseries-assistd`, LFM3-Audio-2B on `127.0.0.1:8772`) instead of a
