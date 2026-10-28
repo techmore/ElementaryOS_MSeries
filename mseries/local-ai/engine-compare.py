@@ -12,6 +12,8 @@ Arms (each a fresh process: load, one warmup on the same prompt, one measured re
               (singleton cache is Rapid-MLX's fast path, vendored); what model-worker.py ships.
               Both serve-n*/serve-p* arms need serve-patch.sh build first (patches/mlx-lm-0.31.3-*).
   tensorfold  TensorFold native Vulkan server (ashhart/TensorFold PR 1517)
+  omlx-120k   oMLX (jundot/omlx) as omarchy-mlx packages it for Linux (packaging/omlx-linux), its own
+              venv on the mlx-lm 0.32 line, at the 120,000 budget; skipped when not installed
 
 All four use the same weights, chat prompt, greedy decoding and token limit,
 the shared worker lock, the 6 GiB desktop reserve and the 80 C limit. MLX arms
@@ -30,11 +32,11 @@ MODELS = {
     'qwen2b': (HOME / '.cache/mseries-metal2vk/qwen35-2b',
                '713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5',
                'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3', 4.5,
-               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-nolp-120k', 'serve-patched-120k', 'tensorfold')),
+               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-nolp-120k', 'serve-patched-120k', 'tensorfold', 'omlx-120k')),
     'qwen4b': (HOME / '.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3',
                '5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db',
                'mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3', 6.5,
-               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-nolp-120k', 'serve-patched-120k')),
+               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-nolp-120k', 'serve-patched-120k', 'omlx-120k')),
     'lfm3': (HOME / '.cache/mseries-metal2vk/lfm3-8bit',
              '2b06cea98d75527c248a0b04383f7cf0a1c72fb4ed7b45096618fc4e59d015ad',
              'LiquidAI/LFM3-1.7B-MLX-8bit@ee7667f3cfccb2a41725f91820531823fcabc6b7', 4.5,
@@ -51,7 +53,10 @@ TF_REV = '670902196c47f3e70e3f56ab933805713be31aa8'
 PROMPT = 'Explain in plain language how a rainbow forms. Give four distinct sentences.'
 LONG_PROMPT = ('Explain in detail how a rainbow forms, including refraction, reflection, color '
                'and viewing angle. Write at least 350 words.')
-ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-nolp-120k', 'serve-patched-120k', 'tensorfold')
+ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-nolp-120k', 'serve-patched-120k', 'tensorfold', 'omlx-120k')
+# omarchy-mlx's packaging/omlx-linux/install.sh --home target; its venv holds the omlx command.
+OMLX_HOME = Path(os.environ.get('MSERIES_OMLX_HOME') or HOME / '.local/share/omlx-linux')
+OMLX_BIN = OMLX_HOME / '.venvs/omlx/bin/omlx'
 SERVE = HOME / '.local/bin/mlx-omarchy-serve'  # what model-worker.py runs for the everyday model
 SERVE_PATCH = HOME / '.local/share/mseries-ai/serve-patch'  # patched mlx_lm copy from serve-patch.sh
 CONCURRENCY = 1
@@ -159,7 +164,15 @@ def concurrent_chat(port, prompt_text, max_tokens, model):
             'completion_tokens': tokens, 'text': results[0]['text'], 'requests': results}
 
 
-def server_command(arm, port):
+def server_command(arm, port, tmp):
+    if arm == 'omlx-120k':
+        # oMLX serves every model folder under --model-dir; give it just this one, and keep its
+        # settings and SSD cache in the run's temp folder.
+        models = Path(tmp) / 'omlx-models'
+        models.mkdir(exist_ok=True)
+        (models / MODEL.name).symlink_to(MODEL)
+        return [str(OMLX_BIN), 'serve', '--model-dir', str(models), '--host', '127.0.0.1', '--port', str(port),
+                '--paged-ssd-cache-dir', str(Path(tmp) / 'omlx-cache')]
     if arm.startswith('serve-'):
         gib = sum(f.stat().st_size for f in MODEL.glob('*.safetensors')) / GIB
         return [str(SERVE), 'serve', str(MODEL), '--server', 'mlx-lm', '--context', '4096',
@@ -194,6 +207,8 @@ def env_for(arm, tmp):
         env['MSERIES_SERVE_SINGLETON'] = '1' if arm == 'serve-patched-120k' else '0'
     if arm == 'serve-patched-120k':
         env.update(MSERIES_SERVE_CONCURRENCY=SERVE_CONCURRENCY, MSERIES_SERVE_KV_BYTES_PER_TOKEN=str(kv_bytes_per_token(MODEL)))
+    if arm == 'omlx-120k':
+        env.update(HOME=f'{tmp}/omlx-home', HF_HUB_CACHE=str(HOME / '.cache/huggingface/hub'))
     if arm == 'rapid-120k':
         env.update(PYTHONPATH=RAPID_PATH, RAPID_MLX_TELEMETRY='0', DO_NOT_TRACK='1',
                    RAPID_MLX_PREFIX_CACHE_AUTOLOAD='0', XDG_CONFIG_HOME=f'{tmp}/config',
@@ -212,7 +227,7 @@ def run_arm(arm, prompt_text, max_tokens, tmp):
     else:
         with socket.socket() as s:
             s.bind(('127.0.0.1', 0)); port = s.getsockname()[1]
-        cmd = server_command(arm, port)
+        cmd = server_command(arm, port, tmp)
     child = subprocess.Popen(cmd, env=env_for(arm, tmp), stdout=log, stderr=subprocess.STDOUT,
                              start_new_session=True, cwd=tmp)
 
@@ -335,6 +350,9 @@ def main():
             raise SystemExit('Qwen weights do not match the pinned checkpoint')
     if any(x in arms for x in ('serve-nolp-120k', 'serve-patched-120k')) and not (SERVE_PATCH / 'mlx_lm/server.py').exists():
         raise SystemExit('patched server missing: run serve-patch.sh')
+    if 'omlx-120k' in arms and not OMLX_BIN.exists():
+        print(f'skipping omlx-120k: {OMLX_BIN} missing (omarchy-mlx packaging/omlx-linux/install.sh)', file=sys.stderr)
+        arms.remove('omlx-120k')
     if 'tensorfold' in arms and not TF_BIN.exists():
         raise SystemExit('TensorFold server missing: run tensorfold-vulkan.sh build')
     out = a.output or Path(__file__).resolve().parent / 'receipts' / (

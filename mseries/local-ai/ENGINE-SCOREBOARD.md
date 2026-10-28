@@ -67,7 +67,7 @@ The engines above move fast, so this page is a living record on `dev`, not a one
 3. **Re-test.** Build it in a private prefix (never system-wide), run its own gates first (`tensorfold-vulkan.sh test` / `gpu`, `mlx-gate.py sweep`), then `engine-compare.py` with the same models, prompts and guards.
 4. **Publish.** Commit the new receipt JSON, run `scoreboard.py`, and open a PR to `dev` with the regenerated CSV, SVG and this page. Rows are replaced by the newest receipt; old receipts stay for history.
 5. **Adopt.** A setting becomes our default only when it holds ★ *and* passes the MLX gate; change defaults in a separate PR.
-6. **Version steps follow upstream.** We move mlx-lm (now 0.31.3) and the omarchy-mlx pin (now v0.7.33, `33630f9c`) only when omarchy-mlx moves its own `install.sh` default or cuts a release. Its 0.32 line (mlx-lm `94cdcae`, used by its oMLX packaging) is tested as a separate engine, not adopted as our default.
+6. **Version steps follow upstream.** We move mlx-lm (now 0.31.3) and the omarchy-mlx pin (now v0.7.33, `33630f9c`) only when omarchy-mlx moves its own `install.sh` default or cuts a release. Its 0.32 line (mlx-lm `94cdcae`, used by its oMLX packaging) is tested as a separate engine, not adopted as our default. `install-omlx.sh` installs oMLX that way (its own venv under `~/.local/share/omlx-linux`) for engine-compare's `omlx-120k` arm.
 
 Rules: everything is documented in our own repo only; we do not post to upstream projects. Rows under "reported elsewhere" are other people's numbers on other hardware and are never ranked against ours.
 
