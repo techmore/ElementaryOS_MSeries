@@ -1,3 +1,7 @@
+## TensorFold Vulkan investigation — 2026-10-27
+
+The private Honeykrisp ICD enumerates the M1 Pro on the running Aurora wip4 kernel. The proposed TensorFold Vulkan engine and its submit-batching change are not yet available as a public upstream PR or branch, so no TensorFold build or inference test was possible. Exact baseline, limits and next gates: [`local-ai/receipts/2026-10-27-tensorfold-vulkan.md`](local-ai/receipts/2026-10-27-tensorfold-vulkan.md).
+
 ## T3 panel menu HIG audit — 2026-10-27
 
 Audit of the unified T3 Wingpanel menu against the elementary HIG: [`t3-wingpanel/HIG-AUDIT.md`](t3-wingpanel/HIG-AUDIT.md). Fixed in source: nested scrollers that hid the second plan window and running threads, menu width jumping between tabs, idle tooltip "0 running" and a never-updated accessible name, raw token counts/cost/timestamps, and the double use of "Activity". Fixture tests pass (`t3-wingpanel/test.sh`); before/after renders in `t3-wingpanel/receipts/2026-10-27-hig-audit/`. Not installed or loaded into the live panel. Owner then approved H1–H5, done in the same PR: one tab bar, plain menu-item footer (Open T3, Activity, Fleet, T3 Settings…), 16 px embedded icons, system text size, badge only for approvals.
