@@ -15,6 +15,7 @@ ARM_SETTINGS = {
     'mlx-5k': ('MLX (omarchy-mlx, in-process)', 'defaults (MLX_OMARCHY_BATCH_WORK fallback 5000)', 'baseline'),
     'mlx-120k': ('MLX (omarchy-mlx, in-process)', 'MLX_OMARCHY_BATCH_WORK=120000', 'work120k'),
     'rapid-120k': ('Rapid-MLX 1d09cdb (HTTP server)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
+    'serve-120k': ('mlx-omarchy-serve, mlx-lm backend (HTTP server; runs the everyday model)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'tensorfold': ('TensorFold Vulkan PR 1517 (HTTP server)', 'serve --backend vulkan --context 1024 --no-thinking', None),
 }
 MODEL_NAMES = {'qwen2b': 'Qwen3.5-2B MLX 4-bit', 'qwen4b': 'Qwen3.5-4B MLX 4-bit', 'lfm3': 'LFM3-1.7B MLX 8-bit'}
@@ -52,17 +53,21 @@ def measured_rows():
             continue
         model = r.get('model_key', 'qwen2b')
         drv = r.get('driver', 'Honeykrisp Mesa 7faf04c065')
+        conc = r.get('concurrency', 1)
         for arm in r['arms']:
-            latest[(model, arm, r['max_tokens'], drv)] = (f, r)
+            latest[(model, arm, r['max_tokens'], drv, conc)] = (f, r)
     rows = []
-    for (model, arm, tokens, drv), (f, r) in sorted(latest.items()):
+    for (model, arm, tokens, drv, conc), (f, r) in sorted(latest.items()):
         ok = [x for x in r['runs'] if x['arm'] == arm and 'text' in x and not x.get('error')]
         if not ok:
             continue
         texts = {x['text_sha256'] for x in ok}
         base = {x['text_sha256'] for x in r['runs'] if x['arm'] == 'mlx-5k' and 'text_sha256' in x}
-        if arm == 'mlx-5k' or not base:
-            same = 'reference' if arm == 'mlx-5k' else 'n/a'
+        if arm == 'mlx-5k':
+            same = 'reference'
+        elif not base:
+            every = {x['text_sha256'] for x in r['runs'] if 'text_sha256' in x}
+            same = 'yes (engines in this run agree)' if len(every) == 1 else 'n/a (no MLX default in this run)'
         elif texts == base:
             same = 'yes'
         else:
@@ -71,6 +76,8 @@ def measured_rows():
             i = next((i for i, (u, v) in enumerate(zip(mt, at)) if u != v), min(len(mt), len(at)))
             same = f'no: diverges after {i} of {len(mt)} chars'
         engine, settings, gate_key = ARM_SETTINGS[arm]
+        if conc > 1:
+            settings += f' · {conc} requests at once (decode = total tok/s)'
         gate = gates.get((model, drv, gate_key), (None, None))[0] if gate_key else None
         rows.append({
             'model': MODEL_NAMES.get(model, model), 'engine': engine, 'settings': settings, 'tokens': tokens,
@@ -79,12 +86,12 @@ def measured_rows():
             'same_output': same if len(texts) == 1 else f'{same}; {len(texts)} variants across its own runs',
             'gate': gate or 'not gated', 'kernel': r.get('kernel', ''),
             'driver': drv, 'date': f.name[:10],
-            'status': 'measured here', 'source': f'receipts/{f.name}', '_model': model})
+            'status': 'measured here', 'source': f'receipts/{f.name}', '_model': model, '_conc': conc})
     # Most functional per model and length: fastest decode among rows whose output matched
     # and whose gate did not fail.
-    for key in {(x['_model'], x['tokens']) for x in rows}:
-        group = [x for x in rows if (x['_model'], x['tokens']) == key and x['gate'] != 'FAIL'
-                 and x['same_output'] in ('yes', 'reference') and x['decode_tok_s']]
+    for key in {(x['_model'], x['tokens'], x['_conc']) for x in rows}:
+        group = [x for x in rows if (x['_model'], x['tokens'], x['_conc']) == key and x['gate'] != 'FAIL'
+                 and x['same_output'].startswith(('yes', 'reference')) and x['decode_tok_s']]
         if group:
             max(group, key=lambda x: x['decode_tok_s'])['best'] = '★'
     return rows
@@ -93,17 +100,19 @@ def measured_rows():
 def chart(rows):
     """Plain SVG bar chart of decode tok/s, one block per (model, tokens); no plotting deps."""
     groups = {}
-    for x in sorted(rows, key=lambda x: (x['_model'], x['tokens'], -(x['decode_tok_s'] or 0))):
-        groups.setdefault((x['model'], x['tokens']), []).append(x)
+    for x in sorted(rows, key=lambda x: (x['_model'], x['tokens'], x['_conc'], -(x['decode_tok_s'] or 0))):
+        groups.setdefault((x['model'], x['tokens'], x['_conc']), []).append(x)
     top = max((x['decode_tok_s'] or 0 for x in rows), default=1)
     w, label_w, bar_w, row_h = 760, 300, 380, 22
     y = 30; parts = []
-    for (model, tokens), xs in groups.items():
-        parts.append(f'<text x="8" y="{y}" class="h">{model}, {tokens} tokens</text>'); y += 10
+    for (model, tokens, conc), xs in groups.items():
+        head = f'{model}, {tokens} tokens' + (f', {conc} requests at once (total)' if conc > 1 else '')
+        parts.append(f'<text x="8" y="{y}" class="h">{head}</text>'); y += 10
         for x in xs:
             v = x['decode_tok_s'] or 0; bw = max(2, bar_w * v / top)
             cls = 'best' if x.get('best') else 'bar'
-            name = x['engine'].split(' (')[0] + (' tuned' if '120000' in x['settings'] else ' default' if 'defaults' in x['settings'] else '')
+            name = x['engine'].split(' (')[0].split(',')[0] + (' tuned' if '120000' in x['settings'] else ' default' if 'defaults' in x['settings'] else '')
+            name += ' · ' + x['driver'].split()[-1][:6]
             parts.append(f'<text x="8" y="{y + 15}" class="l">{name}</text>'
                          f'<rect x="{label_w}" y="{y + 3}" width="{bw:.1f}" height="{row_h - 6}" class="{cls}"/>'
                          f'<text x="{label_w + bw + 6:.1f}" y="{y + 15}" class="v">{v:.1f} tok/s{" ★" if x.get("best") else ""}</text>')
