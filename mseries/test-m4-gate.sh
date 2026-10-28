@@ -24,4 +24,6 @@ printf 'apple,j314s\0apple,t6000\0apple,arm-platform\0' >"$dt"
 ! is_m4_family || { echo "J314s (M1 Pro) must not be M4"; exit 1; }
 printf 'apple,j773gx\0' >"$dt"
 ! is_m4_family || { echo "match must be whole-string, not a prefix"; exit 1; }
+ELEMENTARY_HOST=fedora is_fedora_host || { echo "ELEMENTARY_HOST=fedora must select the Fedora lane"; exit 1; }
+! ELEMENTARY_HOST=arch is_fedora_host || { echo "ELEMENTARY_HOST=arch must not select the Fedora lane"; exit 1; }
 echo "ok: m4 gate and ssh key validation"

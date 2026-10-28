@@ -56,5 +56,13 @@ subvolumes and the boot entry.
 
 - Wi-Fi, Bluetooth and HDMI are listed as working on the M4 mini by Aurora's data; Gravity commits cover the BCM4388
   Bluetooth and display firmware 26.6.x. None of it is verified here.
+- `bin/elementary-mac-setup` now runs end to end on this Fedora base: it skips the Arch boot-layout and encryption steps
+  (the Gravity image is unencrypted) and installs a kernel-install plugin in place of the pacman hook. Until PR 692 merges,
+  pass the branch:
+
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/prep/m4-mini-aurora-installer/bin/elementary-mac-setup \
+    | sudo ELEMENTARY_ACCEPT_M4=1 bash -s -- --ref prep/m4-mini-aurora-installer --no-encrypt --enable-ssh --ssh-key "$(cat ~/.ssh/id_ed25519.pub)"
+  ```
 - The elementary desktop step assumes Ubuntu noble ARM64 packages work on the 16K-page kernel.
 - The Rust Pantheon apps come from `techmore/mseries-sdk-apps` and have not been built for this host.

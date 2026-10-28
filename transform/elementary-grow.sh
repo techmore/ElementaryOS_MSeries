@@ -417,7 +417,16 @@ EOF
   # M-series enhancements (power policy, tuning, session helpers, theme, and the
   # first-boot job). ELEMENTARY_ENHANCE=0 skips them.
   if [[ ${ELEMENTARY_ENHANCE:-1} != 0 ]]; then
-    bash "$REPO_ROOT/mseries/enhance.sh" --root "$newroot" || echo "WARNING: enhancements failed (non-fatal)" >&2
+    # Desktops (Mac mini, Studio, Pro, iMac) have no battery: leave out the
+    # charge-limit and battery pieces. The class comes from the device tree.
+    local -a enhance_args=()
+    # shellcheck source=/dev/null
+    . "$REPO_ROOT/mseries/lib-device.sh"
+    if [[ $(mseries_device_class) == desktop ]]; then
+      enhance_args=(--skip power,battery)
+      log "desktop Mac ($(mseries_dt_boards | grep -m1 '^apple,j')): skipping the power and battery modules"
+    fi
+    bash "$REPO_ROOT/mseries/enhance.sh" --root "$newroot" "${enhance_args[@]}" || echo "WARNING: enhancements failed (non-fatal)" >&2
   fi
 
   # Apple layer: firmware copy (machine-local, never redistributed).
@@ -430,6 +439,13 @@ EOF
   # the new root's /lib/firmware/brcm/ (== /usr/lib/firmware/brcm/).
   local chip
   chip=$(detect_chip)
+  if [[ -z $chip ]]; then
+    # The PCI ids above are the M1/M2 Wi-Fi chips. Newer Macs (the M4 mini's
+    # BCM4388) have other ids; copy every Apple-board Broadcom blob the host has
+    # rather than leave the new root without Wi-Fi.
+    chip=4
+    log "unrecognised Wi-Fi PCI id; copying every host Broadcom blob (brcmfmac4*, brcmbt4*)"
+  fi
   if [[ -n $chip ]]; then
     log "copying host brcmfmac${chip}* + brcmbt${chip}* firmware into new root"
     run mkdir -p "$newroot/lib/firmware/brcm"
@@ -562,8 +578,8 @@ EOF
 # the menu. Idempotent.
 do_repair_grub() {
   if (( HOST_BLS )); then
-    [[ -f $BLS_ENTRY ]] || install_bls_entry
-    log "BLS entry present: $BLS_ENTRY"
+    install_bls_entry
+    log "BLS entry refreshed: $BLS_ENTRY"
     return 0
   fi
   [[ -e $GRUB_CUSTOM || -e $GRUB_CUSTOM.removed ]] \
@@ -765,8 +781,11 @@ build_linux_line() {
   done
   # Pantheon centers Wingpanel content and has no notch avoidance. The
   # running omarchy cmdline may opt into the full-height mode, but the new
-  # elementary entry must retain the rectangular safe display mode.
-  out+=(appledrm.show_notch=0)
+  # elementary entry must retain the rectangular safe display mode. Desktops
+  # have no notch, so the parameter is left off there.
+  # shellcheck source=/dev/null
+  . "$REPO_ROOT/mseries/lib-device.sh"
+  [[ $(mseries_device_class) == desktop ]] || out+=(appledrm.show_notch=0)
   # The elementary unlock screen (mseries/install-unlock-screen.sh) needs the
   # splash to be requested on the kernel line.
   if grep -qs '^Theme=elementary' /etc/plymouth/plymouthd.conf; then
@@ -795,7 +814,7 @@ build_linux_line() {
 # subvolume of the same btrfs.
 install_bls_entry() {
   local kver kpath ipath line opts
-  kver=$(uname -r)
+  kver=${ELEMENTARY_KVER:-$(uname -r)}
   if [[ $(findmnt -no SOURCE /boot) != $(findmnt -no SOURCE /) ]]; then
     kpath="/vmlinuz-$kver"; ipath="/initramfs-$kver.img"      # /boot is its own filesystem
   else
