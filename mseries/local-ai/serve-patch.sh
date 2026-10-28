@@ -17,7 +17,8 @@ prefix=${OMARCHY_MLX_SYSTEM_PREFIX:-$HOME/.local/share/mlx-omarchy}
 out=${MSERIES_SERVE_PATCH_DIR:-$HOME/.local/share/mseries-ai/serve-patch}
 site=$(ls -d "$prefix"/venv/lib/python3.*/site-packages/mlx_lm | head -n1)
 patches=("$here/patches/mlx-lm-0.31.3-server-skip-logprob-read.patch"
-         "$here/patches/mlx-lm-0.31.3-server-singleton-cache.patch")
+         "$here/patches/mlx-lm-0.31.3-server-singleton-cache.patch"
+         "$here/patches/mlx-lm-0.31.3-detokenizer-tokenmap-cache.patch")
 
 case ${1:-build} in
   build)

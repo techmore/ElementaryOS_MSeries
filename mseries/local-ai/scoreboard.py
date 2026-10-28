@@ -15,10 +15,10 @@ ARM_SETTINGS = {
     'mlx-5k': ('MLX (omarchy-mlx, in-process)', 'defaults (MLX_OMARCHY_BATCH_WORK fallback 5000)', 'baseline'),
     'mlx-120k': ('MLX (omarchy-mlx, in-process)', 'MLX_OMARCHY_BATCH_WORK=120000', 'work120k'),
     'rapid-120k': ('Rapid-MLX 1d09cdb (HTTP server)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
-    'serve-120k': ('mlx-omarchy-serve, mlx-lm backend (HTTP server; runs the everyday model)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
+    'serve-120k': ('mlx-omarchy-serve, mlx-lm backend, stock (HTTP server)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'serve-nolp-120k': ('mlx-omarchy-serve + skip-logprob-read patch only (HTTP server)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'serve-single-120k': ('experiment: serve-nolp-120k + Rapid-MLX singleton module loaded from its checkout', 'MLX_OMARCHY_BATCH_WORK=120000', None),
-    'serve-patched-120k': ('mlx-omarchy-serve + our skip-logprob-read and singleton-cache patches (HTTP server)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
+    'serve-patched-120k': ('mlx-omarchy-serve + our three server patches + batching of 4 (HTTP server; runs the everyday model)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'tensorfold': ('TensorFold Vulkan PR 1517 (HTTP server)', 'serve --backend vulkan --context 1024 --no-thinking', None),
 }
 MODEL_NAMES = {'qwen2b': 'Qwen3.5-2B MLX 4-bit', 'qwen4b': 'Qwen3.5-4B MLX 4-bit', 'lfm3': 'LFM3-1.7B MLX 8-bit'}
@@ -65,7 +65,7 @@ def reply_s(x):
 def measured_rows():
     gates = gate_results()
     latest = {}
-    for f in sorted(RECEIPTS.glob('*engine-compare-*.json')):
+    for f in sorted(RECEIPTS.glob('*engine-compare-*.json'), key=lambda f: f.stem):  # stem: '-round2' sorts after its base
         r = json.loads(f.read_text())
         if r.get('status') != 'complete':
             continue

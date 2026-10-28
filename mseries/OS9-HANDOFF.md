@@ -13522,3 +13522,11 @@ matches the installed mlx-lm. One request: Qwen 2B 32.6 → 56.5, Qwen 4B 19.2 �
 identical text, faster than Rapid-MLX. Several requests at once still trail Rapid (28 vs 43–48
 total). The scoreboard chart now shows first token, streaming speed and a typical 200-token reply
 side by side. Receipt and rollback: `mseries/local-ai/receipts/2026-10-28-serve-patch.md`.
+
+Round 2 the same day: first token was half detokenizer setup (two copies of the 248k vocabulary
+per request); a third patch builds it once (Qwen 2B 0.62 → 0.25 s). Upstream's launcher serves
+one request at a time so admission only reserves one KV cache; `configure-serve-concurrency.py`
+makes `MSERIES_SERVE_CONCURRENCY` batch N requests and reserves their KV up front (worker sets 4,
++0.75 GiB for the everyday 4B). Qwen 2B with 4 at once: 20 → 57 tok/s total, first token 4.1 →
+0.8 s; Qwen 4B with 4 at once: 12.8 → 25.8, 6.3 → 2.0 s. Ahead of Rapid-MLX on throughput in
+every case; Rapid still reaches a single request's first token sooner.

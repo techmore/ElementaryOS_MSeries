@@ -16,9 +16,10 @@ from machine import DEFAULT_POLICY, GIB, snapshot, violations, cooling_action, r
 def serve_patch(env, prefix):
     """Put our patched mlx-lm server copy (serve-patch.sh) ahead of the installed one.
 
-    Two private patches on upstream's own launcher: skip the per-token logprob read nobody asked
-    for, and keep a lone request's KV cache unbatched (Rapid-MLX's singleton fast path). Qwen 2B
-    33 -> 57 tok/s with identical text. Used only while the installed server.py still matches the
+    Three private patches on upstream's own launcher: skip the per-token logprob read nobody asked
+    for, keep a lone request's KV cache unbatched (Rapid-MLX's singleton fast path), and build the
+    detokenizer's vocabulary map once instead of twice per request. Qwen 2B 33 -> 56 tok/s and
+    first token 0.62 -> 0.25 s, identical text. Used only while the installed server.py still matches the
     one the copy was built from; MSERIES_SERVE_PATCH=0 turns it off.
     """
     copy = Path.home() / '.local/share/mseries-ai/serve-patch'
@@ -35,7 +36,7 @@ def serve_patch(env, prefix):
         print('SERVE PATCH: skipped, installed mlx-lm changed; rerun serve-patch.sh build', flush=True)
         return
     env['PYTHONPATH'] = str(copy) + (':' + env['PYTHONPATH'] if env.get('PYTHONPATH') else '')
-    print('SERVE PATCH: skip-logprob-read + singleton cache', flush=True)
+    print('SERVE PATCH: skip-logprob-read + singleton cache + detokenizer map', flush=True)
 
 
 def main():
@@ -76,6 +77,10 @@ def main():
         # Qwen 4B 23.1 -> 27.0 tok/s on Honeykrisp 9323171c12). An explicit value in the environment wins.
         env.setdefault('MLX_OMARCHY_BATCH_WORK', '120000')
         serve_patch(env, prefix)
+        # Batch parallel requests (agents, assistant + chat) instead of queueing them; the launcher
+        # reserves each extra request's KV at the profile's context before it starts
+        # (configure-serve-concurrency.py). 8 parallel requests: first tokens by 1.4-1.8 s, not 5.9 s.
+        env.setdefault('MSERIES_SERVE_CONCURRENCY', str(profile.get('concurrency', 4)))
         from runtime_recovery import recover
         recovered = recover(prefix)
         if recovered: print(f'RECOVERY: removed {recovered} dead CLI reservations; reserve unchanged', flush=True)
