@@ -231,6 +231,8 @@ check kernel 'touchid-settings/tests/test-pam-helper.sh' 'bash mseries/touchid-s
 # -- power ---------------------------------------------------------------------
 check power 'test-power-cap.py' 'python3 mseries/test-power-cap.py'
 check power 'test-power-install.py' 'python3 mseries/test-power-install.py'
+check power 'optimize: mseries-power-tune (shellcheck) and tests' \
+  'bash -n mseries/power/optimize/mseries-power-tune && shellcheck -S warning mseries/power/optimize/mseries-power-tune && python3 -m py_compile mseries/power/optimize/*.py && python3 mseries/power/optimize/test_optimize.py'
 check power 'macos-baseline unit tests' "python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'"
 check power 'share-cost tests' 'python3 mseries/share-cost/test-summarize-share-cost.py && python3 mseries/share-cost/test-compare-share-cost.py'
 
