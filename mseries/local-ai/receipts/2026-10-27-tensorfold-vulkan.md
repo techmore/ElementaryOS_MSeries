@@ -1,5 +1,97 @@
 # TensorFold Vulkan feasibility — 2026-10-27
 
+## Engine PR now public (2026-10-28)
+
+The staged engine PR this receipt was waiting for is
+[ashhart/TensorFold PR 1517](https://github.com/ashhart/TensorFold/pull/1517),
+head `670902196c47f3e70e3f56ab933805713be31aa8` (15 commits, about 17,950
+added lines, Apache-2.0). It adds an opt-in native Vulkan backend, built only with
+`-Dvulkan=true`, for one model: dense Qwen3.5-2B MLX Q4 group 64. It runs on one
+GPU with one stream and greedy decoding only, and has a 7,168-token ceiling. It is
+Zig host code plus GLSL compute shaders compiled with `glslang`, with some shader
+code adapted from mlx-omarchy. Outside new files it touches only `build.zig`,
+`zig/src/server/cli.zig` (`--backend vulkan`) and license notices. Upstream
+tested it only on M1 Max and M1 under Honeykrisp. It does **not** claim token
+parity with the Metal engine: 4 of 9 prompts diverge, and three teacher-forced
+logit cases fail upstream's tolerances. Decode takes about 155 ms/token, before
+the submit-batching follow-up, which is still unpublished.
+
+**Kernel:** this is userspace only. It needs a Vulkan 1.3 compute device via
+Honeykrisp; on `7.2.11-elementary-aurora72-wip4` the private ICD already
+enumerates M1 Pro at Vulkan 1.4 (see *Local baseline*). No kernel patch, config
+or UAPI change is needed. The ANE driver used by the sibling ane-linux-experiments
+work is also already live on wip4 (`/dev/accel/accel0`).
+
+**Overlap with this branch:** it uses the same checkpoint revision (`93760be4…`)
+as our Qwen3.5 2B smoke, the same private ICD, and the same "separate prefix,
+process-local `VK_DRIVER_FILES`" rule set out under *Next gate*. Our 20k–120k
+work-group budget measurements are MLX/Rapid submission sizing, not this
+engine. They are not a substitute for the TensorFold batching follow-up.
+
+**Port:** [`tensorfold-vulkan.sh`](../tensorfold-vulkan.sh) pins the PR head and
+the official Zig 0.17.0 aarch64 tarball (SHA-256 checked). It builds under
+`~/.cache/mseries-tensorfold` and refuses to run if the PR head moves or if
+`$HOME` has less than 5 GiB free. It has three modes: `build` (server and stage
+probes), `test` (GPU-free host suites) and `gpu` (stage 1–5 operator gates, with
+the private ICD selected only for that process). The upstream source and Zig were
+fetched and verified on this M1 Pro.
+
+**Build result (2026-10-28, owner-run `build`):** completed on the M1 Pro under
+wip4 with no errors, as a ReleaseSafe build. It produced 25 SPIR-V shader modules
+under `stage1/` to `stage5/`, the server
+`tensorfold-native-vulkan` (SHA-256 `5acf4452…a867379b`), and the probes
+`tf-qwen35-model` (`0a604cd3…3619d98c`), `tf-vulkan-probe` and
+`tf-stage1-gpu` to `tf-stage5-gpu`. The whole prefix uses 906 MiB.
+
+**Host tests (2026-10-28, owner-run `test`):** PASS. Of `vulkan-host-test`,
+`qwen35-model-host-test` and `model-host-test`, 68/68 build steps succeeded.
+Most test runs were reported as cached passes from the first invocation; Zig
+caches only passing runs. One test was skipped: the real-checkpoint load, which
+needs `TF_QWEN_DIR`. Zig 0.17 prints passing tests' diagnostic output (the
+admission-refusal and replay lines) under a red "failed command" header, so the
+script now prints an explicit verdict.
+
+**GPU operator gates (2026-10-28, owner-run `gpu`):** PASS on Apple M1 Pro
+(G13S C0), Honeykrisp Mesa 26.3.0-devel `7faf04c065`, Vulkan 1.4.359, wip4.
+All 39 cases passed:
+
+| Stage | Operators | Cases |
+| --- | --- | ---: |
+| 1 | cast, copy, gather, embedding, Q4 projection | 13/13 |
+| 2 | residual add, SwiGLU, RMS norm | 9/9 |
+| 3 | RoPE, KV cache, SDPA, gate | 4/4 |
+| 4 | GDN conv/split, prefill, decode, norm | 6/6 |
+| 5 | greedy argmax over the 248,320 vocabulary | 7/7 |
+
+The worst case in each check stayed at or below its declared bound; the closest
+was 0.996 (stage 4 conv). Repeated runs were byte-identical, and planted
+NaN/±Inf outputs were refused. In stage 5, the `error: non-finite bf16 logit`
+lines are the expected refusals of its `nonfinite-refused` case. The device
+reports `preserve32=false flush32=true`, so f32 denormals are flushed;
+upstream's residual-add check allows this. These are synthetic operator checks,
+not a model run. Note: Honeykrisp's Vulkan vendor ID is `0x10005` (Mesa), not
+Apple's PCI ID `0x106b`. The model probe and server are not yet wrapped in
+the memory/thermal guard used by `test-mlx-model-smoke.py`; do that before any
+model run.
+
+**Sibling repositories touched the same day** (joshuaswarren, 2026-10-27/28):
+
+* omarchy-cluster PR 39: Honeykrisp reports one heap of 50% of RAM by default;
+  allocations past it fail with `VK_ERROR_OUT_OF_DEVICE_MEMORY` even when RAM is
+  free, and the kernel never refuses. `HK_SYSMEM=<bytes>` raises it. On our
+  32 GB M1 Pro the default heap would be about 15 GiB. That is above every current
+  admission allowance, so it is not the cause of the 4B refusals, which come from
+  our own guard. The script leaves `HK_SYSMEM` unset to keep the desktop
+  reserve.
+* omarchy-mlx PRs 288/289: a storage-buffer-range test skip and a full-logit
+  quantized matmul split by output columns. These are runtime changes for a later
+  omarchy-mlx pin bump, not this engine.
+* metal2vk PRs 99–105: shim/compiler fixes after our pinned `de6faa02`, for a
+  later bump of the isolated clspv toolchain.
+* ane-linux-experiments: same-day llama.cpp-Vulkan receipts and Honeykrisp heap
+  readings on M1/M2 hosts, plus PR 7 (surface mapping). These are reference data
+  only.
+
 ## Compiler completion and `metal::exp` test
 
 The pinned clspv build subsequently completed on the M1 Pro. Source:
@@ -211,3 +303,16 @@ the maintainer's predeclared teacher-forced float64 fidelity gate and record
 all failures. The author's public receipt says the raw inputs and executables
 are private, and the batching code will follow the engine PR, so this is an
 unexecuted plan rather than evidence of a 30% gain on this machine.
+
+## Four-engine comparison (2026-10-28)
+
+Same Qwen3.5-2B MLX 4-bit checkpoint (`93760be4`), same prompts, greedy, no thinking, three rotated rounds, each run a fresh process with one warmup; shared lock, 6 GiB reserve, 80 °C limit; wip4, Honeykrisp `7faf04c065`. Medians:
+
+| Engine | 32 tok decode | 32 tok TTFT | 256 tok decode | 256 tok output vs MLX default |
+| --- | ---: | ---: | ---: | --- |
+| MLX default (5k budget) | 36.0 tok/s | 0.51 s | 37.2 tok/s | reference |
+| MLX 120k budget | **47.2** | 0.46 s | **49.3** | identical |
+| Rapid-MLX 120k (HTTP) | 42.4 | **0.19 s** | 43.2 | identical |
+| TensorFold Vulkan PR 1517 (HTTP) | 2.4 | 2.00 s | 2.8 | diverges after 880 of 1,301 chars |
+
+TensorFold's slowness is structural: `Pipeline.run` (`zig/src/vulkan/dispatch.zig`) records one dispatch, submits it and waits on its fence before the next, so a token costs a few hundred CPU↔GPU round trips. Its server log agrees (`tok/s=2.4–2.6`). Upstream's unpublished submit-batching follow-up targets exactly this. Its 256-token text matched MLX for ~170 tokens and then took a different, coherent continuation, consistent with upstream's reported divergence. Raw data: `2026-10-28-engine-compare-short.json`, `2026-10-28-engine-compare-long.json`; live table in `ENGINE-SCOREBOARD.md`.
