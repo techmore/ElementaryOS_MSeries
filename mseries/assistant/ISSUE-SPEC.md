@@ -56,6 +56,18 @@ Assistant app ──► agent loop ──► desktop MCP server (apps, windows, 
    - Perception is bound to a capture id with a short lifetime, so stale screens are refused.
    - A deny-by-default capability manifest per tool, app and path, with length and regex limits on typed text. The daemon owns grants, and the model cannot widen them.
    - A trajectory log for audit, and batched steps with an observation to cut round trips for a small model.
+   - **Why not cua-driver itself.** It is MIT and well designed, but its Linux support is x86_64 desktops only (X11; Wayland is compositor-specific and refuses raw background keys). This laptop is aarch64 with Pantheon's own compositor, so we write a Rust driver with the same contract instead. The design points we copy:
+     - Never steal focus. The ladder is AT-SPI action first, then IBus text commit, then compositor-addressed input, with foreground delivery only as an explicit, logged last resort.
+     - Sessions are per MCP connection and reaped after 5 idle minutes.
+     - Stdio MCP is the default. A shared daemon listens on a unix socket. HTTP is off unless enabled, and then needs a bearer token.
+     - Permission layers: admin policy, then user policy, then mode (standard, bounded or unrestricted), then a per-session manifest with `allow.tools`, `resources.apps/files/browser` and `expires_after`.
+     - Browser actions only through typed `browser_*` tools over CDP against the separate Assistant Browser profile.
+     - Pantheon gives us an advantage cua-driver lacks: the compositor already exposes `org.pantheon.gala` window lists, and SDK apps can publish their own semantic tree (`msdk render`). Prefer those over pixels.
+   - **Sandbox VMs for risky actions** (the idea from [Lume](https://cua.ai/docs/lume), which runs only on macOS hosts). Use qemu/KVM, which already works here (`/dev/kvm`, ARM64 guests, `~/vms/elementary`, `mseries/KVM-VMS.md`).
+     - Keep a golden elementary OS ARM64 image. Each risky task gets a throwaway qcow2 overlay plus its own copy of the UEFI vars, and the clone is discarded afterwards.
+     - Shares are read-only by default. No credentials in the golden image. The control channel is loopback or virtio-vsock only.
+     - Use it for running untrusted scripts, trying installs or config changes, and opening unknown files or links. The assistant reports the diff or result, and you choose whether to apply it on the host.
+     - The same driver runs inside the guest, so one tool contract works for both.
 5. **Safety.** Window and field content is data, never instructions. Read-only tools run freely. Local reversible creates run under a standing grant. Sending, deleting and system changes need a visible confirmation of the exact action.
 
 ## Milestones
@@ -65,7 +77,8 @@ Assistant app ──► agent loop ──► desktop MCP server (apps, windows, 
 - **M2: Assistant app (talk and type).** Chat UI, push-to-talk through `/v1/assist/voice`, spoken answers, history, and a global shortcut.
   - *Accept:* a spoken question gets a spoken and written answer within 4 s on a warm model. Typed chat works with the mic off. The app passes the HIG/SDK app checks.
 - **M3: agent actions over MCP.** `mseries-desktop-mcp` with the Cua-style tools above, tool calling from LFM3, approval cards and the audit log.
-  - *Accept:* "open Files", "make a task to call Jan tomorrow at 3" and "what's using my battery?" each work by voice. Every side effect is shown before it runs, and refusals come back structured.
+  - A sandbox tool (`sandbox_run`) clones the golden VM, runs the task there with the same driver, returns the result, and discards the clone.
+  - *Accept:* "open Files", "make a task to call Jan tomorrow at 3" and "what's using my battery?" each work by voice. "Try this install script" runs only in a throwaway VM. Every side effect is shown before it runs, and refusals come back structured.
 - **M4: Smart Reply on LFM3, plus Forms.** Move Ctrl+Alt+R drafts to assistd as an option. Add a separate form-fill mode that proposes values per field from the owner's profile, never for password or card fields.
   - *Accept:* draft quality is at least as good as Qwen 4B on the existing reply fixtures. A form fill proposes and never submits.
 - **M5: speed and the ANE.** Adopt TensorFold's one-submit-per-token batching when it is public (30–40% on M1 parts), and the omarchy-mlx updates past v0.7.33. Run the LFM3 backbone on the ANE when the Linux ANE path is device-qualified (see PR #648's handoff).
