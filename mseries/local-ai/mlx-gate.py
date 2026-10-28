@@ -72,11 +72,58 @@ CONFIGS = {
 
 # ---------------------------------------------------------------- worker side (mlx venv)
 
+def install_cpu_fast_ops(mx):
+    """omarchy-mlx's CPU backend raises NYI for mx.fast.rms_norm, rope and
+    scaled_dot_product_attention. Replace them with plain-op math in float32, which also
+    keeps the reference independent of the fused kernels under test."""
+    f32 = mx.float32
+
+    def rms_norm(x, weight, eps):
+        xf = x.astype(f32)
+        y = xf * mx.rsqrt(mx.mean(xf * xf, axis=-1, keepdims=True) + eps)
+        return (y * weight.astype(f32) if weight is not None else y).astype(x.dtype)
+
+    def rope(x, dims, *, traditional, base, scale, offset, freqs=None):
+        L = x.shape[-2]
+        pos = (mx.arange(L, dtype=f32) + mx.array(offset).astype(f32)) * scale
+        inv = (1.0 / freqs.astype(f32)) if freqs is not None else \
+            mx.power(mx.array(base, dtype=f32), -mx.arange(0, dims, 2, dtype=f32) / dims)
+        th = pos[:, None] * inv[None, :]
+        c, s = mx.cos(th), mx.sin(th)
+        xf = x.astype(f32)
+        rot, rest = xf[..., :dims], xf[..., dims:]
+        if traditional:
+            a, b = rot[..., 0::2], rot[..., 1::2]
+            out = mx.stack([a * c - b * s, a * s + b * c], axis=-1).reshape(rot.shape)
+        else:
+            a, b = rot[..., :dims // 2], rot[..., dims // 2:]
+            out = mx.concatenate([a * c - b * s, a * s + b * c], axis=-1)
+        return mx.concatenate([out, rest], axis=-1).astype(x.dtype)
+
+    def sdpa(q, k, v, *, scale, mask=None, sinks=None, **_):
+        B, Hq, L, D = q.shape
+        Hk, S = k.shape[1], k.shape[2]
+        if Hq != Hk:
+            k = mx.repeat(k, Hq // Hk, axis=1); v = mx.repeat(v, Hq // Hk, axis=1)
+        sc = (q.astype(f32) * scale) @ k.astype(f32).swapaxes(-1, -2)
+        if isinstance(mask, str) and mask == 'causal':
+            keep = mx.arange(S)[None, :] <= (mx.arange(L)[:, None] + (S - L))
+            sc = mx.where(keep, sc, -mx.inf)
+        elif mask is not None:
+            sc = mx.where(mask, sc, -mx.inf) if mask.dtype == mx.bool_ else sc + mask.astype(f32)
+        if sinks is not None:
+            raise NotImplementedError('attention sinks not used by the gated checkpoints')
+        return (mx.softmax(sc, axis=-1) @ v.astype(f32)).astype(q.dtype)
+
+    mx.fast.rms_norm, mx.fast.rope, mx.fast.scaled_dot_product_attention = rms_norm, rope, sdpa
+
+
 def load(cpu):
     import mlx.core as mx
     from mlx_lm import load as mlx_load
     if cpu:
         mx.set_default_device(mx.cpu)
+        install_cpu_fast_ops(mx)
     model, tok = mlx_load(str(MODEL))
     if cpu:
         model.set_dtype(mx.float32)
