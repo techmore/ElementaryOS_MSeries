@@ -38,6 +38,8 @@ def main():
     parser.add_argument('--admission-gib', required=True, type=float,
                         help='Model-specific memory allowance, in addition to the 6 GiB desktop reserve')
     parser.add_argument('--lfm3-module', type=Path)
+    parser.add_argument('--batch-work', type=int, choices=[5000, 10000, 20000],
+                        help='Experimental process-local Vulkan work budget (default: runtime chooses)')
     parser.add_argument('--allow-fan-above-3500', action='store_true',
                         help='Only when the owner explicitly authorizes more fan noise')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
@@ -61,11 +63,14 @@ def main():
         raise SystemExit('Admission refused')
     env = os.environ.copy()
     for key in list(env):
-        if key.startswith('MLX_OMARCHY_M2V_') or key == 'MLX_OMARCHY_METAL_KERNEL_BACKEND':
+        if key.startswith('MLX_OMARCHY_M2V_') or key in ('MLX_OMARCHY_METAL_KERNEL_BACKEND', 'MLX_OMARCHY_BATCH_WORK'):
             del env[key]
     env.update(VK_DRIVER_FILES=str(home / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json'),
                MLX_OMARCHY_METAL_KERNEL_BACKEND='auto', MLX_OMARCHY_M2V_SUMMARY='1',
                HF_HUB_OFFLINE='1', OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2')
+    if args.batch_work is not None:
+        env['MLX_OMARCHY_BATCH_WORK'] = str(args.batch_work)
+        print('EXPERIMENTAL_BATCH_WORK', args.batch_work, flush=True)
     command = [str(home / '.local/share/mlx-omarchy/venv/bin/python'), __file__, '--worker', '--model', str(args.model),
                '--admission-gib', str(args.admission_gib)]
     if args.lfm3_module:
