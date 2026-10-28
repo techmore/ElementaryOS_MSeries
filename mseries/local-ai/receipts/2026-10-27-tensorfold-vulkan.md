@@ -1,5 +1,62 @@
 # TensorFold Vulkan feasibility — 2026-10-27
 
+## Engine PR now public (2026-10-28)
+
+The staged engine PR this receipt was waiting for is
+[ashhart/TensorFold PR 1517](https://github.com/ashhart/TensorFold/pull/1517),
+head `670902196c47f3e70e3f56ab933805713be31aa8` (15 commits, about 17,950
+added lines, Apache-2.0). It adds an opt-in native Vulkan backend, built only with
+`-Dvulkan=true`, for one model: dense Qwen3.5-2B MLX Q4 group 64. It runs on one
+GPU with one stream and greedy decoding only, and has a 7,168-token ceiling. It is
+Zig host code plus GLSL compute shaders compiled with `glslang`, with some shader
+code adapted from mlx-omarchy. Outside new files it touches only `build.zig`,
+`zig/src/server/cli.zig` (`--backend vulkan`) and license notices. Upstream
+tested it only on M1 Max and M1 under Honeykrisp. It does **not** claim token
+parity with the Metal engine: 4 of 9 prompts diverge, and three teacher-forced
+logit cases fail upstream's tolerances. Decode takes about 155 ms/token, before
+the submit-batching follow-up, which is still unpublished.
+
+**Kernel:** this is userspace only. It needs a Vulkan 1.3 compute device via
+Honeykrisp; on `7.2.11-elementary-aurora72-wip4` the private ICD already
+enumerates M1 Pro at Vulkan 1.4 (see *Local baseline*). No kernel patch, config
+or UAPI change is needed. The ANE driver used by the sibling ane-linux-experiments
+work is also already live on wip4 (`/dev/accel/accel0`).
+
+**Overlap with this branch:** it uses the same checkpoint revision (`93760be4…`)
+as our Qwen3.5 2B smoke, the same private ICD, and the same "separate prefix,
+process-local `VK_DRIVER_FILES`" rule set out under *Next gate*. Our 20k–120k
+work-group budget measurements are MLX/Rapid submission sizing, not this
+engine. They are not a substitute for the TensorFold batching follow-up.
+
+**Port:** [`tensorfold-vulkan.sh`](../tensorfold-vulkan.sh) pins the PR head and
+the official Zig 0.17.0 aarch64 tarball (SHA-256 checked). It builds under
+`~/.cache/mseries-tensorfold` and refuses to run if the PR head moves or if
+`$HOME` has less than 5 GiB free. It has three modes: `build` (server and stage
+probes), `test` (GPU-free host suites) and `gpu` (stage 1–5 operator gates, with
+the private ICD selected only for that process). The upstream source and Zig were
+fetched and verified on this M1 Pro. **No build, test or GPU run has executed
+here:** running the fetched Zig build was blocked in the agent session, so the
+owner runs the first `build`. The model probe and server are not yet wrapped in
+the memory/thermal guard used by `test-mlx-model-smoke.py`; do that before any
+model run.
+
+**Sibling repositories touched the same day** (joshuaswarren, 2026-10-27/28):
+
+* omarchy-cluster PR 39: Honeykrisp reports one heap of 50% of RAM by default;
+  allocations past it fail with `VK_ERROR_OUT_OF_DEVICE_MEMORY` even when RAM is
+  free, and the kernel never refuses. `HK_SYSMEM=<bytes>` raises it. On our
+  16 GiB M1 Pro this likely caps any Vulkan model near 8 GiB regardless of our
+  admission guard. The script leaves `HK_SYSMEM` unset to keep the desktop
+  reserve.
+* omarchy-mlx PRs 288/289: a storage-buffer-range test skip and a full-logit
+  quantized matmul split by output columns. These are runtime changes for a later
+  omarchy-mlx pin bump, not this engine.
+* metal2vk PRs 99–105: shim/compiler fixes after our pinned `de6faa02`, for a
+  later bump of the isolated clspv toolchain.
+* ane-linux-experiments: same-day llama.cpp-Vulkan receipts and Honeykrisp heap
+  readings on M1/M2 hosts, plus PR 7 (surface mapping). These are reference data
+  only.
+
 ## Compiler completion and `metal::exp` test
 
 The pinned clspv build subsequently completed on the M1 Pro. Source:
