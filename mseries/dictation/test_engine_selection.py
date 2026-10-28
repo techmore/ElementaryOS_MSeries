@@ -57,7 +57,7 @@ class EngineSelection(unittest.TestCase):
         data = engine.DROPIN.read_text()
         self.assertIn('"STREAM_MODE=toggle"', data)
         self.assertIn('"STREAM_THREADS=4"', data)
-        self.assertIn('"STREAM_UNVERIFIED_FALLBACK=0"', data)
+        self.assertIn('"STREAM_UNVERIFIED_FALLBACK=1"', data)
         self.assertIn('"STREAM_OUTPUT=ibus"', data)
         self.assertEqual(self.calls, [])
         self.assertEqual(self.other.read_text(), "Owner ANE preferences\n")
@@ -274,7 +274,7 @@ class InstallerContracts(unittest.TestCase):
 
 class ActivationHealth(unittest.TestCase):
     def test_ready_before_keyboard_failure_is_not_deployment_success(self):
-        with patch.object(engine, "active", return_value=True), patch.object(engine, "systemctl", side_effect=[subprocess.CompletedProcess([], 0, "123\n"), subprocess.CompletedProcess([], 0, "124\n")]), patch.object(engine, "lifecycle", return_value={"pid": 123, "phase": "ready", "output": "ibus"}), patch.object(engine, "environment", return_value={"STREAM_ENGINE": "nemotron", "STREAM_UNVERIFIED_FALLBACK": "0"}), patch.object(engine, "bridge_ready"), patch.object(engine.time, "sleep"):
+        with patch.object(engine, "active", return_value=True), patch.object(engine, "systemctl", side_effect=[subprocess.CompletedProcess([], 0, "123\n"), subprocess.CompletedProcess([], 0, "124\n")]), patch.object(engine, "lifecycle", return_value={"pid": 123, "phase": "ready", "output": "ibus"}), patch.object(engine, "environment", return_value={"STREAM_ENGINE": "nemotron", "STREAM_UNVERIFIED_FALLBACK": "1"}), patch.object(engine, "bridge_ready"), patch.object(engine.time, "sleep"):
             with self.assertRaisesRegex(ValueError, "opening its keyboard"):
                 engine.wait_ready("nemotron")
 

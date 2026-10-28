@@ -46,6 +46,11 @@ Known gaps (2026-10-18)
 - Mic gain is 60 (`STREAM_GAIN` / `AOP_MIC_GAIN`) since the float fix below; typing assumes a US layout (ydotool).
 - Automatic streamed grammar remains disabled; optional original/proposal review is qualified separately below.
 
+
+### Mac-style F5 in every app (2026-10-27)
+
+F5 now works the way it does on a Mac: tap F5 in any text field, talk, and tap F5 again to stop. When an app exposes its field through accessibility, the focus-bound IBus path is used as before, and password, card and other sensitive fields are refused. Some apps, such as Electron apps like Claude and ChatGPT and some Qt apps, hide their fields unless started with accessibility. For those, the managed engine setting `STREAM_UNVERIFIED_FALLBACK=1` types through `ydotool` instead of refusing. That path cannot see the field type, so a password field inside such an app is not detected. Launching those apps with `--force-renderer-accessibility` (done for Claude and ChatGPT) puts them back on the verified path. Qualification scripts still run the strict mode (`0`).
+
 ## Streaming mode (2026-10-18, default after `install-dictation-stream.sh`)
 
 Hold F5: words are typed while you talk instead of after you release. transcribe.cpp 0.4.0 (MIT) + Parakeet Unified 0.6B Q4_K_M (CC-BY-4.0) via `stream-dictate.py`; start/stop chimes; Voxtype stays installed as the fallback (`systemctl --user stop mseries-stream-dictate; systemctl --user start voxtype`).
