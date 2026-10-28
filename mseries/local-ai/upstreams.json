@@ -1,0 +1,81 @@
+{
+  "_doc": "Every upstream the local AI stack pins, and the patches we carry on each. upstream-step.py reads this; test_upstreams.py keeps install.sh and serve-patch.sh in step with it. kind: ours = we wrote it, send it upstream (upstream_pr records the PR); port = someone else's upstream fix carried until our pin reaches it; vendored = third-party code we carry, never ours to send.",
+  "upstreams": {
+    "omarchy-mlx": {
+      "repo": "joshuaswarren/omarchy-mlx",
+      "track": "main",
+      "pin": "33630f9c1eeefe5fc985a28bed0585432c2c014e",
+      "pin_label": "v0.7.33",
+      "step_rule": "Step only when upstream moves its install.sh MLX_LM_VERSION default or cuts a release; never run ahead of it.",
+      "install_checkout": "omarchy-mlx",
+      "patches": []
+    },
+    "mlx-lm": {
+      "repo": "ml-explore/mlx-lm",
+      "track": "omarchy-mlx",
+      "pin": "v0.31.3",
+      "step_rule": "Follows the MLX_LM_VERSION that our omarchy-mlx pin installs; serve-patch.sh applies these to a copy of the installed mlx_lm.",
+      "strip": 1,
+      "patches": [
+        {
+          "file": "patches/mlx-lm-0.31.3-server-skip-logprob-read.patch",
+          "kind": "port",
+          "origin": "joshuaswarren/omarchy-mlx patches/mlx-lm-0.32/mlx-lm-server-skip-logprob-read.patch",
+          "drop_when": "omarchy-mlx's default moves to the mlx-lm 0.32 line"
+        },
+        {
+          "file": "patches/mlx-lm-0.31.3-server-singleton-cache.patch",
+          "kind": "vendored",
+          "origin": "Rapid-MLX singleton_cache_fastpath.py (Apache-2.0), see serve_singleton_cache.py",
+          "extra_files": ["serve_singleton_cache.py"]
+        },
+        {
+          "file": "patches/mlx-lm-0.31.3-detokenizer-tokenmap-cache.patch",
+          "kind": "ours",
+          "upstream_pr": null
+        }
+      ]
+    },
+    "coreglass": {
+      "repo": "joshuaswarren/coreglass",
+      "track": "main",
+      "pin": "25603cbf1f95fd2819b11d914afec58997ef1b8b",
+      "install_checkout": "coreglass",
+      "strip": 1,
+      "patches": [
+        {
+          "file": "coreglass-local.patch",
+          "kind": "ours",
+          "upstream_pr": null
+        }
+      ]
+    },
+    "mesa-mlx-compute": {
+      "repo": "joshuaswarren/mesa-1",
+      "track": null,
+      "pin": "9323171c12c5aa6055f1031ea26c16c247191987",
+      "step_rule": "Branch-based driver work with no patches of ours; step by hand after the MLX gate and ENGINE-SCOREBOARD.md comparison.",
+      "install_checkout": "mesa-mlx-compute",
+      "patches": []
+    },
+    "ane-linux-experiments": {
+      "repo": "joshuaswarren/ane-linux-experiments",
+      "track": "main",
+      "pin": "b1f2cbe338ef33f9befb320b98ef83096b37980b",
+      "step_rule": "Experiments only; not installed.",
+      "strip": 1,
+      "patches": [
+        {
+          "file": "patches/ane-linux-experiments-b1f2cbe-uniform-relayout.patch",
+          "kind": "ours",
+          "upstream_pr": null
+        },
+        {
+          "file": "patches/ane-linux-experiments-b1f2cbe-tile-unit-tests.patch",
+          "kind": "ours",
+          "upstream_pr": null
+        }
+      ]
+    }
+  }
+}
