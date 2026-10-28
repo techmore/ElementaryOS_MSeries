@@ -1,5 +1,5 @@
 {
-  "_doc": "Every upstream the local AI stack pins, and the patches we carry on each. upstream-step.py reads this; test_upstreams.py keeps install.sh and serve-patch.sh in step with it. kind: ours = we wrote it, send it upstream (upstream_pr records the PR); port = someone else's upstream fix carried until our pin reaches it; vendored = third-party code we carry, never ours to send.",
+  "_doc": "Every upstream the local AI stack pins, and the patches we carry on each. upstream-step.py reads this; test_upstreams.py keeps install.sh and serve-patch.sh in step with it. We never send patches to third-party repos: our changes live here and are re-applied on each step. kind: ours = we wrote it; port = someone else's fix carried until our pin reaches it; vendored = third-party code we carry.",
   "upstreams": {
     "omarchy-mlx": {
       "repo": "joshuaswarren/omarchy-mlx",
@@ -34,7 +34,6 @@
         {
           "file": "patches/mlx-lm-0.31.3-detokenizer-tokenmap-cache.patch",
           "kind": "ours",
-          "upstream_pr": "not needed",
           "drop_when": "our mlx-lm pin reaches v0.32.0, where TokenizerWrapper.detokenizer copies one prebuilt detokenizer"
         }
       ]
@@ -48,8 +47,7 @@
       "patches": [
         {
           "file": "coreglass-local.patch",
-          "kind": "ours",
-          "upstream_pr": null
+          "kind": "ours"
         }
       ]
     },
@@ -70,13 +68,11 @@
       "patches": [
         {
           "file": "patches/ane-linux-experiments-b1f2cbe-uniform-relayout.patch",
-          "kind": "ours",
-          "upstream_pr": null
+          "kind": "ours"
         },
         {
           "file": "patches/ane-linux-experiments-b1f2cbe-tile-unit-tests.patch",
-          "kind": "ours",
-          "upstream_pr": null
+          "kind": "ours"
         }
       ]
     }

@@ -29,8 +29,6 @@ class ManifestTests(unittest.TestCase):
         for up in DATA.values():
             for p in up["patches"]:
                 self.assertIn(p["kind"], ("ours", "port", "vendored"), p["file"])
-                if p["kind"] == "ours":
-                    self.assertIn("upstream_pr", p, p["file"])
 
     def test_install_checkouts_match_pins(self):
         text = (HERE / "install.sh").read_text()

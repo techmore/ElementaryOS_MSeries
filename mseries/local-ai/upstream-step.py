@@ -192,13 +192,10 @@ def status(data):
             line += f"  (could not reach upstream: {e})"
         print(line)
         for p in up["patches"]:
-            pr = p.get("upstream_pr")
             if p.get("drop_when"):
                 tag = f"{p['kind']}, drop when {p['drop_when']}"
-            elif pr:
-                tag = f"upstream PR {pr}"
             else:
-                tag = "not sent upstream yet" if p["kind"] == "ours" else p["kind"]
+                tag = p["kind"]
             print(f"    {Path(p['file']).name}: {tag}")
 
 
