@@ -191,3 +191,17 @@ Offline through the real controller (clip played at real time): a 10.4 s sentenc
 ### Latency tuning and typing-interrupt — 2026-10-18
 
 Typing any non-modifier key while dictating (ANE engine) ends dictation at once and drops words not yet typed, so nothing lands in the middle of your sentence (Escape still cancels). Latency was measured offline on the pinned 10.4 s clip with `STREAM_ANE_TRACE=1`: lag = audio time when a word was typed minus the earliest audio prefix whose decode contained it. Every pass costs about 0.5 s whatever the length (the encoder window is a fixed 30 s), so the submit interval does not matter below that (0.3, 0.4 and 0.6 s all gave a 2.0 s median lag with 1 held-back word). Typing from a single pass (`STREAM_ANE_AGREE=1`) gives median lag 0.6-1.3 s but typed hallucinated words from truncated audio ("Well, I'm World War"), so two agreeing passes stay. Holding back no extra word (`STREAM_ANE_HOLD=0`, now the default) gives a 1.5 s median (3 runs, p90 about 2.9 s, includes the cold start of the first words). Idle release of the ANE worker is 180 s instead of 60 s. A fourth back-to-back test run was refused by the resource guard, as designed.
+
+## LFM3-Audio engine (`STREAM_ENGINE=lfm3`)
+
+F5 can use the shared on-device assistant (`mseries-assistd`, LFM3-Audio-2B on `127.0.0.1:8772`) instead of a
+separate speech model. `dictation_lfm.py` cuts the microphone stream into phrases at short pauses and sends each
+phrase to `/v1/audio/transcriptions`; text is typed as each phrase returns (about 2 s for 10 s of speech when warm).
+F5, F6 suggestions and Smart Reply then share one resident model. Enable it with a drop-in:
+
+    [Service]
+    Environment=STREAM_ENGINE=lfm3
+    Environment=MSERIES_ASSIST_RESERVE_GIB=4
+
+`MSERIES_ASSIST_RESERVE_GIB` is the desktop memory kept free after the model loads (default 6). Set the same value on
+`mseries-assistd.service`, or F5 will refuse to start once the model is resident.

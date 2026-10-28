@@ -36,7 +36,7 @@ NO_THINK = '<think>\n</think>\n'
 GIB = 1024 ** 3
 # Model weights plus working memory, in addition to the shared six-GiB desktop reserve.
 ADMISSION_GIB = 3.0
-RESERVE_GIB = 6.0
+RESERVE_GIB = float(os.environ.get('MSERIES_ASSIST_RESERVE_GIB', '6'))  # desktop headroom kept free after loading
 MAX_BODY = 32 * 1024 * 1024
 MAX_PREFIX_CHARS = 1500
 COMPLETE_SYSTEM = 'Write the text the user asks for, in their voice.'

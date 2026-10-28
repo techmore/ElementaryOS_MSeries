@@ -181,15 +181,6 @@ fn draft_with_store(
     let revision_prompt = revision.map(revision_prompt).transpose()?;
     let model_settings = store.local_model_settings()?;
 
-    let endpoint = Url::parse(&format!(
-        "{}/",
-        model_settings.endpoint.trim_end_matches('/')
-    ))
-    .map_err(|_| "The saved local AI endpoint is invalid".to_string())?;
-    let models_url = endpoint.join("models").map_err(|error| error.to_string())?;
-    let completions_url = endpoint
-        .join("chat/completions")
-        .map_err(|error| error.to_string())?;
     let client = reqwest::blocking::Client::builder()
         .no_proxy()
         .connect_timeout(Duration::from_secs(3))
@@ -203,26 +194,16 @@ fn draft_with_store(
         .build()
         .map_err(|error| format!("Could not prepare the local AI connection: {error}"))?;
 
-    let catalog = client
-        .get(models_url)
-        .send()
-        .and_then(reqwest::blocking::Response::error_for_status)
-        .map_err(|error| local_model_error(&error))?
-        .json::<Value>()
-        .map_err(|error| format!("The local model returned an invalid model list: {error}"))?;
-    let model = catalog
-        .get("data")
-        .and_then(Value::as_array)
-        .and_then(|models| {
-            models
-                .iter()
-                .filter_map(|model| model.get("id").and_then(Value::as_str))
-                .find(|id| is_qwen_model_id(id))
-        })
-        .ok_or_else(|| {
-            "No supported local Qwen model is loaded. Load the everyday Qwen profile and try again."
-                .to_string()
-        })?;
+    // The saved endpoint first (the everyday Qwen profile). When the owner never changed it and it has no Qwen model,
+    // fall back to the shared on-device assistant (LFM3-Audio in mseries-assistd), which is resident for F5 and F6.
+    let (completions_url, model) =
+        match pick_model(&client, &model_settings.endpoint, is_qwen_model_id) {
+            Ok(found) => found,
+            Err(error) if model_settings.endpoint == crate::store::DEFAULT_ENDPOINT => {
+                pick_model(&client, ASSISTANT_ENDPOINT, is_assistant_model_id).map_err(|_| error)?
+            }
+            Err(error) => return Err(error),
+        };
 
     let mut system_prompt = build_system_prompt(personal.block());
     system_prompt.push_str(revision_prompt.as_deref().unwrap_or_default());
@@ -351,6 +332,48 @@ fn bounded_context(context: &[ChatMessage]) -> Vec<BoundedMessage> {
     }
     bounded.reverse();
     bounded
+}
+
+/// The shared on-device assistant (mseries-assistd), OpenAI-compatible under /v1.
+pub const ASSISTANT_ENDPOINT: &str = "http://127.0.0.1:8772/v1";
+
+fn is_assistant_model_id(value: &str) -> bool {
+    value.to_ascii_lowercase().starts_with("lfm")
+}
+
+/// Finds a supported model at `endpoint`; returns its chat-completions URL and model id.
+fn pick_model(
+    client: &reqwest::blocking::Client,
+    endpoint: &str,
+    supported: fn(&str) -> bool,
+) -> Result<(Url, String), String> {
+    let endpoint = Url::parse(&format!("{}/", endpoint.trim_end_matches('/')))
+        .map_err(|_| "The saved local AI endpoint is invalid".to_string())?;
+    let models_url = endpoint.join("models").map_err(|error| error.to_string())?;
+    let completions_url = endpoint
+        .join("chat/completions")
+        .map_err(|error| error.to_string())?;
+    let catalog = client
+        .get(models_url)
+        .send()
+        .and_then(reqwest::blocking::Response::error_for_status)
+        .map_err(|error| local_model_error(&error))?
+        .json::<Value>()
+        .map_err(|error| format!("The local model returned an invalid model list: {error}"))?;
+    let model = catalog
+        .get("data")
+        .and_then(Value::as_array)
+        .and_then(|models| {
+            models
+                .iter()
+                .filter_map(|model| model.get("id").and_then(Value::as_str))
+                .find(|id| supported(id))
+        })
+        .ok_or_else(|| {
+            "No supported local Qwen model is loaded. Load the everyday Qwen profile and try again."
+                .to_string()
+        })?;
+    Ok((completions_url, model.to_string()))
 }
 
 fn is_qwen_model_id(value: &str) -> bool {
@@ -594,5 +617,7 @@ mod tests {
             "publisher/938d8919941c6e7efd3c7150eff7fe9d12afa631"
         ));
         assert!(!is_qwen_model_id("llama-3.2-3b-instruct"));
+        assert!(is_assistant_model_id("lfm3-audio-2b"));
+        assert!(!is_assistant_model_id("llama-3.2-3b-instruct"));
     }
 }
