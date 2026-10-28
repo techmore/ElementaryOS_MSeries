@@ -85,8 +85,15 @@ def main():
         recovered = recover(prefix)
         if recovered: print(f'RECOVERY: removed {recovered} dead CLI reservations; reserve unchanged', flush=True)
         launcher = home / '.local/bin/mlx-omarchy-serve' if prefix == home / '.local/share/mlx-omarchy' else Path('/usr/bin/mlx-omarchy-serve')
+        # Chats re-send the whole conversation each turn. mlx-lm saves a cache at the end of the system
+        # prompt and of each question; with one entry the system prompt evicts the question, so every
+        # turn re-read all history (Qwen 4B first token 0.72 -> 1.12 s by turn 4). Four entries keep
+        # two conversations' system + latest question: first token stays ~0.65 s
+        # (receipts/2026-10-28-serve-patch.md). Each entry reserves a full context of KV, so the
+        # 16k coding profiles keep two (one long conversation). A profile's prompt_cache_size wins.
+        cache_entries = profile.get('prompt_cache_size', 4 if profile['context'] <= 8192 else 2)
         command = [str(launcher), 'serve', profile['model'],
-                   '--context', str(profile['context']), '--prompt-cache-size', str(profile.get('prompt_cache_size', 1)),
+                   '--context', str(profile['context']), '--prompt-cache-size', str(cache_entries),
                    '--host', '127.0.0.1', '--port', str(profile['port']), '--offline', '--yes']
         if 'weights_gib' in profile:
             command += ['--weights-gib', str(profile['weights_gib'])]

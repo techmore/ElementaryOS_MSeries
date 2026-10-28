@@ -13548,3 +13548,8 @@ makes `MSERIES_SERVE_CONCURRENCY` batch N requests and reserves their KV up fron
 +0.75 GiB for the everyday 4B). Qwen 2B with 4 at once: 20 → 57 tok/s total, first token 4.1 →
 0.8 s; Qwen 4B with 4 at once: 12.8 → 25.8, 6.3 → 2.0 s. Ahead of Rapid-MLX on throughput in
 every case; Rapid still reaches a single request's first token sooner.
+
+Multi-turn chats (2026-10-28, round 3): the worker passed `--prompt-cache-size 1`, so with a system
+prompt each chat turn re-read all history (Qwen 4B first token 0.72 → 1.12 s by turn 4). The worker
+now keeps 4 cache entries at 8k context (2 at 16k), so each turn reads only the last reply and the
+new question and first token stays ~0.65 s. Receipt: `local-ai/receipts/2026-10-28-serve-patch.md`.

@@ -90,6 +90,31 @@ Receipts: the same names as above with `-round2`, plus
 Through the installed worker: plain answer, tool call, logprobs, and 4 parallel requests answered
 together in 2.2 s.
 
+## Round 3: multi-turn chats reuse the conversation (same day)
+
+Chats re-send the whole conversation every turn. mlx-lm 0.31.3 already saves a cache at the end of
+the system prompt and at the end of each question (before the 4-token reply header), which is
+the prompt-only copy Rapid-MLX makes by hand, and Qwen 3.5's untrimmable recurrent layers can
+resume from it. But our worker passed `--prompt-cache-size 1`, and with a system prompt the
+eviction order keeps the system entry and drops the question, so every turn re-read all history.
+
+Everyday Qwen 4B through the patched server, 236-token system prompt, two 4-turn
+conversations, greedy, identical text in both settings (`multiturn-probe.py 1` and `4`, receipts
+`2026-10-28-multiturn-qwen4b-hk9323171c12-cache{1,4}.json`):
+
+| Turn | Prompt tokens | Reused, 1 entry | First token, 1 entry | Reused, 4 entries | First token, 4 entries |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 258 | 0 | 1.44 s | 0 | 1.45 s |
+| 2 | 310 | 236 | 0.72 s | 254 | 0.69 s |
+| 3 | 362 | 236 | 0.78 s | 306 | 0.66 s |
+| 4 | 402 | 236 | 1.02 s | 358 | 0.63 s |
+| 2nd chat, turn 4 | 450 | 236 | 1.12 s | 401 | 0.65 s |
+
+With 4 entries only the last reply and the new question are read (~50 tokens), so first token
+stays flat as the chat grows. `model-worker.py` now defaults to 4 entries at 8k context and 2 at
+16k (each entry reserves a full context of KV: +0.75 GiB for the everyday 4B); `personal` keeps its
+explicit 1 at 64k. Through the installed worker: turns 2 and 3 reused 257 and 271 tokens.
+
 ## Still open
 
 - **Batching does not add throughput here.** 4 or 8 requests share about the same total
@@ -98,10 +123,6 @@ together in 2.2 s.
 - **First token for one request.** 0.25 s (2B) and 0.51 s (4B) against Rapid's 0.21-0.22 s.
   The prompt is read in two GPU passes (user part, then a 4-token tail kept for the prompt
   cache), and each pass with more than one token has ~70 ms fixed cost on this stack.
-- **Prompt cache.** Upstream disables it by default; our worker keeps 1 entry. Qwen 3.5's
-  recurrent layers cannot be trimmed, so a cache that includes the reply cannot be reused;
-  Rapid saves a prompt-only copy before decoding. Not measured yet (the benchmark sends a fresh
-  server each run and does not record cache hits).
 - **Sampling.** Benchmarks are greedy. Assistants use temperature 0.2; Rapid also fuses the
   top-p sampler (`_sampler_fast_path.py`), which these numbers do not cover.
 
