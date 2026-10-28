@@ -143,7 +143,10 @@ def chime(kind):
         with wave.open(path, "wb") as w:
             w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate)
             w.writeframes(struct.pack("<%dh" % len(out), *(int(32767 * 0.32 * x / peak) for x in out)))
-    subprocess.Popen(["pw-play", "--media-role", "Notification", path], stderr=subprocess.DEVNULL)
+    try:
+        subprocess.Popen(["pw-play", "--media-role", "Notification", path], stderr=subprocess.DEVNULL)
+    except OSError:
+        pass  # no PipeWire player: dictation still works, just silently
 
 
 class MicIndicator:
@@ -171,9 +174,12 @@ class MicIndicator:
             return  # running: the indicator is up
         if code == 3 or proc is None:
             # No overlay support in this compositor: a notification with the microphone icon instead.
-            subprocess.Popen(["notify-send", "-t", "0", "-i", "audio-input-microphone", "-a", "Dictation",
-                              "-h", "string:x-canonical-private-synchronous:mseries-dictation",
-                              "Listening\u2026"], stderr=subprocess.DEVNULL)
+            try:
+                subprocess.Popen(["notify-send", "-t", "0", "-i", "audio-input-microphone", "-a", "Dictation",
+                                  "-h", "string:x-canonical-private-synchronous:mseries-dictation",
+                                  "Listening\u2026"], stderr=subprocess.DEVNULL)
+            except OSError:
+                pass
 
     def feed(self, pcm16):
         """Send the chunk's level, at most ~25 times a second."""
