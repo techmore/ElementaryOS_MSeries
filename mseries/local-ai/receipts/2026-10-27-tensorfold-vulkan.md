@@ -34,9 +34,16 @@ the official Zig 0.17.0 aarch64 tarball (SHA-256 checked). It builds under
 `$HOME` has less than 5 GiB free. It has three modes: `build` (server and stage
 probes), `test` (GPU-free host suites) and `gpu` (stage 1–5 operator gates, with
 the private ICD selected only for that process). The upstream source and Zig were
-fetched and verified on this M1 Pro. **No build, test or GPU run has executed
-here:** running the fetched Zig build was blocked in the agent session, so the
-owner runs the first `build`. The model probe and server are not yet wrapped in
+fetched and verified on this M1 Pro.
+
+**Build result (2026-10-28, owner-run `build`):** completed on the M1 Pro under
+wip4 with no errors, as a ReleaseSafe build. It produced 25 SPIR-V shader modules
+under `stage1/` to `stage5/`, the server
+`tensorfold-native-vulkan` (SHA-256 `5acf4452…a867379b`), and the probes
+`tf-qwen35-model` (`0a604cd3…3619d98c`), `tf-vulkan-probe` and
+`tf-stage1-gpu` to `tf-stage5-gpu`. The whole prefix uses 906 MiB. Host tests and
+GPU gates have **not** run yet; a successful build says nothing about
+correctness on G13S. The model probe and server are not yet wrapped in
 the memory/thermal guard used by `test-mlx-model-smoke.py`; do that before any
 model run.
 
