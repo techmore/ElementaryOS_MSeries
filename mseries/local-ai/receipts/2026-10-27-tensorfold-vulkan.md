@@ -49,8 +49,28 @@ Most test runs were reported as cached passes from the first invocation; Zig
 caches only passing runs. One test was skipped: the real-checkpoint load, which
 needs `TF_QWEN_DIR`. Zig 0.17 prints passing tests' diagnostic output (the
 admission-refusal and replay lines) under a red "failed command" header, so the
-script now prints an explicit verdict. No GPU work has run yet; stage 1–5 gates
-are next. The model probe and server are not yet wrapped in
+script now prints an explicit verdict.
+
+**GPU operator gates (2026-10-28, owner-run `gpu`):** PASS on Apple M1 Pro
+(G13S C0), Honeykrisp Mesa 26.3.0-devel `7faf04c065`, Vulkan 1.4.359, wip4.
+All 39 cases passed:
+
+| Stage | Operators | Cases |
+| --- | --- | ---: |
+| 1 | cast, copy, gather, embedding, Q4 projection | 13/13 |
+| 2 | residual add, SwiGLU, RMS norm | 9/9 |
+| 3 | RoPE, KV cache, SDPA, gate | 4/4 |
+| 4 | GDN conv/split, prefill, decode, norm | 6/6 |
+| 5 | greedy argmax over the 248,320 vocabulary | 7/7 |
+
+The worst case in each check stayed at or below its declared bound; the closest
+was 0.996 (stage 4 conv). Repeated runs were byte-identical, and planted
+NaN/±Inf outputs were refused. In stage 5, the `error: non-finite bf16 logit`
+lines are the expected refusals of its `nonfinite-refused` case. The device
+reports `preserve32=false flush32=true`, so f32 denormals are flushed;
+upstream's residual-add check allows this. These are synthetic operator checks,
+not a model run. Note: Honeykrisp's Vulkan vendor ID is `0x10005` (Mesa), not
+Apple's PCI ID `0x106b`. The model probe and server are not yet wrapped in
 the memory/thermal guard used by `test-mlx-model-smoke.py`; do that before any
 model run.
 
