@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1f2933">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<title>Remote Desktop</title>
+</head>
+<body>
+<main id="screen-pair" class="screen" hidden>
+  <h1>Connect to this computer</h1>
+  <p id="pair-copy">Open the link or QR code shown on the computer you want to use.</p>
+  <label class="field" id="name-field" hidden>
+    <span>Name this phone</span>
+    <input id="device-name" maxlength="64" autocomplete="off" autocapitalize="words">
+  </label>
+  <button id="btn-connect" class="primary" hidden>Connect</button>
+</main>
+
+<main id="screen-wait" class="screen" hidden>
+  <div class="spinner" aria-hidden="true"></div>
+  <h1>Waiting for approval</h1>
+  <p>Someone at the computer has to tap <strong>Allow</strong>. This request expires in <span id="wait-left">60</span> s.</p>
+  <button id="btn-cancel" class="secondary">Cancel</button>
+</main>
+
+<main id="screen-ended" class="screen" hidden>
+  <h1 id="ended-title">Disconnected</h1>
+  <p id="ended-copy"></p>
+  <p class="hint">Ask for a new link on the computer to connect again.</p>
+</main>
+
+<section id="screen-stream" class="stream" hidden>
+  <video id="video" autoplay playsinline muted></video>
+  <div id="surface" class="surface" tabindex="-1" aria-label="Remote screen"></div>
+  <header id="bar" class="bar">
+    <span id="chip" class="chip">Connecting…</span>
+    <span id="stats" class="stats" aria-live="off"></span>
+    <button id="btn-end" class="bar-btn danger" aria-label="End session">End</button>
+  </header>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <div id="reconnect" class="reconnect" role="status" hidden>Reconnecting…</div>
+  <footer id="tools" class="tools">
+    <button id="btn-kb" class="tool" aria-label="Keyboard">⌨</button>
+    <button id="btn-keys" class="tool" aria-label="Special keys">Esc ⇥ ⌃</button>
+    <button id="btn-mode" class="tool" aria-label="Pointer mode">Touchpad</button>
+    <button id="btn-full" class="tool" aria-label="Full screen">⤢</button>
+  </footer>
+  <div id="keys" class="keys" hidden>
+    <button data-key="Escape">Esc</button><button data-key="Tab">Tab</button>
+    <button data-mod="ctrl" class="mod">Ctrl</button><button data-mod="alt" class="mod">Alt</button>
+    <button data-mod="meta" class="mod">Super</button><button data-mod="shift" class="mod">Shift</button>
+    <button data-key="ArrowLeft">←</button><button data-key="ArrowUp">↑</button>
+    <button data-key="ArrowDown">↓</button><button data-key="ArrowRight">→</button>
+    <button data-key="Home">Home</button><button data-key="End">End</button>
+    <button data-key="PageUp">PgUp</button><button data-key="PageDown">PgDn</button>
+    <button data-key="Delete">Del</button><button data-key="Enter">Enter</button>
+  </div>
+  <input id="kb" class="kb" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type on the remote computer">
+</section>
+<script src="/app.js"></script>
+</body>
+</html>

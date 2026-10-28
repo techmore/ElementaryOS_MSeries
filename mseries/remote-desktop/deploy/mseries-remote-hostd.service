@@ -1,0 +1,31 @@
+[Unit]
+Description=Remote Desktop host (WebRTC) for phones
+Documentation=https://github.com/techmore/ElementaryOS_MSeries/tree/dev/mseries/remote-desktop
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=io.elementary.mseries.Remote
+ExecStart=%h/.local/bin/mseries-remote-hostd
+Restart=on-failure
+RestartSec=3
+
+# It only ever needs the network, the session bus, PipeWire and its own state.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%S/mseries %C/gstreamer-1.0
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+LockPersonality=yes
+MemoryDenyWriteExecute=no
+SystemCallArchitectures=native
+
+[Install]
+# Not enabled by default: remote access is an explicit opt-in. D-Bus activation
+# starts the daemon on demand when the Remote Desktop app asks for it.
+WantedBy=
