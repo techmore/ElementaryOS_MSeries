@@ -12,6 +12,11 @@ Status 2026-10-28. Nothing here has been run on an M4 by this project.
 - Stock Asahi Alarm does not boot M4. The Aurora native installer's signed catalog
   (`aurora-silicon/aurora-distributions`) does not yet list `j773*`, so it cannot install onto this Mac.
 
+- Mainline: Phoronix (2026-10-02) reports pull requests for Linux 7.4 adding initial M4 device trees, including
+  the Mac mini (M4, 2024), covering only CPU cores, interrupts, power states, watchdog, serial, pin control, I2C
+  and the framebuffer. No GPU. The article does not confirm the pull was merged, and it does not name J773.
+  A mainline or Asahi kernel is therefore not a substitute for the Aurora kernel here.
+
 ## Consequence
 
 The README's step 1 (Asahi Alarm bootstrap) cannot work on an M4 mini. Until Aurora's catalog lists J773,

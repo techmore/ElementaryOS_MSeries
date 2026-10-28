@@ -951,8 +951,18 @@ run_named_step() {
   esac
 }
 
+# Per-step timing, after the F1 installer's script timing: one line per step in
+# $STATE_DIR/timings.log, so a slow or interrupted step can be seen afterwards.
+# The step may reboot or exit, so the start is recorded first and the end only if
+# control comes back.
+record_timing() {
+  [[ -d $STATE_DIR ]] || return 0
+  printf '%s %s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" "$2" >>"$STATE_DIR/timings.log" 2>/dev/null || true
+}
+
 run_step() {
   local step="$1"
+  record_timing "$step" start
   case $step in
     boot-layout) step_boot_layout ;;
     encrypt) step_encrypt ;;
@@ -960,6 +970,7 @@ run_step() {
     done) step_done ;;
     *) fail "unknown step: $step" ;;
   esac
+  record_timing "$step" end
 }
 
 # ---------------------------------------------------------------------------
