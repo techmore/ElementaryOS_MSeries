@@ -58,6 +58,16 @@ if [[ -n ${ELEMENTARY_HOSTNAME:-} ]] && \
 fi
 HOME_SUBVOL="@elementary-home"
 GRUB_CUSTOM="/etc/grub.d/40_elementary-grow"
+# Fedora hosts (Gravity Linux on the M4 Mac mini) boot through BLS entries in
+# /boot/loader/entries, not /etc/grub.d, and the host kernel is
+# /boot/vmlinuz-<release> with /boot/initramfs-<release>.img. ELEMENTARY_HOST
+# overrides the os-release detection.
+HOST_BLS=0
+if [[ ${ELEMENTARY_HOST:-} == fedora ]] || \
+   { [[ -z ${ELEMENTARY_HOST:-} ]] && [[ -r /etc/os-release ]] && grep -qx 'ID=fedora' /etc/os-release; }; then
+  HOST_BLS=1
+fi
+BLS_ENTRY="/boot/loader/entries/elementary-mseries.conf"
 SNAP_PREFIX="@.snapshots/elementary-grow"
 MIN_FREE_GB=${ELEMENTARY_MIN_FREE_GB:-40}
 CMDLINE_FILE=${ELEMENTARY_CMDLINE_FILE:-/proc/cmdline}   # overridable for tests
@@ -85,8 +95,12 @@ preconditions() {
     || fail "no Apple device-tree — not Apple Silicon"
   [[ $(findmnt -no FSTYPE /) == "btrfs" ]] || fail "root (/) is not btrfs"
   command -v btrfs >/dev/null || fail "btrfs-progs not installed"
-  command -v grub-mkconfig >/dev/null || fail "grub-mkconfig not found"
-  [[ -d /etc/grub.d ]] || fail "/etc/grub.d missing — unknown bootloader setup"
+  if (( HOST_BLS )); then
+    [[ -d /boot/loader/entries ]] || fail "/boot/loader/entries missing — not a BLS host"
+  else
+    command -v grub-mkconfig >/dev/null || fail "grub-mkconfig not found"
+    [[ -d /etc/grub.d ]] || fail "/etc/grub.d missing — unknown bootloader setup"
+  fi
   command -v curl >/dev/null || fail "curl not installed"
   command -v lspci >/dev/null || fail "lspci not installed (pciutils)"
   local free_gb
@@ -99,10 +113,15 @@ preconditions() {
   kver=$(uname -r)
   [[ -d "/usr/lib/modules/$kver" ]] || [[ -d "/lib/modules/$kver" ]] \
     || fail "no modules tree for running kernel $kver"
-  compgen -G '/boot/vmlinuz-*' >/dev/null \
-    || fail "no kernel image in /boot"
-  compgen -G '/boot/initramfs-*' >/dev/null \
-    || fail "no initramfs in /boot"
+  if (( HOST_BLS )); then
+    [[ -f /boot/vmlinuz-$kver ]] || fail "no /boot/vmlinuz-$kver for the running kernel"
+    [[ -f /boot/initramfs-$kver.img ]] || fail "no /boot/initramfs-$kver.img for the running kernel"
+  else
+    compgen -G '/boot/vmlinuz-*' >/dev/null \
+      || fail "no kernel image in /boot"
+    compgen -G '/boot/initramfs-*' >/dev/null \
+      || fail "no initramfs in /boot"
+  fi
   log "preconditions OK (kernel $kver, ${free_gb}G free)"
 }
 
@@ -169,7 +188,11 @@ do_status() {
   find "$TOP_MNT/$SUBVOL_NAME/lib/firmware/brcm" -maxdepth 1 -name 'brcm*' 2>/dev/null | wc -l
   echo "--- boot entry ---"
   local n
-  n=$(grep -c "elementary OS (M-series" /boot/grub/grub.cfg 2>/dev/null || true)
+  if (( HOST_BLS )); then
+    n=$(grep -l "elementary OS (M-series" /boot/loader/entries/*.conf 2>/dev/null | wc -l)
+  else
+    n=$(grep -c "elementary OS (M-series" /boot/grub/grub.cfg 2>/dev/null || true)
+  fi
   if (( n == 0 )); then echo "(no entry)";
   elif (( n == 1 )); then echo "1 entry";
   else echo "$n entries — WARNING: duplicate; check /etc/grub.d/*.removed is not executable"; fi
@@ -203,7 +226,12 @@ do_rollback() {
   # grub-mkconfig runs EVERY executable file in /etc/grub.d, so an aside
   # file must also lose its executable bit or it adds a second, identical
   # menuentry (the classic "two elementary OS entries, both broken" bug).
-  if [[ -f $GRUB_CUSTOM ]]; then
+  if (( HOST_BLS )); then
+    if [[ -f $BLS_ENTRY ]]; then
+      run rm -f "$BLS_ENTRY"
+      log "removed $BLS_ENTRY"
+    else log "no $BLS_ENTRY — bootloader untouched"; fi
+  elif [[ -f $GRUB_CUSTOM ]]; then
     if [[ $MODE != "dry-run" ]]; then
       rm -f "$GRUB_CUSTOM.removed"
       mv "$GRUB_CUSTOM" "$GRUB_CUSTOM.removed"
@@ -279,7 +307,9 @@ do_apply() {
   if [[ $MODE == "apply" ]]; then graft_kernel_into "$newroot" || fail "kernel graft failed"; fi
 
   log "installing GRUB entry $GRUB_CUSTOM (additive; default untouched)"
-  if [[ $MODE == "apply" ]]; then install_grub_entry "$newroot";
+  if [[ $MODE == "apply" ]] && (( HOST_BLS )); then install_bls_entry
+  elif [[ $MODE == "apply" ]]; then install_grub_entry "$newroot";
+  elif (( HOST_BLS )); then log "(dry-run) would write $BLS_ENTRY"
   else log "(dry-run) would write $GRUB_CUSTOM and run grub-mkconfig"; fi
 
   rm -rf "$workdir"
@@ -454,10 +484,22 @@ EOF
   host_root_row=$(awk '$1 !~ /^#/ && $2=="/" {print}' /etc/fstab)
   [[ $(wc -l <<<"$host_root_row") == 1 && -n $host_root_row ]] \
     || fail "host /etc/fstab / row is not exactly one line — refusing to guess"
-  new_root_row=$(sed -E 's/subvol=\/@([,[:space:]])/subvol=\/@elementary\1/; s/subvol=@([,[:space:]])/subvol=@elementary\1/' <<<"$host_root_row")
+  if (( HOST_BLS )); then
+    # Fedora's root is a subvolume with its own name (kiwi: "root"), not "@".
+    local host_subvol
+    host_subvol=$(sed -nE 's/.*[ ,]subvol=\/?([^,[:space:]]+).*/\1/p' <<<"$host_root_row")
+    [[ -n $host_subvol ]] || fail "host / row has no subvol= option — unknown layout, refusing to guess"
+    new_root_row=$(sed -E "s#subvol=/?${host_subvol}([,[:space:]])#subvol=/@elementary\1#" <<<"$host_root_row")
+  else
+    new_root_row=$(sed -E 's/subvol=\/@([,[:space:]])/subvol=\/@elementary\1/; s/subvol=@([,[:space:]])/subvol=@elementary\1/' <<<"$host_root_row")
+  fi
   [[ $new_root_row != "$host_root_row" ]] \
     || fail "host / row has no subvol=@ option — unknown layout, refusing to guess"
   host_boot_row=$(awk '$1 !~ /^#/ && $2=="/boot" {print}' /etc/fstab)
+  if (( HOST_BLS )); then
+    # Fedora also mounts the ESP at /boot/efi; carry it over with /boot.
+    host_boot_row+=$'\n'$(awk '$1 !~ /^#/ && $2=="/boot/efi" {print}' /etc/fstab)
+  fi
   [[ -n $host_boot_row ]] || log "WARNING: no /boot row in host fstab — new root will not mount the ESP"
   host_home_row=$(awk '$1 !~ /^#/ && $2=="/home" {print}' /etc/fstab)
   if [[ -n $host_home_row ]]; then
@@ -519,6 +561,11 @@ EOF
 # executable file in /etc/grub.d, so it doubles the menuentry) and regenerate
 # the menu. Idempotent.
 do_repair_grub() {
+  if (( HOST_BLS )); then
+    [[ -f $BLS_ENTRY ]] || install_bls_entry
+    log "BLS entry present: $BLS_ENTRY"
+    return 0
+  fi
   [[ -e $GRUB_CUSTOM || -e $GRUB_CUSTOM.removed ]] \
     || fail "no $GRUB_CUSTOM — run --apply first"
   if [[ -e $GRUB_CUSTOM.removed ]]; then
@@ -739,6 +786,32 @@ build_linux_line() {
     return 1
   fi
   printf '%s\n' "$line"
+}
+
+# Fedora/Gravity hosts: an additive Boot Loader Specification entry. GRUB's
+# blscfg reads /boot/loader/entries on every boot, so nothing has to be
+# regenerated and the host's default entry stays as it was. The host initramfs
+# is built --no-hostonly (kiwi config.sh), so it can mount a different
+# subvolume of the same btrfs.
+install_bls_entry() {
+  local kver kpath ipath line opts
+  kver=$(uname -r)
+  if [[ $(findmnt -no SOURCE /boot) != $(findmnt -no SOURCE /) ]]; then
+    kpath="/vmlinuz-$kver"; ipath="/initramfs-$kver.img"      # /boot is its own filesystem
+  else
+    kpath="/boot/vmlinuz-$kver"; ipath="/boot/initramfs-$kver.img"
+  fi
+  line=$(build_linux_line "$kpath") || fail "cannot derive boot line from /proc/cmdline"
+  opts=${line#*"$kpath "}
+  cat > "$BLS_ENTRY" <<ENTRY
+title elementary OS (M-series)
+version $kver
+linux $kpath
+initrd $ipath
+options $opts
+ENTRY
+  grep -q '^options .* root=' "$BLS_ENTRY" || { rm -f "$BLS_ENTRY"; fail "boot entry has no root= — removed it"; }
+  log "BLS entry $BLS_ENTRY written (kernel $kver); default entry untouched"
 }
 
 install_grub_entry() {
