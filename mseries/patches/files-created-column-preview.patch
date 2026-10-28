@@ -1,0 +1,268 @@
+diff --git a/data/schemas/io.elementary.files.gschema.xml b/data/schemas/io.elementary.files.gschema.xml
+index 06efa20..0150ec5 100644
+--- a/data/schemas/io.elementary.files.gschema.xml
++++ b/data/schemas/io.elementary.files.gschema.xml
+@@ -40,6 +40,16 @@
+       <summary>Thumbnail local files</summary>
+       <description>Show thumbnail files on the local filesystem</description>
+     </key>
++    <key type="s" name="default-sort-column">
++      <default>'modified'</default>
++      <summary>Default sort column</summary>
++      <description>Folders without a remembered sort use this column. One of "name", "size", "type", "modified" or "created". Date columns list the newest first unless the order is reversed.</description>
++    </key>
++    <key type="b" name="default-sort-reversed">
++      <default>false</default>
++      <summary>Reverse the default sort</summary>
++      <description>Reverse the order of the default sort column. For the date columns this lists the oldest first.</description>
++    </key>
+     <key type="b" name="show-file-preview">
+       <default>true</default>
+       <summary>Show file preview</summary>
+diff --git a/libcore/File.vala b/libcore/File.vala
+index 141c477..3a0eec7 100644
+--- a/libcore/File.vala
++++ b/libcore/File.vala
+@@ -75,6 +75,7 @@ public class Files.File : GLib.Object {
+     public uint64 modified;
+     public uint64 created;
+     public string formated_modified = null;
++    public string formated_created = null;
+     public string formated_type = null;
+     public string tagstype = null;
+     public Gdk.Pixbuf? pix = null;
+@@ -566,6 +567,7 @@ public class Files.File : GLib.Object {
+ 
+         /* metadata */
+         if (is_directory) {
++            apply_default_sort ();
+             if (info.has_attribute ("metadata::marlin-sort-column-id")) {
+                 sort_column_id = Files.ListModel.ColumnID.from_string (
+                                      info.get_attribute_string ("metadata::marlin-sort-column-id")
+@@ -659,6 +661,13 @@ public class Files.File : GLib.Object {
+             formated_modified = _("Inaccessible");
+         }
+ 
++        /* created (birth) date: not every filesystem records it */
++        if (info.has_attribute (GLib.FileAttribute.TIME_CREATED)) {
++            formated_created = get_formated_time (GLib.FileAttribute.TIME_CREATED);
++        } else {
++            formated_created = "";
++        }
++
+         /* icon */
+         if (is_directory) {
+             get_folder_icon_from_uri_or_path ();
+@@ -1047,6 +1056,13 @@ public class Files.File : GLib.Object {
+                     result = compare_by_display_name (other);
+                 }
+ 
++                break;
++            case Files.ListModel.ColumnID.CREATED:
++                result = compare_files_by_created (other);
++                if (result == 0) {
++                    result = compare_by_display_name (other);
++                }
++
+                 break;
+             default:
+                 assert_not_reached ();
+@@ -1148,6 +1164,28 @@ public class Files.File : GLib.Object {
+         target_gof.query_update ();
+     }
+ 
++    /* Sort used for folders that have no remembered sort of their own (M-series) */
++    private static GLib.Settings? default_sort_settings = null;
++    private void apply_default_sort () {
++        if (default_sort_settings == null) {
++            var source = GLib.SettingsSchemaSource.get_default ();
++            var schema = source != null ? source.lookup ("io.elementary.files.preferences", true) : null;
++            if (schema == null || !schema.has_key ("default-sort-column")) {
++                return;
++            }
++
++            default_sort_settings = new GLib.Settings ("io.elementary.files.preferences");
++        }
++
++        var column = Files.ListModel.ColumnID.from_string (default_sort_settings.get_string ("default-sort-column"));
++        if ((int) column >= 0) {
++            sort_column_id = column;
++            /* Date columns sort newest first when ascending, so "reversed" means oldest first */
++            sort_order = default_sort_settings.get_boolean ("default-sort-reversed") ?
++                         Gtk.SortType.DESCENDING : Gtk.SortType.ASCENDING;
++        }
++    }
++
+     private void clear_info () {
+         target_location = null;
+         mount = null;
+@@ -1155,6 +1193,7 @@ public class Files.File : GLib.Object {
+         formated_type = null;
+         format_size = null;
+         formated_modified = null;
++        formated_created = null;
+         icon = null;
+         custom_display_name = null;
+         custom_icon_name = null;
+diff --git a/libcore/ListModel.vala b/libcore/ListModel.vala
+index 9b50cb2..88053da 100644
+--- a/libcore/ListModel.vala
++++ b/libcore/ListModel.vala
+@@ -25,6 +25,7 @@ public class Files.ListModel : Gtk.TreeStore, Gtk.TreeModel {
+         SIZE,
+         TYPE,
+         MODIFIED,
++        CREATED,
+         NUM_COLUMNS;
+ 
+         public static ColumnID from_string (string column_id) {
+@@ -37,6 +38,8 @@ public class Files.ListModel : Gtk.TreeStore, Gtk.TreeModel {
+                     return ColumnID.TYPE;
+                 case "modified":
+                     return ColumnID.MODIFIED;
++                case "created":
++                    return ColumnID.CREATED;
+                 default:
+                     return (ColumnID) (-1);
+             }
+@@ -52,6 +55,8 @@ public class Files.ListModel : Gtk.TreeStore, Gtk.TreeModel {
+                     return "type";
+                 case ColumnID.MODIFIED:
+                     return "modified";
++                case ColumnID.CREATED:
++                    return "created";
+                 default:
+                     critical ("COLUMN id %u unsupported", this);
+                     return "";
+@@ -90,6 +95,7 @@ public class Files.ListModel : Gtk.TreeStore, Gtk.TreeModel {
+             typeof (string),
+             typeof (string),
+             typeof (string),
++            typeof (string),
+             typeof (bool)
+         });
+ 
+@@ -235,6 +241,15 @@ public class Files.ListModel : Gtk.TreeStore, Gtk.TreeModel {
+                     value.set_static_string ("");
+                 }
+ 
++                break;
++            case ColumnID.CREATED:
++                value = Value (typeof (string));
++                if (file != null) {
++                    value.set_string (file.formated_created);
++                } else {
++                    value.set_static_string ("");
++                }
++
+                 break;
+             case PrivColumnID.DUMMY:
+                 value = Value (typeof (bool));
+diff --git a/src/View/AbstractDirectoryView.vala b/src/View/AbstractDirectoryView.vala
+index 2c89748..6a213fc 100644
+--- a/src/View/AbstractDirectoryView.vala
++++ b/src/View/AbstractDirectoryView.vala
+@@ -2349,10 +2349,15 @@ namespace Files {
+                 );
+ 
+                 var date_item = new MenuItem (
+-                    _("Date"),
++                    _("Date Modified"),
+                     Action.print_detailed_name ("background.sort-by", new Variant.string ("modified"))
+                 );
+ 
++                var created_item = new MenuItem (
++                    _("Date Created"),
++                    Action.print_detailed_name ("background.sort-by", new Variant.string ("created"))
++                );
++
+                 var reversed_item = new MenuItem (
+                     _("Reversed Order"),
+                     "background.reverse"
+@@ -2368,6 +2373,7 @@ namespace Files {
+                 radio_section.append_item (size_item);
+                 radio_section.append_item (type_item);
+                 radio_section.append_item (date_item);
++                radio_section.append_item (created_item);
+ 
+                 var check_section = new Menu ();
+                 check_section.append_item (reversed_item);
+diff --git a/src/View/ListView.vala b/src/View/ListView.vala
+index 0c754fd..511f96c 100644
+--- a/src/View/ListView.vala
++++ b/src/View/ListView.vala
+@@ -26,7 +26,8 @@ namespace Files {
+             _("Filename"),
+             _("Size"),
+             _("Type"),
+-            _("Modified")
++            _("Modified"),
++            _("Created")
+         };
+ 
+         /* ListView manages the loading and unloading of subdirectories displayed */
+@@ -68,7 +69,8 @@ namespace Files {
+                         min_width = 24
+                     };
+ 
+-                    if (k == ListModel.ColumnID.SIZE || k == ListModel.ColumnID.MODIFIED) {
++                    if (k == ListModel.ColumnID.SIZE || k == ListModel.ColumnID.MODIFIED ||
++                        k == ListModel.ColumnID.CREATED) {
+                         renderer.@set ("xalign", 1.0f);
+                     } else {
+                         renderer.@set ("xalign", 0.0f);
+diff --git a/src/View/Slot.vala b/src/View/Slot.vala
+index 7295b08..6cdecae 100644
+--- a/src/View/Slot.vala
++++ b/src/View/Slot.vala
+@@ -160,6 +160,50 @@ namespace Files.View {
+ 
+         private void on_dir_view_selection_changed (GLib.List<Files.File> files) {
+             selection_changed (files);
++            update_side_preview (files);
++        }
++
++        /* Details and preview pane beside the list view, as in Column View (M-series) */
++        private Gtk.Widget? side_preview = null;
++        private uint side_preview_timeout_id = 0;
++        private void update_side_preview (GLib.List<Files.File> files) {
++            if (mode != ViewMode.LIST) {
++                return;
++            }
++
++            if (side_preview_timeout_id > 0) {
++                Source.remove (side_preview_timeout_id);
++                side_preview_timeout_id = 0;
++            }
++
++            if (side_preview != null) {
++                side_preview.destroy ();
++                side_preview = null;
++            }
++
++            if (!Files.Preferences.get_default ().show_file_preview || files.length () != 1) {
++                return;
++            }
++
++            var file = files.data;
++            if (file.is_folder ()) {
++                return;
++            }
++
++            side_preview_timeout_id = Timeout.add (200, () => {
++                side_preview_timeout_id = 0;
++                /* Scrolled and capped so the list keeps room for its Modified and Created columns */
++                var scrolled = new Gtk.ScrolledWindow (null, null) {
++                    hscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
++                    min_content_width = 420,
++                    propagate_natural_width = false
++                };
++                scrolled.add (new View.DetailsColumn (file, dir_view));
++                side_preview = scrolled;
++                add_side_widget (side_preview, false, true);
++                side_preview.show_all ();
++                return Source.REMOVE;
++            });
+         }
+ 
+         private void connect_dir_signals () {

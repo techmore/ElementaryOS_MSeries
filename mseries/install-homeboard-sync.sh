@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install, upgrade or remove the Homeboard ↔ elementary Tasks bridge for this user,
 # without the separate Homeboard indicator: the calendar dropdown's Tasks tab shows the
-# Homeboard list and its sync status (see mseries/calendar/README.md).
+# Homeboard lists (one per project, plus "Homeboard") and the sync status (see mseries/calendar/README.md).
 #   bash mseries/install-homeboard-sync.sh [--uninstall]
 #
 # Source: techmore/homeboard (private; needs the owner's GitHub access) at the pinned
@@ -11,7 +11,7 @@
 # in the calendar's Tasks tab afterwards.
 set -euo pipefail
 repository=https://github.com/techmore/homeboard.git
-commit=${HOMEBOARD_COMMIT:-5a7feb93bb292e5a6720ab72b31d419fe30aabbd}
+commit=${HOMEBOARD_COMMIT:-7b6bc919592332b05a02216119977f5e6d8cd750}
 case ${1:-} in
     ''|--uninstall) ;;
     *) echo 'Usage: install-homeboard-sync.sh [--uninstall]' >&2; exit 2 ;;

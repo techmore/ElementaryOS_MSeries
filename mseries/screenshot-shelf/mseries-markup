@@ -12,6 +12,8 @@ case ${file,,} in
     exec xdg-open "$file" ;;
   *.png|*.jpg|*.jpeg|*.webp|*.bmp|*.gif|*.tif|*.tiff)
     dir=$(dirname -- "$file"); base=$(basename -- "$file"); stem=${base%.*}
-    exec swappy -f "$file" -o "$dir/$stem (markup).png" ;;
+    # The patched build (Close, Print, Save as PDF; build-swappy.sh) lives in ~/.local/bin and wins over the distro one.
+    swappy_bin=swappy; [[ -x $HOME/.local/bin/swappy ]] && swappy_bin=$HOME/.local/bin/swappy
+    exec "$swappy_bin" -f "$file" -o "$dir/$stem (markup).png" ;;
   *) exec xdg-open "$file" ;;
 esac

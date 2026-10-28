@@ -1,0 +1,561 @@
+{
+  "status": "complete",
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "sequence": [
+    5000,
+    20000,
+    20000,
+    5000,
+    5000,
+    20000
+  ],
+  "runs": [
+    {
+      "budget": 5000,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 13365673984,
+      "samples": [
+        {
+          "available_bytes": 13364133888,
+          "max_fan_rpm": 2522.0,
+          "max_temp_c": 49.546
+        },
+        {
+          "available_bytes": 12538953728,
+          "max_fan_rpm": 2471.0,
+          "max_temp_c": 50.443
+        },
+        {
+          "available_bytes": 11852447744,
+          "max_fan_rpm": 2500.0,
+          "max_temp_c": 49.9
+        },
+        {
+          "available_bytes": 11750195200,
+          "max_fan_rpm": 2509.0,
+          "max_temp_c": 49.386
+        },
+        {
+          "available_bytes": 11659722752,
+          "max_fan_rpm": 2513.0,
+          "max_temp_c": 49.2
+        },
+        {
+          "available_bytes": 11659395072,
+          "max_fan_rpm": 2500.0,
+          "max_temp_c": 49.226
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.5224248740014446,
+        "total_s": 1.4072298719984246,
+        "tokens": [
+          29108,
+          4009,
+          33060,
+          1472,
+          279,
+          16078,
+          321,
+          5055,
+          18766,
+          21479,
+          318,
+          65,
+          305,
+          8,
+          430,
+          424,
+          27891,
+          264,
+          10849,
+          6508,
+          13,
+          198,
+          760,
+          3000,
+          1179,
+          25133,
+          974,
+          279,
+          1142,
+          314,
+          279,
+          6756
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 36.97620599969717,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 429,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8931,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 429,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8695,
+          "barriers_skipped": 1073
+        }
+      }
+    },
+    {
+      "budget": 20000,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 13068877824,
+      "samples": [
+        {
+          "available_bytes": 13068877824,
+          "max_fan_rpm": 2500.0,
+          "max_temp_c": 50.233
+        },
+        {
+          "available_bytes": 12247482368,
+          "max_fan_rpm": 2496.0,
+          "max_temp_c": 50.266
+        },
+        {
+          "available_bytes": 11736416256,
+          "max_fan_rpm": 2484.0,
+          "max_temp_c": 49.386
+        },
+        {
+          "available_bytes": 11659575296,
+          "max_fan_rpm": 2488.0,
+          "max_temp_c": 49.286
+        },
+        {
+          "available_bytes": 11562106880,
+          "max_fan_rpm": 2513.0,
+          "max_temp_c": 50.072
+        },
+        {
+          "available_bytes": 11571904512,
+          "max_fan_rpm": 2492.0,
+          "max_temp_c": 49.253
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.45999565400052234,
+        "total_s": 1.171967655998742,
+        "tokens": [
+          29108,
+          4009,
+          33060,
+          1472,
+          279,
+          16078,
+          321,
+          5055,
+          18766,
+          21479,
+          318,
+          65,
+          305,
+          8,
+          430,
+          424,
+          27891,
+          264,
+          10849,
+          6508,
+          13,
+          198,
+          760,
+          3000,
+          1179,
+          25133,
+          974,
+          279,
+          1142,
+          314,
+          279,
+          6756
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 46.16072654329581,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 141,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8931,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 141,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8335,
+          "barriers_skipped": 1145
+        }
+      }
+    },
+    {
+      "budget": 20000,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 13250641920,
+      "samples": [
+        {
+          "available_bytes": 13249445888,
+          "max_fan_rpm": 2509.0,
+          "max_temp_c": 50.032
+        },
+        {
+          "available_bytes": 12394020864,
+          "max_fan_rpm": 2496.0,
+          "max_temp_c": 50.62
+        },
+        {
+          "available_bytes": 11691704320,
+          "max_fan_rpm": 2513.0,
+          "max_temp_c": 49.566
+        },
+        {
+          "available_bytes": 11621122048,
+          "max_fan_rpm": 2510.0,
+          "max_temp_c": 49.56
+        },
+        {
+          "available_bytes": 11424317440,
+          "max_fan_rpm": 2513.0,
+          "max_temp_c": 49.733
+        },
+        {
+          "available_bytes": 11406606336,
+          "max_fan_rpm": 2496.0,
+          "max_temp_c": 49.226
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.4666926729987608,
+        "total_s": 1.1803061370010255,
+        "tokens": [
+          29108,
+          4009,
+          33060,
+          1472,
+          279,
+          16078,
+          321,
+          5055,
+          18766,
+          21479,
+          318,
+          65,
+          305,
+          8,
+          430,
+          424,
+          27891,
+          264,
+          10849,
+          6508,
+          13,
+          198,
+          760,
+          3000,
+          1179,
+          25133,
+          974,
+          279,
+          1142,
+          314,
+          279,
+          6756
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 45.97831632706637,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 141,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8931,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 141,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8335,
+          "barriers_skipped": 1145
+        }
+      }
+    },
+    {
+      "budget": 5000,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 13062553600,
+      "samples": [
+        {
+          "available_bytes": 13062553600,
+          "max_fan_rpm": 2484.0,
+          "max_temp_c": 49.893
+        },
+        {
+          "available_bytes": 12242403328,
+          "max_fan_rpm": 2513.0,
+          "max_temp_c": 50.056
+        },
+        {
+          "available_bytes": 11564793856,
+          "max_fan_rpm": 2483.0,
+          "max_temp_c": 49.873
+        },
+        {
+          "available_bytes": 11614208000,
+          "max_fan_rpm": 2505.0,
+          "max_temp_c": 49.386
+        },
+        {
+          "available_bytes": 11561533440,
+          "max_fan_rpm": 2483.0,
+          "max_temp_c": 49.24
+        },
+        {
+          "available_bytes": 11567972352,
+          "max_fan_rpm": 2513.0,
+          "max_temp_c": 49.913
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.5254251330006809,
+        "total_s": 1.411373716997332,
+        "tokens": [
+          29108,
+          4009,
+          33060,
+          1472,
+          279,
+          16078,
+          321,
+          5055,
+          18766,
+          21479,
+          318,
+          65,
+          305,
+          8,
+          430,
+          424,
+          27891,
+          264,
+          10849,
+          6508,
+          13,
+          198,
+          760,
+          3000,
+          1179,
+          25133,
+          974,
+          279,
+          1142,
+          314,
+          279,
+          6756
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 37.2333503073846,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 429,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8931,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 429,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8695,
+          "barriers_skipped": 1073
+        }
+      }
+    },
+    {
+      "budget": 5000,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 13170851840,
+      "samples": [
+        {
+          "available_bytes": 13170851840,
+          "max_fan_rpm": 2483.0,
+          "max_temp_c": 49.713
+        },
+        {
+          "available_bytes": 12371034112,
+          "max_fan_rpm": 2496.0,
+          "max_temp_c": 50.629
+        },
+        {
+          "available_bytes": 11656609792,
+          "max_fan_rpm": 2483.0,
+          "max_temp_c": 50.008
+        },
+        {
+          "available_bytes": 11605606400,
+          "max_fan_rpm": 2509.0,
+          "max_temp_c": 49.4
+        },
+        {
+          "available_bytes": 11532238848,
+          "max_fan_rpm": 2483.0,
+          "max_temp_c": 49.726
+        },
+        {
+          "available_bytes": 11502157824,
+          "max_fan_rpm": 2509.0,
+          "max_temp_c": 48.766
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.5281483489998209,
+        "total_s": 1.4612944860018615,
+        "tokens": [
+          29108,
+          4009,
+          33060,
+          1472,
+          279,
+          16078,
+          321,
+          5055,
+          18766,
+          21479,
+          318,
+          65,
+          305,
+          8,
+          430,
+          424,
+          27891,
+          264,
+          10849,
+          6508,
+          13,
+          198,
+          760,
+          3000,
+          1179,
+          25133,
+          974,
+          279,
+          1142,
+          314,
+          279,
+          6756
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 34.86799864305172,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 429,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8931,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 429,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8695,
+          "barriers_skipped": 1073
+        }
+      }
+    },
+    {
+      "budget": 20000,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 12776030208,
+      "samples": [
+        {
+          "available_bytes": 12776030208,
+          "max_fan_rpm": 2500.0,
+          "max_temp_c": 49.386
+        },
+        {
+          "available_bytes": 12013207552,
+          "max_fan_rpm": 2487.0,
+          "max_temp_c": 50.048
+        },
+        {
+          "available_bytes": 11222138880,
+          "max_fan_rpm": 2513.0,
+          "max_temp_c": 49.02
+        },
+        {
+          "available_bytes": 10991419392,
+          "max_fan_rpm": 2500.0,
+          "max_temp_c": 49.893
+        },
+        {
+          "available_bytes": 10984849408,
+          "max_fan_rpm": 2522.0,
+          "max_temp_c": 49.68
+        },
+        {
+          "available_bytes": 10968776704,
+          "max_fan_rpm": 2487.0,
+          "max_temp_c": 49.726
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.5081880840007216,
+        "total_s": 1.227596815002471,
+        "tokens": [
+          29108,
+          4009,
+          33060,
+          1472,
+          279,
+          16078,
+          321,
+          5055,
+          18766,
+          21479,
+          318,
+          65,
+          305,
+          8,
+          430,
+          424,
+          27891,
+          264,
+          10849,
+          6508,
+          13,
+          198,
+          760,
+          3000,
+          1179,
+          25133,
+          974,
+          279,
+          1142,
+          314,
+          279,
+          6756
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 45.4863921963552,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 141,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8931,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 141,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8335,
+          "barriers_skipped": 1145
+        }
+      }
+    }
+  ]
+}

@@ -116,6 +116,8 @@ pub struct PantheonCompositor {
     pub activation_policy: ActivationPolicy,
     /// When the user last pressed a key; xdg-activation waits while they type.
     pub last_key_press: Option<std::time::Instant>,
+    /// Key whose press got a synthetic Shift in a terminal (see terminal_keys).
+    pub terminal_shift_key: Option<u32>,
     deferred_activations: usize,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
@@ -232,8 +234,10 @@ pub struct PantheonCompositor {
     fractional_scale_fingerprint: Cell<Option<u64>>,
     /// Snap preview and OSD rectangles, kept so unchanged ones add no damage.
     pub(crate) solid_buffers: crate::cursor::SolidBuffers,
-    /// Cached physical-panel corner masks; no timers or per-frame raster work.
-    pub(crate) screen_corners: crate::screen_corners::ScreenCorners,
+    /// The `corners` design tokens, read once at start-up.
+    pub(crate) corner_tokens: crate::corners::CornerTokens,
+    /// Screen-corner mask bitmaps kept across frames.
+    pub(crate) corner_masks: crate::corner_render::MaskBuffers,
     /// Where wallpaper scaling threads deliver their result.
     pub(crate) wallpaper_scaled_sender: channel::Sender<crate::wallpaper::ScaledWallpaper>,
 
@@ -497,6 +501,7 @@ impl PantheonCompositor {
                 std::env::var("PANTHEON_ACTIVATION_POLICY").ok().as_deref(),
             ),
             last_key_press: None,
+            terminal_shift_key: None,
             deferred_activations: 0,
             session_lock_state,
             session_locked: false,
@@ -581,7 +586,8 @@ impl PantheonCompositor {
             gala_snapshot_at: Cell::new(None),
             fractional_scale_fingerprint: Cell::new(None),
             solid_buffers: Default::default(),
-            screen_corners: crate::screen_corners::ScreenCorners::from_environment(),
+            corner_tokens: crate::corners::CornerTokens::load(),
+            corner_masks: Default::default(),
             wallpaper_scaled_sender,
             idle_monitor,
             idle_notifier_state,
@@ -590,6 +596,62 @@ impl PantheonCompositor {
             displays_off: false,
             idle_lock_timer: None,
         })
+    }
+
+    /// Hash of the output layout; a selection that outlives it is cancelled.
+    pub(crate) fn output_signature(&self) -> u64 {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        let mut layout: Vec<_> = self
+            .space
+            .outputs()
+            .map(|output| {
+                let area = self.space.output_geometry(output).unwrap_or_default();
+                (output.name(), area.loc.x, area.loc.y, area.size.w, area.size.h)
+            })
+            .collect();
+        layout.sort();
+        layout.hash(&mut hasher);
+        hasher.finish()
+    }
+
+    /// Start the region selector. A one-shot timer cancels it after
+    /// `IDLE_TIMEOUT` without input, so it can never hold the grab forever.
+    pub(crate) fn begin_screenshot_selection(&mut self, pointer: (i32, i32)) {
+        let signature = self.output_signature();
+        {
+            let mut selection = self.screenshot_selection.borrow_mut();
+            selection.begin(pointer);
+            selection.set_outputs(signature);
+        }
+        let timer = Timer::from_duration(crate::screenshot::IDLE_TIMEOUT);
+        if let Err(error) = self.loop_handle.insert_source(timer, |_, _, state| {
+            let now = std::time::Instant::now();
+            let remaining = state.screenshot_selection.borrow().idle_remaining(now);
+            match remaining {
+                None => TimeoutAction::Drop,
+                Some(left) if left.is_zero() => {
+                    state.screenshot_selection.borrow_mut().cancel();
+                    state.request_native_redraw();
+                    state.request_winit_redraw();
+                    TimeoutAction::Drop
+                }
+                Some(left) => TimeoutAction::ToDuration(left),
+            }
+        }) {
+            tracing::warn!(%error, "could not arm the screenshot idle timeout");
+        }
+    }
+
+    /// Cancel the selector if outputs were added, removed or moved.
+    pub(crate) fn cancel_screenshot_on_output_change(&self) {
+        if !self.screenshot_selection.borrow().active() {
+            return;
+        }
+        let signature = self.output_signature();
+        self.screenshot_selection
+            .borrow_mut()
+            .cancel_if_outputs_changed(signature);
     }
 
     /// Any input from the user: reset idle time and wake blanked displays.

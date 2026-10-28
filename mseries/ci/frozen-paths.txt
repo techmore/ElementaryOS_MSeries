@@ -1,0 +1,40 @@
+# Paths whose writable source of truth is techmore/mseries-sdk-apps.
+# One repo-relative path per line; a directory covers everything below it.
+# See mseries/REPO-OWNERSHIP.md. FROZEN.md files are exempt from the guard.
+rust/claude-pantheon-rs
+rust/msdk
+rust/msdk-gtk
+rust/mseries-ai
+rust/mseries-apple-dev
+rust/mseries-broker
+rust/mseries-dock
+rust/mseries-greeter
+rust/mseries-messages
+rust/mseries-pantheon-kit
+rust/mseries-reply
+rust/mseries-signal-import
+rust/mseries-system-monitor
+rust/mseries-update-core
+mseries/sdk-tests
+mseries/sdk-bench
+mseries/sdk-status-host
+mseries/phone-setup
+mseries/battery
+mseries/polybagger-print-manager
+mseries/messages-mcp
+mseries/fleet-shepherd
+mseries/APP-BUILDING-GUIDE.md
+mseries/DOCK-SDK-SPEC.md
+mseries/RUST-PANTHEON-SDK.md
+mseries/RUST-PANTHEON-CLIENTS.md
+mseries/SDK-AGENT-SURFACE.md
+mseries/SDK-AUDIT-2026-10-23.md
+mseries/SDK-COMPATIBILITY.md
+mseries/SDK-COMPLETION.md
+mseries/SDK-CORNERS.md
+mseries/SDK-DESIGN-LANGUAGE.md
+mseries/SDK-GOLDEN-PATH.md
+mseries/SDK-INTROSPECTION-AND-STREAMING.md
+mseries/SDK-PARITY.md
+mseries/SDK-RUNTIME-CONTRACT.md
+mseries/SDK-USAGE-DATA.md

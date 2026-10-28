@@ -116,7 +116,7 @@ STAGE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mseries-shelf")
 LOG = os.path.expanduser("~/.cache/mseries-screenshot-shelf.log")
 MARKUP = os.environ.get("MSERIES_MARKUP", os.path.expanduser("~/.local/bin/mseries-markup"))
 EXPORT_GRACE_SECONDS = 120  # transient drag copy/export lifetime after the card closes; originals never expire
-SHOW_SECONDS = int(os.environ.get("MSERIES_SHELF_SECONDS", "3"))       # how long the thumbnail stays when ignored (hover or drag keeps it)
+SHOW_SECONDS = int(os.environ.get("MSERIES_SHELF_SECONDS", "5"))       # how long the thumbnail stays when ignored (hover or drag keeps it)
 MAX_DRAG_FILES = 12       # bound one compose drop and the number of portal exports it can create
 THUMB_WIDTH = 280       # the card is always THUMB_WIDTH x THUMB_HEIGHT, whatever the screenshot's shape
 THUMB_HEIGHT = 180
@@ -583,7 +583,7 @@ class ShelfApp(Gtk.Application):
         if not name.lower().endswith(".png") or not name.startswith("Screenshot") or name in self.seen:
             return
         self.seen.add(name)
-        GLib.timeout_add(250, self.show, file.get_path())
+        GLib.timeout_add(40, self.show, file.get_path())  # file is complete at CHANGES_DONE_HINT
 
     def show(self, path):
         try:
@@ -602,11 +602,13 @@ class ShelfApp(Gtk.Application):
         if self.shelf and not self.shelf.finished and not self.shelf.dragging and self.shelf.pending_finish is None:
             log(f"adding {os.path.basename(path)} to recent screenshot batch")
             self.shelf.add_capture(path, staged)
+            GLib.idle_add(self.shelf.copy_to_clipboard)
         else:
             if self.shelf:
                 self.shelf.finish("replaced")
             log(f"showing {os.path.basename(path)}")
             self.shelf = Shelf(self, path, staged)
+            GLib.idle_add(self.shelf.copy_to_clipboard)  # also on the clipboard as image/png
         return False
 
 

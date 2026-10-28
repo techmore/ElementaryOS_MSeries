@@ -53,7 +53,9 @@ checkout() {
 }
 checkout coreglass coreglass 25603cbf1f95fd2819b11d914afec58997ef1b8b
 checkout omarchy-mlx omarchy-mlx 33630f9c1eeefe5fc985a28bed0585432c2c014e
-checkout mesa-mlx-compute mesa-1 7faf04c065c5376d2d58a1e5b33a60118109c99e
+# 9323171c12 (2026-10-25): identical MLX gate results to 7faf04c065 and faster decode on the
+# M1 Pro (Qwen 2B +36%, Qwen 4B +24%, LFM3 +48% at defaults); see ENGINE-SCOREBOARD.md.
+checkout mesa-mlx-compute mesa-1 9323171c12c5aa6055f1031ea26c16c247191987
 if git -C "$work/coreglass" apply --check "$script_dir/coreglass-local.patch" 2>/dev/null; then
   git -C "$work/coreglass" apply "$script_dir/coreglass-local.patch"
 else
@@ -100,6 +102,10 @@ PY
 export OMARCHY_MLX_SYSTEM_PREFIX=$prefix
 MLX_OMARCHY_VERSION=v0.7.33 bash "$installer"
 python3 "$script_dir/configure-prefill.py" "$prefix/mlx_omarchy_serve/__main__.py"
+python3 "$script_dir/configure-serve-concurrency.py" "$prefix/mlx_omarchy_serve/__main__.py"
+# Our two private mlx-lm server patches, in a side copy that model-worker.py puts first on
+# PYTHONPATH only while it matches the installed server.py (receipts/2026-10-28-serve-patch.md).
+OMARCHY_MLX_SYSTEM_PREFIX=$prefix bash "$script_dir/serve-patch.sh" build
 # Keep driver selection local to MLX launchers; never set global Vulkan variables.
 python3 - "$HOME/.local/bin" <<'PY'
 from pathlib import Path
@@ -117,7 +123,7 @@ p.parent.mkdir(parents=True,exist_ok=True)
 text=p.read_text() if p.exists() else ''
 if '[local]' not in text:
     prefix=Path.home()/'.local/share/mlx-omarchy'
-    text+=f'\n[local]\nssh = "local"\nchip = "Apple Silicon"\ngpu_lock = "/tmp/mseries-ai-gpu.lock"\nmlx_python = "{prefix}/venv/bin/python"\nenv = {{ OMARCHY_MLX_SYSTEM_PREFIX = "{prefix}" }}\n'
+    text+=f'\n[local]\nssh = "local"\nchip = "Apple Silicon"\ngpu_lock = "/tmp/mseries-ai-gpu.lock"\nmlx_python = "{prefix}/venv/bin/python"\nenv = {{ OMARCHY_MLX_SYSTEM_PREFIX = "{prefix}", VK_DRIVER_FILES = "{prefix}/vulkan/honeykrisp_icd.aarch64.json" }}\n'
     p.write_text(text)
 CONFIG
 "$HOME/.local/bin/mlx-omarchy-info"

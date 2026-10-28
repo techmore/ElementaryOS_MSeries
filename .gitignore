@@ -28,7 +28,8 @@ mkosi.packages/
 /mkosi.images/sysupdate/mkosi.extra/efi/m1n1/boot.bin
 
 # Rust build output
-rust/target/
+# Cargo build output from any crate or workspace (e.g. rust/msdk/target)
+target/
 
 # Local scratch: build copies, external symlinks and agent worktrees
 /work/

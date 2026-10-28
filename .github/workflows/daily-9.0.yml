@@ -14,6 +14,11 @@ on:
         type: boolean
         required: false
         default: false
+      fetch_kernel:
+        description: With fairydust, use the pinned Kernel-repo release (mseries/kernel-pin.json) instead of building the kernel here
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -23,8 +28,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  fetch-kernel:
+    if: inputs.fairydust && inputs.fetch_kernel
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Fetch and verify the pinned kernel release
+        run: python3 mseries/fetch-kernel.py --check-profiles --out mkosi.packages
+      - name: Preserve pinned kernel packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: fairydust-kernel-packages-${{ github.run_id }}
+          path: mkosi.packages/
+          retention-days: 2
+
   build-kernel:
-    if: inputs.fairydust
+    if: inputs.fairydust && !inputs.fetch_kernel
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 180
     steps:
@@ -87,8 +107,8 @@ jobs:
           retention-days: 2
 
   build:
-    needs: build-kernel
-    if: always() && (!inputs.fairydust || needs.build-kernel.result == 'success')
+    needs: [build-kernel, fetch-kernel]
+    if: always() && (!inputs.fairydust || needs.build-kernel.result == 'success' || needs.fetch-kernel.result == 'success')
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 180
     steps:

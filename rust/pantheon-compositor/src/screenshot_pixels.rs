@@ -42,7 +42,11 @@ pub fn read_framebuffer<R: ExportMem>(
     if TextureMapping::format(&mapping) != Fourcc::Abgr8888 || mapping.size() != size {
         return Err("Screenshot renderer returned an unexpected pixel format or size".into());
     }
-    let bottom_up = mapping.flipped();
+    // Smithay renders into textures y-down, so ReadPixels already returns the
+    // top row first. `TextureMapping::flipped()` is a hard-coded `true` in the
+    // GLES backend and must not be used here: it turned every capture upside
+    // down on the hardware renderer (see `gpu_orientation`).
+    let bottom_up = false;
     let bytes = renderer
         .map_texture(&mapping)
         .map_err(|error| format!("Could not map screenshot pixels: {error}"))?;
@@ -60,7 +64,8 @@ where
     R: smithay::backend::renderer::ImportAll
         + smithay::backend::renderer::ImportMem
         + smithay::backend::renderer::Offscreen<smithay::backend::renderer::gles::GlesTexture>
-        + ExportMem,
+        + ExportMem
+        + crate::corner_render::CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     if state.session_locked {
@@ -73,7 +78,7 @@ where
     if size.w <= 0 || size.h <= 0 || i64::from(size.w) * i64::from(size.h) > MAX_PIXELS as i64 {
         return Err("Screenshot dimensions exceed the capture limit".into());
     }
-    let elements = crate::cursor::render_desktop_elements(renderer, state, output)
+    let elements = crate::cursor::render_desktop_elements_with(renderer, state, output, false)
         .map_err(|error| format!("Could not collect screenshot surfaces: {error}"))?;
     let mut target = renderer
         .create_buffer(Fourcc::Abgr8888, size)
@@ -133,73 +138,6 @@ pub fn crop_output(
         .then(|| image::imageops::crop_imm(image, x, y, end_x - x, end_y - y).to_image())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn preserves_channels_and_corrects_bottom_up_rows() {
-        let bytes = [255, 0, 0, 255, 0, 0, 255, 128];
-        let upright = rgba_image(1, 2, &bytes, false).unwrap();
-        assert_eq!(upright.get_pixel(0, 0).0, [255, 0, 0, 255]);
-        let flipped = rgba_image(1, 2, &bytes, true).unwrap();
-        assert_eq!(flipped.get_pixel(0, 0).0, [0, 0, 255, 128]);
-        assert_eq!(flipped.get_pixel(0, 1).0, [255, 0, 0, 255]);
-    }
-    #[test]
-    fn region_crop_handles_negative_origins_fractional_scale_and_clipping() {
-        use crate::screenshot::Region;
-        let image =
-            image::RgbaImage::from_fn(150, 120, |x, y| image::Rgba([x as u8, y as u8, 0, 255]));
-        let output = Region {
-            x: -100,
-            y: -80,
-            width: 100,
-            height: 80,
-        };
-        let selected = Region {
-            x: -90,
-            y: -70,
-            width: 20,
-            height: 20,
-        };
-        let cropped = crop_output(&image, output, selected).unwrap();
-        assert_eq!(cropped.dimensions(), (30, 30));
-        assert_eq!(cropped.get_pixel(0, 0).0, [15, 15, 0, 255]);
-        let clipped = crop_output(
-            &image,
-            output,
-            Region {
-                x: -110,
-                y: -90,
-                width: 20,
-                height: 20,
-            },
-        )
-        .unwrap();
-        assert_eq!(clipped.dimensions(), (15, 15));
-        assert!(
-            crop_output(
-                &image,
-                output,
-                Region {
-                    x: 1,
-                    y: 1,
-                    width: 10,
-                    height: 10
-                }
-            )
-            .is_none()
-        );
-    }
-
-    #[test]
-    fn rejects_empty_oversized_and_truncated_buffers() {
-        assert!(rgba_image(0, 1, &[], false).is_err());
-        assert!(rgba_image(u32::MAX, u32::MAX, &[], false).is_err());
-        assert!(rgba_image(1, 1, &[0; 3], false).is_err());
-    }
-}
-
 /// Consume one explicit request; encoding and file I/O run off the render loop.
 pub fn process_request<R>(
     renderer: &mut R,
@@ -209,7 +147,8 @@ pub fn process_request<R>(
     R: smithay::backend::renderer::ImportAll
         + smithay::backend::renderer::ImportMem
         + smithay::backend::renderer::Offscreen<smithay::backend::renderer::gles::GlesTexture>
-        + ExportMem,
+        + ExportMem
+        + crate::corner_render::CornerRenderer,
     R::TextureId: Texture + Clone + Send + 'static,
 {
     use std::sync::atomic::Ordering;
@@ -298,5 +237,193 @@ pub fn process_request<R>(
     if let Err(error) = worker {
         state.screenshot_busy.store(false, Ordering::Release);
         tracing::warn!(%error, "Could not start screenshot worker");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn preserves_channels_and_corrects_bottom_up_rows() {
+        let bytes = [255, 0, 0, 255, 0, 0, 255, 128];
+        let upright = rgba_image(1, 2, &bytes, false).unwrap();
+        assert_eq!(upright.get_pixel(0, 0).0, [255, 0, 0, 255]);
+        let flipped = rgba_image(1, 2, &bytes, true).unwrap();
+        assert_eq!(flipped.get_pixel(0, 0).0, [0, 0, 255, 128]);
+        assert_eq!(flipped.get_pixel(0, 1).0, [255, 0, 0, 255]);
+    }
+    #[test]
+    fn region_crop_handles_negative_origins_fractional_scale_and_clipping() {
+        use crate::screenshot::Region;
+        let image =
+            image::RgbaImage::from_fn(150, 120, |x, y| image::Rgba([x as u8, y as u8, 0, 255]));
+        let output = Region {
+            x: -100,
+            y: -80,
+            width: 100,
+            height: 80,
+        };
+        let selected = Region {
+            x: -90,
+            y: -70,
+            width: 20,
+            height: 20,
+        };
+        let cropped = crop_output(&image, output, selected).unwrap();
+        assert_eq!(cropped.dimensions(), (30, 30));
+        assert_eq!(cropped.get_pixel(0, 0).0, [15, 15, 0, 255]);
+        let clipped = crop_output(
+            &image,
+            output,
+            Region {
+                x: -110,
+                y: -90,
+                width: 20,
+                height: 20,
+            },
+        )
+        .unwrap();
+        assert_eq!(clipped.dimensions(), (15, 15));
+        assert!(
+            crop_output(
+                &image,
+                output,
+                Region {
+                    x: 1,
+                    y: 1,
+                    width: 10,
+                    height: 10
+                }
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn rejects_empty_oversized_and_truncated_buffers() {
+        assert!(rgba_image(0, 1, &[], false).is_err());
+        assert!(rgba_image(u32::MAX, u32::MAX, &[], false).is_err());
+        assert!(rgba_image(1, 1, &[0; 3], false).is_err());
+    }
+}
+
+/// Orientation through the exact renderer stack the native session uses
+/// (GbmGles multi-GPU renderer, offscreen texture, damage-tracker render,
+/// `read_framebuffer`). Needs a hardware render node; skipped without one.
+#[cfg(all(test, feature = "native-drm"))]
+mod gpu_orientation {
+    use super::*;
+    use smithay::{
+        backend::{
+            allocator::gbm::GbmDevice,
+            drm::{DrmDeviceFd, DrmNode},
+            egl::{EGLContext, EGLDisplay, context::ContextPriority},
+            renderer::{
+                Bind, Offscreen, Renderer,
+                damage::OutputDamageTracker,
+                element::{
+                    Kind,
+                    solid::{SolidColorBuffer, SolidColorRenderElement},
+                },
+                gles::{GlesRenderer, GlesTexture},
+                multigpu::{GpuManager, gbm::GbmGlesBackend},
+            },
+        },
+        output::{Mode, Output, PhysicalProperties, Subpixel},
+        utils::{DeviceFd, Scale, Transform},
+    };
+
+    #[test]
+    fn red_top_left_stays_at_the_top_through_the_native_renderer() {
+        let Ok(path) = std::fs::read_dir("/dev/dri").map(|d| {
+            d.flatten()
+                .map(|e| e.path())
+                .find(|p| p.to_string_lossy().contains("renderD"))
+        }) else {
+            return;
+        };
+        let Some(path) = path else { return };
+        let Ok(file) = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&path)
+        else {
+            return;
+        };
+        let drm_fd = DrmDeviceFd::new(DeviceFd::from(std::os::fd::OwnedFd::from(file)));
+        let gbm = GbmDevice::new(drm_fd).unwrap();
+        let display = unsafe { EGLDisplay::new(gbm.clone()).unwrap() };
+        let node = DrmNode::from_path(&path).unwrap();
+        let mut gpus = GpuManager::new(GbmGlesBackend::<GlesRenderer, DrmDeviceFd>::with_factory(
+            |display| {
+                let context = EGLContext::new_with_priority(display, ContextPriority::High)?;
+                let capabilities = unsafe { GlesRenderer::supported_capabilities(&context)? };
+                Ok(unsafe { GlesRenderer::with_capabilities(context, capabilities)? })
+            },
+        ))
+        .unwrap();
+        drop(display);
+        gpus.as_mut().add_node(node, gbm).unwrap();
+        let mut renderer = gpus.single_renderer(&node).unwrap();
+
+        let output = Output::new(
+            "test".into(),
+            PhysicalProperties {
+                size: (0, 0).into(),
+                subpixel: Subpixel::Unknown,
+                make: "t".into(),
+                serial_number: "t".into(),
+                model: "t".into(),
+            },
+        );
+        let mode = Mode {
+            size: (128, 128).into(),
+            refresh: 60_000,
+        };
+        output.change_current_state(
+            Some(mode),
+            Some(Transform::Normal),
+            Some(smithay::output::Scale::Integer(1)),
+            Some((0, 0).into()),
+        );
+        output.set_preferred(mode);
+        let buffer = SolidColorBuffer::new((64, 32), [1.0, 0.0, 0.0, 1.0]);
+        let element = SolidColorRenderElement::from_buffer(
+            &buffer,
+            (0, 0),
+            Scale::from(1.0),
+            1.0,
+            Kind::Unspecified,
+        );
+        let mut target = Offscreen::<GlesTexture>::create_buffer(
+            &mut renderer,
+            Fourcc::Abgr8888,
+            (128, 128).into(),
+        )
+        .unwrap();
+        let mut framebuffer = renderer.bind(&mut target).unwrap();
+        let mut damage = OutputDamageTracker::from_output(&output);
+        let rendered = damage
+            .render_output(
+                &mut renderer,
+                &mut framebuffer,
+                0,
+                &[element],
+                [0.0, 0.0, 1.0, 1.0],
+            )
+            .unwrap();
+        renderer.wait(&rendered.sync).unwrap();
+        let image = read_framebuffer(&mut renderer, &framebuffer, (128, 128).into()).unwrap();
+        println!(
+            "top-left {:?} bottom-left {:?}",
+            image.get_pixel(10, 10),
+            image.get_pixel(10, 120)
+        );
+        assert_eq!(
+            image.get_pixel(10, 10).0,
+            [255, 0, 0, 255],
+            "red element must be at the top"
+        );
+        assert_eq!(image.get_pixel(10, 120).0, [0, 0, 255, 255]);
     }
 }

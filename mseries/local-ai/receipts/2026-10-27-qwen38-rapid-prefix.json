@@ -1,0 +1,392 @@
+{
+  "status": "complete",
+  "model": "nvythong/Qwen3.8-2B-Distill-mlx-4Bit@0afdb6850d218024c7788eda5659aa25475b7d51",
+  "weights_sha256": "b0d5de688567bf4acd5e421027acd410dabcdc255a5bd46fdbf06c75dc2e6863",
+  "rapid_revision": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "mode": "prefix_cache",
+  "runs": [
+    {
+      "budget": 20000,
+      "admission_available_bytes": 13570670592,
+      "samples": [
+        {
+          "available_bytes": 13570670592,
+          "max_temp_c": 48.32,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "available_bytes": 13544718336,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2476.0
+        },
+        {
+          "available_bytes": 13519044608,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "available_bytes": 12738707456,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "available_bytes": 12182618112,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "available_bytes": 11988893696,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "available_bytes": 11961352192,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2472.0
+        },
+        {
+          "available_bytes": 11925405696,
+          "max_temp_c": 47.3,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "available_bytes": 11873419264,
+          "max_temp_c": 47.3,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "available_bytes": 11880054784,
+          "max_temp_c": 46.44,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "available_bytes": 11878924288,
+          "max_temp_c": 46.44,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "available_bytes": 11879858176,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "available_bytes": 11631312896,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "available_bytes": 11529617408,
+          "max_temp_c": 47.14,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "available_bytes": 11483332608,
+          "max_temp_c": 47.14,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "available_bytes": 11373477888,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "available_bytes": 11159076864,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "available_bytes": 11318607872,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "available_bytes": 11217272832,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "available_bytes": 11382489088,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "available_bytes": 11171184640,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "available_bytes": 11200921600,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "available_bytes": 11161665536,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "available_bytes": 11156619264,
+          "max_temp_c": 47.693,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "available_bytes": 11155243008,
+          "max_temp_c": 47.693,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "available_bytes": 11130667008,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "available_bytes": 10933174272,
+          "max_temp_c": 48.32,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "available_bytes": 10920198144,
+          "max_temp_c": 48.32,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "available_bytes": 10927915008,
+          "max_temp_c": 48.526,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "available_bytes": 10943037440,
+          "max_temp_c": 48.526,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "available_bytes": 10926080000,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "available_bytes": 10896769024,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2501.0
+        }
+      ],
+      "outcome": {
+        "warmup": {
+          "elapsed_s": 0.4637561759991513,
+          "response": {
+            "id": "chatcmpl-ae36b648",
+            "object": "chat.completion",
+            "created": 1793153127,
+            "model": "/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx",
+            "choices": [
+              {
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "19"
+                },
+                "finish_reason": "stop"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 27,
+              "completion_tokens": 3,
+              "total_tokens": 30
+            },
+            "metrics": {
+              "time_to_first_token_ms": 243.41876000107732,
+              "mean_itl_ms": 21.848070498890593
+            }
+          }
+        },
+        "pairs": [
+          {
+            "cold": {
+              "elapsed_s": 1.8885969080001814,
+              "response": {
+                "id": "chatcmpl-ee7c8a9f",
+                "object": "chat.completion",
+                "created": 1793153129,
+                "model": "/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx",
+                "choices": [
+                  {
+                    "index": 0,
+                    "message": {
+                      "role": "assistant",
+                      "content": "Sunlight enters raindrops and changes direction. Internal reflection returns light, while refraction separates colors."
+                    },
+                    "finish_reason": "stop"
+                  }
+                ],
+                "usage": {
+                  "prompt_tokens": 586,
+                  "completion_tokens": 21,
+                  "total_tokens": 607
+                },
+                "metrics": {
+                  "time_to_first_token_ms": 1221.9971040030941,
+                  "mean_itl_ms": 24.85541469995951
+                }
+              }
+            },
+            "repeat": {
+              "elapsed_s": 0.9481999419986096,
+              "response": {
+                "id": "chatcmpl-05327b51",
+                "object": "chat.completion",
+                "created": 1793153130,
+                "model": "/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx",
+                "choices": [
+                  {
+                    "index": 0,
+                    "message": {
+                      "role": "assistant",
+                      "content": "Sunlight enters raindrops and changes direction. Internal reflection returns light, while refraction separates colors."
+                    },
+                    "finish_reason": "stop"
+                  }
+                ],
+                "usage": {
+                  "prompt_tokens": 586,
+                  "completion_tokens": 21,
+                  "total_tokens": 607,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 571
+                  }
+                },
+                "metrics": {
+                  "time_to_first_token_ms": 271.40707400030806,
+                  "mean_itl_ms": 25.34738454996841
+                }
+              }
+            }
+          },
+          {
+            "cold": {
+              "elapsed_s": 1.830746485000418,
+              "response": {
+                "id": "chatcmpl-506cc5a0",
+                "object": "chat.completion",
+                "created": 1793153132,
+                "model": "/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx",
+                "choices": [
+                  {
+                    "index": 0,
+                    "message": {
+                      "role": "assistant",
+                      "content": "Sunlight enters raindrops and changes direction. Internal reflection returns light, while refraction separates colors."
+                    },
+                    "finish_reason": "stop"
+                  }
+                ],
+                "usage": {
+                  "prompt_tokens": 586,
+                  "completion_tokens": 21,
+                  "total_tokens": 607
+                },
+                "metrics": {
+                  "time_to_first_token_ms": 1145.3416379990813,
+                  "mean_itl_ms": 26.265665800019633
+                }
+              }
+            },
+            "repeat": {
+              "elapsed_s": 0.8984007030012435,
+              "response": {
+                "id": "chatcmpl-7d6a52ff",
+                "object": "chat.completion",
+                "created": 1793153133,
+                "model": "/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx",
+                "choices": [
+                  {
+                    "index": 0,
+                    "message": {
+                      "role": "assistant",
+                      "content": "Sunlight enters raindrops and changes direction. Internal reflection returns light, while refraction separates colors."
+                    },
+                    "finish_reason": "stop"
+                  }
+                ],
+                "usage": {
+                  "prompt_tokens": 586,
+                  "completion_tokens": 21,
+                  "total_tokens": 607,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 571
+                  }
+                },
+                "metrics": {
+                  "time_to_first_token_ms": 210.98722900205757,
+                  "mean_itl_ms": 26.24813450001966
+                }
+              }
+            }
+          },
+          {
+            "cold": {
+              "elapsed_s": 1.8680229439996765,
+              "response": {
+                "id": "chatcmpl-9a6e4615",
+                "object": "chat.completion",
+                "created": 1793153135,
+                "model": "/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx",
+                "choices": [
+                  {
+                    "index": 0,
+                    "message": {
+                      "role": "assistant",
+                      "content": "Sunlight enters raindrops and changes direction. Internal reflection returns light, while refraction separates colors."
+                    },
+                    "finish_reason": "stop"
+                  }
+                ],
+                "usage": {
+                  "prompt_tokens": 586,
+                  "completion_tokens": 21,
+                  "total_tokens": 607
+                },
+                "metrics": {
+                  "time_to_first_token_ms": 1160.3417139995145,
+                  "mean_itl_ms": 24.962377449992346
+                }
+              }
+            },
+            "repeat": {
+              "elapsed_s": 0.8991718300021603,
+              "response": {
+                "id": "chatcmpl-d50bb0bf",
+                "object": "chat.completion",
+                "created": 1793153136,
+                "model": "/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx",
+                "choices": [
+                  {
+                    "index": 0,
+                    "message": {
+                      "role": "assistant",
+                      "content": "Sunlight enters raindrops and changes direction. Internal reflection returns light, while refraction separates colors."
+                    },
+                    "finish_reason": "stop"
+                  }
+                ],
+                "usage": {
+                  "prompt_tokens": 586,
+                  "completion_tokens": 21,
+                  "total_tokens": 607,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 571
+                  }
+                },
+                "metrics": {
+                  "time_to_first_token_ms": 259.8685890006891,
+                  "mean_itl_ms": 24.99764630010759
+                }
+              }
+            }
+          }
+        ]
+      },
+      "stopped": null,
+      "log_tail": "Guided generation disabled: could not import the llguidance stack (ModuleNotFoundError: No module named 'llguidance'). Install the extra with `/home/sdolbec/.local/share/mlx-omarchy/venv/bin/python -m pip install 'rapid-mlx[guided]'`; if it is installed, this indicates a broken or version-incompatible llguidance/mlx install.\n[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.\nINFO:__main__:============================================================\nINFO:__main__:SECURITY CONFIGURATION\nINFO:__main__:============================================================\nWARNING:__main__:  Authentication: DISABLED - Set RAPID_MLX_API_KEY env or use --api-key to enable\nWARNING:__main__:  Rate limiting: DISABLED - Use --rate-limit to enable\nINFO:__main__:  Request timeout: 1800.0s\nINFO:__main__:============================================================\nINFO:rapid_mlx._mlx_compat:rapid-mlx compat: device Device(gpu, 0) supports thread-local streams (no shim).\nINFO:rapid_mlx.model_auto_config:Auto-detected model family 'qwen3' \u2192 tool_call_parser=hermes, reasoning_parser=qwen3, is_hybrid=False, supports_spec_decode=False\nINFO:__main__:Auto-configured --tool-call-parser hermes\nINFO:__main__:Auto-configured --reasoning-parser qwen3\nINFO:__main__:Tool call parser enabled: hermes\nINFO:__main__:Reasoning parser enabled: qwen3\nINFO:rapid_mlx.utils.mamba_cache:[MambaCache] Skipping _make_cache patch \u2014 mlx-lm ArraysCache has native batching support\nINFO:rapid_mlx.cli:Non-trimmable model cache detected with --enable-prefix-cache: auto-setting --hybrid-cache-entries=8 (pass --hybrid-cache-entries 0 to disable)\nINFO:__main__:Force text-only mode enabled via --no-mllm flag (MLLM auto-detection overridden, #393)\nINFO:__main__:Loading model with BatchedEngine: /home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx\nINFO:__main__:Model loaded: /home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx\nINFO:__main__:Native tool format enabled for parser: hermes\nINFO:__main__:Default max tokens: 4096\nINFO:rapid_mlx.runtime.model_registry:Registered model '/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' (aliases=none, default=True)\nINFO:     Started server process [1191881]\nINFO:     Waiting for application startup.\nINFO:__main__:GC control enabled: thresholds set to (100000, 50, 50)\nINFO:rapid_mlx.engine_core:MLX step thread initialized: stream=Stream(Device(gpu, 0), 2) (worker default = generation_stream)\n----------------------------------------\nException occurred during processing of request from ('127.0.0.1', 52458)\nTraceback (most recent call last):\n  File \"/usr/lib/python3.14/socketserver.py\", line 318, in _handle_request_noblock\n    self.process_request(request, client_address)\n    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.14/socketserver.py\", line 349, in process_request\n    self.finish_request(request, client_address)\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.14/socketserver.py\", line 362, in finish_request\n    self.RequestHandlerClass(request, client_address, self)\n    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.14/socketserver.py\", line 766, in __init__\n    self.handle()\n    ~~~~~~~~~~~^^\n  File \"/usr/lib/python3.14/http/server.py\", line 496, in handle\n    self.handle_one_request()\n    ~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/tmp/mseries-rapid-mlx/rapid_mlx/_startup_probe.py\", line 30, in handle_one_request\n    super().handle_one_request()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/usr/lib/python3.14/http/server.py\", line 484, in handle_one_request\n    method()\n    ~~~~~~^^\n  File \"/tmp/mseries-rapid-mlx/rapid_mlx/_startup_probe.py\", line 55, in _respond\n    self.end_headers()\n    ~~~~~~~~~~~~~~~~^^\n  File \"/usr/lib/python3.14/http/server.py\", line 598, in end_headers\n    self.flush_headers()\n    ~~~~~~~~~~~~~~~~~~^^\n  File \"/usr/lib/python3.14/http/server.py\", line 602, in flush_headers\n    self.wfile.write(b\"\".join(self._headers_buffer))\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.14/socketserver.py\", line 845, in write\n    self._sock.sendall(b)\n    ~~~~~~~~~~~~~~~~~~^^^\nBrokenPipeError: [Errno 32] Broken pipe\n----------------------------------------\nINFO:rapid_mlx.utils.generation_config:generation_config: loaded extra EOS token ids from /home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx/generation_config.json: [248046, 248044]\nINFO:rapid_mlx.gdn_in_proj_fusion:[gdn_fusion] in-projection fusion applied: 18 GDN layers\nINFO:rapid_mlx.memory_cache:MemoryAwarePrefixCache initialized: max_memory=2218.5MB, max_entries=1000, radix_index=on\nINFO:rapid_mlx.scheduler:Memory-aware cache enabled: limit=2218.5MB (agent-session floor 0.0MB), index=radix\nINFO:rapid_mlx.engine_core:Model profile: /home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx \u2192 pure attention, throttle OFF, spec decode OFF, tool=hermes, reasoning=qwen3\nINFO:rapid_mlx.engine_core:Engine started\nINFO:rapid_mlx.engine.batched:BatchedEngine loaded: /home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx (mllm=False)\nINFO:__main__:Warming up (compiling Metal shaders)...\nINFO:__main__:Hybrid model: running full request warmup (compiling GatedDeltaNet kernels)\nINFO:rapid_mlx.output_router:[OutputRouter] Think tag format detected: think=248068/248069\nINFO:rapid_mlx.scheduler:[cache_fetch] request=bba4adde-7bf MISS prompt_tokens=11 time=0.000s entries=0\nINFO:rapid_mlx.engine_core:[stream_outputs] bba4adde-7bf START waiting for tokens\nINFO:rapid_mlx.scheduler:[dense_sampler_fastpath] installed on BatchGenerator\nINFO:rapid_mlx.singleton_cache_fastpath:[singleton-fastpath] installed (B=1 keeps singleton KV caches)\nINFO:rapid_mlx.scheduler:[schedule] request=bba4adde-7bf uid=0 prompt_tokens=11 tokens_to_prefill=11 max_tokens=2 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[boundary_snapshot] request=bba4adde-7bf saved 10 tokens at message boundary store_time=0.000s\nINFO:rapid_mlx.engine_core:[stream_outputs] bba4adde-7bf first token after 0.5s\nINFO:rapid_mlx.scheduler:[cache_store] request=bba4adde-7bf tokens=13 (11 prompt + 2 output) stored=True time=0.000s cache_entries=2 cache_mem=59MB\nINFO:rapid_mlx.engine_core:[stream_outputs] bba4adde-7bf finished normally, 2 tokens in 0.6s\nINFO:rapid_mlx.engine_core:[stream_outputs] bba4adde-7bf cleanup done\nINFO:__main__:Warmup complete (0.7s)\nINFO:__main__:[lifespan] Prefix-cache auto-load disabled by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://127.0.0.1:45899 (Press CTRL+C to quit)\n  Ready: http://127.0.0.1:45899\n\n  OpenAI:    http://127.0.0.1:45899/v1\n  Anthropic: http://127.0.0.1:45899\n  Model:     /home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx\n\n  Connect:\n    Coding agent  rapid-mlx launch codex\n    Python        rapid-mlx connect openai-python --base-url http://127.0.0.1:45899/v1\nINFO:     127.0.0.1:47130 - \"GET /healthz HTTP/1.1\" 200 OK\nINFO:rapid_mlx.routes.chat:[REQUEST] POST /v1/chat/completions stream=False model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' max_tokens=32 temp=0.0 msgs=1 roles=['user'] total_chars=46 tools=0 response_format=None\nINFO:rapid_mlx.routes.chat:tool-grammar request=ffff3388a410 model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' admission=skipped:no_tools\nINFO:rapid_mlx.memory_cache:[cache_fetch] LCP unavailable: shared=3 entry_len=10 requested_len=27 non_trimmable=True\nINFO:rapid_mlx.scheduler:[cache_fetch] request=07329841-ec1 MISS prompt_tokens=27 time=0.000s entries=2\nINFO:rapid_mlx.scheduler:[schedule] request=07329841-ec1 uid=1 prompt_tokens=27 tokens_to_prefill=27 max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[boundary_snapshot] request=07329841-ec1 saved 26 tokens at message boundary store_time=0.001s\nINFO:rapid_mlx.scheduler:[cache_store] request=07329841-ec1 tokens=30 (27 prompt + 3 output) stored=True time=0.001s cache_entries=4 cache_mem=118MB\nINFO:rapid_mlx.routes.chat:Chat completion: 3 tokens in 0.42s (7.1 tok/s)\nINFO:     127.0.0.1:47142 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\nINFO:rapid_mlx.routes.chat:[REQUEST] POST /v1/chat/completions stream=False model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' max_tokens=32 temp=0.0 msgs=1 roles=['user'] total_chars=3394 tools=0 response_format=None\nINFO:rapid_mlx.routes.chat:tool-grammar request=fffeda6eb5f0 model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' admission=skipped:no_tools\nINFO:rapid_mlx.memory_cache:[cache_fetch] LCP unavailable: shared=3 entry_len=30 requested_len=586 non_trimmable=True\nINFO:rapid_mlx.scheduler:[cache_fetch] request=cd7acace-988 MISS prompt_tokens=586 time=0.000s entries=4\nINFO:rapid_mlx.scheduler:[schedule] request=cd7acace-988 uid=2 prompt_tokens=586 tokens_to_prefill=586 max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[boundary_snapshot] request=cd7acace-988 saved 571 tokens at message boundary store_time=0.001s\nINFO:rapid_mlx.scheduler:[cache_store] request=cd7acace-988 tokens=607 (586 prompt + 21 output) stored=True time=0.000s cache_entries=6 cache_mem=191MB\nINFO:rapid_mlx.routes.chat:Chat completion: 21 tokens in 1.88s (11.2 tok/s)\nINFO:     127.0.0.1:47148 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\nINFO:rapid_mlx.routes.chat:[REQUEST] POST /v1/chat/completions stream=False model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' max_tokens=32 temp=0.0 msgs=1 roles=['user'] total_chars=3394 tools=0 response_format=None\nINFO:rapid_mlx.routes.chat:tool-grammar request=fffedabea120 model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' admission=skipped:no_tools\nINFO:rapid_mlx.scheduler:[cache_fetch] request=1fa91274-97a HIT prompt_tokens=586 cached=571 remaining=15 time=0.001s\nINFO:rapid_mlx.scheduler:[schedule] request=1fa91274-97a uid=3 prompt_tokens=586 tokens_to_prefill=15, 571 cached max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[cache_store] request=1fa91274-97a tokens=607 (586 prompt + 21 output) stored=True time=0.000s cache_entries=6 cache_mem=191MB\nINFO:rapid_mlx.routes.chat:Chat completion: 21 tokens in 0.94s (22.2 tok/s)\nINFO:     127.0.0.1:47164 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\nINFO:rapid_mlx.routes.chat:[REQUEST] POST /v1/chat/completions stream=False model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' max_tokens=32 temp=0.0 msgs=1 roles=['user'] total_chars=3394 tools=0 response_format=None\nINFO:rapid_mlx.routes.chat:tool-grammar request=fffedabea120 model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' admission=skipped:no_tools\nINFO:rapid_mlx.memory_cache:[cache_fetch] LCP unavailable: shared=5 entry_len=607 requested_len=586 non_trimmable=True\nINFO:rapid_mlx.scheduler:[cache_fetch] request=777043ce-f51 MISS prompt_tokens=586 time=0.000s entries=6\nINFO:rapid_mlx.scheduler:[schedule] request=777043ce-f51 uid=4 prompt_tokens=586 tokens_to_prefill=586 max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[boundary_snapshot] request=777043ce-f51 saved 571 tokens at message boundary store_time=0.002s\nINFO:rapid_mlx.scheduler:[cache_store] request=777043ce-f51 tokens=607 (586 prompt + 21 output) stored=True time=0.001s cache_entries=8 cache_mem=264MB\nINFO:rapid_mlx.routes.chat:Chat completion: 21 tokens in 1.83s (11.5 tok/s)\nINFO:     127.0.0.1:47178 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\nINFO:rapid_mlx.routes.chat:[REQUEST] POST /v1/chat/completions stream=False model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' max_tokens=32 temp=0.0 msgs=1 roles=['user'] total_chars=3394 tools=0 response_format=None\nINFO:rapid_mlx.routes.chat:tool-grammar request=ffff3553ead0 model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' admission=skipped:no_tools\nINFO:rapid_mlx.scheduler:[cache_fetch] request=970d9c60-803 HIT prompt_tokens=586 cached=571 remaining=15 time=0.001s\nINFO:rapid_mlx.scheduler:[schedule] request=970d9c60-803 uid=5 prompt_tokens=586 tokens_to_prefill=15, 571 cached max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[cache_store] request=970d9c60-803 tokens=607 (586 prompt + 21 output) stored=True time=0.000s cache_entries=8 cache_mem=264MB\nINFO:rapid_mlx.routes.chat:Chat completion: 21 tokens in 0.89s (23.5 tok/s)\nINFO:     127.0.0.1:47192 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\nINFO:rapid_mlx.routes.chat:[REQUEST] POST /v1/chat/completions stream=False model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' max_tokens=32 temp=0.0 msgs=1 roles=['user'] total_chars=3394 tools=0 response_format=None\nINFO:rapid_mlx.routes.chat:tool-grammar request=ffff3553e710 model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' admission=skipped:no_tools\nINFO:rapid_mlx.memory_cache:[cache_fetch] LCP unavailable: shared=5 entry_len=607 requested_len=586 non_trimmable=True\nINFO:rapid_mlx.scheduler:[cache_fetch] request=d7c9f039-f12 MISS prompt_tokens=586 time=0.000s entries=8\nINFO:rapid_mlx.scheduler:[schedule] request=d7c9f039-f12 uid=6 prompt_tokens=586 tokens_to_prefill=586 max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[boundary_snapshot] request=d7c9f039-f12 saved 571 tokens at message boundary store_time=0.002s\nINFO:rapid_mlx.scheduler:[cache_store] request=d7c9f039-f12 tokens=607 (586 prompt + 21 output) stored=True time=0.002s cache_entries=8 cache_mem=279MB\nINFO:rapid_mlx.routes.chat:Chat completion: 21 tokens in 1.86s (11.3 tok/s)\nINFO:     127.0.0.1:50932 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\nINFO:rapid_mlx.routes.chat:[REQUEST] POST /v1/chat/completions stream=False model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' max_tokens=32 temp=0.0 msgs=1 roles=['user'] total_chars=3394 tools=0 response_format=None\nINFO:rapid_mlx.routes.chat:tool-grammar request=ffff2b527100 model='/home/sdolbec/.cache/mseries-metal2vk/qwen38-mlx' admission=skipped:no_tools\nINFO:rapid_mlx.scheduler:[cache_fetch] request=b7a5b426-045 HIT prompt_tokens=586 cached=571 remaining=15 time=0.002s\nINFO:rapid_mlx.scheduler:[schedule] request=b7a5b426-045 uid=7 prompt_tokens=586 tokens_to_prefill=15, 571 cached max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[cache_store] request=b7a5b426-045 tokens=607 (586 prompt + 21 output) stored=True time=0.000s cache_entries=8 cache_mem=279MB\nINFO:rapid_mlx.routes.chat:Chat completion: 21 tokens in 0.90s (23.4 tok/s)\nINFO:     127.0.0.1:50940 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffed8eb7160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/tmp/mseries-rapid-mlx/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff308ef160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff4e6007a0 [python] (most recent call first):\n  File \"/tmp/mseries-rapid-mlx/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/selectors.py\", line 452 in select\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2019 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/tmp/mseries-rapid-mlx/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/tmp/mseries-rapid-mlx/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/tmp/mseries-rapid-mlx/rapid_mlx/server.py\", line 4758 in main\n  File \"/tmp/mseries-rapid-mlx/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/tmp/mseries-rapid-mlx/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1191881]\n"
+    }
+  ]
+}

@@ -33,7 +33,7 @@
       "file": "mseries/codexbar-wingpanel/Indicator.vala",
       "rule": "icon-px",
       "match": "pixel_size = 36",
-      "count": 3,
+      "count": 1,
       "reason": "Dropdown icon glyph, doubled with the popover text (2em). Phase 3/4 (#332): confirm it should follow the ladder, then derive it."
     },
     {

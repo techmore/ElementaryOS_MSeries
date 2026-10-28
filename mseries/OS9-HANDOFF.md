@@ -1,10 +1,108 @@
+## wip4 revision 6: DP routing candidate — 2026-10-27
+
+Owner report: dock HDMI and Ethernet not working on wip3; HDMI worked after moving the dock to another port. Journals show `apple-dcp 28cc00000` timing out the DPTX validate call (-110 x6, "Type-C DPTX reconnect failed after 5 retries") on every failing boot, each time on the first plug within ~4 s of resuming from s2idle; the same dock then worked on `289c00000`. wip2 used `28cc00000` successfully; wip3 never did. Ethernet (RTL8153, `r8152`) enumerated but had no carrier this boot (it had carrier on the previous wip3 boot with the identical missing-`rtl8153b-2.fw` message), so that looks physical/cable, not kernel. Candidate: wip4 revision 6 = wip3 source + #157 + local 0002 + upstream #186 (0003-0005; #163 excluded as conflicting duplicate). Full-tree `candidate.py prepare`/`check` and 83 aurora tests pass; kernel build, KUnit and boot are NOT done. Nothing installed, staged, armed or rebooted. `thunderbolt_apple.s2idle_teardown/resume_recovery/router_sleep` remain at the default N (upstream did not test them with a real dock).
+## Rapid prompt cache and ANE references — 2026-10-27
+
+On Qwen3.8 distill, 80k vs 20k Rapid HTTP budget A/B gave a 1.74% median reduction (three pairs; one slower). At 20k, three 586-token cold/repeat requests showed 50.93% median shorter repeat time, 571 tokens cached and identical paired outputs; this is a repeat-prompt cache result, not general decode. maderix/ANE and fork solatticus/ANE add macOS/iOS ANE training references, not the missing Linux converter. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
+
+## Qwen H13 export and Rapid batching — 2026-10-27
+
+M4 macOS mini cross-compiled all 38 staged Qwen programs for h13 from a hash-verified GGUF; files remain in its isolated cache, checksums retained locally. Upstream ANEC conversion fails before first output: undefined `uniform_task_relayout`; `payload` is also referenced before assignment. No ANE execution. Qwen3.8 distill on M1 Pro: direct MLX 20k vs 5k median paired request time −11.79% (3 pairs); Rapid loopback HTTP −17.95% (2 pairs), outputs text-matched but measurement boundaries/warmups differ, so not an engine ranking. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
+
+## ANE converter unit follow-up — 2026-10-27
+
+The converter writes 512-byte tile counts, whereas historical probe/staged paths used 16-KiB counts. A branch-only patch updates stale tests and requires explicit unit selection before the direct staged decoder opens the device; 84 offline tests pass on a clean archive. The separate libane runner, real bundle layout and hardware remain unverified. Public ANEForge commit 2ea941c is reachable, but no compiled Qwen bundle appears in repository/release assets or local cache; no model comparison ran. [Receipt](local-ai/receipts/2026-10-27-ane-qwen-preflight.md).
+
+## Qwen 4B batching qualification — 2026-10-27
+
+Memory rose naturally; guarded Qwen 4B smoke passed at 12.69 GiB admission. Three matched 20k vs 5k 32-token pairs gave median 12.86% lower request time, 19.46 → 23.29 reported tokens/s, 823 → 249 submissions and identical outputs. One candidate GTK callback gap was 50.49 ms; sustained presentation/input and numerical fidelity remain open. No default changed. ANE still needs compiled assets and converter ABI resolution. [4B receipt](local-ai/receipts/2026-10-27-qwen4b-20k.md).
+
+## Qwen ANE preflight — 2026-10-27
+
+Inspected current public ane-linux-experiments and omarchy-ane: Qwen staged decoder needs 38 compiled ANE programs, a guarded manifest and matched model assets not found locally. Upstream reports 8.38 GB peak RSS; available desktop memory was about 10.26 GiB, insufficient alongside the 6 GiB reserve. Host-only Qwen contract/reference suite passed 18 tests; five converter header-geometry tests failed because source uses 512-byte units while tests expect 16-KiB units, with ABI correctness unresolved. No ANE model or comparison ran; no driver/system changes. [Preflight](local-ai/receipts/2026-10-27-ane-qwen-preflight.md).
+
+## MLX longer generation follow-up — 2026-10-27
+
+Qwen 2B 256-token tests: 80k budget median paired request reduction 21.06% (two pairs, interrupted at admission); 120k 20.69% (three pairs), with matching outputs. GTK callback probe saw no intervals over 33.33 ms over individual 6–8 second requests; this is not sustained desktop or input qualification. Wave scheduling offered no compelling gain. 4B admission remained refused at 10.61 GiB versus 12.5 required. ANE is a separate accelerator and not yet an MLX Qwen path. Leave defaults unchanged; 4B, longer interaction/fidelity and later Rapid comparison remain open. [Receipts](local-ai/receipts/2026-10-27-batch-work.md).
+
+## MLX batch follow-up — 2026-10-27
+
+A 20k and 80k Qwen 2B sweep with a GTK animation probe showed median paired request reductions of 14.29% and 17.55%, respectively; no callback gaps over 33.33 ms during the short measured requests. This is not presentation or input-latency qualification. Qwen 4B was refused at 11.28 GiB available against a 12.5 GiB admission requirement; reserve unchanged. Keep opt-in and test sustained desktop behavior, larger models, and numerical fidelity before any default. Rapid-MLX remains a later matched comparison. [Raw results](local-ai/receipts/2026-10-27-batch-work.md).
+
+## TensorFold Vulkan investigation — 2026-10-27
+
+M1 Pro Qwen3.5 2B process-local submission-budget experiment: 20,000 versus the uncalibrated-board fallback 5,000 reduced median paired 32-token request time 16.37% with identical token IDs across three pairs; 10,000 and 40,000 were also tested. The branch includes the guarded harness, graph and raw receipts. Desktop frame pacing and broader model correctness are not qualified, so this is opt-in only and is not the unavailable TensorFold batching patch. [`local-ai/receipts/2026-10-27-batch-work.md`](local-ai/receipts/2026-10-27-batch-work.md).
+
+Qwen3.5 2B initial MLX and Rapid-MLX timings, identical 64-token output, admission refusals and measurement limits: [`local-ai/receipts/2026-10-27-qwen2b-timing.md`](local-ai/receipts/2026-10-27-qwen2b-timing.md). Rapid's isolated loopback server smoke and dependency snapshot: [`local-ai/RAPID-MLX-INVESTIGATION-2026-10-27.md`](local-ai/RAPID-MLX-INVESTIGATION-2026-10-27.md). The test helper now requires an explicit model-specific admission allowance; guard refusals report available, model allowance and reserve. The six-GiB reserve remains in force. Timing surfaces and warmups differ, so the one pair is not a speed ranking.
+
+The private Honeykrisp ICD enumerates the M1 Pro on the running Aurora wip4 kernel. The metal2vk compiler build completed in `~/.cache/mseries-metal2vk`; both the shipped `metal::precise::exp` and freshly compiled `metal::exp` SiLU probes ran through MLX metal2vk without fallback and matched a bounded independent reference. LFM3 1.7B 8-bit answered a short prompt on the Mac with an isolated unmerged mlx-lm PR; it did not invoke a metal2vk custom kernel. Qwen 4B admission was refused with 12.22 GiB available against the 12.5 GiB requirement. No model or compiler job remains running. Full-model correctness, TensorFold batching and speed improvements are unqualified. Exact results: [`local-ai/receipts/2026-10-27-tensorfold-vulkan.md`](local-ai/receipts/2026-10-27-tensorfold-vulkan.md).
+## T3 Dock launcher and Wingpanel — 2026-10-27
+
+The owner chose to retain the unified Wingpanel menu. The Dock launcher opens the T3 window and its taskbar status area does not add a second T3 menu. The Dock source-preparation guard checks these boundaries; the Wingpanel module is not retired. Source preparation is verified against the pinned upstream Dock, with live desktop acceptance still outstanding.
+## WD22TB4 and wip4 candidate status — 2026-10-28
+
+Current `dev` is `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`. Pages deployment
+`40628638433` succeeded for that exact revision. The live homepage and build
+monitor still showed the October 23 #533 candidate paragraph; a focused status
+correction is prepared in this docs change and is not published until it merges
+and a Pages deployment succeeds for the resulting `dev` revision.
+
+The attended October 21 wip2 trial confirmed WD22TB4 picture at 1080p/60 on all
+three USB-C ports. Retained wip3 observations from October 20–27 show three DPTX
+failures when the dock was first plugged within about four seconds of resume;
+there were no matching failures on .20, wip2, or a wip3 boot with the dock
+connected at boot. Moving to another port restored picture in one observed
+incident. This pattern is consistent with, not proof of, a post-resume DCP state
+problem. A separate user-space monitor-profile watcher restored the saved layout
+on two observed same-port cycles; automatic restore was confirmed only on
+the later cycle after a fallback association fix. This does not establish kernel
+recovery or wip4 acceptance.
+
+Two wip4 revision-6 proposals remain open: #533 at head
+`f68fd1d9833d4895607df1951726b163542c71f0` and draft #619 at head
+`1dfb6ecc43400b2051bdd7c81c3408defd45e305`. Their patch lists differ, and the
+#619 conversation records that the intended revision must be resolved before
+either merges. PR #619 is based on older `dev` `44644d852cf70d12068ebbbba73726ffbf9a0338`;
+against current `dev` `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`, its head is
+eight commits behind and four ahead. Do not choose or refresh one candidate until
+the owner settles the overlap.
+
+On exact #619 head `1dfb6ecc`, Aurora candidate run
+[40605242087](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40605242087)
+passed both ARM64 candidate and unified72 profile jobs: pinned-source preparation,
+selected production-kernel logic checks, kernel/modules/DTB builds, payload-only
+Debian package builds, and package-boundary checks. Actions uploaded
+`elementary-aurora-enhancements-candidate-40605242087` (artifact 12782705133,
+SHA-256 `6601d97a59fb070fc6a2b0aa4bf74711b49216ddecf151fc068b0150d69f9a94`) and
+`elementary-aurora-enhancements-unified72-40605242087` (artifact 12782670058,
+SHA-256 `31ffc75baec619e3e466751d890b8d483df78901a934530117e424c7a8be20c8`).
+The workflow did not run DCP KUnit, and no independent post-upload artifact audit
+is recorded. No wip4 package was installed or armed, and no wip4 hardware boot,
+dock recovery, suspend, long-run stability, or paired-power qualification was
+performed. The .20 kernel remains the documented persistent boot default; factory
+image boot remains unverified.
+
+Next: obtain the owner’s choice between #533 and #619, then review the chosen
+current-head patch interactions and required KUnit/build evidence before any
+owner-authorized attended hardware trial. Reuse the existing dock/VRR results;
+do not repeat the completed trials. After the docs change merges, verify the new
+Pages run and live status separately.
+
+## T3 panel menu HIG audit — 2026-10-27
+
+Audit of the unified T3 Wingpanel menu against the elementary HIG: [`t3-wingpanel/HIG-AUDIT.md`](t3-wingpanel/HIG-AUDIT.md). Fixed in source: nested scrollers that hid the second plan window and running threads, menu width jumping between tabs, idle tooltip "0 running" and a never-updated accessible name, raw token counts/cost/timestamps, and the double use of "Activity". Fixture tests pass (`t3-wingpanel/test.sh`); before/after renders in `t3-wingpanel/receipts/2026-10-27-hig-audit/`. Not installed or loaded into the live panel. Owner then approved H1–H5, done in the same PR: one tab bar, plain menu-item footer (Open T3, Activity, Fleet, T3 Settings…), 16 px embedded icons, system text size, badge only for approvals.
+
+## Public messaging status — 2026-10-27
+
+The public homepage and support matrix now distinguish the scoped October 20 BlueFerry texting observation from the owner’s October 22 decision that the Messages and Signal experience is incomplete and deferred. See [MESSAGING-STATUS.md](MESSAGING-STATUS.md). This documentation update does not change or qualify the apps, phone pairing or hardware.
+
 ## Title bar buttons stay on the left — 2026-10-27
 
 Owner request: window title-bar buttons always on the left. Live `button-layout` was `:minimize,maximize,close` because Work Mode's `window-buttons` key defaulted to `windows` (not user-set in dconf) and applied the Windows layout whenever Work Mode was active; the saved original it would restore was already `close,minimize,maximize:`. The schema default is now `unchanged`, so Work Mode no longer touches the layout; `windows` remains an explicit opt-in. Work Mode tests: 14 pass (new test asserts the default leaves the left layout alone; the two tests that exercised the Windows layout now set it explicitly). **Not deployed:** the default changes only after the schema is recompiled by the Work Mode install, and the helper then restores the saved left layout on its next tick; no live gsettings, panel or session change was made.
 
 ## Upstream watch: retry transient GitHub errors — 2026-10-27
 
-After #598/#610 the dashboard renders and the 03:40 manual run passed, but the 05:06 scheduled run exited 1 because one source (`aurora-silicon/linux`) returned HTTP 500 (shown under "Fetch failures" in issue #51). `people-watch.get` had no retry, so any transient upstream 5xx failed the job. It now retries 5xx, 429, URL errors and timeouts up to 3 times (1 s, 3 s, 8 s); 404 still returns None and other 4xx (401/403/422) are not retried; a persistent failure still raises and still fails the run. 5 new tests in `test_github_watch.py`; 93 local-ai tests pass. Not yet observed on a scheduled run.
+After #598/#610 the dashboard rendered and the 03:40 manual run passed, but the 05:06 scheduled run exited 1 because one source (`aurora-silicon/linux`) returned HTTP 500 (shown under "Fetch failures" in issue #51). `people-watch.get` had no retry, so any transient upstream 5xx failed the job. It now retries 5xx, 429, URL errors and timeouts up to 3 times (1 s, 3 s, 8 s); 404 still returns None and other 4xx (401/403/422) are not retried; a persistent failure still raises and still fails the run. 5 new tests in `test_github_watch.py`; 93 local-ai tests pass. PR #618 merged as `5267e1be7cea5d37d49e8c1f6630e3401274560a`; scheduled run `40502016600` completed successfully on `dev` revision `7478f2fe9ce2230e8f21666cffcc9d8b4232c3bd`. Issue #51 remains open with public upstream changes awaiting review; the watcher does not import changes or qualify hardware.
 
 ## Wingpanel indicator staging hazard — 2026-10-27
 
@@ -1010,6 +1108,14 @@ now stage outside discovery and require explicit activation; no further panel
 reload was issued. Physical Wingpanel behavior/owner acceptance remain open. Whole-chat validation stays
 deferred. Next: confirm the loaded unified native menu without duplicating old
 modules, then owner visual/account acceptance. No factory boot qualification.
+## Separate Intel kiosk project — 2026-10-26
+
+Owner selected a standalone `elementaryos-i3-kiosk` repository for a minimal
+shell/Chromium kiosk. Hardware reliability is the first gate; no M-series
+installer, kernel or desktop app bundle is being ported wholesale. Initial
+read-only inventory, candidate boundaries and preview tools live in that private
+repository. Production kiosk unchanged; shell implementation and hardware
+qualification remain open. No public machine details or credentials retained here.
 
 ## Native Fleet in T3 and unified-menu dev integration — 2026-10-26
 
@@ -2406,6 +2512,103 @@ No kernel, boot payload, display, power, audio or desktop state changed in this
 maintenance pass.
 
 
+## Image Studio: Claude UI with decoder/reference backend — 2026-10-22
+
+Owner selected Claude's UI and prohibited further generations/benchmarks.
+Imported Claude's read-only `claude/image-studio-native-ui` working-tree snapshot;
+original worktree untouched. [Source hashes](image-studio/UI-PROVENANCE.json).
+
+Backend retains CPU/Vulkan tiled VAE, TAESD preview-only, disk-backed weights,
+GPU budget, SD1.5 Plus Face references with immutable hashes, saved settings and
+structured logs. Fixed UI/backend value ranges, stale metrics, frame-vs-step
+progress, Run readiness, auxiliary weights appearing as checkpoints, and image
+count dispatch through a sequential queue. Downloader conversion shares the
+workflow lock. Claude's canvas, gallery, filmstrip and stylesheet are retained.
+
+Validation: source review against pinned upstream CLI/docs, Python and embedded
+downloader syntax parsing, offline Rust compile check. No inference, benchmarks,
+model download/conversion, UI launch or runtime tests during this integration.
+No live app reinstall/restart or kernel/boot/Mesa changes. [Model/kernel decisions](image-studio/UPSTREAM-DIFFUSION.md)
+and [backend contract](image-studio/README.md). Deployment and runtime validation
+are not claimed by this source-only pass.
+
+## Image Studio upstream diffusion audit — 2026-10-22
+
+Reviewed Aurora, Asahi/Honeykrisp, omarchy-mlx, its TensorFold workflow and
+Mesa compute PR #6. [Pinned findings and patch plan](image-studio/UPSTREAM-DIFFUSION.md).
+Mesa #6 remains NOT READY; its targeted passes do not resolve prior wide-suite
+regressions. TensorFold's qualified video workflow needs 96 GB, unsuitable for
+this 32 GB host. No driver/kernel changes made. Running kernel is
+`7.2.11-elementary-aurora72-wip3`; Mesa package is `26.0.8-1ubuntu0.3`.
+
+Realistic Vision V6 FP16 plus external MSE VAE, 512×768, DPM++ 2M/Karras,
+30 steps, CFG 5, seed 424242 completed in 258.856 s with 30 previews and first
+preview at 7.292 s. Image is sharper than the old Q4 test, but subject consistency
+and prompt adherence remain insufficient for the owner's quality acceptance.
+A logging finalization bug incorrectly marked this successful engine output
+failed; retained metadata records that repair and source is fixed. GPU VAE
+trial stopped at the 6 GiB reserve after 3.18 s: no GPU-VAE qualification.
+
+Current source adds prominent short model/settings summary, larger native text,
+RV downloader and explicit VAE/sampler/scheduler controls, personal model notes,
+run logs, repeat/new-seed actions and reliable sweep state. Repeated recipes drop
+old measurements. Latest scoped `cargo check -p mseries-image-studio` passes;
+updated binary deployment and final quality acceptance remain outstanding.
+
+## Image Studio: native app, live local previews and vision review — 2026-10-22
+
+Installed as **Image Studio** in Applications with its SVG icon, stable user-local executable and D-Bus
+activation. The GTK 4 / Granite / Pantheon SDK window follows the desktop stylesheet and color/font
+preferences. Run, Stop and Reload recipe remain in the header. Compact windows move generation
+settings into a native popover. Library supports image viewing, settings inspection and recipe reuse.
+Models offers SD 1.5 Q4/Q8, SDXL Turbo FP16, and Qwen3-VL 2B plus its matching projector. Storage
+reports include image models, shared AI weights, images/previews, and the app-managed engine/source.
+Downloads resolve a revision, verify size/SHA-256 and retain receipts. Model guide distinguishes engine
+capabilities and author defaults from local qualification. Compare queues bounded sequential lighting,
+step or installed-model sweeps; optional CPU vision review runs after image generation unloads.
+
+Concrete hardware result: stable-diffusion.cpp `fd21ecfceef2665d2c5f2db8536e3202d864fd30`, Honeykrisp
+Apple M1 Pro, SD 1.5 Q4, Euler, 8 steps, CFG 7, seed 424242, 512×512, batch 1: **55.701 s**, first
+preview **4.021 s**, **8 genuine projected-latent previews**, peak child process RSS **1957 MiB**,
+minimum observed available host memory **7308 MiB**. GPU memory is not included in process RSS.
+The resulting PNG and recipe are in the owner's private Image Studio Library. This is a low-step
+baseline hardware trial, not portrait-quality or all-model qualification. A sequential Qwen3-VL 2B Q4
++ Q8 projector CPU review completed in **94.439 s**, advisory score **2.8/5**, with per-criterion
+explanations, image hash, exact rubric and an optional user-applied prompt suggestion saved beside it.
+
+Checks: build and Python parsing; six Rust data tests; five offline adapter checks (integrity, memory
+admission, actual fixture subprocess/preview transport, and fixed-seed sweep persistence); GTK interaction
+coverage including frame replacement, model/guide/review/compare navigation, recipe reuse and header
+Run/Stop. Desktop dark and compact light renders inspected; compact settings popover opens/closes.
+Desktop launcher validation passed. No indicator, kernel, compositor or audio changes were made.
+
+Local runs remain supervised calibration: estimated admission budgets plus a continuously sampled
+6 GiB desktop reserve, cancellation and a 15-minute image limit. LoRA/inpainting/reference-conditioned
+local generation remain unqualified and are labeled accordingly. Q8/Turbo inference and the accuracy
+of automated vision grades are not qualified by the single Q4 hardware run. Hosted samples retain
+unknown provider settings rather than fabricated values. See [app notes](image-studio/README.md).
+
+## Image Studio: Draw Things-style native redesign — 2026-10-22 (Claude Code)
+
+Owner asked for Image Studio to look like a beautiful, native elementary OS app inspired by Draw Things.
+UI only: no generation, model, download or recipe logic changed, and no indicator, kernel, compositor or
+audio changes were made. One scoped stylesheet (`rust/mseries-image-studio/src/style.rs`) uses the
+elementary stylesheet's named colors. Create is now a dotted canvas with glass status/detail pills, a
+history filmstrip, a floating prompt dock with a pill Generate button, recipe chips and an inspector of
+collapsible cards with real sliders. Library is a gallery with a detail pane and a Recipes tab; Models,
+Model guide, Compare, Review and Run logs use the same card system. The header keeps Reload recipe and
+Stop; Run moved into the dock (Ctrl+Enter still works). The compact breakpoint is now 76 text units, and
+the regular layout's minimum width is asserted to stay below it. Built-in sample prompts now describe an
+original fictional adult character instead of a named real person.
+
+Checks: build; six Rust data tests; the Xvfb render test (updated for the new widgets) passed five
+consecutive regular runs plus the compact run, covering save/load, library selection and reuse, recipe
+load, model/guide/compare/review navigation and live preview frame replacement; dark and light renders
+were inspected from fictional fixtures (`tests/demo_data.py`, screenshots in `image-studio/docs/screenshots`);
+a smoke start against the real data dir exited cleanly. **Not verified:** keyboard tab order and screen
+reader behavior, a real generation run through the new Generate button, and Orca/high-contrast themes.
+Installed to `~/.local/libexec/mseries-image-studio`; a running instance keeps the old UI until reopened.
+
 ## Lock screen restyled like elementary's greeter — 2026-10-22 (Claude Code)
 
 Owner asked for gtklock to look like elementary: wallpaper, fonts, clock and password field. **Installed nowhere,
@@ -2481,6 +2684,21 @@ receipt predates this change; it does not validate speaker protection. Next:
 fix the repart/signature failure and fail-closed recipe, rebuild, inspect both
 payloads, then install and boot that exact image in an isolated VM. Physical
 Apple boot and speaker acceptance remain open.
+## Dock monitor dark on wip3: dcpext1 DPTX stall, wip4 draft patch — 2026-10-22 (Claude Code)
+
+Owner plugged the WD22TB4 on the running wip3 trial kernel; no picture. Dock USB/Thunderbolt fine; `28cc00000` (dcpext1) never
+answered `validate DPTX target` (six attempts), its release then timed out too, and replugging the same port failed again
+(`DP tunnel setup failed: -110`). Moving the dock to another USB-C port routed it to `289c00000` and gave 1080p/60 at once.
+Full timeline, what is and is not shown: `mseries/aurora/hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md`.
+
+- **Cause (partly shown).** The pinned source keeps a Thunderbolt route owned when its release is refused; a timeout is
+  treated as a refusal, so the port stays on the dead pipeline. Why `28cc00000` was picked first and why it went silent: not shown.
+- **Draft.** wip4 candidate (`unified72/series.json` revision 5, `patches/0002-...`). Build-only: patch applies on the pinned
+  files, routing logic exercised in userspace; kernel build, KUnit and every boot are open. wip3 untouched, nothing staged.
+- **Workaround on wip3.** Use a different USB-C port; reboot clears a pinned port.
+- **Side note.** Audio blips on dock plug/unplug coincide with `mseries-power` re-applying the CPU profile on each AC flip; one logged
+  ALSA underrun at the first plug. Not investigated further.
+- **Next.** CI native build of the PR, then owner decides on unarmed staging; design the same-plug re-request on the Thunderbolt side.
 
 ## Orchard: Machine Lab and Orchard for Incus merged into one app — 2026-10-21 (Claude Code)
 
@@ -13234,6 +13452,14 @@ ungrabbing, and a same-client regrab-then-release left the key held. Not verifie
 installed session (needs a compositor reload, i.e. the next login). Separate, unaddressed: `gsd-media-keys` logs
 `Unable to get default sink` when pressed before PipeWire's default sink exists.
 
+## Qwen ANE binding audit — 2026-10-27
+
+Offline audit identifies six incorrectly packed 128-byte surfaces, 18 surfaces not named in decoded selectors and 20 extended `0x300` descriptors requiring T6000 validation. No Qwen ANE execution or speed comparison yet; available memory remains below the admission estimate. The reproducible audit and next steps are in `local-ai/receipts/2026-10-27-ane-binding-handoff.md`.
+
+## Qwen ANE conversion — 2026-10-27
+
+The Mac mini built and converted all 38 H13 Qwen programs; transfer hashes match and the converter and group-state fixes pass 70 targeted tests. Execution remains gated on memory reserve, descriptor safety, and surface binding validation; no Linux ANE timing or fidelity result is claimed. Details and reference hashes: `local-ai/receipts/2026-10-27-ane-qwen-conversion.md`.
+
 ## SDK dock panel protocol — 2026-10-23
 
 PR 556 merged. The SDK now registers panel surfaces using the compositor's Pantheon shell protocol on realization, before presentation. The dock requests bottom anchoring, 64 logical pixels and overlap hiding. A private Wayland event queue discovers the shell without dispatching GDK events; only adapter-owned proxies are destroyed. Incremental dock build succeeded. Live placement has not been reviewed. Build dependencies: wayland-scanner, gtk4-wayland and wayland-client development files, plus cc/pkg-config Rust build helpers.
@@ -13298,3 +13524,51 @@ that revision. This PR updates the candidate links/status; it is not published
 until merge and a new successful Pages deployment. No host, boot, panel, kernel,
 audio or power state changed. Next: merge after required review/current-head
 checks, then verify Pages deployment and live bytes for the merged revision.
+
+## Local AI engines: scoreboard, gate and 45–80% faster decode — 2026-10-28
+
+TensorFold PR 1517 (native Vulkan Qwen 2B) was ported as a pinned private-prefix build
+(`mseries/local-ai/tensorfold-vulkan.sh`): host tests and 39/39 GPU operator gates pass on the
+M1 Pro, but it decodes at 2.4–2.8 tok/s because each GPU op is submitted and waited on alone;
+upstream's batching PR is not public. No kernel change was needed (wip4 already exposes
+Honeykrisp Vulkan 1.4 and `/dev/accel/accel0`). PR 1526 is the first stacked slice (runtime +
+Q4 projection + kernel contract); `tensorfold-vulkan.sh contract` runs it on G13S when wanted.
+
+Added `engine-compare.py` (MLX in-process, Rapid-MLX, mlx-omarchy-serve, TensorFold; Qwen 2B,
+Qwen 4B, LFM3; optional concurrency), `mlx-gate.py` (TensorFold-style correctness gate against
+a CPU float32 reference; omarchy-mlx's CPU backend lacks `mx.fast` rms_norm/rope/SDPA, so the
+reference uses plain-op versions), `honeykrisp-candidate.sh` (side driver builds selected with
+`MSERIES_HK_ICD`) and `scoreboard.py` → `ENGINE-SCOREBOARD.md` + CSV + SVG. Tracking issue #659
+holds triage; the watch lists cover joshuaswarren (user), TensorFold, coreglass, metal2vk,
+omarchy-cluster, ane-linux-experiments and Generated-Computers/Locals. Documentation stays in
+this repo; nothing is posted upstream. mlx-lm / omarchy-mlx steps follow upstream's own default
+(still mlx-lm 0.31.3 on omarchy-mlx main).
+
+Adopted in #664 and installed here: Honeykrisp `7faf04c065` → `9323171c12` and a 120k MLX
+submit budget (G13S has no upstream calibration row and fell back to 5000). The gate passes on
+both drivers with identical RMSE; text is identical. Decode: Qwen 2B 36.0 → 56.4, Qwen 4B
+18.6 → 27.0, LFM3 15.3 → 27.5 tok/s; llama.cpp +8%. Receipt and rollback:
+`mseries/local-ai/receipts/2026-10-28-honeykrisp-9323-adoption.md`.
+
+Memory audit the same day: the LFM3 assistant kept ~3 GiB of GPU memory pinned after its idle
+unload (fixed in #661: exit after unload, systemd restarts it); wingpanel restarts killed
+panel-launched apps (fixed in #662: `KillMode=process`). Open: mlx-omarchy-serve (what the
+everyday model runs) decodes well below in-process MLX — see the server rows on the scoreboard.
+
+Later the same day: instead of switching the everyday model to Rapid-MLX (which would drop
+upstream's memory reservation, context cap and speech yield gate), two private patches now run
+inside upstream's own launcher: omarchy-mlx's 0.32-line skip-logprob-read fix ported to 0.31.3,
+and Rapid-MLX's singleton-cache fast path (Apache-2.0, vendored). Built by
+`mseries/local-ai/serve-patch.sh` into a side copy that `model-worker.py` uses only while it
+matches the installed mlx-lm. One request: Qwen 2B 32.6 → 56.5, Qwen 4B 19.2 → 27.4 tok/s,
+identical text, faster than Rapid-MLX. Several requests at once still trail Rapid (28 vs 43–48
+total). The scoreboard chart now shows first token, streaming speed and a typical 200-token reply
+side by side. Receipt and rollback: `mseries/local-ai/receipts/2026-10-28-serve-patch.md`.
+
+Round 2 the same day: first token was half detokenizer setup (two copies of the 248k vocabulary
+per request); a third patch builds it once (Qwen 2B 0.62 → 0.25 s). Upstream's launcher serves
+one request at a time so admission only reserves one KV cache; `configure-serve-concurrency.py`
+makes `MSERIES_SERVE_CONCURRENCY` batch N requests and reserves their KV up front (worker sets 4,
++0.75 GiB for the everyday 4B). Qwen 2B with 4 at once: 20 → 57 tok/s total, first token 4.1 →
+0.8 s; Qwen 4B with 4 at once: 12.8 → 25.8, 6.3 → 2.0 s. Ahead of Rapid-MLX on throughput in
+every case; Rapid still reaches a single request's first token sooner.

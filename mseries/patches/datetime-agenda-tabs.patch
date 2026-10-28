@@ -4,15 +4,15 @@ index 0000000..b7040ff
 --- /dev/null
 +++ b/data/DailyVerse.css
 @@ -0,0 +1,33 @@
-+/* Verse of the Day: a little larger and airier than list text, for reading. */
++/* Verse of the Day: noticeably larger and airier than list text, for reading. */
 +.daily-verse-text {
-+    font-size: 1.12em;
-+    line-height: 1.4;
++    font-size: 1.4em;
++    line-height: 1.45;
 +}
 +
 +.daily-verse-reference {
 +    font-weight: 600;
-+    opacity: 0.75;
++    font-size: 1.1em;
 +}
 +
 +/* Titus study: the passage reads like the daily verse; section labels are small caps. */

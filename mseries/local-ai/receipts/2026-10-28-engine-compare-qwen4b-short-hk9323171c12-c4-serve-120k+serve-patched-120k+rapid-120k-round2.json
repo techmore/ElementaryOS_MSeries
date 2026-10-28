@@ -1,0 +1,1331 @@
+{
+  "status": "complete",
+  "model_key": "qwen4b",
+  "model": "mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3",
+  "weights_sha256": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db",
+  "kernel": "7.2.11-elementary-aurora72-wip4",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "670902196c47f3e70e3f56ab933805713be31aa8",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 6.5,
+  "arms": [
+    "serve-120k",
+    "serve-patched-120k",
+    "rapid-120k"
+  ],
+  "concurrency": 4,
+  "runs": [
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 13.739,
+          "max_temp_c": 48.913,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 13.18,
+          "max_temp_c": 49.066,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 11.3,
+          "max_temp_c": 49.04,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 10.647,
+          "max_temp_c": 49.9,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 10.311,
+          "max_temp_c": 48.913,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 5.05,
+          "available_gib": 9.962,
+          "max_temp_c": 49.146,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 6.06,
+          "available_gib": 9.975,
+          "max_temp_c": 49.44,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 7.06,
+          "available_gib": 9.95,
+          "max_temp_c": 49.386,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 8.07,
+          "available_gib": 9.768,
+          "max_temp_c": 49.24,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 9.1,
+          "available_gib": 9.799,
+          "max_temp_c": 49.253,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 10.11,
+          "available_gib": 9.747,
+          "max_temp_c": 50.008,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 11.13,
+          "available_gib": 9.812,
+          "max_temp_c": 49.56,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 12.15,
+          "available_gib": 9.806,
+          "max_temp_c": 49.92,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 13.17,
+          "available_gib": 9.815,
+          "max_temp_c": 49.893,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 14.18,
+          "available_gib": 9.83,
+          "max_temp_c": 50.241,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 15.2,
+          "available_gib": 9.823,
+          "max_temp_c": 49.24,
+          "max_fan_rpm": 2529.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 10:44:50,457 - INFO - Starting httpd at 127.0.0.1 on port 42387...\n127.0.0.1 - - [28/Oct/2026 10:44:50] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 10:44:50] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 10:44:53,486 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:44:53,486 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:44:53,486 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:44:53,486 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:44:53] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:44:54,084 - INFO - Prompt processing progress: 23/27\n2026-10-28 10:44:54,268 - INFO - Prompt processing progress: 26/27\n2026-10-28 10:44:54,341 - INFO - Prompt processing progress: 27/27\n2026-10-28 10:44:56,042 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:44:56,042 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:44:56,042 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:44:56,042 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:44:56] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:44:56,393 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:44:56,393 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:44:56,393 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:44:56,393 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:44:56] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:44:56,726 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:44:56,726 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:44:56,726 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:44:56,726 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:44:56] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:44:57,068 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:44:57,068 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:44:57,068 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:44:57,068 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:44:57] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:44:57,712 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:44:57,907 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:44:57,980 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:44:59,836 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:00,030 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:00,096 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:45:01,925 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:02,117 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:02,183 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:45:04,001 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:04,199 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:04,266 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3\nbackend:      mlx-lm\nbind:         127.0.0.1:42387\ncontext:      4096 tokens\nweights:      2.83 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      13.74 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 5.83 GiB\nmem:          headroom:          5.91 GiB\nverdict:      FITS\n",
+      "ready_s": 6.2731313170006615,
+      "concurrency": 4,
+      "wall_s": 9.812919805001002,
+      "aggregate_tok_s": 13.044027928850166,
+      "per_request_decode_median": 17.425635263908426,
+      "ttft_s": 6.1928513209932134,
+      "total_s": 9.812919805001002,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 8.274844769999618,
+          "total_s": 9.810129010998935,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 6.1928513209932134,
+          "total_s": 7.971839548998105,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 1.9987976190022891,
+          "total_s": 3.803071317001013,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 4.103337744003511,
+          "total_s": 5.892314600998361,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 13.044027928850166,
+      "min_available_gib": 9.747,
+      "peak_temp_c": 50.241,
+      "round": 1,
+      "admission_available_gib": 13.739
+    },
+    {
+      "arm": "serve-patched-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 13.186,
+          "max_temp_c": 49.566,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 12.695,
+          "max_temp_c": 50.241,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 10.736,
+          "max_temp_c": 49.88,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 10.437,
+          "max_temp_c": 49.4,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 10.011,
+          "max_temp_c": 49.566,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 9.811,
+          "max_temp_c": 49.726,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 6.09,
+          "available_gib": 9.68,
+          "max_temp_c": 51.427,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 7.1,
+          "available_gib": 9.169,
+          "max_temp_c": 49.713,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 8.11,
+          "available_gib": 8.868,
+          "max_temp_c": 50.645,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 9.13,
+          "available_gib": 9.173,
+          "max_temp_c": 50.08,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 10.14,
+          "available_gib": 9.728,
+          "max_temp_c": 50.233,
+          "max_fan_rpm": 2503.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mseries-ai/serve-patch/mlx_lm/server.py:1756: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 10:45:09,919 - INFO - Starting httpd at 127.0.0.1 on port 37665...\n127.0.0.1 - - [28/Oct/2026 10:45:10] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 10:45:10] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 10:45:12,986 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:45:12,986 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:45:12,986 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:45:12,986 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:45:12] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:45:13,396 - INFO - Prompt processing progress: 23/27\n2026-10-28 10:45:13,590 - INFO - Prompt processing progress: 26/27\n2026-10-28 10:45:13,620 - INFO - Prompt processing progress: 27/27\n2026-10-28 10:45:14,798 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:45:14,799 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:45:14,799 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:45:14,799 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:45:14] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:45:15,058 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:15,256 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:15,277 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:45:15,312 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:45:15,312 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:45:15,312 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:45:15,313 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:45:15] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:45:15,313 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:45:15,313 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:45:15,313 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:45:15,313 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:45:15] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:45:15,313 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:45:15,313 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:45:15,313 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:45:15,313 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:45:15] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:45:16,034 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:16,034 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:16,034 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:16,560 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:16,560 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:16,560 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:16,720 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:45:16,721 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:45:16,721 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3\nbackend:      mlx-lm\nbind:         127.0.0.1:37665\ncontext:      4096 tokens\nweights:      2.83 GiB\nkv cache:     0.12 GiB at 4096 tokens\nconcurrency:  4 requests, +0.38 GiB (KV of 3 more at 4096 tokens)\nmargin:       1.38 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      13.19 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.33 GiB\nmem:          headroom:          6.86 GiB\nverdict:      FITS\n",
+      "ready_s": 5.603480636003951,
+      "concurrency": 4,
+      "wall_s": 5.016717077000067,
+      "aggregate_tok_s": 25.514693779889694,
+      "per_request_decode_median": 10.518535787511876,
+      "ttft_s": 2.0680455670008087,
+      "total_s": 5.016717077000067,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 0.5152923590067076,
+          "total_s": 4.693556721002096,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.0680455670008087,
+          "total_s": 5.015223827002046,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.067957483995997,
+          "total_s": 5.015347410000686,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.068445609002083,
+          "total_s": 5.015382035002403,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 25.514693779889694,
+      "min_available_gib": 8.868,
+      "peak_temp_c": 51.427,
+      "round": 1,
+      "admission_available_gib": 13.186
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 13.309,
+          "max_temp_c": 49.58,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 13.16,
+          "max_temp_c": 50.233,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 12.806,
+          "max_temp_c": 50.814,
+          "max_fan_rpm": 2473.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 10.972,
+          "max_temp_c": 49.166,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 10.426,
+          "max_temp_c": 50.233,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 5.07,
+          "available_gib": 10.338,
+          "max_temp_c": 50.258,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 6.08,
+          "available_gib": 10.282,
+          "max_temp_c": 50.056,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 7.09,
+          "available_gib": 10.289,
+          "max_temp_c": 49.873,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 8.1,
+          "available_gib": 10.296,
+          "max_temp_c": 49.86,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 9.12,
+          "available_gib": 9.701,
+          "max_temp_c": 50.798,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 10.13,
+          "available_gib": 9.322,
+          "max_temp_c": 50.024,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 11.14,
+          "available_gib": 9.301,
+          "max_temp_c": 50.08,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 12.15,
+          "available_gib": 8.864,
+          "max_temp_c": 49.88,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 13.16,
+          "available_gib": 8.831,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 14.17,
+          "available_gib": 8.854,
+          "max_temp_c": 49.86,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 15.18,
+          "available_gib": 9.093,
+          "max_temp_c": 50.451,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 16.19,
+          "available_gib": 9.216,
+          "max_temp_c": 50.274,
+          "max_fan_rpm": 2515.0
+        }
+      ],
+      "log_tail": " completion (stream): 32 tokens in 5.93s (5.4 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 5.93s (5.4 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 5.93s (5.4 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffe83d5f160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff49cc7160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff67c847a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=6.1s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1995569]\n",
+      "ready_s": 11.113787563001097,
+      "concurrency": 4,
+      "wall_s": 6.0795778120009345,
+      "aggregate_tok_s": 21.054093550267783,
+      "per_request_decode_median": 8.251766353146706,
+      "ttft_s": 2.32129639100458,
+      "total_s": 6.0795778120009345,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 2.3117567199951736,
+          "total_s": 6.078599312000733,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.3164437220038963,
+          "total_s": 6.078425644001982,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.32129639100458,
+          "total_s": 6.078067811002256,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.322699475000263,
+          "total_s": 6.076662685001793,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 21.054093550267783,
+      "min_available_gib": 8.831,
+      "peak_temp_c": 50.814,
+      "round": 1,
+      "admission_available_gib": 13.317
+    },
+    {
+      "arm": "serve-patched-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 13.13,
+          "max_temp_c": 50.032,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 12.645,
+          "max_temp_c": 50.612,
+          "max_fan_rpm": 2481.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 10.787,
+          "max_temp_c": 50.233,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 10.501,
+          "max_temp_c": 49.713,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 10.062,
+          "max_temp_c": 49.56,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 9.864,
+          "max_temp_c": 49.386,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 6.1,
+          "available_gib": 9.732,
+          "max_temp_c": 50.217,
+          "max_fan_rpm": 2473.0
+        },
+        {
+          "t": 7.11,
+          "available_gib": 9.009,
+          "max_temp_c": 49.226,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 8.13,
+          "available_gib": 8.492,
+          "max_temp_c": 50.241,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 9.14,
+          "available_gib": 8.827,
+          "max_temp_c": 49.86,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 10.16,
+          "available_gib": 8.931,
+          "max_temp_c": 49.533,
+          "max_fan_rpm": 2511.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mseries-ai/serve-patch/mlx_lm/server.py:1756: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 10:45:44,656 - INFO - Starting httpd at 127.0.0.1 on port 59059...\n127.0.0.1 - - [28/Oct/2026 10:45:44] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 10:45:44] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 10:45:47,675 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:45:47,675 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:45:47,675 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:45:47,675 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:45:47] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:45:48,084 - INFO - Prompt processing progress: 23/27\n2026-10-28 10:45:48,285 - INFO - Prompt processing progress: 26/27\n2026-10-28 10:45:48,315 - INFO - Prompt processing progress: 27/27\n2026-10-28 10:45:49,476 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,476 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,476 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,476 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:45:49] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:45:49,739 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:49,933 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:49,954 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:45:49,991 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,991 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,991 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,991 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:45:49] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:45:49,992 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,992 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,992 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,992 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:45:49] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:45:49,992 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,992 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,992 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:45:49,992 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:45:49] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:45:50,705 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:50,705 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:50,705 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:45:51,231 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:51,231 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:51,231 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:45:51,387 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:45:51,388 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:45:51,388 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3\nbackend:      mlx-lm\nbind:         127.0.0.1:59059\ncontext:      4096 tokens\nweights:      2.83 GiB\nkv cache:     0.12 GiB at 4096 tokens\nconcurrency:  4 requests, +0.38 GiB (KV of 3 more at 4096 tokens)\nmargin:       1.38 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      13.13 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.33 GiB\nmem:          headroom:          6.80 GiB\nverdict:      FITS\n",
+      "ready_s": 5.530581145001634,
+      "concurrency": 4,
+      "wall_s": 4.966792804996658,
+      "aggregate_tok_s": 25.771157570984307,
+      "per_request_decode_median": 10.619362935991191,
+      "ttft_s": 2.0443172650047927,
+      "total_s": 4.966792804996658,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 0.5163172770044184,
+          "total_s": 4.61821843800135,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.0453424740044284,
+          "total_s": 4.964205429001595,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.0443172650047927,
+          "total_s": 4.9635130950046005,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.042589930999384,
+          "total_s": 4.9620921360037755,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 25.771157570984307,
+      "min_available_gib": 8.492,
+      "peak_temp_c": 50.612,
+      "round": 2,
+      "admission_available_gib": 13.13
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 12.577,
+          "max_temp_c": 50.241,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 12.558,
+          "max_temp_c": 50.217,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 12.474,
+          "max_temp_c": 49.7,
+          "max_fan_rpm": 2477.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 10.595,
+          "max_temp_c": 50.032,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 10.065,
+          "max_temp_c": 50.258,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 10.024,
+          "max_temp_c": 50.629,
+          "max_fan_rpm": 2528.0
+        },
+        {
+          "t": 6.06,
+          "available_gib": 10.058,
+          "max_temp_c": 50.814,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 7.07,
+          "available_gib": 10.063,
+          "max_temp_c": 49.56,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 10.077,
+          "max_temp_c": 49.226,
+          "max_fan_rpm": 2477.0
+        },
+        {
+          "t": 9.12,
+          "available_gib": 9.558,
+          "max_temp_c": 50.806,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 10.13,
+          "available_gib": 9.202,
+          "max_temp_c": 49.52,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 11.15,
+          "available_gib": 9.212,
+          "max_temp_c": 50.056,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 12.16,
+          "available_gib": 8.712,
+          "max_temp_c": 50.629,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 13.21,
+          "available_gib": 8.671,
+          "max_temp_c": 51.0,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 14.22,
+          "available_gib": 8.903,
+          "max_temp_c": 50.072,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 15.23,
+          "available_gib": 8.912,
+          "max_temp_c": 50.225,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 16.28,
+          "available_gib": 9.216,
+          "max_temp_c": 50.427,
+          "max_fan_rpm": 2511.0
+        }
+      ],
+      "log_tail": " completion (stream): 32 tokens in 5.78s (5.5 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 5.78s (5.5 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 5.78s (5.5 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffddcda7160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000fffea6747160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000fffec47247a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=5.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=5.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=5.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=5.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=5.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=5.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=5.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=5.9s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1997139]\n",
+      "ready_s": 11.24254220599687,
+      "concurrency": 4,
+      "wall_s": 5.902099106002424,
+      "aggregate_tok_s": 21.687199367734138,
+      "per_request_decode_median": 8.508803888526913,
+      "ttft_s": 2.253891193999152,
+      "total_s": 5.902099106002424,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 2.252505984994059,
+          "total_s": 5.901655022993509,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.255805861001136,
+          "total_s": 5.899091145998682,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.2536312759984867,
+          "total_s": 5.897275602997979,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.253891193999152,
+          "total_s": 5.896951186994556,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 21.687199367734138,
+      "min_available_gib": 8.671,
+      "peak_temp_c": 51.0,
+      "round": 2,
+      "admission_available_gib": 12.58
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 13.097,
+          "max_temp_c": 51.0,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 12.712,
+          "max_temp_c": 51.379,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 10.86,
+          "max_temp_c": 50.008,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 10.584,
+          "max_temp_c": 49.873,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 10.65,
+          "max_temp_c": 50.612,
+          "max_fan_rpm": 2477.0
+        },
+        {
+          "t": 5.05,
+          "available_gib": 10.314,
+          "max_temp_c": 50.233,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 6.06,
+          "available_gib": 10.295,
+          "max_temp_c": 51.564,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 7.07,
+          "available_gib": 10.288,
+          "max_temp_c": 49.52,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 10.083,
+          "max_temp_c": 50.637,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 9.12,
+          "available_gib": 10.096,
+          "max_temp_c": 50.032,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 10.14,
+          "available_gib": 10.057,
+          "max_temp_c": 50.032,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 11.15,
+          "available_gib": 10.055,
+          "max_temp_c": 51.379,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 12.17,
+          "available_gib": 10.054,
+          "max_temp_c": 50.241,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 13.18,
+          "available_gib": 10.053,
+          "max_temp_c": 51.193,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 14.19,
+          "available_gib": 10.059,
+          "max_temp_c": 50.217,
+          "max_fan_rpm": 2528.0
+        },
+        {
+          "t": 15.2,
+          "available_gib": 10.074,
+          "max_temp_c": 50.395,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 16.21,
+          "available_gib": 10.077,
+          "max_temp_c": 51.0,
+          "max_fan_rpm": 2494.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 10:46:19,152 - INFO - Starting httpd at 127.0.0.1 on port 51883...\n127.0.0.1 - - [28/Oct/2026 10:46:19] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 10:46:19] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 10:46:22,186 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:46:22,186 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:46:22,186 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:46:22,186 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:46:22] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:46:22,769 - INFO - Prompt processing progress: 23/27\n2026-10-28 10:46:22,953 - INFO - Prompt processing progress: 26/27\n2026-10-28 10:46:23,025 - INFO - Prompt processing progress: 27/27\n2026-10-28 10:46:24,709 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:46:24,710 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:46:24,710 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:46:24,710 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:46:24] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:46:25,034 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:46:25,034 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:46:25,034 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:46:25,034 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:46:25] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:46:25,387 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:46:25,387 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:46:25,387 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:46:25,387 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:46:25] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:46:25,717 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:46:25,717 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:46:25,717 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:46:25,717 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:46:25] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:46:26,328 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:46:26,520 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:46:26,586 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:46:28,494 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:46:28,692 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:46:28,761 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:46:30,665 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:46:30,856 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:46:30,923 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:46:32,823 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:46:33,019 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:46:33,091 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3\nbackend:      mlx-lm\nbind:         127.0.0.1:51883\ncontext:      4096 tokens\nweights:      2.83 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      13.08 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 5.83 GiB\nmem:          headroom:          5.25 GiB\nverdict:      FITS\n",
+      "ready_s": 6.248615305994463,
+      "concurrency": 4,
+      "wall_s": 10.08440767799766,
+      "aggregate_tok_s": 12.692862494965636,
+      "per_request_decode_median": 16.75116238460623,
+      "ttft_s": 6.270982816000469,
+      "total_s": 10.08440767799766,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 1.9341396730014822,
+          "total_s": 3.79732031399908,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 4.109888081002282,
+          "total_s": 5.9640934679991915,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 8.432546049996745,
+          "total_s": 10.080472092995478,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 6.270982816000469,
+          "total_s": 8.121600659003889,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 12.692862494965636,
+      "min_available_gib": 10.053,
+      "peak_temp_c": 51.564,
+      "round": 2,
+      "admission_available_gib": 13.098
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 13.364,
+          "max_temp_c": 50.612,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 13.29,
+          "max_temp_c": 50.79,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 12.959,
+          "max_temp_c": 50.427,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 3.07,
+          "available_gib": 11.024,
+          "max_temp_c": 50.612,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 10.596,
+          "max_temp_c": 51.564,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 5.09,
+          "available_gib": 10.516,
+          "max_temp_c": 50.991,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 6.11,
+          "available_gib": 10.291,
+          "max_temp_c": 50.596,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 7.13,
+          "available_gib": 10.308,
+          "max_temp_c": 50.79,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 8.15,
+          "available_gib": 10.036,
+          "max_temp_c": 50.806,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 9.15,
+          "available_gib": 9.566,
+          "max_temp_c": 50.806,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 10.17,
+          "available_gib": 9.244,
+          "max_temp_c": 49.853,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 11.18,
+          "available_gib": 8.899,
+          "max_temp_c": 50.435,
+          "max_fan_rpm": 2481.0
+        },
+        {
+          "t": 12.2,
+          "available_gib": 8.873,
+          "max_temp_c": 50.403,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 13.22,
+          "available_gib": 8.749,
+          "max_temp_c": 49.86,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 14.23,
+          "available_gib": 8.758,
+          "max_temp_c": 50.79,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 15.25,
+          "available_gib": 9.111,
+          "max_temp_c": 50.008,
+          "max_fan_rpm": 2464.0
+        },
+        {
+          "t": 16.27,
+          "available_gib": 9.117,
+          "max_temp_c": 49.853,
+          "max_fan_rpm": 2506.0
+        }
+      ],
+      "log_tail": "outes.chat:Chat completion (stream): 32 tokens in 5.90s (5.4 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 5.90s (5.4 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 5.90s (5.4 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffeaecef160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff0661b160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff245f47a0 [python] (most recent call first):\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"<frozen importlib._bootstrap>\", line 1409 in _handle_fromlist\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8873 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=6.1s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1998906]\n",
+      "ready_s": 10.78347474700422,
+      "concurrency": 4,
+      "wall_s": 6.0429629199934425,
+      "aggregate_tok_s": 21.181662322716832,
+      "per_request_decode_median": 8.159242482663966,
+      "ttft_s": 2.242431812999712,
+      "total_s": 6.0429629199934425,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 2.242494229998556,
+          "total_s": 6.041866544997902,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.242430480000621,
+          "total_s": 6.0420985860037035,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.242431812999712,
+          "total_s": 6.041426586001762,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.2419921469991095,
+          "total_s": 6.041623878001701,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 21.181662322716832,
+      "min_available_gib": 8.749,
+      "peak_temp_c": 51.564,
+      "round": 3,
+      "admission_available_gib": 13.364
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 12.814,
+          "max_temp_c": 51.75,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 12.354,
+          "max_temp_c": 50.798,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 10.442,
+          "max_temp_c": 51.193,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 10.197,
+          "max_temp_c": 50.604,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 10.1,
+          "max_temp_c": 50.991,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 5.1,
+          "available_gib": 9.808,
+          "max_temp_c": 51.185,
+          "max_fan_rpm": 2529.0
+        },
+        {
+          "t": 6.12,
+          "available_gib": 9.85,
+          "max_temp_c": 50.806,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 7.14,
+          "available_gib": 9.829,
+          "max_temp_c": 50.217,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 8.14,
+          "available_gib": 9.72,
+          "max_temp_c": 50.419,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 9.16,
+          "available_gib": 9.742,
+          "max_temp_c": 50.79,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 10.18,
+          "available_gib": 9.679,
+          "max_temp_c": 51.185,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 11.22,
+          "available_gib": 9.633,
+          "max_temp_c": 51.008,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 12.24,
+          "available_gib": 9.652,
+          "max_temp_c": 50.588,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 13.25,
+          "available_gib": 9.659,
+          "max_temp_c": 50.419,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 14.27,
+          "available_gib": 9.643,
+          "max_temp_c": 50.024,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 15.28,
+          "available_gib": 9.684,
+          "max_temp_c": 51.564,
+          "max_fan_rpm": 2476.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 10:46:59,290 - INFO - Starting httpd at 127.0.0.1 on port 44825...\n127.0.0.1 - - [28/Oct/2026 10:46:59] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 10:46:59] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 10:47:02,274 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:47:02,274 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:47:02,274 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:47:02,274 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:47:02] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:47:02,863 - INFO - Prompt processing progress: 23/27\n2026-10-28 10:47:03,050 - INFO - Prompt processing progress: 26/27\n2026-10-28 10:47:03,114 - INFO - Prompt processing progress: 27/27\n2026-10-28 10:47:04,789 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:47:04,789 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:47:04,789 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:47:04,789 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:47:04] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:47:05,115 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:47:05,115 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:47:05,115 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:47:05,115 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:47:05] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:47:05,455 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:47:05,455 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:47:05,455 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:47:05,455 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:47:05] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:47:05,794 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:47:05,794 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:47:05,794 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:47:05,794 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:47:05] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:47:06,379 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:47:06,565 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:47:06,635 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:47:08,546 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:47:08,745 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:47:08,811 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:47:10,734 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:47:10,931 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:47:11,009 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:47:12,903 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:47:13,099 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:47:13,166 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3\nbackend:      mlx-lm\nbind:         127.0.0.1:44825\ncontext:      4096 tokens\nweights:      2.83 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      12.82 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 5.83 GiB\nmem:          headroom:          4.99 GiB\nverdict:      FITS\n",
+      "ready_s": 6.218347707996145,
+      "concurrency": 4,
+      "wall_s": 10.034971572000359,
+      "aggregate_tok_s": 12.755392387672169,
+      "per_request_decode_median": 16.770019721132552,
+      "ttft_s": 6.273321857996052,
+      "total_s": 10.034971572000359,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 1.899929241000791,
+          "total_s": 3.768595549998281,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 4.077631232998101,
+          "total_s": 5.956382714000938,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 8.431611883999722,
+          "total_s": 10.033629654994002,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 6.273321857996052,
+          "total_s": 8.121858742000768,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 12.755392387672169,
+      "min_available_gib": 9.633,
+      "peak_temp_c": 51.75,
+      "round": 3,
+      "admission_available_gib": 12.807
+    },
+    {
+      "arm": "serve-patched-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 13.007,
+          "max_temp_c": 50.798,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 12.414,
+          "max_temp_c": 51.75,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 10.489,
+          "max_temp_c": 50.782,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 10.186,
+          "max_temp_c": 51.37,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 9.872,
+          "max_temp_c": 50.798,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 9.611,
+          "max_temp_c": 51.169,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 6.08,
+          "available_gib": 9.121,
+          "max_temp_c": 50.806,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 7.09,
+          "available_gib": 8.838,
+          "max_temp_c": 51.177,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 8.1,
+          "available_gib": 8.703,
+          "max_temp_c": 51.75,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 9.003,
+          "max_temp_c": 51.564,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 10.12,
+          "available_gib": 8.639,
+          "max_temp_c": 51.935,
+          "max_fan_rpm": 2497.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mseries-ai/serve-patch/mlx_lm/server.py:1756: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 10:47:18,869 - INFO - Starting httpd at 127.0.0.1 on port 46947...\n127.0.0.1 - - [28/Oct/2026 10:47:19] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 10:47:19] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 10:47:21,967 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:47:21,967 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:47:21,967 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:47:21,967 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:47:21] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:47:22,388 - INFO - Prompt processing progress: 23/27\n2026-10-28 10:47:22,580 - INFO - Prompt processing progress: 26/27\n2026-10-28 10:47:22,609 - INFO - Prompt processing progress: 27/27\n2026-10-28 10:47:23,785 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,786 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,786 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,786 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:47:23] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:47:23,786 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,786 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,786 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,786 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:47:23] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:47:23,787 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,787 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,787 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,787 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:47:23] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:47:23,788 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,788 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,788 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 10:47:23,788 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 10:47:23] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 10:47:24,663 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:47:24,663 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:47:24,663 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:47:24,663 - INFO - Prompt processing progress: 29/33\n2026-10-28 10:47:25,286 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:47:25,287 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:47:25,287 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:47:25,287 - INFO - Prompt processing progress: 32/33\n2026-10-28 10:47:25,424 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:47:25,424 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:47:25,424 - INFO - Prompt processing progress: 33/33\n2026-10-28 10:47:25,424 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3\nbackend:      mlx-lm\nbind:         127.0.0.1:46947\ncontext:      4096 tokens\nweights:      2.83 GiB\nkv cache:     0.12 GiB at 4096 tokens\nconcurrency:  4 requests, +0.38 GiB (KV of 3 more at 4096 tokens)\nmargin:       1.38 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      12.99 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.33 GiB\nmem:          headroom:          6.66 GiB\nverdict:      FITS\n",
+      "ready_s": 5.633744316997763,
+      "concurrency": 4,
+      "wall_s": 4.9396794169952045,
+      "aggregate_tok_s": 25.91261278203801,
+      "per_request_decode_median": 9.669313372227435,
+      "ttft_s": 1.731233288999647,
+      "total_s": 4.9396794169952045,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 1.731233288999647,
+          "total_s": 4.93834274999972,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 1.7318624969993834,
+          "total_s": 4.9378812499999185,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 1.7307474970002659,
+          "total_s": 4.936624081994523,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 1.7306053299980704,
+          "total_s": 4.93778575000033,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 25.91261278203801,
+      "min_available_gib": 8.639,
+      "peak_temp_c": 51.935,
+      "round": 3,
+      "admission_available_gib": 13.008
+    }
+  ],
+  "summary": {
+    "serve-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 6.270982816000469,
+      "median_total_s": 10.034971572000359,
+      "median_decode_tps": 12.755392387672169,
+      "texts": [
+        "9095cd4ace32"
+      ]
+    },
+    "serve-patched-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 2.0443172650047927,
+      "median_total_s": 4.966792804996658,
+      "median_decode_tps": 25.771157570984307,
+      "texts": [
+        "9095cd4ace32"
+      ]
+    },
+    "rapid-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 2.253891193999152,
+      "median_total_s": 6.0429629199934425,
+      "median_decode_tps": 21.181662322716832,
+      "texts": [
+        "9095cd4ace32"
+      ]
+    }
+  }
+}
