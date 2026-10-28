@@ -36,6 +36,7 @@ MLX_PY = HOME / '.local/share/mlx-omarchy/venv/bin/python'
 REF_DIR = HOME / '.cache/mseries-mlx-gate/reference-v1'
 POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
 ALLOWANCE_GIB = 4.5
+REFERENCE_ALLOWANCE_GIB = 6.0  # CPU float32 copy of the 248k-row output layer
 STEPS = 32
 TIE_MARGIN = 0.5
 POOLED_MARGIN, CASE_MARGIN = 1.05, 1.15
@@ -167,9 +168,12 @@ def worker(mode, out_dir):
     cpu = mode == 'reference'
     mx, model, tok = load(cpu)
     out_dir = Path(out_dir); out_dir.mkdir(parents=True, exist_ok=True)
-    meta = {}
+    meta_path = out_dir / 'meta.json'
+    meta = json.loads(meta_path.read_text())['cases'] if meta_path.exists() else {}
     ref = None if cpu else json.loads((REF_DIR / 'meta.json').read_text())
     for name, text in CASES.items():
+        if name in meta and (out_dir / f'{name}.npy').exists():
+            continue  # resumable: the slow CPU reference keeps finished cases
         ids = prompt_ids(tok, text)
         if not cpu:
             greedy(mx, model, ids, 4)  # warm the kernels for this shape
@@ -179,7 +183,9 @@ def worker(mode, out_dir):
         np.save(out_dir / f'{name}.npy', logits)
         meta[name] = {'prompt_tokens': len(ids), 'ids': gen, 'decode_s': decode_s,
                       'prompt_sha256': hashlib.sha256(json.dumps(ids).encode()).hexdigest()}
-    (out_dir / 'meta.json').write_text(json.dumps({'cases': meta}, indent=1))
+        meta_path.write_text(json.dumps({'cases': meta}, indent=1))
+        del logits
+        mx.clear_cache()
 
 
 # ---------------------------------------------------------------- driver side
@@ -208,10 +214,10 @@ def run_child(mode, out_dir, env_over, deadline):
             'min_available_gib': round(low or 0, 2), 'peak_temp_c': hot, 'log_tail': tail}
 
 
-def admit(wait_s):
+def admit(wait_s, allowance_gib=ALLOWANCE_GIB):
     end = time.monotonic() + wait_s
     while True:
-        r = violations(snapshot(), POLICY, extra_bytes=int(ALLOWANCE_GIB * GIB))
+        r = violations(snapshot(), POLICY, extra_bytes=int(allowance_gib * GIB))
         if not r:
             return
         if time.monotonic() > end:
@@ -277,7 +283,7 @@ def main():
     lock = (HOME / '.local/state/mseries-ai/worker.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     if a.mode == 'reference':
-        admit(a.admission_wait_seconds)
+        admit(a.admission_wait_seconds, REFERENCE_ALLOWANCE_GIB)
         tmp = REF_DIR.with_name(REF_DIR.name + '.partial')
         res = run_child('reference', tmp, {}, 3600)
         if res['exit'] != 0 or res['stopped']:
