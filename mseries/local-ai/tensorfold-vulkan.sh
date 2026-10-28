@@ -6,6 +6,7 @@
 #   tensorfold-vulkan.sh build    fetch the pinned source + Zig, build server and probes
 #   tensorfold-vulkan.sh test     GPU-free host suites (no device work)
 #   tensorfold-vulkan.sh gpu      stage 1-5 GPU operator gates on the M1 Pro (private ICD only)
+#   tensorfold-vulkan.sh contract kernel contract (gates 1-5 + planted controls) from PR 1526
 #
 # Kernel: no change needed. The backend talks to Honeykrisp through the existing
 # Asahi DRM UAPI; it requires a Vulkan 1.3 device and wip4's Honeykrisp reports 1.4.
@@ -15,6 +16,9 @@ set -euo pipefail
 TF_REPO=https://github.com/ashhart/TensorFold.git
 TF_REF=pull/1517/head
 TF_REV=670902196c47f3e70e3f56ab933805713be31aa8
+# PR 1526 is the first stacked piece of 1517 (runtime + Q4 projection + kernel contract runner).
+TF_CONTRACT_REF=pull/1526/head
+TF_CONTRACT_REV=68167f428f3415d1623828fe56c20325dd3a51b1
 ZIG_VERSION=0.17.0
 ZIG_URL=https://ziglang.org/download/0.17.0/zig-aarch64-linux-0.17.0.tar.xz
 ZIG_SHA256=9e8d11661d4ae3bd57702a3832781e23ad151dde5798e16a5ccd503f65234ff8
@@ -101,6 +105,21 @@ gpu)
     done
     (( failed == 0 )) && echo "GPU GATES: PASS" || { echo "GPU GATES: FAIL" >&2; exit 1; }
     ;;
+contract)
+    check_disk; fetch
+    [[ -f $ICD ]] || { echo "private Honeykrisp ICD not found: $ICD" >&2; exit 1; }
+    csrc=$ROOT/src-1526
+    if [[ ! -d $csrc ]]; then
+        git -C "$SRC" fetch -q --depth 1 "$TF_REPO" "$TF_CONTRACT_REF"
+        git -C "$SRC" worktree add -q --detach "$csrc" FETCH_HEAD
+    fi
+    have=$(git -C "$csrc" rev-parse HEAD)
+    [[ $have == "$TF_CONTRACT_REV" ]] || { echo "PR 1526 head moved: have $have, pinned $TF_CONTRACT_REV" >&2; exit 1; }
+    (cd "$csrc" && ZIG_LOCAL_CACHE_DIR=$ROOT/zig-local-1526 "$ZIG" build -Dvulkan=true -Doptimize=ReleaseSafe tf-vulkan-kernel-contract)
+    export VK_DRIVER_FILES=$ICD
+    rc=0; "$csrc/zig-out/bin/tf-vulkan-kernel-contract" || rc=$?
+    (( rc == 0 )) && echo "KERNEL CONTRACT: PASS" || { echo "KERNEL CONTRACT: FAIL (exit $rc)" >&2; exit 1; }
+    ;;
 *)
-    sed -n '2,10p' "$0"; exit 2 ;;
+    sed -n '2,11p' "$0"; exit 2 ;;
 esac
