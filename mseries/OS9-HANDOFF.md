@@ -13359,6 +13359,10 @@ ungrabbing, and a same-client regrab-then-release left the key held. Not verifie
 installed session (needs a compositor reload, i.e. the next login). Separate, unaddressed: `gsd-media-keys` logs
 `Unable to get default sink` when pressed before PipeWire's default sink exists.
 
+## Qwen ANE conversion — 2026-10-27
+
+The Mac mini built and converted all 38 H13 Qwen programs; transfer hashes match and the converter and group-state fixes pass 70 targeted tests. Execution remains gated on memory reserve, descriptor safety, and surface binding validation; no Linux ANE timing or fidelity result is claimed. Details and reference hashes: `local-ai/receipts/2026-10-27-ane-qwen-conversion.md`.
+
 ## SDK dock panel protocol — 2026-10-23
 
 PR 556 merged. The SDK now registers panel surfaces using the compositor's Pantheon shell protocol on realization, before presentation. The dock requests bottom anchoring, 64 logical pixels and overlap hiding. A private Wayland event queue discovers the shell without dispatching GDK events; only adapter-owned proxies are destroyed. Incremental dock build succeeded. Live placement has not been reviewed. Build dependencies: wayland-scanner, gtk4-wayland and wayland-client development files, plus cc/pkg-config Rust build helpers.

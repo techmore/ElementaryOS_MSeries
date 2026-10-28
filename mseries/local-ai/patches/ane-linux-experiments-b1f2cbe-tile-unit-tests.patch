@@ -27,7 +27,7 @@ index 83e3653..5992ac6 100755
 -        control_stage = stage_geometry(load_anec_header(splice_control))
 +        control_stage = stage_geometry(load_anec_header(splice_control), args.tile_unit)
 diff --git a/tools/staged-decode-runtime.py b/tools/staged-decode-runtime.py
-index 07d8e7d..d9a39a3 100755
+index 07d8e7d..6feae9a 100755
 --- a/tools/staged-decode-runtime.py
 +++ b/tools/staged-decode-runtime.py
 @@ -52 +52 @@ ROW_STRIDE = 64  # staged gate/state rows: values at the row head, 64 B stride
@@ -50,10 +50,22 @@ index 07d8e7d..d9a39a3 100755
 @@ -421 +423 @@ class StagedDecoder:
 -                    binding, name=f"prog_{index:03d}", valid_totals=valid_totals,
 +                    binding, name=f"prog_{index:03d}", valid_totals=valid_totals, tile_unit=tile_unit,
-@@ -566,0 +569,2 @@ def main(argv=None):
+@@ -453 +455 @@ class StagedDecoder:
+-        self.lanes["x"] = np.asarray(hidden, dtype=np.float16).reshape(1, -1)
++        hidden = np.asarray(hidden, dtype=np.float16).reshape(1, -1)
+@@ -454,0 +457,2 @@ class StagedDecoder:
++            if program.get("group_start"):
++                self.lanes["x"] = hidden
+@@ -470,0 +475,2 @@ class StagedDecoder:
++            if program.get("group_end"):
++                hidden = self.lanes["h"]
+@@ -472 +478 @@ class StagedDecoder:
+-        return self.lanes["h"].reshape(-1)
++        return hidden.reshape(-1)
+@@ -566,0 +573,2 @@ def main(argv=None):
 +    parser.add_argument("--tile-unit", type=lambda x: int(x, 0), choices=(0x200, 0x4000), required=True,
 +                        help="explicit header tile-count unit in bytes")
-@@ -583 +587 @@ def main(argv=None):
+@@ -583 +591 @@ def main(argv=None):
 -        args.manifest, args.anec_dir, args.bindings, args.qid
 +        args.manifest, args.anec_dir, args.bindings, args.qid, tile_unit=args.tile_unit
 diff --git a/tools/staged-decode-window-td-dump.py b/tools/staged-decode-window-td-dump.py
@@ -128,10 +140,10 @@ index 2f29a41..6fd8bfe 100644
 +                "--tile-unit", "0x4000",
 diff --git a/tools/test_staged_tile_unit_guard.py b/tools/test_staged_tile_unit_guard.py
 new file mode 100644
-index 0000000..cc93e67
+index 0000000..6927655
 --- /dev/null
 +++ b/tools/test_staged_tile_unit_guard.py
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,40 @@
 +"""Offline test: a staged decoder needs an explicit ANEC header unit."""
 +import importlib.util
 +from pathlib import Path
@@ -149,3 +161,26 @@ index 0000000..cc93e67
 +                with self.assertRaisesRegex(ValueError, 'explicit ANEC header tile unit'):
 +                    module.StagedDecoder('absent-manifest', 'absent-dir', tile_unit=unit)
 +            device.assert_not_called()
++
++class GroupFlowTests(unittest.TestCase):
++    def test_output_of_one_group_becomes_input_to_next(self):
++        import numpy as np
++        class Program:
++            def write_bank(self, port, value):
++                self.value = value.copy()
++            def execute(self, outputs):
++                pass
++            def read_output(self, port, shape):
++                return self.value + np.float16(1)
++        d = module.StagedDecoder.__new__(module.StagedDecoder)
++        d.programs = [Program(), Program()]
++        d.manifest = {'programs': [
++            {'group_start': True, 'group_end': True,
++             'srcs': [{'kind': 'lane', 'lane': 'x', 'port': 'in'}],
++             'dsts': [{'lane': 'h', 'port': 'out', 'shape': [1, 1]}]}
++            for _ in range(2)]}
++        d.lanes = {}; d.position = 0
++        d.context_arrays = lambda position, rope: {}
++        output = d.step(np.array([1], dtype=np.float16), {})
++        self.assertEqual(float(output[0]), 3.0)
++        self.assertEqual(float(d.programs[1].value[0, 0]), 2.0)

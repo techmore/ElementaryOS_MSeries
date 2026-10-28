@@ -5554,6 +5554,10 @@ Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
 only owned synthetic peers. No application behavior or VM acceptance change.
 See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
 
+### Qwen ANE conversion — 2026-10-27
+
+38 H13 programs converted and hash-verified; Linux ANE submission and comparison remain gated on safe descriptor and surface bindings and sufficient desktop memory. See `local-ai/receipts/2026-10-27-ane-qwen-conversion.md`.
+
 ### SDK dock anchoring — 2026-10-23
 
 Pantheon panel protocol adapter implemented in msdk-gtk; dock builds with bottom anchor, size and hide mode. Next: live placement review and pin editing.
