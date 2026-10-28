@@ -172,5 +172,41 @@
     "who": "Peter Steinberger",
     "why": "macOS GitHub repository dashboard reference; track feature changes for the independent elementary OS Wingpanel port",
     "group": "apps"
+  },
+  {
+    "user": "joshuaswarren",
+    "who": "Joshua Warren",
+    "why": "Author of omarchy-mlx, metal2vk, TensorFold Vulkan, omarchy-cluster and ane-linux-experiments; any new repo or push is a candidate for our local AI path",
+    "group": "omarchy-m"
+  },
+  {
+    "repo": "ashhart/TensorFold",
+    "who": "Ash Hart (maintainer), Joshua Warren (Vulkan)",
+    "why": "Native Vulkan engine (PR 1517) built and gated on our M1 Pro 2026-10-28; watch for the submit-batching follow-up (issue 1420) before re-testing",
+    "group": "omarchy-m"
+  },
+  {
+    "repo": "joshuaswarren/TensorFold",
+    "who": "Joshua Warren",
+    "why": "Fork where the Vulkan engine and batching branches are developed before upstream PRs",
+    "group": "omarchy-m"
+  },
+  {
+    "repo": "joshuaswarren/metal2vk",
+    "who": "Joshua Warren",
+    "why": "Metal-to-SPIR-V compiler behind omarchy-mlx's opt-in custom-kernel route; our clspv toolchain is pinned at de6faa02",
+    "group": "omarchy-m"
+  },
+  {
+    "repo": "joshuaswarren/omarchy-cluster",
+    "who": "Joshua Warren",
+    "why": "Multi-Mac MLX serving; source of Honeykrisp HK_SYSMEM heap findings",
+    "group": "omarchy-m"
+  },
+  {
+    "repo": "joshuaswarren/ane-linux-experiments",
+    "who": "Joshua Warren",
+    "why": "ANE on Linux primitives and cross-Mac receipts; our ANE decoder patches target it",
+    "group": "omarchy-m"
   }
 ]
