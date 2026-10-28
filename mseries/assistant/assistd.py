@@ -6,6 +6,7 @@ assistant model is ever resident. It loads on the first request and unloads afte
 
 Endpoints (127.0.0.1 only):
   GET  /health                     {"loaded": bool, ...}
+  POST /v1/warm                    load the model now (F5 sends this on key press)
   GET  /v1/models                  OpenAI-style model list (one entry: lfm3-audio-2b)
   POST /v1/chat/completions        OpenAI-style text chat ({"messages": [...], "max_tokens", "temperature"})
   POST /v1/complete                {"prefix": "text before the caret"} -> {"text": "continuation"}
@@ -37,6 +38,8 @@ GIB = 1024 ** 3
 # Model weights plus working memory, in addition to the shared six-GiB desktop reserve.
 ADMISSION_GIB = 3.0
 RESERVE_GIB = float(os.environ.get('MSERIES_ASSIST_RESERVE_GIB', '6'))  # desktop headroom kept free after loading
+PRESSURE_FREE_GIB = float(os.environ.get('MSERIES_ASSIST_PRESSURE_GIB', '2'))  # unload early below this
+PRESSURE_IDLE_S = 60  # ...once idle this long
 MAX_BODY = 32 * 1024 * 1024
 MAX_PREFIX_CHARS = 1500
 COMPLETE_SYSTEM = 'Write the text the user asks for, in their voice.'
@@ -104,19 +107,31 @@ class Engine:
         self.caches = {}
         print(f'assistd: loaded {self.model_path} in {self.load_seconds:.1f}s', flush=True)
 
+    def warm(self):
+        """Load now (F5 calls this on key press so the model loads while the user talks)."""
+        with self.lock:
+            self._ensure()
+            self.last_used = time.monotonic()
+        return {'loaded': True, 'load_seconds': self.load_seconds}
+
     def _unload(self):
         import mlx.core as mx
         self.model = self.processor = None
         self.caches = {}
         gc.collect()
         mx.clear_cache()
-        print('assistd: unloaded after idle', flush=True)
+        print('assistd: unloaded', flush=True)
 
     def _idle_watch(self):
         while True:
             time.sleep(15)
             with self.lock:
-                if self.model is not None and time.monotonic() - self.last_used > self.idle_seconds:
+                idle = time.monotonic() - self.last_used
+                # Stay resident while the desktop has room; give the memory back early when it is tight.
+                tight = idle > PRESSURE_IDLE_S and available_gib() < PRESSURE_FREE_GIB
+                if self.model is not None and (idle > self.idle_seconds or tight):
+                    print(f'assistd: unloading after {idle:.0f}s idle'
+                          f'{" (memory tight)" if tight else ""}', flush=True)
                     self._unload()
                     if os.environ.get('MSERIES_ASSIST_EXIT_ON_UNLOAD', '1') == '1':
                         # Dropping the model and clearing MLX's cache leaves the Vulkan device's
@@ -244,6 +259,8 @@ def handler_for(engine):
                     return self._send(200, {'id': f'assistd-{int(time.time()*1000)}', 'object': 'chat.completion',
                                             'model': MODEL_ID, 'choices': [{'index': 0, 'finish_reason': 'stop',
                                             'message': {'role': 'assistant', 'content': text}}]})
+                if url.path == '/v1/warm':
+                    return self._send(200, engine.warm())
                 if url.path == '/v1/complete':
                     body = self._json()
                     prefix = str(body.get('prefix') or '')
@@ -286,7 +303,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--model', type=Path, default=Path(os.environ.get('MSERIES_ASSIST_MODEL', DEFAULT_MODEL)))
     parser.add_argument('--port', type=int, default=int(os.environ.get('MSERIES_ASSIST_PORT', 8772)))
-    parser.add_argument('--idle', type=int, default=int(os.environ.get('MSERIES_ASSIST_IDLE', 600)),
+    parser.add_argument('--idle', type=int, default=int(os.environ.get('MSERIES_ASSIST_IDLE', 1800)),
                         help='Seconds without requests before the model is unloaded')
     parser.add_argument('--preload', action='store_true')
     args = parser.parse_args()
