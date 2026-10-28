@@ -133,6 +133,15 @@ unverified; #531 stays open for installation/acceptance. #530 Preview remains
 separate. No Files binary, AirDrop destination, panel, audio or boot setting is
 modified. Install/uninstall commands and limits are in the README.
 
+## Build/runtime log audit — 2026-10-26
+
+The audit fixed the dock's null context-menu hover critical, which landed in
+#638. It also found the upstream-watch dashboard overflow, fixed in #598. It
+restored the failed document portal, after which no failed user units remained,
+and the full native UI matrix passed. Popup lifecycle, backup and audio/kernel
+findings remain open; see the [audit receipt](ui-audit/receipts/2026-10-26-log-audit/README.md).
+No kernel, audio, boot or kiosk cutover changes.
+
 ## J314S monitor restoration incident — 2026-10-26
 
 Owner reported the WD22TB4 monitor did not restore while connected. Live host
