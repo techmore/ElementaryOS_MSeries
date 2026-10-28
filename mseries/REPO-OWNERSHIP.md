@@ -7,7 +7,8 @@ holds older duplicate copies. Those are now **frozen migration snapshots**: noth
 deleted, moved or archived, but PRs that edit them fail the `Frozen paths guard` CI check
 (label `allow-frozen-edit` overrides). The guarded list is
 [`ci/frozen-paths.txt`](ci/frozen-paths.txt); each frozen directory has a `FROZEN.md`.
-Branch rules: [BRANCHING.md](BRANCHING.md).
+Branch rules: [BRANCHING.md](BRANCHING.md). Functional duplicates (Python/Rust/Vala twins, duplicate
+launchers) are marked, not removed, in [LEGACY-DUPLICATES.md](LEGACY-DUPLICATES.md).
 
 Method: real trees compared with `diff -rq` between `git archive origin/main` of the SDK repo
 and this checkout (`dev` at `7478f2fe`). Phase 2 (kernel split) is owned by another session;
