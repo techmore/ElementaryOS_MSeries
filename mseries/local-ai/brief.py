@@ -130,7 +130,8 @@ def due_text(component):
 def open_tasks(triage):
     registry = EDataServer.SourceRegistry.new_sync(None)
     sources = registry.list_sources(EDataServer.SOURCE_EXTENSION_TASK_LIST)
-    chosen = [s for s in sources if s.get_display_name() == LIST_NAME] or sources
+    # The Homeboard bridge owns the "Homeboard" list and one list per project (UIDs start with homeboard-).
+    chosen = [s for s in sources if s.get_uid().startswith('homeboard-') or s.get_display_name() == LIST_NAME] or sources
     today = date.today().strftime('%Y%m%d')
     rows = []
     for source in chosen:

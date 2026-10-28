@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use url::Url;
 
-const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:8766/v1";
+pub(crate) const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:8766/v1";
 const MAX_MEMORY_CHARS: usize = 600;
 const SCHEMA_VERSION: i64 = 2;
 
