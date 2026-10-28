@@ -28,3 +28,12 @@ finished, the MLX run was admitted at 11.36 GiB and the Rapid run at 11.06 GiB.
 The refusal was expected policy behavior. The smoke helper now requires an
 explicit per-model admission allowance; a larger model can no longer silently
 reuse the 2B allowance.
+
+Guard audit: the managed worker previously returned success after stopping on
+three consecutive policy violations, hiding a memory/thermal stop as normal
+service completion. It now returns exit 3 for policy stops while preserving
+normal external shutdown behavior. Lock files are explicitly closed on these
+paths. Admission refusals now show available memory, model allowance and
+reserve; the reserve itself is unchanged. The unit tests simulate low memory
+and confirm the failure exit and child cleanup. These are source changes, not
+yet installed on the live system.

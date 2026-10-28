@@ -26,6 +26,7 @@ def main():
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
         print('ADMISSION REFUSED: another managed model is running', flush=True)
+        lock.close()
         return 3
     profile = config['profiles'][args.profile]
     policy = dict(config.get('policy', DEFAULT_POLICY))
@@ -33,6 +34,7 @@ def main():
     reasons = violations(initial, policy, int(profile['admission_gib'] * GIB))
     if reasons:
         print('ADMISSION REFUSED: ' + '; '.join(reasons), flush=True)
+        lock.close()
         return 3
     baseline = max(initial['fans_rpm'].values())
     policy.setdefault('cool_fan_rpm', min(baseline + 300, policy['max_fan_rpm'] - 200))
@@ -66,6 +68,7 @@ def main():
                    '--jinja', '--alias', 'local-coder', '--host', '127.0.0.1', '--port', str(profile['port'])]
     child = subprocess.Popen(command, env=env, start_new_session=True)
     stopping = False
+    policy_stopped = False
     cooling = False
     cooling_since = 0
     burst_until = 0
@@ -95,6 +98,7 @@ def main():
             consecutive = consecutive + 1 if reasons else 0
             if consecutive >= 3:
                 print('QUIET POLICY STOP: ' + '; '.join(reasons), flush=True)
+                policy_stopped = True
                 stop()
                 break
             now = time.monotonic()
@@ -121,7 +125,8 @@ def main():
             except subprocess.TimeoutExpired:
                 group_signal(signal.SIGKILL)
                 child.wait()
-    return 0 if stopping else child.returncode
+        lock.close()
+    return 3 if policy_stopped else (0 if stopping else child.returncode)
 
 
 if __name__ == '__main__':
