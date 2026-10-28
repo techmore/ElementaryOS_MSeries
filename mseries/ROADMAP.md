@@ -5566,3 +5566,7 @@ run `39944207967` and validation run `39944207727`. PR #533 is still open and
 conflicts with `dev`; refresh/review remains required. Wip4 hardware acceptance
 remains open. The current live site byte-matches `dev` `7053069f` from Pages run
 `39954620306`; this correction is prepared in a PR and awaits publication.
+
+## T3 launcher and panel decision (2026-10-27)
+
+Keep the unified T3 Wingpanel menu and use the Dock launcher to open the T3 window. Validate the combined experience on the target desktop before claiming acceptance.

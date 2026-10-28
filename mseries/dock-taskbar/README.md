@@ -1,4 +1,14 @@
-# Unified native T3 taskbar menu
+# T3 in the Dock and Wingpanel
+
+**2026-10-27:** The pinned T3 launcher opens or raises the T3
+window like any other app; right-click shows the app's quicklist (New Thread, Usage, Repositories,
+Activity). The launcher no longer opens the dropdown below, the taskbar status area no longer has a
+T3 (or CodexBar/RepoBar) button. The unified T3 Wingpanel menu remains available; Usage, the repository overview and Activity also live in the T3 window's sidebar
+(techmore/mseries-sdk-apps `rust/claude-pantheon-rs`). `prepare-source.sh` refuses a build that
+attaches the dropdown again. `TaskbarT3.vala` and `TaskbarT3RPopover.vala` stay compiled for their
+tests; the notes below describe that retired menu.
+
+## Retired: unified native T3 taskbar menu
 
 `TaskbarT3.vala` replaces the separate CodexBar and RepoBar taskbar anchors with
 one T3 button in the existing status group. It reuses the custom CodexBar native
