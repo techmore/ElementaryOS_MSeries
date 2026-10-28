@@ -1,0 +1,21 @@
+[Unit]
+Description=MSeries assistant model (LFM3-Audio-2B: suggestions, chat, speech) on 127.0.0.1:8772
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+# One model for every assistant feature. It loads on the first request and unloads after MSERIES_ASSIST_IDLE seconds.
+Environment=OMARCHY_MLX_SYSTEM_PREFIX=%h/.local/share/mlx-omarchy
+Environment=VK_DRIVER_FILES=%h/.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json
+Environment=HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1
+# Vulkan submission budget: 20k measured 7% faster suggestions and 13% faster speech-to-text than the default (PR #648 value).
+Environment=MLX_OMARCHY_BATCH_WORK=20000
+Environment=MSERIES_ASSIST_IDLE=600
+ExecStart=%h/.local/share/mseries-ai/lfm3-audio-venv/bin/python -I %h/.local/libexec/mseries-assistant/assistd.py
+Nice=5
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=graphical-session.target
