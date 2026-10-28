@@ -1,3 +1,7 @@
+## T3 panel menu HIG audit — 2026-10-27
+
+Audit of the unified T3 Wingpanel menu against the elementary HIG: [`t3-wingpanel/HIG-AUDIT.md`](t3-wingpanel/HIG-AUDIT.md). Fixed in source: nested scrollers that hid the second plan window and running threads, menu width jumping between tabs, idle tooltip "0 running" and a never-updated accessible name, raw token counts/cost/timestamps, and the double use of "Activity". Fixture tests pass (`t3-wingpanel/test.sh`); before/after renders in `t3-wingpanel/receipts/2026-10-27-hig-audit/`. Not installed or loaded into the live panel. Owner then approved H1–H5, done in the same PR: one tab bar, plain menu-item footer (Open T3, Activity, Fleet, T3 Settings…), 16 px embedded icons, system text size, badge only for approvals.
+
 ## Public messaging status — 2026-10-27
 
 The public homepage and support matrix now distinguish the scoped October 20 BlueFerry texting observation from the owner’s October 22 decision that the Messages and Signal experience is incomplete and deferred. See [MESSAGING-STATUS.md](MESSAGING-STATUS.md). This documentation update does not change or qualify the apps, phone pairing or hardware.

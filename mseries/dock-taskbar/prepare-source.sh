@@ -78,7 +78,7 @@ for filename, required in {
     'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala', 'TaskbarT3RPopover.vala'],
     'src/Taskbar.vala': ['new TaskbarT3', 'new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)'],
     'src/AppSystem/Launcher.vala': ['new TaskbarT3RPopover (this, app)', 't3r_popup.toggle_from_icon ()'],
-    'src/TaskbarT3RPopover.vala': ['"tokenUsage"', '"usedPercent"', '"repositories"', 'Timeout.add (250', 'Timeout.add (450'],
+    'src/TaskbarT3RPopover.vala': ['"tokenUsage"', '"usedPercent"', '"settings"', 'Timeout.add (250', 'Timeout.add (450'],
     'src/TaskbarAirDrop.vala': ['new MSeries.AirDropPanel'],
     'src/AirDropPanel.vala': ['Receive Files'],
     'src/MainWindow.vala': ['taskbar-mode', 'TaskbarRow'],

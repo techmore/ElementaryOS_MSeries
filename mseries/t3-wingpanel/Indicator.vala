@@ -15,20 +15,27 @@ namespace MSeries {
             badge = new Gtk.Label ("") { visible = false };
             badge.add_css_class ("caption");
             display.append (badge);
-            display.update_property (Gtk.AccessibleProperty.LABEL, "T3 · Usage, GitHub, Activity and Fleet", -1);
-            display.tooltip_text = "T3 · Usage, GitHub, Activity and Fleet";
+            set_status ("Usage, GitHub, Activity and Fleet");
             menu = new Dock.TaskbarT3RPopover (display, 28, true);
             menu.request_close.connect (() => close ());
             menu.status_changed.connect ((live, pending, running) => {
-                badge.label = live && pending > 0 ? pending.to_string () :
-                    live && running > 0 ? running.to_string () : "";
+                // A number only when something needs you; running work stays quiet (tooltip says it).
+                badge.label = live && pending > 0 ? pending.to_string () : "";
                 badge.visible = badge.label.length > 0;
-                display.tooltip_text = !live ? "T3 · No live server status" : pending > 0 ?
-                    "T3 · %s awaiting approval".printf (pending.to_string ()) :
-                    "T3 · %s running".printf (running.to_string ());
+                set_status (!live ? "No live server status" :
+                    pending == 1 ? "1 thread needs approval" :
+                    pending > 1 ? "%s threads need approval".printf (pending.to_string ()) :
+                    running == 1 ? "1 thread running" :
+                    running > 1 ? "%s threads running".printf (running.to_string ()) : "Idle");
             });
             notification_owner = new RepoBarIndicator ();
             visible = true;
+        }
+
+        /* Native two-line panel tooltip; screen readers get the same status, not a stale label. */
+        private void set_status (string status) {
+            display.tooltip_markup = "T3\n" + Granite.TOOLTIP_SECONDARY_TEXT_MARKUP.printf (Markup.escape_text (status));
+            display.update_property (Gtk.AccessibleProperty.LABEL, "T3, " + status, -1);
         }
 
         public override Gtk.Widget get_display_widget () { return display; }

@@ -112,7 +112,7 @@ namespace MSeries {
             chip_label.add_css_class ("chip");
 
             refresh_display = new Gtk.Stack ();
-            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = 36 }, "idle");
+            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = dock_icon_size () }, "idle");
             refresh_spinner = new Gtk.Spinner ();
             refresh_display.add_named (refresh_spinner, "busy");
             refresh_button = new Gtk.Button () {
@@ -138,6 +138,9 @@ namespace MSeries {
             pages.add_titled (spend_box, "spend", "Spend");
             var switcher = new Gtk.StackSwitcher () { stack = pages, halign = Gtk.Align.FILL };
             switcher.add_css_class ("mseries-switcher");
+            // Inside the T3 menu, its own tab bar is the only one: show Quota; Sessions and
+            // Spend stay one click away through the Usage and Spending details buttons below.
+            switcher.visible = !on_demand;
             menu.append (switcher);
 
             var scroll = new Gtk.ScrolledWindow () {
@@ -145,7 +148,7 @@ namespace MSeries {
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
                 vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
                 propagate_natural_height = true,
-                min_content_height = 300,
+                min_content_height = on_demand ? -1 : 300,
                 max_content_height = 600
             };
             menu.append (scroll);
@@ -303,9 +306,12 @@ namespace MSeries {
             Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
 
+        /* 36 px matches the standalone double-size dropdown; the T3 menu uses normal text, so 16 px. */
+        private int dock_icon_size () { return on_demand ? 16 : 36; }
+
         private Gtk.Button make_dock_button (string label, string icon_name, string action) {
             var button = new Gtk.Button () {
-                child = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 36 },
+                child = new Gtk.Image.from_icon_name (icon_name) { pixel_size = dock_icon_size () },
                 tooltip_text = label
             };
             button.add_css_class ("flat");
