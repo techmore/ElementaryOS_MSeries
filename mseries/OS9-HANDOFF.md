@@ -1,6 +1,54 @@
 ## T3 Dock launcher and Wingpanel — 2026-10-27
 
 The owner chose to retain the unified Wingpanel menu. The Dock launcher opens the T3 window and its taskbar status area does not add a second T3 menu. The Dock source-preparation guard checks these boundaries; the Wingpanel module is not retired. Source preparation is verified against the pinned upstream Dock, with live desktop acceptance still outstanding.
+## WD22TB4 and wip4 candidate status — 2026-10-28
+
+Current `dev` is `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`. Pages deployment
+`40628638433` succeeded for that exact revision. The live homepage and build
+monitor still showed the October 23 #533 candidate paragraph; a focused status
+correction is prepared in this docs change and is not published until it merges
+and a Pages deployment succeeds for the resulting `dev` revision.
+
+The attended October 21 wip2 trial confirmed WD22TB4 picture at 1080p/60 on all
+three USB-C ports. Retained wip3 observations from October 20–27 show three DPTX
+failures when the dock was first plugged within about four seconds of resume;
+there were no matching failures on .20, wip2, or a wip3 boot with the dock
+connected at boot. Moving to another port restored picture in one observed
+incident. This pattern is consistent with, not proof of, a post-resume DCP state
+problem. A separate user-space monitor-profile watcher restored the saved layout
+on two observed same-port cycles; automatic restore was confirmed only on
+the later cycle after a fallback association fix. This does not establish kernel
+recovery or wip4 acceptance.
+
+Two wip4 revision-6 proposals remain open: #533 at head
+`f68fd1d9833d4895607df1951726b163542c71f0` and draft #619 at head
+`1dfb6ecc43400b2051bdd7c81c3408defd45e305`. Their patch lists differ, and the
+#619 conversation records that the intended revision must be resolved before
+either merges. PR #619 is based on older `dev` `44644d852cf70d12068ebbbba73726ffbf9a0338`;
+against current `dev` `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`, its head is
+eight commits behind and four ahead. Do not choose or refresh one candidate until
+the owner settles the overlap.
+
+On exact #619 head `1dfb6ecc`, Aurora candidate run
+[40605242087](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40605242087)
+passed both ARM64 candidate and unified72 profile jobs: pinned-source preparation,
+selected production-kernel logic checks, kernel/modules/DTB builds, payload-only
+Debian package builds, and package-boundary checks. Actions uploaded
+`elementary-aurora-enhancements-candidate-40605242087` (artifact 12782705133,
+SHA-256 `6601d97a59fb070fc6a2b0aa4bf74711b49216ddecf151fc068b0150d69f9a94`) and
+`elementary-aurora-enhancements-unified72-40605242087` (artifact 12782670058,
+SHA-256 `31ffc75baec619e3e466751d890b8d483df78901a934530117e424c7a8be20c8`).
+The workflow did not run DCP KUnit, and no independent post-upload artifact audit
+is recorded. No wip4 package was installed or armed, and no wip4 hardware boot,
+dock recovery, suspend, long-run stability, or paired-power qualification was
+performed. The .20 kernel remains the documented persistent boot default; factory
+image boot remains unverified.
+
+Next: obtain the owner’s choice between #533 and #619, then review the chosen
+current-head patch interactions and required KUnit/build evidence before any
+owner-authorized attended hardware trial. Reuse the existing dock/VRR results;
+do not repeat the completed trials. After the docs change merges, verify the new
+Pages run and live status separately.
 
 ## T3 panel menu HIG audit — 2026-10-27
 
