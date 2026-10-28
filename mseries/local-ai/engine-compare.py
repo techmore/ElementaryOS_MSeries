@@ -5,6 +5,11 @@ Arms (each a fresh process: load, one warmup on the same prompt, one measured re
   mlx-5k      installed omarchy-mlx, default 5,000 work-group submit budget (baseline)
   mlx-120k    same runtime at last night's best 120,000 budget
   rapid-120k  Rapid-MLX loopback server at the 120,000 budget
+  serve-120k  mlx-omarchy-serve (mlx-lm backend; what model-worker.py runs) at 120,000
+  serve-nolp-120k  the same launcher with only our skip-logprob-read patch
+  serve-patched-120k  both private patches: skip-logprob-read and the singleton cache
+              (Rapid-MLX's fast path, vendored); what model-worker.py ships.
+              Both serve-n*/serve-p* arms need serve-patch.sh build first (patches/mlx-lm-0.31.3-*).
   tensorfold  TensorFold native Vulkan server (ashhart/TensorFold PR 1517)
 
 All four use the same weights, chat prompt, greedy decoding and token limit,
@@ -24,11 +29,11 @@ MODELS = {
     'qwen2b': (HOME / '.cache/mseries-metal2vk/qwen35-2b',
                '713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5',
                'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3', 4.5,
-               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'tensorfold')),
+               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-nolp-120k', 'serve-patched-120k', 'tensorfold')),
     'qwen4b': (HOME / '.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3',
                '5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db',
                'mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3', 6.5,
-               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k')),
+               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-nolp-120k', 'serve-patched-120k')),
     'lfm3': (HOME / '.cache/mseries-metal2vk/lfm3-8bit',
              '2b06cea98d75527c248a0b04383f7cf0a1c72fb4ed7b45096618fc4e59d015ad',
              'LiquidAI/LFM3-1.7B-MLX-8bit@ee7667f3cfccb2a41725f91820531823fcabc6b7', 4.5,
@@ -45,8 +50,9 @@ TF_REV = '670902196c47f3e70e3f56ab933805713be31aa8'
 PROMPT = 'Explain in plain language how a rainbow forms. Give four distinct sentences.'
 LONG_PROMPT = ('Explain in detail how a rainbow forms, including refraction, reflection, color '
                'and viewing angle. Write at least 350 words.')
-ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'tensorfold')
+ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-nolp-120k', 'serve-patched-120k', 'tensorfold')
 SERVE = HOME / '.local/bin/mlx-omarchy-serve'  # what model-worker.py runs for the everyday model
+SERVE_PATCH = HOME / '.local/share/mseries-ai/serve-patch'  # patched mlx_lm copy from serve-patch.sh
 CONCURRENCY = 1
 POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
 DEADLINE_S = 300
@@ -153,7 +159,7 @@ def concurrent_chat(port, prompt_text, max_tokens, model):
 
 
 def server_command(arm, port):
-    if arm == 'serve-120k':
+    if arm.startswith('serve-'):
         gib = sum(f.stat().st_size for f in MODEL.glob('*.safetensors')) / GIB
         return [str(SERVE), 'serve', str(MODEL), '--server', 'mlx-lm', '--context', '4096',
                 '--weights-gib', f'{gib:.2f}', '--host', '127.0.0.1', '--port', str(port), '--offline', '--yes']
@@ -169,6 +175,9 @@ def env_for(arm, tmp):
     env.update(VK_DRIVER_FILES=str(ICD), HF_HUB_OFFLINE='1', OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2')
     if arm != 'tensorfold':
         env['MLX_OMARCHY_BATCH_WORK'] = '5000' if arm == 'mlx-5k' else '120000'
+    if arm in ('serve-nolp-120k', 'serve-patched-120k'):
+        env['PYTHONPATH'] = str(SERVE_PATCH)
+        env['MSERIES_SERVE_SINGLETON'] = '1' if arm == 'serve-patched-120k' else '0'
     if arm == 'rapid-120k':
         env.update(PYTHONPATH=RAPID_PATH, RAPID_MLX_TELEMETRY='0', DO_NOT_TRACK='1',
                    RAPID_MLX_PREFIX_CACHE_AUTOLOAD='0', XDG_CONFIG_HOME=f'{tmp}/config',
@@ -308,12 +317,14 @@ def main():
     with (MODEL / 'model.safetensors').open('rb') as f:
         if hashlib.file_digest(f, 'sha256').hexdigest() != WEIGHTS_SHA:
             raise SystemExit('Qwen weights do not match the pinned checkpoint')
+    if any(x in arms for x in ('serve-nolp-120k', 'serve-patched-120k')) and not (SERVE_PATCH / 'mlx_lm/server.py').exists():
+        raise SystemExit('patched server missing: run serve-patch.sh')
     if 'tensorfold' in arms and not TF_BIN.exists():
         raise SystemExit('TensorFold server missing: run tensorfold-vulkan.sh build')
     out = a.output or Path(__file__).resolve().parent / 'receipts' / (
         f"{time.strftime('%Y-%m-%d')}-engine-compare-{a.model}-{'long' if a.long else 'short'}"
         + ('' if DRIVER == '7faf04c065' else f'-hk{DRIVER}') + (f'-c{CONCURRENCY}' if CONCURRENCY > 1 else '')
-        + ('' if tuple(arms) == tuple(x for x in MODEL_ARMS if x != 'serve-120k') else '-' + '+'.join(arms)) + '.json')
+        + ('' if tuple(arms) == tuple(x for x in MODEL_ARMS if not x.startswith('serve-')) else '-' + '+'.join(arms)) + '.json')
     lock = (HOME / '.local/state/mseries-ai/worker.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     report = {'status': 'running', 'model_key': a.model, 'model': MODEL_ID, 'weights_sha256': WEIGHTS_SHA, 'kernel': os.uname().release, 'driver': 'Honeykrisp Mesa ' + DRIVER,

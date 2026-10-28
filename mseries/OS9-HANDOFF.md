@@ -13512,3 +13512,13 @@ Memory audit the same day: the LFM3 assistant kept ~3 GiB of GPU memory pinned a
 unload (fixed in #661: exit after unload, systemd restarts it); wingpanel restarts killed
 panel-launched apps (fixed in #662: `KillMode=process`). Open: mlx-omarchy-serve (what the
 everyday model runs) decodes well below in-process MLX — see the server rows on the scoreboard.
+
+Later the same day: instead of switching the everyday model to Rapid-MLX (which would drop
+upstream's memory reservation, context cap and speech yield gate), two private patches now run
+inside upstream's own launcher: omarchy-mlx's 0.32-line skip-logprob-read fix ported to 0.31.3,
+and Rapid-MLX's singleton-cache fast path (Apache-2.0, vendored). Built by
+`mseries/local-ai/serve-patch.sh` into a side copy that `model-worker.py` uses only while it
+matches the installed mlx-lm. One request: Qwen 2B 32.6 → 56.5, Qwen 4B 19.2 → 27.4 tok/s,
+identical text, faster than Rapid-MLX. Several requests at once still trail Rapid (28 vs 43–48
+total). The scoreboard chart now shows first token, streaming speed and a typical 200-token reply
+side by side. Receipt and rollback: `mseries/local-ai/receipts/2026-10-28-serve-patch.md`.
