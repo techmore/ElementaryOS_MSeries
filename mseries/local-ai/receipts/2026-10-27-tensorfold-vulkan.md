@@ -1,5 +1,22 @@
 # TensorFold Vulkan feasibility — 2026-10-27
 
+## MLX route follow-up
+
+The shipped AOT entry matches the oMLX probe's `metal::precise::exp` variant;
+the first trial used its `metal::exp` variant, which produces a different
+content-addressed source key. With the precise variant, the repeatable
+[`test-metal2vk-probe.py`](../test-metal2vk-probe.py) ran separate translator
+and auto processes using the private ICD. Auto reported `m2v=1 translator=0
+fallbacks=0 refusals=0`; translator reported `m2v=0 translator=1 fallbacks=0
+refusals=0`. Both passed the float64 SiLU reference at 1e-5 absolute and
+relative tolerance on 131,072 inputs in [-8, 8]. Maximum absolute reference
+error was 4.64653531e-7 for each; maximum difference between routes was
+4.76837158e-7, so they were not bit-identical. Command:
+`~/.local/share/mlx-omarchy/venv/bin/python mseries/local-ai/test-metal2vk-probe.py`.
+The kernel and installed runtime were not changed. This qualifies this one
+variant and input range, not the unmatched `metal::exp` variant, model
+inference, numerical edge cases, sustained operation, or speed.
+
 ## M1 Pro kernel trial
 
 On the running `7.2.11-elementary-aurora72-wip4`, using the private ICD and
@@ -23,11 +40,9 @@ absolute and relative. Source: the sigmoid probe in
   reference tolerance, maximum absolute error 4.65e-7. Maximum difference from
   the MLX translator result was 4.77e-7; results were not bit-identical.
 
-This demonstrates one translated module executing on the GPU, **not** a
-successful MLX metal2vk route, general model correctness or a speedup. One
-dispatch is not a benchmark. Next resolve the exact source/cache-key mismatch
-or build the pinned compiler in an isolated location, then require `m2v>0` and
-`fallbacks=0` for the same numerical fixture. No installed settings changed.
+This earlier direct run demonstrates one translated module executing on the
+GPU; the later precise-variant MLX route result is recorded above. Neither
+establishes general model correctness or a speedup. No installed settings changed.
 
 ## Related metal2vk route
 
@@ -39,18 +54,15 @@ merged an opt-in metal2vk route for custom MLX kernels. Its merge commit
 `242a86509a6f88b49e7c5265d78bfc60dabbc2b7` is an ancestor of our pinned
 omarchy-mlx source `33630f9c1eeefe5fc985a28bed0585432c2c014e`. The installed
 `libmlx.so` contains the route and summary environment variable names, and its
-adjacent `m2v_aot` directory contains 67 files. This establishes presence, not
-that a particular module dispatched or produced correct output on this host.
+adjacent `m2v_aot` directory contains 67 files. The subsequent bounded
+precise-variant dispatch and numerical result are recorded above.
 The normal route remains the translator by default; `auto` is opt-in and may
 fall back. The compiler toolchain itself is not installed (`clang-23`, `opt-23`
 and `clspv` were not found on PATH). No runtime or setting was changed.
 
-Next, use a controlled custom-kernel fixture from the pinned MLX/metal2vk
-contract, with process-local private ICD and `MLX_OMARCHY_METAL_KERNEL_BACKEND=auto`,
-and collect route summary plus numerical reference and fallback results before
-making any performance or integration claim. Avoid concurrent GPU work. A full
-translator build requires LLVM/clspv and sufficient disk; 16 GiB was free on
-the root filesystem at inspection.
+The controlled precise-variant fixture and its route summary are recorded
+above. A full translator build requires LLVM/clspv and sufficient disk; 16 GiB
+was free on the root filesystem at inspection.
 
 The requested native Vulkan engine and subsequent per-token submit batching are
 being developed upstream in [TensorFold issue 1420](https://github.com/ashhart/TensorFold/issues/1420).

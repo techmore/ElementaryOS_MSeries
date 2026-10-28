@@ -1,6 +1,6 @@
 ## TensorFold Vulkan investigation — 2026-10-27
 
-The private Honeykrisp ICD enumerates the M1 Pro on the running Aurora wip4 kernel. A shipped metal2vk SiLU module ran directly on the GPU and matched an independent reference within 1e-5. The same MLX `auto` trial fell back to its translator because its exact source missed the AOT cache and the compiler was absent; MLX metal2vk routing is therefore not qualified. The proposed TensorFold Vulkan engine and submit batching were not available publicly at inspection. Exact baseline, limits and next gates: [`local-ai/receipts/2026-10-27-tensorfold-vulkan.md`](local-ai/receipts/2026-10-27-tensorfold-vulkan.md).
+The private Honeykrisp ICD enumerates the M1 Pro on the running Aurora wip4 kernel. The shipped `metal::precise::exp` SiLU probe ran through MLX metal2vk with one dispatch and zero fallbacks and matched an independent reference within 1e-5. The earlier `metal::exp` variant missed the exact-source AOT cache and fell back; its JIT compiler is absent. This is a single-kernel, bounded-input result, not model qualification. The proposed TensorFold Vulkan engine and submit batching were not available publicly at inspection. Exact baseline, test and limits: [`local-ai/receipts/2026-10-27-tensorfold-vulkan.md`](local-ai/receipts/2026-10-27-tensorfold-vulkan.md).
 
 ## T3 panel menu HIG audit — 2026-10-27
 
