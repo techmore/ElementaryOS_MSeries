@@ -156,7 +156,10 @@ def main():
            '4. **Publish.** Commit the new receipt JSON, run `scoreboard.py`, and open a PR to `dev` with the regenerated '
            'CSV, SVG and this page. Rows are replaced by the newest receipt; old receipts stay for history.',
            '5. **Adopt.** A setting becomes our default only when it holds ★ *and* passes the MLX gate; '
-           'change defaults in a separate PR.', '',
+           'change defaults in a separate PR.',
+           '6. **Version steps follow upstream.** We move mlx-lm (now 0.31.3) and the omarchy-mlx pin (now v0.7.33, '
+           '`33630f9c`) only when omarchy-mlx moves its own `install.sh` default or cuts a release. Its 0.32 line '
+           '(mlx-lm `94cdcae`, used by its oMLX packaging) is tested as a separate engine, not adopted as our default.', '',
            'Rules: everything is documented in our own repo only; we do not post to upstream projects. '
            'Rows under "reported elsewhere" are other people\'s numbers on other hardware and are never ranked against ours.', '',
            '## Reproduce', '',
