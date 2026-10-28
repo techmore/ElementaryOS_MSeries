@@ -1,5 +1,7 @@
 ## TensorFold Vulkan investigation — 2026-10-27
 
+Qwen3.5 2B initial MLX and Rapid-MLX timings, identical 64-token output, admission refusals and measurement limits: [`local-ai/receipts/2026-10-27-qwen2b-timing.md`](local-ai/receipts/2026-10-27-qwen2b-timing.md). Rapid's isolated loopback server smoke and dependency snapshot: [`local-ai/RAPID-MLX-INVESTIGATION-2026-10-27.md`](local-ai/RAPID-MLX-INVESTIGATION-2026-10-27.md). The test helper now requires an explicit model-specific admission allowance; guard refusals report available, model allowance and reserve. The six-GiB reserve remains in force. Timing surfaces and warmups differ, so the one pair is not a speed ranking.
+
 The private Honeykrisp ICD enumerates the M1 Pro on the running Aurora wip4 kernel. The shipped `metal::precise::exp` SiLU probe ran through MLX metal2vk without fallback and matched a bounded independent reference. LFM3 1.7B 8-bit answered a short prompt on the Mac with an isolated unmerged mlx-lm PR; it did not invoke a metal2vk custom kernel. The `metal::exp` variant still needs the compiler: its pinned build is incomplete and retained in `~/.cache/mseries-metal2vk/clspv`, paused when fan speed exceeded 3500 RPM. No model or compiler job remains running. Full-model correctness and speed are unqualified. Exact results and resumption steps: [`local-ai/receipts/2026-10-27-tensorfold-vulkan.md`](local-ai/receipts/2026-10-27-tensorfold-vulkan.md).
 
 ## T3 panel menu HIG audit — 2026-10-27
