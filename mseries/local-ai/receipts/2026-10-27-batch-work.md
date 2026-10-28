@@ -54,3 +54,41 @@ candidate, measure actual GPU submission duration and desktop frame pacing,
 compare logits and output across representative models and contexts, retain
 matched timing pairs, and verify reserve/thermal behavior. TensorFold's own
 before/after benchmark still requires its unpublished source.
+
+## Follow-up: higher budget and desktop animation probe
+
+Two additional alternating six-process sweeps ran the same 2B workload with a
+visible GTK 3 animated window. The probe records monotonic frame-clock callback
+times, filtered to the measured inference interval. The frame clock observed
+approximately 60 Hz even though the connected display advertises 119.91 Hz;
+these are application callbacks, not scanout timestamps or input latency.
+
+| Candidate | Median paired request-time reduction | Submissions baseline → candidate | Largest measured callback gap (baseline / candidate) | Gaps >33.33 ms |
+| --- | ---: | ---: | ---: | ---: |
+| 20,000 | 14.29% | 429 → 141 | 29.73 / 24.55 ms | 0 / 0 |
+| 80,000 | 17.55% | 429 → 69 | 29.24 / 25.04 ms | 0 / 0 |
+
+Each row is three matched pairs. All 12 generated sequences matched each other
+and the previous experiment. The 80,000 reductions in individual pairs were
+20.03%, 17.55% and 17.07%; the original 20,000 run without the desktop probe
+showed 16.37%. These small, short tests do not establish a statistically reliable
+winner, 30% improvement, sustained responsiveness, compositor input latency,
+frame presentation, long-context behavior or numerical fidelity. 80,000 is an
+experimental setting only; no default was changed. The probe can be occluded,
+composited or throttled, and must not be mistaken for display presentation or
+an interactive usability test. Full raw frame times and samples are retained in
+[20k desktop](2026-10-27-batch-work-20k-desktop.json) and
+[80k desktop](2026-10-27-batch-work-80k-desktop.json). Across both sweeps,
+minimum sampled available memory was 9.38 GiB, maximum temperature 48.853 C,
+and maximum fan speed 2528 RPM. The six-GiB reserve and 80 C stop remained.
+
+The cached Qwen3.5 4B checkpoint was located at revision
+`32f3e8ecf65426fc3306969496342d504bfa13f3`, but the guarded 20k model smoke
+was refused before loading: 11.28 GiB available versus a 6.5 GiB model
+allowance plus 6 GiB reserve. This is an admission result, not a 4B benchmark.
+Retry when sufficient memory is available, then measure multiple prompts,
+longer/sustained loads, presentation and interaction, and teacher-forced
+fidelity before considering a default. After the MLX path is characterized,
+repeat a matched Rapid-MLX comparison; the earlier Rapid numbers are not a
+valid apples-to-apples ranking. The unpublished TensorFold engine remains
+separate from this MLX budget experiment.

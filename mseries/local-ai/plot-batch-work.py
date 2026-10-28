@@ -13,8 +13,9 @@ series = [
     (10000, root / '2026-10-27-batch-work-ab.json'),
     (20000, root / '2026-10-27-batch-work-20k-ab.json'),
     (40000, root / '2026-10-27-batch-work-40k-ab.json'),
+    (80000, root / '2026-10-27-batch-work-80k-desktop.json'),
 ]
-fig, axes = plt.subplots(1, 3, figsize=(12.8, 5), sharey=True)
+fig, axes = plt.subplots(1, 4, figsize=(16, 5), sharey=True)
 fig.patch.set_facecolor('#f7f8fa')
 for ax, (budget, filename) in zip(axes, series):
     report = json.loads(filename.read_text())
@@ -43,7 +44,7 @@ fig.suptitle('M1 Pro: larger Vulkan batches reduce short Qwen request time',
              x=.08, ha='left', fontsize=15, fontweight='bold', color='#172c3d')
 fig.text(.08, .89, 'Each line is one alternating pair · Qwen3.5 2B · 27 prompt + 32 generated tokens',
          fontsize=10, color='#475a6c')
-fig.text(.08, .025, 'Three pairs per candidate; one prompt. Desktop frame pacing and broader model correctness are untested.',
+fig.text(.08, .025, 'Three pairs per candidate; one prompt. The 80k run included an animated desktop probe; broader qualification remains open.',
          fontsize=9, color='#526477')
 fig.subplots_adjust(left=.08, right=.98, bottom=.16, top=.79, wspace=.19)
 fig.savefig(root / '2026-10-27-batch-work-ab.png', dpi=160, facecolor=fig.get_facecolor())

@@ -1,3 +1,7 @@
+## MLX batch follow-up — 2026-10-27
+
+A 20k and 80k Qwen 2B sweep with a GTK animation probe showed median paired request reductions of 14.29% and 17.55%, respectively; no callback gaps over 33.33 ms during the short measured requests. This is not presentation or input-latency qualification. Qwen 4B was refused at 11.28 GiB available against a 12.5 GiB admission requirement; reserve unchanged. Keep opt-in and test sustained desktop behavior, larger models, and numerical fidelity before any default. Rapid-MLX remains a later matched comparison. [Raw results](local-ai/receipts/2026-10-27-batch-work.md).
+
 ## TensorFold Vulkan investigation — 2026-10-27
 
 M1 Pro Qwen3.5 2B process-local submission-budget experiment: 20,000 versus the uncalibrated-board fallback 5,000 reduced median paired 32-token request time 16.37% with identical token IDs across three pairs; 10,000 and 40,000 were also tested. The branch includes the guarded harness, graph and raw receipts. Desktop frame pacing and broader model correctness are not qualified, so this is opt-in only and is not the unavailable TensorFold batching patch. [`local-ai/receipts/2026-10-27-batch-work.md`](local-ai/receipts/2026-10-27-batch-work.md).

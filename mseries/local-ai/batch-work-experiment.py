@@ -65,6 +65,7 @@ def worker(model, output):
     data = {'first_s': first, 'total_s': elapsed, 'tokens': tokens,
             'prompt_tokens': last.prompt_tokens if last else None,
             'generation_tps': last.generation_tps if last else None,
+            'measured_start_monotonic': started, 'measured_end_monotonic': time.monotonic(),
             'counter_delta': {key: after[key] - before[key] for key in FIELDS}}
     output.write_text(json.dumps(data))
 
@@ -73,8 +74,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--candidate', type=int, choices=[10000, 20000, 40000], default=10000)
+    parser.add_argument('--candidate', type=int, choices=[10000, 20000, 40000, 80000], default=10000)
     parser.add_argument('--worker', action='store_true')
+    parser.add_argument('--desktop-probe', action='store_true')
     args = parser.parse_args()
     if args.worker:
         worker(args.model, args.output)
@@ -112,8 +114,19 @@ def main():
                            OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2')
                 command = [str(home / '.local/share/mlx-omarchy/venv/bin/python'), __file__, '--worker',
                            '--model', str(args.model), '--output', str(result)]
+                probe_file = Path(temp) / f'frames-{index}.json'
+                probe = None
+                if args.desktop_probe:
+                    probe = subprocess.Popen(['/usr/bin/python3', str(Path(__file__).with_name('desktop-frame-probe.py')), str(probe_file)])
+                    time.sleep(2)
                 with tempfile.TemporaryFile(mode='w+t') as log:
-                    child = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                    try:
+                        child = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                    except BaseException:
+                        if probe is not None:
+                            probe.terminate()
+                            probe.wait(timeout=10)
+                        raise
                     started = time.monotonic()
                     bad = 0
                     samples = []
@@ -136,6 +149,9 @@ def main():
                         if child.poll() is None:
                             os.killpg(child.pid, signal.SIGKILL)
                             child.wait()
+                        if probe is not None:
+                            probe.terminate()
+                            probe.wait(timeout=10)
                     log.seek(0)
                     entry = {'budget': budget, 'exit': child.returncode, 'stopped': stopped,
                              'admission_available_bytes': initial['available_bytes'], 'samples': samples,
@@ -144,6 +160,10 @@ def main():
                     if child.returncode or stopped or not result.exists():
                         raise RuntimeError('Worker did not complete')
                     entry['result'] = json.loads(result.read_text())
+                    if args.desktop_probe:
+                        if not probe_file.exists() or probe.returncode:
+                            raise RuntimeError('Desktop frame probe did not complete')
+                        entry['desktop_probe'] = json.loads(probe_file.read_text())
                 print(f"run {index + 1} budget {budget}: {entry['result']['total_s']:.3f}s, "
                       f"{entry['result']['counter_delta']['vk_submissions']} submits", flush=True)
                 time.sleep(2)
