@@ -146,6 +146,12 @@ is retained while reopening the popup in the same panel process.
 Live updates reflow blocks and retain the reading position. The Upcoming view
 continues to use its separate rolling 30-day EDS model and minute refresh timer.
 
+## Windows Work Mode
+
+Work Mode hides the top panel. Its taskbar clock loads this same indicator and
+shows it above the clock; see
+[Taskbar clock opens the panel calendar](../dock-taskbar/README.md#taskbar-clock-opens-the-panel-calendar).
+
 ## Google Calendar
 
 Choose **Calendar Accounts…**, add **Google**, complete the browser sign-in and
