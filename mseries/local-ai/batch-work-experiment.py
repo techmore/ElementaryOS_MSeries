@@ -74,7 +74,7 @@ def worker(model, output, long_run):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=Path, required=True)
-    parser.add_argument('--checkpoint', choices=['qwen2b', 'qwen4b'], default='qwen2b')
+    parser.add_argument('--checkpoint', choices=['qwen2b', 'qwen4b', 'qwen38distill'], default='qwen2b')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--candidate', type=int, choices=[10000, 20000, 40000, 80000, 120000], default=10000)
     parser.add_argument('--worker', action='store_true')
@@ -93,6 +93,8 @@ def main():
                    'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3'),
         'qwen4b': ('5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db', 6.5,
                    'mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3'),
+        'qwen38distill': ('b0d5de688567bf4acd5e421027acd410dabcdc255a5bd46fdbf06c75dc2e6863', 4.5,
+                   'nvythong/Qwen3.8-2B-Distill-mlx-4Bit@0afdb6850d218024c7788eda5659aa25475b7d51'),
     }
     expected_digest, allowance_gib, model_id = checkpoints[args.checkpoint]
     weights = args.model / 'model.safetensors'

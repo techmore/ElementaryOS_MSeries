@@ -1,3 +1,7 @@
+## Qwen H13 export and Rapid batching — 2026-10-27
+
+M4 macOS mini cross-compiled all 38 staged Qwen programs for h13 from a hash-verified GGUF; files remain in its isolated cache, checksums retained locally. Upstream ANEC conversion fails before first output: undefined `uniform_task_relayout`; `payload` is also referenced before assignment. No ANE execution. Qwen3.8 distill on M1 Pro: direct MLX 20k vs 5k median paired request time −11.79% (3 pairs); Rapid loopback HTTP −17.95% (2 pairs), outputs text-matched but measurement boundaries/warmups differ, so not an engine ranking. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
+
 ## ANE converter unit follow-up — 2026-10-27
 
 The converter writes 512-byte tile counts, whereas historical probe/staged paths used 16-KiB counts. A branch-only patch updates stale tests and requires explicit unit selection before the direct staged decoder opens the device; 84 offline tests pass on a clean archive. The separate libane runner, real bundle layout and hardware remain unverified. Public ANEForge commit 2ea941c is reachable, but no compiled Qwen bundle appears in repository/release assets or local cache; no model comparison ran. [Receipt](local-ai/receipts/2026-10-27-ane-qwen-preflight.md).
