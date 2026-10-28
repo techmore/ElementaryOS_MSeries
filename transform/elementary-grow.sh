@@ -417,7 +417,16 @@ EOF
   # M-series enhancements (power policy, tuning, session helpers, theme, and the
   # first-boot job). ELEMENTARY_ENHANCE=0 skips them.
   if [[ ${ELEMENTARY_ENHANCE:-1} != 0 ]]; then
-    bash "$REPO_ROOT/mseries/enhance.sh" --root "$newroot" || echo "WARNING: enhancements failed (non-fatal)" >&2
+    # Desktops (Mac mini, Studio, Pro, iMac) have no battery: leave out the
+    # charge-limit and battery pieces. The class comes from the device tree.
+    local -a enhance_args=()
+    # shellcheck source=/dev/null
+    . "$REPO_ROOT/mseries/lib-device.sh"
+    if [[ $(mseries_device_class) == desktop ]]; then
+      enhance_args=(--skip power,battery)
+      log "desktop Mac ($(mseries_dt_boards | grep -m1 '^apple,j')): skipping the power and battery modules"
+    fi
+    bash "$REPO_ROOT/mseries/enhance.sh" --root "$newroot" "${enhance_args[@]}" || echo "WARNING: enhancements failed (non-fatal)" >&2
   fi
 
   # Apple layer: firmware copy (machine-local, never redistributed).
@@ -765,8 +774,11 @@ build_linux_line() {
   done
   # Pantheon centers Wingpanel content and has no notch avoidance. The
   # running omarchy cmdline may opt into the full-height mode, but the new
-  # elementary entry must retain the rectangular safe display mode.
-  out+=(appledrm.show_notch=0)
+  # elementary entry must retain the rectangular safe display mode. Desktops
+  # have no notch, so the parameter is left off there.
+  # shellcheck source=/dev/null
+  . "$REPO_ROOT/mseries/lib-device.sh"
+  [[ $(mseries_device_class) == desktop ]] || out+=(appledrm.show_notch=0)
   # The elementary unlock screen (mseries/install-unlock-screen.sh) needs the
   # splash to be requested on the kernel line.
   if grep -qs '^Theme=elementary' /etc/plymouth/plymouthd.conf; then
