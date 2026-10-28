@@ -1129,14 +1129,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "granite-smoke"
-version = "0.1.0"
-dependencies = [
- "granite-rs",
- "gtk4",
-]
-
-[[package]]
 name = "graphene-rs"
 version = "0.22.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1933,18 +1925,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mseries-diskspace"
-version = "0.1.0"
-dependencies = [
- "granite-rs",
- "gtk4",
- "libc",
- "mseries-pantheon-kit 0.1.0",
- "pangocairo",
- "rayon",
-]
-
-[[package]]
 name = "mseries-dock"
 version = "0.1.0"
 dependencies = [
@@ -2021,10 +2001,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mseries-power"
-version = "0.1.0"
-
-[[package]]
 name = "mseries-reply"
 version = "0.1.0"
 dependencies = [
@@ -2060,16 +2036,6 @@ source = "git+https://github.com/techmore/ElementaryOS_MSeries.git?rev=e15f9272d
 dependencies = [
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "mseries-updates"
-version = "0.1.0"
-dependencies = [
- "granite-rs",
- "gtk4",
- "mseries-pantheon-kit 0.1.0",
- "mseries-update-core 0.1.0",
 ]
 
 [[package]]
@@ -2284,31 +2250,6 @@ dependencies = [
  "glib-sys",
  "gobject-sys",
  "libc",
- "system-deps 9.0.0",
-]
-
-[[package]]
-name = "pangocairo"
-version = "0.22.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd199a0fef965b3ebda91a929a1ab5e7729538882c68e8de38e1904d2e094757"
-dependencies = [
- "cairo-rs",
- "glib",
- "pango",
- "pangocairo-sys",
-]
-
-[[package]]
-name = "pangocairo-sys"
-version = "0.22.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a649a616d67ae68539bc85f00fb45d36fba742ed20fc20e6712a15d8ee52bd3f"
-dependencies = [
- "cairo-sys-rs",
- "glib-sys",
- "libc",
- "pango-sys",
  "system-deps 9.0.0",
 ]
 

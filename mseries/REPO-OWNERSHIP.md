@@ -71,3 +71,11 @@ that fall between classes should be settled in phase 2 or later.
 | Kernel/boot | this repo until phase 2 lands |
 
 Cutover revision recorded in every `FROZEN.md`: `mseries-sdk-apps@40d4445c4414e83da5893500528e088ec599af30`.
+
+## Removed from this repo (2026-10-27)
+
+`rust/mseries-diskspace`, `rust/mseries-updates`, `rust/mseries-power`, `rust/granite-smoke`,
+`mseries/diskspace-app` and `mseries/updates-app` (with their two CI workflows and `validate.sh` checks) were
+deleted here; the source of truth is `techmore/mseries-sdk-apps`. Still here: `rust/mseries-update-core`
+(`mseries-pantheon-kit` depends on it and it holds the OS-owned root helper) and `rust/claude-pantheon-rs`
+(`rust/msdk` tests, `msdk.yml` and `mseries/sdk-tests` read its `sdk/t3.*` files; remove it together with `msdk`).
