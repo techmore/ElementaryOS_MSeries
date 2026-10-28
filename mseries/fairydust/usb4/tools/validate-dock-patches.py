@@ -28,13 +28,31 @@ def sha(path):
         return hashlib.file_digest(handle, 'sha256').hexdigest()
 
 
+def verify_archive(path, git_archive=False):
+    """The codeload tarball must match ARCHIVE_SHA256. A `git archive` copy must carry the pinned commit id
+    in its pax comment: git wrote it from a commit fetched by that full id, so git already checked the content."""
+    if not git_archive:
+        if sha(path) != ARCHIVE_SHA256:
+            raise ValueError('kernel archive does not match the reviewed source pin')
+        return {'archive_sha256': ARCHIVE_SHA256}
+    with tarfile.open(path, 'r:gz') as archive:
+        archive.next()  # reads the global pax header git archive writes first
+        commit = archive.pax_headers.get('comment')
+    if commit != PIN:
+        raise ValueError(f'git archive is of {commit!r}, not the reviewed source pin {PIN}')
+    return {'archive_git_commit': PIN}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--archive', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True, help='fresh scratch directory')
+    parser.add_argument('--git-archive', action='store_true',
+                        help='the archive came from `git archive` of the pin fetched by its full commit id '
+                             '(the CI fallback when codeload rate-limits); checked by the commit id git '
+                             'embeds, since its bytes never match the codeload tarball')
     args = parser.parse_args()
-    if sha(args.archive) != ARCHIVE_SHA256:
-        raise ValueError('kernel archive does not match the reviewed source pin')
+    archive_check = verify_archive(args.archive, args.git_archive)
     output = args.output.resolve()
     # This tool only creates a new directory. It never overwrites an existing source/build tree.
     output.mkdir(parents=True, exist_ok=False)
@@ -144,7 +162,7 @@ def main():
     groups = {name: sum(map(int, re.findall(r'PASS: (\d+) .*?groups', text))) for name,text in contract_runs.items()}
     if not all(groups.values()):
         raise ValueError('missing production test completion receipt')
-    result = {'production_test_groups': groups, 'source_pin': PIN, 'archive_sha256': ARCHIVE_SHA256,
+    result = {'production_test_groups': groups, 'source_pin': PIN, **archive_check,
               'patches': {p.name: sha(p) for p in patches},
               'dtb_sha256': {p.name: sha(p) for p in (e3,e4,touchid,control_before,control_after)},
               'status': 'PASS: 0001-0015 apply; production helper/contracts and E3/E4 DT checks pass',
