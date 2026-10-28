@@ -439,6 +439,13 @@ EOF
   # the new root's /lib/firmware/brcm/ (== /usr/lib/firmware/brcm/).
   local chip
   chip=$(detect_chip)
+  if [[ -z $chip ]]; then
+    # The PCI ids above are the M1/M2 Wi-Fi chips. Newer Macs (the M4 mini's
+    # BCM4388) have other ids; copy every Apple-board Broadcom blob the host has
+    # rather than leave the new root without Wi-Fi.
+    chip=4
+    log "unrecognised Wi-Fi PCI id; copying every host Broadcom blob (brcmfmac4*, brcmbt4*)"
+  fi
   if [[ -n $chip ]]; then
     log "copying host brcmfmac${chip}* + brcmbt${chip}* firmware into new root"
     run mkdir -p "$newroot/lib/firmware/brcm"
@@ -571,8 +578,8 @@ EOF
 # the menu. Idempotent.
 do_repair_grub() {
   if (( HOST_BLS )); then
-    [[ -f $BLS_ENTRY ]] || install_bls_entry
-    log "BLS entry present: $BLS_ENTRY"
+    install_bls_entry
+    log "BLS entry refreshed: $BLS_ENTRY"
     return 0
   fi
   [[ -e $GRUB_CUSTOM || -e $GRUB_CUSTOM.removed ]] \
@@ -807,7 +814,7 @@ build_linux_line() {
 # subvolume of the same btrfs.
 install_bls_entry() {
   local kver kpath ipath line opts
-  kver=$(uname -r)
+  kver=${ELEMENTARY_KVER:-$(uname -r)}
   if [[ $(findmnt -no SOURCE /boot) != $(findmnt -no SOURCE /) ]]; then
     kpath="/vmlinuz-$kver"; ipath="/initramfs-$kver.img"      # /boot is its own filesystem
   else
