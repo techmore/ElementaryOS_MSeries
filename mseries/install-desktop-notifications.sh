@@ -47,7 +47,7 @@ cat > "$unit_dir/mseries-desktop-notifications.service" <<EOF
 [Unit]
 Description=M-Series desktop notification popups
 PartOf=graphical-session.target
-After=graphical-session-pre.target
+After=graphical-session-pre.target graphical-session.target
 
 [Service]
 Type=dbus
