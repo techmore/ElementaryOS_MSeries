@@ -1,5 +1,36 @@
 # TensorFold Vulkan feasibility — 2026-10-27
 
+## Compiler completion and `metal::exp` test
+
+The pinned clspv build subsequently completed on the M1 Pro. Source:
+clspv `f2b01dd6dce7058585eb4bcdb5326997cfeebfd4` with metal2vk
+`de6faa02c42455963645ac55cbc8191e15b3ac68` patches; its LLVM source is
+`c4d9267a31897dd76b2aab5196b75bffb49e6846`. The resulting Clang reports
+24.0.0git (upstream's instructions name Clang 23), and the `clspv` binary
+SHA-256 is `bc474bfa773754f604f0e029d1536adb98773185a5292686d23ab5de0d846548`.
+The 4.5 GiB source/build directory and metal2vk checkout remain under
+`~/.cache/mseries-metal2vk/`; no system compiler or MLX runtime was replaced.
+
+With a fresh temporary AOT/compiler cache, the `metal::exp` sigmoid fixture
+compiled through that toolchain and dispatched on the private ICD. The MLX
+summary was `m2v=1 translator=0 fallbacks=0 refusals=0`; the separate translator
+control was `m2v=0 translator=1 fallbacks=0`. Both matched the float64
+reference at 1e-5 absolute/relative tolerance for 131,072 values in [-8,8],
+maximum absolute error 4.64653531e-7, and differed from one another by at most
+4.76837158e-7 (not bit-identical). The generated SPIR-V SHA-256 was
+`6eb3c7d0ea5aa30d35c7c430ef706b7f183259b8e4d563aca815b03d39006ca8`.
+The last rerun's process wall times were 0.250 s for the translator and
+0.708 s for the JIT route, including startup and compilation; these are not
+GPU kernel or model performance measurements. The reusable test accepts
+`--variant exp --compiler <metal2vk>/tools/m2v-compile` with `CLANG`, `OPT`
+and `CLSPV` set to the isolated toolchain paths. The shipped `precise` variant
+also passed its regression rerun. This does not implement the unpublished
+TensorFold batching change.
+
+The 4B Qwen trial was attempted after the build finished, but was refused at
+12.22 GiB available: its existing 6.5 GiB allowance plus the six-GiB desktop
+reserve requires 12.5 GiB. No 4B inference ran.
+
 ## Qwen3.5 2B checkpoint smoke
 
 Upstream identifies checkpoint revision `93760be4f1f69842a46bc13dbdc0f19e291392a3`;
@@ -24,7 +55,7 @@ run when the available memory failed that threshold.
 
 ## Earlier compiler build checkpoint
 
-The metal2vk compiler build is **incomplete**. Cloned clspv at upstream's
+At this earlier checkpoint the metal2vk compiler build was incomplete. Cloned clspv at upstream's
 documented `f2b01dd6dce7058585eb4bcdb5326997cfeebfd4`, fetched its pinned
 dependencies, and applied metal2vk `de6faa02c42455963645ac55cbc8191e15b3ac68`
 patches in `~/.cache/mseries-metal2vk/clspv`. CMake configured a Release Ninja
@@ -32,16 +63,16 @@ build with tests, examples and benchmarks disabled. A two-job build was
 restarted at four jobs; it reached 332/3350 remaining tasks before being
 interrupted to reduce fan load. Afterwards, while the compiler was stopped,
 the second fan rose above the project's 3500 RPM hard limit (3673 RPM on the
-last sample). No compiler build or test remains running. The build tree is
-retained for resumption. `metal::exp` is still untested through metal2vk, and
-the compiler was not installed. Root filesystem had 13 GiB free at last
+last sample). No compiler build or test remained running at that point. The build tree was
+retained for resumption. At that point `metal::exp` was untested through metal2vk, and
+the compiler was not installed. Root filesystem then had 13 GiB free at the
 check; preserve the 5 GiB disk floor and the existing memory/thermal guard.
 
 The owner subsequently authorized higher fan speeds; the build was resumed
-with six jobs and independent temperature, memory and disk guards. Its final
-result should be recorded before describing the compiler as usable.
+with independent temperature, memory and disk guards and completed as recorded
+above.
 
-To resume a stopped build, use `ninja -C
+For a future rebuild, use `ninja -C
 ~/.cache/mseries-metal2vk/clspv/build -j2 clspv clang opt` under continuous
 guard, then point `CLANG`, `OPT`, `CLSPV` and
 `MLX_OMARCHY_M2V_COMPILE` at the isolated tools and metal2vk checkout. Repeat
