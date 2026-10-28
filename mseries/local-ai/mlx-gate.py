@@ -31,11 +31,14 @@ HOME = Path.home()
 HERE = Path(__file__).resolve().parent
 MODEL = HOME / '.cache/mseries-metal2vk/qwen35-2b'
 WEIGHTS_SHA = '713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5'
-ICD = HOME / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json'
+# MSERIES_HK_ICD selects a candidate driver built by honeykrisp-candidate.sh.
+ICD = Path(os.environ.get('MSERIES_HK_ICD') or HOME / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json')
+DRIVER = (ICD.parent / 'mesa-git-sha').read_text().strip() if (ICD.parent / 'mesa-git-sha').exists() else 'unknown'
 MLX_PY = HOME / '.local/share/mlx-omarchy/venv/bin/python'
 REF_DIR = HOME / '.cache/mseries-mlx-gate/reference-v1'
 POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
 ALLOWANCE_GIB = 4.5
+REFERENCE_ALLOWANCE_GIB = 6.0  # CPU float32 copy of the 248k-row output layer
 STEPS = 32
 TIE_MARGIN = 0.5
 POOLED_MARGIN, CASE_MARGIN = 1.05, 1.15
@@ -72,11 +75,58 @@ CONFIGS = {
 
 # ---------------------------------------------------------------- worker side (mlx venv)
 
+def install_cpu_fast_ops(mx):
+    """omarchy-mlx's CPU backend raises NYI for mx.fast.rms_norm, rope and
+    scaled_dot_product_attention. Replace them with plain-op math in float32, which also
+    keeps the reference independent of the fused kernels under test."""
+    f32 = mx.float32
+
+    def rms_norm(x, weight, eps):
+        xf = x.astype(f32)
+        y = xf * mx.rsqrt(mx.mean(xf * xf, axis=-1, keepdims=True) + eps)
+        return (y * weight.astype(f32) if weight is not None else y).astype(x.dtype)
+
+    def rope(x, dims, *, traditional, base, scale, offset, freqs=None):
+        L = x.shape[-2]
+        pos = (mx.arange(L, dtype=f32) + mx.array(offset).astype(f32)) * scale
+        inv = (1.0 / freqs.astype(f32)) if freqs is not None else \
+            mx.power(mx.array(base, dtype=f32), -mx.arange(0, dims, 2, dtype=f32) / dims)
+        th = pos[:, None] * inv[None, :]
+        c, s = mx.cos(th), mx.sin(th)
+        xf = x.astype(f32)
+        rot, rest = xf[..., :dims], xf[..., dims:]
+        if traditional:
+            a, b = rot[..., 0::2], rot[..., 1::2]
+            out = mx.stack([a * c - b * s, a * s + b * c], axis=-1).reshape(rot.shape)
+        else:
+            a, b = rot[..., :dims // 2], rot[..., dims // 2:]
+            out = mx.concatenate([a * c - b * s, a * s + b * c], axis=-1)
+        return mx.concatenate([out, rest], axis=-1).astype(x.dtype)
+
+    def sdpa(q, k, v, *, scale, mask=None, sinks=None, **_):
+        B, Hq, L, D = q.shape
+        Hk, S = k.shape[1], k.shape[2]
+        if Hq != Hk:
+            k = mx.repeat(k, Hq // Hk, axis=1); v = mx.repeat(v, Hq // Hk, axis=1)
+        sc = (q.astype(f32) * scale) @ k.astype(f32).swapaxes(-1, -2)
+        if isinstance(mask, str) and mask == 'causal':
+            keep = mx.arange(S)[None, :] <= (mx.arange(L)[:, None] + (S - L))
+            sc = mx.where(keep, sc, -mx.inf)
+        elif mask is not None:
+            sc = mx.where(mask, sc, -mx.inf) if mask.dtype == mx.bool_ else sc + mask.astype(f32)
+        if sinks is not None:
+            raise NotImplementedError('attention sinks not used by the gated checkpoints')
+        return (mx.softmax(sc, axis=-1) @ v.astype(f32)).astype(q.dtype)
+
+    mx.fast.rms_norm, mx.fast.rope, mx.fast.scaled_dot_product_attention = rms_norm, rope, sdpa
+
+
 def load(cpu):
     import mlx.core as mx
     from mlx_lm import load as mlx_load
     if cpu:
         mx.set_default_device(mx.cpu)
+        install_cpu_fast_ops(mx)
     model, tok = mlx_load(str(MODEL))
     if cpu:
         model.set_dtype(mx.float32)
@@ -120,9 +170,12 @@ def worker(mode, out_dir):
     cpu = mode == 'reference'
     mx, model, tok = load(cpu)
     out_dir = Path(out_dir); out_dir.mkdir(parents=True, exist_ok=True)
-    meta = {}
+    meta_path = out_dir / 'meta.json'
+    meta = json.loads(meta_path.read_text())['cases'] if meta_path.exists() else {}
     ref = None if cpu else json.loads((REF_DIR / 'meta.json').read_text())
     for name, text in CASES.items():
+        if name in meta and (out_dir / f'{name}.npy').exists():
+            continue  # resumable: the slow CPU reference keeps finished cases
         ids = prompt_ids(tok, text)
         if not cpu:
             greedy(mx, model, ids, 4)  # warm the kernels for this shape
@@ -132,7 +185,9 @@ def worker(mode, out_dir):
         np.save(out_dir / f'{name}.npy', logits)
         meta[name] = {'prompt_tokens': len(ids), 'ids': gen, 'decode_s': decode_s,
                       'prompt_sha256': hashlib.sha256(json.dumps(ids).encode()).hexdigest()}
-    (out_dir / 'meta.json').write_text(json.dumps({'cases': meta}, indent=1))
+        meta_path.write_text(json.dumps({'cases': meta}, indent=1))
+        del logits
+        mx.clear_cache()
 
 
 # ---------------------------------------------------------------- driver side
@@ -161,10 +216,10 @@ def run_child(mode, out_dir, env_over, deadline):
             'min_available_gib': round(low or 0, 2), 'peak_temp_c': hot, 'log_tail': tail}
 
 
-def admit(wait_s):
+def admit(wait_s, allowance_gib=ALLOWANCE_GIB):
     end = time.monotonic() + wait_s
     while True:
-        r = violations(snapshot(), POLICY, extra_bytes=int(ALLOWANCE_GIB * GIB))
+        r = violations(snapshot(), POLICY, extra_bytes=int(allowance_gib * GIB))
         if not r:
             return
         if time.monotonic() > end:
@@ -222,6 +277,10 @@ def main():
     a = p.parse_args()
     if a.worker:
         return worker(a.worker, a.out)
+    try:
+        import numpy  # noqa: F401  scoring needs it; the system python has none
+    except ModuleNotFoundError:
+        os.execv(str(MLX_PY), [str(MLX_PY), __file__] + sys.argv[1:])
     if not a.mode:
         p.error('mode required')
     with (MODEL / 'model.safetensors').open('rb') as f:
@@ -230,7 +289,7 @@ def main():
     lock = (HOME / '.local/state/mseries-ai/worker.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     if a.mode == 'reference':
-        admit(a.admission_wait_seconds)
+        admit(a.admission_wait_seconds, REFERENCE_ALLOWANCE_GIB)
         tmp = REF_DIR.with_name(REF_DIR.name + '.partial')
         res = run_child('reference', tmp, {}, 3600)
         if res['exit'] != 0 or res['stopped']:
@@ -245,9 +304,10 @@ def main():
     if 'baseline' in names:
         names.remove('baseline')
     names.insert(0, 'baseline')
-    out = a.output or HERE / 'receipts' / f"{time.strftime('%Y-%m-%d')}-mlx-gate-sweep.json"
+    out = a.output or HERE / 'receipts' / (f"{time.strftime('%Y-%m-%d')}-mlx-gate-sweep"
+                                          + ('' if DRIVER == '7faf04c065' else f'-hk{DRIVER}') + '.json')
     report = {'model': 'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4', 'weights_sha256': WEIGHTS_SHA,
-              'kernel': os.uname().release, 'steps': STEPS, 'tie_margin': TIE_MARGIN,
+              'kernel': os.uname().release, 'driver': 'Honeykrisp Mesa ' + DRIVER, 'steps': STEPS, 'tie_margin': TIE_MARGIN,
               'margins': {'pooled': POOLED_MARGIN, 'case': CASE_MARGIN}, 'cases': list(CASES), 'configs': {}}
     base = None
     with tempfile.TemporaryDirectory(prefix='mlx-gate-', dir=HOME / '.cache') as tmp:

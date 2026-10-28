@@ -691,6 +691,8 @@ class Dictation:
         """LFM3-Audio: cut phrases at pauses, transcribe each in order on one worker, type as they return."""
         from dictation_lfm import PhraseCutter, LfmUnavailable
         cutter = PhraseCutter()
+        # Load the model while the user talks instead of after the first phrase (cold load ~4 s).
+        threading.Thread(target=model.warm, daemon=True).start()
         phrases = queue.Queue()
         typed = []
         t0 = time.time()

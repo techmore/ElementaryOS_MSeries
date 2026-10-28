@@ -13482,3 +13482,43 @@ that revision. This PR updates the candidate links/status; it is not published
 until merge and a new successful Pages deployment. No host, boot, panel, kernel,
 audio or power state changed. Next: merge after required review/current-head
 checks, then verify Pages deployment and live bytes for the merged revision.
+
+## Local AI engines: scoreboard, gate and 45–80% faster decode — 2026-10-28
+
+TensorFold PR 1517 (native Vulkan Qwen 2B) was ported as a pinned private-prefix build
+(`mseries/local-ai/tensorfold-vulkan.sh`): host tests and 39/39 GPU operator gates pass on the
+M1 Pro, but it decodes at 2.4–2.8 tok/s because each GPU op is submitted and waited on alone;
+upstream's batching PR is not public. No kernel change was needed (wip4 already exposes
+Honeykrisp Vulkan 1.4 and `/dev/accel/accel0`). PR 1526 is the first stacked slice (runtime +
+Q4 projection + kernel contract); `tensorfold-vulkan.sh contract` runs it on G13S when wanted.
+
+Added `engine-compare.py` (MLX in-process, Rapid-MLX, mlx-omarchy-serve, TensorFold; Qwen 2B,
+Qwen 4B, LFM3; optional concurrency), `mlx-gate.py` (TensorFold-style correctness gate against
+a CPU float32 reference; omarchy-mlx's CPU backend lacks `mx.fast` rms_norm/rope/SDPA, so the
+reference uses plain-op versions), `honeykrisp-candidate.sh` (side driver builds selected with
+`MSERIES_HK_ICD`) and `scoreboard.py` → `ENGINE-SCOREBOARD.md` + CSV + SVG. Tracking issue #659
+holds triage; the watch lists cover joshuaswarren (user), TensorFold, coreglass, metal2vk,
+omarchy-cluster, ane-linux-experiments and Generated-Computers/Locals. Documentation stays in
+this repo; nothing is posted upstream. mlx-lm / omarchy-mlx steps follow upstream's own default
+(still mlx-lm 0.31.3 on omarchy-mlx main).
+
+Adopted in #664 and installed here: Honeykrisp `7faf04c065` → `9323171c12` and a 120k MLX
+submit budget (G13S has no upstream calibration row and fell back to 5000). The gate passes on
+both drivers with identical RMSE; text is identical. Decode: Qwen 2B 36.0 → 56.4, Qwen 4B
+18.6 → 27.0, LFM3 15.3 → 27.5 tok/s; llama.cpp +8%. Receipt and rollback:
+`mseries/local-ai/receipts/2026-10-28-honeykrisp-9323-adoption.md`.
+
+Memory audit the same day: the LFM3 assistant kept ~3 GiB of GPU memory pinned after its idle
+unload (fixed in #661: exit after unload, systemd restarts it); wingpanel restarts killed
+panel-launched apps (fixed in #662: `KillMode=process`). Open: mlx-omarchy-serve (what the
+everyday model runs) decodes well below in-process MLX — see the server rows on the scoreboard.
+
+Later the same day: instead of switching the everyday model to Rapid-MLX (which would drop
+upstream's memory reservation, context cap and speech yield gate), two private patches now run
+inside upstream's own launcher: omarchy-mlx's 0.32-line skip-logprob-read fix ported to 0.31.3,
+and Rapid-MLX's singleton-cache fast path (Apache-2.0, vendored). Built by
+`mseries/local-ai/serve-patch.sh` into a side copy that `model-worker.py` uses only while it
+matches the installed mlx-lm. One request: Qwen 2B 32.6 → 56.5, Qwen 4B 19.2 → 27.4 tok/s,
+identical text, faster than Rapid-MLX. Several requests at once still trail Rapid (28 vs 43–48
+total). The scoreboard chart now shows first token, streaming speed and a typical 200-token reply
+side by side. Receipt and rollback: `mseries/local-ai/receipts/2026-10-28-serve-patch.md`.

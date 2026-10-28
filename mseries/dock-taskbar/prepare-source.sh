@@ -12,6 +12,7 @@ cp "$here/TaskbarNotifications.vala" "$source_dir/src/TaskbarNotifications.vala"
 cp "$here/TaskbarCodexBar.vala" "$source_dir/src/TaskbarCodexBar.vala"
 cp "$repo/mseries/quick-settings/AirDropPanel.vala" "$source_dir/src/AirDropPanel.vala"
 cp "$here/TaskbarAirDrop.vala" "$source_dir/src/TaskbarAirDrop.vala"
+cp "$here/TaskbarCalendar.vala" "$source_dir/src/TaskbarCalendar.vala"
 cp "$here/TaskbarT3.vala" "$source_dir/src/TaskbarT3.vala"
 cp "$here/TaskbarT3RPopover.vala" "$source_dir/src/TaskbarT3RPopover.vala"
 mkdir -p "$source_dir/src/codexbar"
@@ -32,7 +33,7 @@ PY
 # Tracking may change launcher matching/markers, never taskbar/Start/CodexBar.
 sha256sum "$source_dir/src/Taskbar.vala" "$source_dir/src/StartMenu.vala" \
   "$source_dir/src/TaskbarCodexBar.vala" "$source_dir/src/TaskbarRepoBar.vala" \
-  "$source_dir/src/TaskbarNotifications.vala" "$source_dir/src/TaskbarAirDrop.vala" \
+  "$source_dir/src/TaskbarNotifications.vala" "$source_dir/src/TaskbarAirDrop.vala" "$source_dir/src/TaskbarCalendar.vala" \
   "$source_dir/src/TaskbarT3RPopover.vala" "$source_dir/src/TaskbarT3.vala" "$source_dir/src/AirDropPanel.vala" \
   "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala > "$source_dir/.mseries-preserved.sha256"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
@@ -67,19 +68,32 @@ p = root / 'src/Taskbar.vala'
 s = p.read_text()
 old = '        codexbar_group.append (new TaskbarCodexBar ());\n        var repobar = new TaskbarRepoBar () { margin_start = 6 };\n        codexbar_group.append (repobar);'
 assert s.count(old) == 1, 'Unified T3 anchor replacement mismatch'
-p.write_text(s.replace(old, '        // T3 usage and repositories live in the T3 window; no status-area button.\n        codexbar_group.visible = false;'))
+s = s.replace(old, '        // T3 usage and repositories live in the T3 window; no status-area button.\n        codexbar_group.visible = false;')
+# The clock opens the Wingpanel datetime indicator above the taskbar (Work Mode hides
+# the top panel); the Calendar app stays the fallback when the indicator is missing.
+old = '''        clock_button.clicked.connect (() => {
+            if (Environment.find_program_in_path ("io.elementary.calendar") != null) {'''
+assert s.count(old) == 1, 'Taskbar clock handler mismatch'
+s = s.replace(old, '''        var clock_calendar = new TaskbarCalendar (clock_button);
+        clock_button.clicked.connect (() => {
+            if (clock_calendar.toggle ()) {
+                return;
+            }
+            if (Environment.find_program_in_path ("io.elementary.calendar") != null) {''')
+p.write_text(s)
 p = root / 'src/meson.build'
-p.write_text(p.read_text().replace("    'TaskbarT3RPopover.vala',", "    'TaskbarT3RPopover.vala',\n    'TaskbarT3.vala',"))
+p.write_text(p.read_text().replace("    'TaskbarT3RPopover.vala',", "    'TaskbarT3RPopover.vala',\n    'TaskbarT3.vala',\n    'TaskbarCalendar.vala',"))
 PYUNIFIED
 # Refuse a partial/stock rebuild instead of silently losing the Windows taskbar.
 python3 - "$source_dir" <<'PY'
 import pathlib, sys
 root = pathlib.Path(sys.argv[1])
 for filename, required in {
-    'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala', 'TaskbarT3RPopover.vala'],
-    'src/Taskbar.vala': ['new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)'],
+    'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala', 'TaskbarT3RPopover.vala', 'TaskbarCalendar.vala'],
+    'src/Taskbar.vala': ['new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)', 'new TaskbarCalendar (clock_button)'],
     'src/TaskbarT3RPopover.vala': ['"tokenUsage"', '"usedPercent"', '"settings"', 'Timeout.add (250', 'Timeout.add (450'],
     'src/TaskbarAirDrop.vala': ['new MSeries.AirDropPanel'],
+    'src/TaskbarCalendar.vala': ['libdatetime.so', 'get_indicator'],
     'src/AirDropPanel.vala': ['Receive Files'],
     'src/MainWindow.vala': ['taskbar-mode', 'TaskbarRow'],
     'data/dock.gschema.xml': ['taskbar-mode'],

@@ -1,0 +1,27 @@
+[Unit]
+Description=MSeries Smart Reply model (Qwen3.5-4B 4-bit, loads on demand) on 127.0.0.1:8766
+After=graphical-session.target
+PartOf=graphical-session.target
+# Both serve 127.0.0.1:8766; this one replaces the always-resident everyday worker for Smart Reply.
+Conflicts=mseries-ai-everyday.service
+
+[Service]
+# Listening costs ~40 MB. The model loads on the first draft and is dropped after MSERIES_REPLY_IDLE seconds, or after
+# 60 s idle when free memory falls under MSERIES_REPLY_RESERVE_GIB. Dropping it exits the process (the only way to
+# release pinned Vulkan buffers); Restart=always brings back an empty listener a second later.
+Environment=OMARCHY_MLX_SYSTEM_PREFIX=%h/.local/share/mlx-omarchy
+Environment=PYTHONPATH=%h/.local/share/mlx-omarchy
+Environment=VK_DRIVER_FILES=%h/.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json
+Environment=HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1
+# 120k is the scoreboard value (#664); the system-prompt cache in reply-modeld.py is what cuts the first-token wait.
+Environment=MLX_OMARCHY_BATCH_WORK=120000
+Environment=MSERIES_REPLY_IDLE=900
+Environment=MSERIES_REPLY_RESERVE_GIB=4
+ExecStart=%h/.local/share/mlx-omarchy/venv/bin/python %h/.local/libexec/mseries-ai/reply-modeld.py
+Nice=5
+Restart=always
+RestartSec=1
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=graphical-session.target

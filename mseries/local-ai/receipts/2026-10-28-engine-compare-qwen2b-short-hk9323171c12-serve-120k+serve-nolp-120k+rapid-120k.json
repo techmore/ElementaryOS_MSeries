@@ -1,0 +1,619 @@
+{
+  "status": "complete",
+  "model_key": "qwen2b",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "weights_sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+  "kernel": "7.2.11-elementary-aurora72-wip4",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "670902196c47f3e70e3f56ab933805713be31aa8",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "serve-120k",
+    "serve-nolp-120k",
+    "rapid-120k"
+  ],
+  "concurrency": 1,
+  "runs": [
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.987,
+          "max_temp_c": 43.407,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 14.422,
+          "max_temp_c": 42.684,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 13.58,
+          "max_temp_c": 43.152,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.02,
+          "available_gib": 13.548,
+          "max_temp_c": 42.728,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 13.334,
+          "max_temp_c": 42.728,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 13.194,
+          "max_temp_c": 42.168,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.04,
+          "available_gib": 13.171,
+          "max_temp_c": 42.983,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 09:40:42,442 - INFO - Starting httpd at 127.0.0.1 on port 37949...\n127.0.0.1 - - [28/Oct/2026 09:40:42] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 09:40:42] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 09:40:44,728 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:40:44,728 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:40:44,728 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:40:44,728 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:40:44] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:40:45,217 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:40:45,314 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:40:45,358 - INFO - Prompt processing progress: 27/27\n2026-10-28 09:40:46,314 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:40:46,314 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:40:46,314 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:40:46,314 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:40:46] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:40:46,771 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:40:46,870 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:40:46,906 - INFO - Prompt processing progress: 27/27\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:37949\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.97 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.37 GiB\nverdict:      FITS\n",
+      "ready_s": 4.537822922000487,
+      "ttft_s": 0.6237531989972922,
+      "total_s": 1.5233467029975145,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 34.46000872855607,
+      "min_available_gib": 13.171,
+      "peak_temp_c": 43.407,
+      "round": 1,
+      "admission_available_gib": 14.992
+    },
+    {
+      "arm": "serve-nolp-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 14.809,
+          "max_temp_c": 42.146,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 14.237,
+          "max_temp_c": 43.07,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 13.408,
+          "max_temp_c": 42.586,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 13.425,
+          "max_temp_c": 42.521,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 13.112,
+          "max_temp_c": 41.885,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 13.258,
+          "max_temp_c": 41.836,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.cache/mseries-serve-patch/site/mlx_lm/server.py:1747: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 09:40:51,754 - INFO - Starting httpd at 127.0.0.1 on port 54751...\n127.0.0.1 - - [28/Oct/2026 09:40:52] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 09:40:52] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 09:40:54,008 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:40:54,008 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:40:54,008 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:40:54,008 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:40:54] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:40:54,490 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:40:54,581 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:40:54,622 - INFO - Prompt processing progress: 27/27\n2026-10-28 09:40:55,443 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:40:55,443 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:40:55,443 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:40:55,443 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:40:55] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:40:55,908 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:40:55,999 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:40:56,038 - INFO - Prompt processing progress: 27/27\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:54751\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.80 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.20 GiB\nverdict:      FITS\n",
+      "ready_s": 4.4126989240030525,
+      "ttft_s": 0.6211015310036601,
+      "total_s": 1.4058456260027015,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 39.50332369183086,
+      "min_available_gib": 13.112,
+      "peak_temp_c": 43.07,
+      "round": 1,
+      "admission_available_gib": 14.81
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.859,
+          "max_temp_c": 42.586,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 14.841,
+          "max_temp_c": 43.239,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 14.794,
+          "max_temp_c": 44.244,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 13.557,
+          "max_temp_c": 43.701,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 13.343,
+          "max_temp_c": 43.364,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 13.312,
+          "max_temp_c": 43.538,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 13.238,
+          "max_temp_c": 42.847,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 12.973,
+          "max_temp_c": 43.364,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 12.738,
+          "max_temp_c": 43.701,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "irst chunk arrived, elapsed=0.0s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] post-first-chunk keepalive (R15 #291), elapsed=0.0s\nINFO:rapid_mlx.scheduler:[schedule] request=chatcmpl-6f9 uid=2 prompt_tokens=27 tokens_to_prefill=1, 26 cached max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[prompt_cache_save] request=chatcmpl-6f9 prompt_tokens=27 store_time=0.001s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-6f9 first token after 0.0s\nINFO:rapid_mlx.scheduler:[cache_store] request=chatcmpl-6f9 tokens=59 (27 prompt + 32 output) stored=True time=0.000s cache_entries=5 cache_mem=138MB\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-6f9 finished normally, 32 tokens in 0.7s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-6f9 cleanup done\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 0.68s (47.2 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffed2083160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff23fff160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff460247a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=0.8s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=0.8s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1918061]\n",
+      "ready_s": 8.103040958005295,
+      "ttft_s": 0.18673716399644036,
+      "total_s": 0.8141513230002602,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 49.409149530862386,
+      "min_available_gib": 12.738,
+      "peak_temp_c": 44.244,
+      "round": 1,
+      "admission_available_gib": 14.85
+    },
+    {
+      "arm": "serve-nolp-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.812,
+          "max_temp_c": 44.369,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.191,
+          "max_temp_c": 43.619,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 13.409,
+          "max_temp_c": 42.978,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 13.306,
+          "max_temp_c": 43.538,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 13.12,
+          "max_temp_c": 43.065,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.09,
+          "available_gib": 13.076,
+          "max_temp_c": 43.538,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.cache/mseries-serve-patch/site/mlx_lm/server.py:1747: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 09:41:13,233 - INFO - Starting httpd at 127.0.0.1 on port 52353...\n127.0.0.1 - - [28/Oct/2026 09:41:13] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 09:41:13] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 09:41:15,334 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:41:15,334 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:41:15,334 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:41:15,334 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:41:15] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:41:15,770 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:41:15,861 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:41:15,902 - INFO - Prompt processing progress: 27/27\n2026-10-28 09:41:16,640 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:41:16,641 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:41:16,641 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:41:16,641 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:41:16] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:41:17,065 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:41:17,156 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:41:17,193 - INFO - Prompt processing progress: 27/27\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:52353\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.82 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.22 GiB\nverdict:      FITS\n",
+      "ready_s": 4.100524885994673,
+      "ttft_s": 0.5767080849982449,
+      "total_s": 1.2833999209979083,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 43.86636214093007,
+      "min_available_gib": 13.076,
+      "peak_temp_c": 44.369,
+      "round": 2,
+      "admission_available_gib": 14.811
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.71,
+          "max_temp_c": 45.34,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.638,
+          "max_temp_c": 44.054,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 14.151,
+          "max_temp_c": 44.26,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 13.344,
+          "max_temp_c": 44.13,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 13.417,
+          "max_temp_c": 44.016,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 13.178,
+          "max_temp_c": 43.581,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.09,
+          "available_gib": 12.927,
+          "max_temp_c": 44.548,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.11,
+          "available_gib": 12.683,
+          "max_temp_c": 44.331,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.12,
+          "available_gib": 12.642,
+          "max_temp_c": 43.668,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "irst chunk arrived, elapsed=0.0s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] post-first-chunk keepalive (R15 #291), elapsed=0.0s\nINFO:rapid_mlx.scheduler:[schedule] request=chatcmpl-991 uid=2 prompt_tokens=27 tokens_to_prefill=1, 26 cached max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[prompt_cache_save] request=chatcmpl-991 prompt_tokens=27 store_time=0.000s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-991 first token after 0.0s\nINFO:rapid_mlx.scheduler:[cache_store] request=chatcmpl-991 tokens=59 (27 prompt + 32 output) stored=True time=0.000s cache_entries=5 cache_mem=138MB\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-991 finished normally, 32 tokens in 0.7s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-991 cleanup done\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 0.66s (48.6 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffe999f7160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000fffefce6b160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff1ae5c7a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=0.8s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=0.8s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1918360]\n",
+      "ready_s": 7.429946643998846,
+      "ttft_s": 0.1831777030020021,
+      "total_s": 0.793006225998397,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 50.83396205818871,
+      "min_available_gib": 12.642,
+      "peak_temp_c": 45.34,
+      "round": 2,
+      "admission_available_gib": 14.71
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.633,
+          "max_temp_c": 44.516,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.976,
+          "max_temp_c": 44.869,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 13.272,
+          "max_temp_c": 44.423,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 13.238,
+          "max_temp_c": 44.548,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 13.089,
+          "max_temp_c": 44.608,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.1,
+          "available_gib": 13.069,
+          "max_temp_c": 44.608,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 09:41:33,621 - INFO - Starting httpd at 127.0.0.1 on port 43551...\n127.0.0.1 - - [28/Oct/2026 09:41:33] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 09:41:33] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 09:41:35,787 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:41:35,787 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:41:35,787 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:41:35,787 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:41:35] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:41:36,258 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:41:36,351 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:41:36,392 - INFO - Prompt processing progress: 27/27\n2026-10-28 09:41:37,353 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:41:37,353 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:41:37,353 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:41:37,353 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:41:37] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:41:37,810 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:41:37,906 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:41:37,943 - INFO - Prompt processing progress: 27/27\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:43551\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.63 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.03 GiB\nverdict:      FITS\n",
+      "ready_s": 4.434735688002547,
+      "ttft_s": 0.6226186150015565,
+      "total_s": 1.6012113370015868,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 31.678142809648893,
+      "min_available_gib": 13.069,
+      "peak_temp_c": 44.869,
+      "round": 2,
+      "admission_available_gib": 14.633
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 14.572,
+          "max_temp_c": 44.869,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.05,
+          "available_gib": 14.547,
+          "max_temp_c": 44.608,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 14.141,
+          "max_temp_c": 44.385,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 13.243,
+          "max_temp_c": 44.222,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 13.164,
+          "max_temp_c": 44.804,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 13.161,
+          "max_temp_c": 45.226,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.09,
+          "available_gib": 13.021,
+          "max_temp_c": 44.516,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.11,
+          "available_gib": 12.749,
+          "max_temp_c": 44.538,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.13,
+          "available_gib": 12.693,
+          "max_temp_c": 45.226,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "irst chunk arrived, elapsed=0.0s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] post-first-chunk keepalive (R15 #291), elapsed=0.0s\nINFO:rapid_mlx.scheduler:[schedule] request=chatcmpl-6c2 uid=2 prompt_tokens=27 tokens_to_prefill=1, 26 cached max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[prompt_cache_save] request=chatcmpl-6c2 prompt_tokens=27 store_time=0.001s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-6c2 first token after 0.0s\nINFO:rapid_mlx.scheduler:[cache_store] request=chatcmpl-6c2 tokens=59 (27 prompt + 32 output) stored=True time=0.000s cache_entries=5 cache_mem=138MB\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-6c2 finished normally, 32 tokens in 0.7s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-6c2 cleanup done\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 0.67s (47.5 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffef35ff160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff55efb160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff73ea07a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=0.8s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=0.8s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1918636]\n",
+      "ready_s": 7.576053447002778,
+      "ttft_s": 0.1945702099983464,
+      "total_s": 0.8154333240017877,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 49.93049079708764,
+      "min_available_gib": 12.693,
+      "peak_temp_c": 45.226,
+      "round": 3,
+      "admission_available_gib": 14.572
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.767,
+          "max_temp_c": 44.864,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 14.146,
+          "max_temp_c": 44.57,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 13.355,
+          "max_temp_c": 44.07,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 13.296,
+          "max_temp_c": 45.493,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 13.127,
+          "max_temp_c": 45.573,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 13.137,
+          "max_temp_c": 44.961,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 09:41:54,838 - INFO - Starting httpd at 127.0.0.1 on port 45787...\n127.0.0.1 - - [28/Oct/2026 09:41:55] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 09:41:55] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 09:41:57,021 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:41:57,021 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:41:57,021 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:41:57,021 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:41:57] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:41:57,489 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:41:57,585 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:41:57,629 - INFO - Prompt processing progress: 27/27\n2026-10-28 09:41:58,610 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:41:58,611 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:41:58,611 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:41:58,611 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:41:58] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:41:59,058 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:41:59,150 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:41:59,188 - INFO - Prompt processing progress: 27/27\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:45787\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.77 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.17 GiB\nverdict:      FITS\n",
+      "ready_s": 4.491684349995921,
+      "ttft_s": 0.610920315994008,
+      "total_s": 1.5493325119969086,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 33.03452377541796,
+      "min_available_gib": 13.127,
+      "peak_temp_c": 45.573,
+      "round": 3,
+      "admission_available_gib": 14.767
+    },
+    {
+      "arm": "serve-nolp-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.684,
+          "max_temp_c": 45.346,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 14.116,
+          "max_temp_c": 45.146,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 13.281,
+          "max_temp_c": 45.066,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 13.197,
+          "max_temp_c": 45.726,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 13.056,
+          "max_temp_c": 45.573,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.05,
+          "available_gib": 13.025,
+          "max_temp_c": 45.88,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.cache/mseries-serve-patch/site/mlx_lm/server.py:1747: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 09:42:04,114 - INFO - Starting httpd at 127.0.0.1 on port 47459...\n127.0.0.1 - - [28/Oct/2026 09:42:04] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 09:42:04] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 09:42:06,348 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:42:06,349 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:42:06,349 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:42:06,349 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:42:06] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:42:06,818 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:42:06,911 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:42:06,950 - INFO - Prompt processing progress: 27/27\n2026-10-28 09:42:07,731 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:42:07,731 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:42:07,731 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:42:07,731 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:42:07] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:42:08,192 - INFO - Prompt processing progress: 23/27\n2026-10-28 09:42:08,288 - INFO - Prompt processing progress: 26/27\n2026-10-28 09:42:08,326 - INFO - Prompt processing progress: 27/27\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:47459\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.68 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.08 GiB\nverdict:      FITS\n",
+      "ready_s": 4.334260204996099,
+      "ttft_s": 0.6227164069932769,
+      "total_s": 1.373613771997043,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 41.283937652177706,
+      "min_available_gib": 13.025,
+      "peak_temp_c": 45.88,
+      "round": 3,
+      "admission_available_gib": 14.684
+    }
+  ],
+  "summary": {
+    "serve-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.6226186150015565,
+      "median_total_s": 1.5493325119969086,
+      "median_decode_tps": 33.03452377541796,
+      "texts": [
+        "ffbf23cb27bb"
+      ]
+    },
+    "serve-nolp-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.6211015310036601,
+      "median_total_s": 1.373613771997043,
+      "median_decode_tps": 41.283937652177706,
+      "texts": [
+        "ffbf23cb27bb"
+      ]
+    },
+    "rapid-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.18673716399644036,
+      "median_total_s": 0.8141513230002602,
+      "median_decode_tps": 49.93049079708764,
+      "texts": [
+        "ffbf23cb27bb"
+      ]
+    }
+  }
+}

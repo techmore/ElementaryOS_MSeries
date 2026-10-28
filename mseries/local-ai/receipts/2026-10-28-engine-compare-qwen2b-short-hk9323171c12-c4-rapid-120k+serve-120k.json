@@ -1,0 +1,765 @@
+{
+  "status": "complete",
+  "model_key": "qwen2b",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "weights_sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+  "kernel": "7.2.11-elementary-aurora72-wip4",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "670902196c47f3e70e3f56ab933805713be31aa8",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "rapid-120k",
+    "serve-120k"
+  ],
+  "concurrency": 4,
+  "runs": [
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 16.403,
+          "max_temp_c": 49.693,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 16.357,
+          "max_temp_c": 49.1,
+          "max_fan_rpm": 2491.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 16.043,
+          "max_temp_c": 49.186,
+          "max_fan_rpm": 2524.0
+        },
+        {
+          "t": 3.02,
+          "available_gib": 14.97,
+          "max_temp_c": 49.52,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 14.924,
+          "max_temp_c": 50.048,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 14.903,
+          "max_temp_c": 48.7,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 6.05,
+          "available_gib": 14.75,
+          "max_temp_c": 48.68,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 7.06,
+          "available_gib": 14.482,
+          "max_temp_c": 49.68,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 8.08,
+          "available_gib": 14.23,
+          "max_temp_c": 48.36,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 9.1,
+          "available_gib": 14.078,
+          "max_temp_c": 49.006,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 10.12,
+          "available_gib": 14.137,
+          "max_temp_c": 49.14,
+          "max_fan_rpm": 2503.0
+        }
+      ],
+      "log_tail": "mpletion (stream): 32 tokens in 3.05s (10.5 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 3.05s (10.5 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 3.05s (10.5 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffe612ff160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff0297b160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff208e07a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=3.2s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=3.2s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=3.2s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=3.2s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=3.2s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=3.2s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=3.2s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=3.2s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1788557]\n",
+      "ready_s": 7.853159953003342,
+      "concurrency": 4,
+      "wall_s": 3.183955219996278,
+      "aggregate_tok_s": 40.2015704228873,
+      "per_request_decode_median": 15.63144678211781,
+      "ttft_s": 1.19923376099905,
+      "total_s": 3.183955219996278,
+      "completion_tokens": 128,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 1.1965766349967453,
+          "total_s": 3.182979636992968,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.19923376099905,
+          "total_s": 3.182534511994163,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.1990484280031524,
+          "total_s": 3.1822301790016354,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.1996537189988885,
+          "total_s": 3.1820526369992876,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 40.2015704228873,
+      "min_available_gib": 14.078,
+      "peak_temp_c": 50.048,
+      "round": 1,
+      "admission_available_gib": 16.403
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 16.465,
+          "max_temp_c": 49.893,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 15.862,
+          "max_temp_c": 48.68,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 14.945,
+          "max_temp_c": 49.506,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 14.849,
+          "max_temp_c": 48.106,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 14.656,
+          "max_temp_c": 48.826,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 5.09,
+          "available_gib": 14.646,
+          "max_temp_c": 48.313,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 6.11,
+          "available_gib": 14.617,
+          "max_temp_c": 47.753,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 7.12,
+          "available_gib": 14.568,
+          "max_temp_c": 50.0,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 8.13,
+          "available_gib": 14.56,
+          "max_temp_c": 49.533,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 9.15,
+          "available_gib": 14.563,
+          "max_temp_c": 49.666,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 10.16,
+          "available_gib": 14.598,
+          "max_temp_c": 50.225,
+          "max_fan_rpm": 2491.0
+        },
+        {
+          "t": 11.19,
+          "available_gib": 14.664,
+          "max_temp_c": 49.006,
+          "max_fan_rpm": 2503.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 08:26:23,583 - INFO - Starting httpd at 127.0.0.1 on port 40089...\n127.0.0.1 - - [28/Oct/2026 08:26:23] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 08:26:23] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 08:26:25,963 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:26:25,964 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:26:25,964 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:26:25,964 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:26:25] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:26:26,502 - INFO - Prompt processing progress: 23/27\n2026-10-28 08:26:26,594 - INFO - Prompt processing progress: 26/27\n2026-10-28 08:26:26,634 - INFO - Prompt processing progress: 27/27\n2026-10-28 08:26:27,606 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:26:27,606 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:26:27,606 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:26:27,606 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:26:27] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:26:27,998 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:26:27,998 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:26:27,998 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:26:27,998 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:26:27] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:26:28,402 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:26:28,403 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:26:28,403 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:26:28,403 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:26:28] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:26:28,817 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:26:28,817 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:26:28,817 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:26:28,817 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:26:28] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:26:29,359 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:26:29,459 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:26:29,499 - INFO - Prompt processing progress: 33/33\n2026-10-28 08:26:30,586 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:26:30,687 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:26:30,725 - INFO - Prompt processing progress: 33/33\n2026-10-28 08:26:31,892 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:26:31,994 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:26:32,030 - INFO - Prompt processing progress: 33/33\n2026-10-28 08:26:33,160 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:26:33,263 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:26:33,301 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:40089\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      16.46 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          9.86 GiB\nverdict:      FITS\n",
+      "ready_s": 4.747734952004976,
+      "concurrency": 4,
+      "wall_s": 6.634395647000929,
+      "aggregate_tok_s": 19.293392617888603,
+      "per_request_decode_median": 28.81892287819679,
+      "ttft_s": 4.451272740996501,
+      "total_s": 6.634395647000929,
+      "completion_tokens": 128,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 1.9237921169988113,
+          "total_s": 2.999474234995432,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 3.1455287560020224,
+          "total_s": 4.291515092001646,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.451272740996501,
+          "total_s": 5.558337905000371,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.720947554000304,
+          "total_s": 6.629915646000882,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 19.293392617888603,
+      "min_available_gib": 14.56,
+      "peak_temp_c": 50.225,
+      "round": 1,
+      "admission_available_gib": 16.465
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 16.222,
+          "max_temp_c": 50.983,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 15.613,
+          "max_temp_c": 49.546,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 2.06,
+          "available_gib": 14.871,
+          "max_temp_c": 48.826,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 3.07,
+          "available_gib": 14.933,
+          "max_temp_c": 50.217,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 14.78,
+          "max_temp_c": 49.36,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 5.09,
+          "available_gib": 14.688,
+          "max_temp_c": 49.313,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 6.11,
+          "available_gib": 14.548,
+          "max_temp_c": 48.333,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 7.13,
+          "available_gib": 14.613,
+          "max_temp_c": 50.387,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 8.14,
+          "available_gib": 14.601,
+          "max_temp_c": 49.826,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 9.15,
+          "available_gib": 14.616,
+          "max_temp_c": 48.66,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 10.17,
+          "available_gib": 14.626,
+          "max_temp_c": 49.186,
+          "max_fan_rpm": 2511.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 08:26:38,125 - INFO - Starting httpd at 127.0.0.1 on port 46379...\n127.0.0.1 - - [28/Oct/2026 08:26:38] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 08:26:38] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 08:26:40,420 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:26:40,420 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:26:40,420 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:26:40,420 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:26:40] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:26:40,888 - INFO - Prompt processing progress: 23/27\n2026-10-28 08:26:40,980 - INFO - Prompt processing progress: 26/27\n2026-10-28 08:26:41,027 - INFO - Prompt processing progress: 27/27\n2026-10-28 08:26:42,033 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:26:42,033 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:26:42,033 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:26:42,033 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:26:42] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:26:42,357 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:26:42,357 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:26:42,357 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:26:42,357 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:26:42] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:26:42,698 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:26:42,698 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:26:42,698 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:26:42,698 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:26:42] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:26:43,027 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:26:43,027 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:26:43,027 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:26:43,027 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:26:43] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:26:43,508 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:26:43,601 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:26:43,638 - INFO - Prompt processing progress: 33/33\n2026-10-28 08:26:44,753 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:26:44,858 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:26:44,898 - INFO - Prompt processing progress: 33/33\n2026-10-28 08:26:46,006 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:26:46,113 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:26:46,153 - INFO - Prompt processing progress: 33/33\n2026-10-28 08:26:47,286 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:26:47,387 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:26:47,427 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:46379\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      16.21 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          9.61 GiB\nverdict:      FITS\n",
+      "ready_s": 4.603186430002097,
+      "concurrency": 4,
+      "wall_s": 6.426893659001507,
+      "aggregate_tok_s": 19.916308996450127,
+      "per_request_decode_median": 28.549239497299755,
+      "ttft_s": 4.149505239001883,
+      "total_s": 6.426893659001507,
+      "completion_tokens": 128,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 1.6348683670003084,
+          "total_s": 2.7279046529947664,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.149505239001883,
+          "total_s": 5.258155069001077,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 2.893182345003879,
+          "total_s": 3.979025630003889,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.423983635002514,
+          "total_s": 6.423148449001019,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 19.916308996450127,
+      "min_available_gib": 14.548,
+      "peak_temp_c": 50.983,
+      "round": 2,
+      "admission_available_gib": 16.222
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 16.364,
+          "max_temp_c": 48.293,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 16.318,
+          "max_temp_c": 48.7,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 15.952,
+          "max_temp_c": 50.193,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 3.07,
+          "available_gib": 14.965,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 14.985,
+          "max_temp_c": 48.46,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 5.1,
+          "available_gib": 15.024,
+          "max_temp_c": 48.773,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 6.11,
+          "available_gib": 14.842,
+          "max_temp_c": 49.153,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 7.12,
+          "available_gib": 14.453,
+          "max_temp_c": 49.186,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 8.14,
+          "available_gib": 14.082,
+          "max_temp_c": 47.62,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 9.16,
+          "available_gib": 13.801,
+          "max_temp_c": 49.493,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 10.18,
+          "available_gib": 13.688,
+          "max_temp_c": 50.0,
+          "max_fan_rpm": 2503.0
+        }
+      ],
+      "log_tail": "mpletion (stream): 32 tokens in 2.71s (11.8 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 2.71s (11.8 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 2.71s (11.8 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffe4edff160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000fffeaf7ef160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000fffed18bc7a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=2.9s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1789180]\n",
+      "ready_s": 7.490133523999248,
+      "concurrency": 4,
+      "wall_s": 2.8200189170020167,
+      "aggregate_tok_s": 45.389766440317985,
+      "per_request_decode_median": 18.083895088437146,
+      "ttft_s": 1.1044392889962182,
+      "total_s": 2.8200189170020167,
+      "completion_tokens": 128,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 1.1047035379961017,
+          "total_s": 2.818935999996029,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.1044392889962182,
+          "total_s": 2.8183070839950233,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.1009587459993782,
+          "total_s": 2.818544166999345,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.1039738719991874,
+          "total_s": 2.81876458300394,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 45.389766440317985,
+      "min_available_gib": 13.688,
+      "peak_temp_c": 50.193,
+      "round": 2,
+      "admission_available_gib": 16.364
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 16.051,
+          "max_temp_c": 48.333,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 15.992,
+          "max_temp_c": 49.166,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 15.769,
+          "max_temp_c": 49.68,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 3.02,
+          "available_gib": 14.664,
+          "max_temp_c": 49.82,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 14.624,
+          "max_temp_c": 48.68,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 14.634,
+          "max_temp_c": 48.853,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 6.05,
+          "available_gib": 14.504,
+          "max_temp_c": 49.693,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 7.06,
+          "available_gib": 14.243,
+          "max_temp_c": 49.806,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 8.07,
+          "available_gib": 13.854,
+          "max_temp_c": 49.2,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 9.09,
+          "available_gib": 13.853,
+          "max_temp_c": 48.986,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 10.1,
+          "available_gib": 13.768,
+          "max_temp_c": 49.68,
+          "max_fan_rpm": 2486.0
+        }
+      ],
+      "log_tail": "mpletion (stream): 32 tokens in 2.81s (11.4 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 2.81s (11.4 tok/s)\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 2.81s (11.4 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffeeafff160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff4d8a7160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff6b8687a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=2.9s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=2.9s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1789358]\n",
+      "ready_s": 7.4609698109998135,
+      "concurrency": 4,
+      "wall_s": 2.944998268998461,
+      "aggregate_tok_s": 43.463523000144384,
+      "per_request_decode_median": 17.16073894600281,
+      "ttft_s": 1.1365670849991147,
+      "total_s": 2.944998268998461,
+      "completion_tokens": 128,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 1.1309735419999924,
+          "total_s": 2.9430258509964915,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.136795792997873,
+          "total_s": 2.9441979769981117,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.1364368759968784,
+          "total_s": 2.9428858929968555,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.1365670849991147,
+          "total_s": 2.94251226799679,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 43.463523000144384,
+      "min_available_gib": 13.768,
+      "peak_temp_c": 49.82,
+      "round": 3,
+      "admission_available_gib": 16.051
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 16.088,
+          "max_temp_c": 50.201,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 15.532,
+          "max_temp_c": 50.395,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 14.755,
+          "max_temp_c": 50.758,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 14.667,
+          "max_temp_c": 49.666,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 14.512,
+          "max_temp_c": 49.226,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 14.54,
+          "max_temp_c": 51.758,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 6.08,
+          "available_gib": 14.397,
+          "max_temp_c": 49.98,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 7.11,
+          "available_gib": 14.556,
+          "max_temp_c": 49.333,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 8.13,
+          "available_gib": 14.602,
+          "max_temp_c": 49.84,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 9.15,
+          "available_gib": 14.529,
+          "max_temp_c": 48.786,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 10.16,
+          "available_gib": 14.555,
+          "max_temp_c": 49.68,
+          "max_fan_rpm": 2507.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-28 08:27:20,251 - INFO - Starting httpd at 127.0.0.1 on port 55395...\n127.0.0.1 - - [28/Oct/2026 08:27:20] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [28/Oct/2026 08:27:20] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-28 08:27:22,513 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:27:22,513 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:27:22,513 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:27:22,513 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:27:22] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:27:22,976 - INFO - Prompt processing progress: 23/27\n2026-10-28 08:27:23,067 - INFO - Prompt processing progress: 26/27\n2026-10-28 08:27:23,112 - INFO - Prompt processing progress: 27/27\n2026-10-28 08:27:24,056 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:27:24,056 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:27:24,056 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:27:24,056 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:27:24] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:27:24,385 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:27:24,386 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:27:24,386 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:27:24,386 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:27:24] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:27:24,732 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:27:24,733 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:27:24,733 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:27:24,733 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:27:24] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:27:25,063 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 08:27:25,063 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 08:27:25,063 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 08:27:25,063 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 08:27:25] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 08:27:25,523 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:27:25,612 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:27:25,648 - INFO - Prompt processing progress: 33/33\n2026-10-28 08:27:26,812 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:27:26,916 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:27:26,957 - INFO - Prompt processing progress: 33/33\n2026-10-28 08:27:28,033 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:27:28,134 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:27:28,170 - INFO - Prompt processing progress: 33/33\n2026-10-28 08:27:29,227 - INFO - Prompt processing progress: 29/33\n2026-10-28 08:27:29,330 - INFO - Prompt processing progress: 32/33\n2026-10-28 08:27:29,367 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:55395\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      16.08 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          9.48 GiB\nverdict:      FITS\n",
+      "ready_s": 4.520947917997546,
+      "concurrency": 4,
+      "wall_s": 6.2460191729987855,
+      "aggregate_tok_s": 20.493052687596176,
+      "per_request_decode_median": 30.01937380663311,
+      "ttft_s": 4.144244821000029,
+      "total_s": 6.2460191729987855,
+      "completion_tokens": 128,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 1.6214403650010354,
+          "total_s": 2.761569825001061,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.144244821000029,
+          "total_s": 5.176911264999944,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 2.9318568089947803,
+          "total_s": 3.982397838997713,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.338125789006881,
+          "total_s": 6.243238631002896,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 20.493052687596176,
+      "min_available_gib": 14.397,
+      "peak_temp_c": 51.758,
+      "round": 3,
+      "admission_available_gib": 16.088
+    }
+  ],
+  "summary": {
+    "rapid-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 1.1365670849991147,
+      "median_total_s": 2.944998268998461,
+      "median_decode_tps": 43.463523000144384,
+      "texts": [
+        "97af50af7f79"
+      ]
+    },
+    "serve-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 4.149505239001883,
+      "median_total_s": 6.426893659001507,
+      "median_decode_tps": 19.916308996450127,
+      "texts": [
+        "97af50af7f79"
+      ]
+    }
+  }
+}

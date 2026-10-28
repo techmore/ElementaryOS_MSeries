@@ -13,6 +13,31 @@ import time
 from machine import DEFAULT_POLICY, GIB, snapshot, violations, cooling_action, runtime_prefix
 
 
+def serve_patch(env, prefix):
+    """Put our patched mlx-lm server copy (serve-patch.sh) ahead of the installed one.
+
+    Two private patches on upstream's own launcher: skip the per-token logprob read nobody asked
+    for, and keep a lone request's KV cache unbatched (Rapid-MLX's singleton fast path). Qwen 2B
+    33 -> 57 tok/s with identical text. Used only while the installed server.py still matches the
+    one the copy was built from; MSERIES_SERVE_PATCH=0 turns it off.
+    """
+    copy = Path.home() / '.local/share/mseries-ai/serve-patch'
+    if env.get('MSERIES_SERVE_PATCH') == '0' or not (copy / 'mlx_lm/server.py').exists():
+        return
+    import hashlib
+    installed = next((prefix / 'venv/lib').glob('python3.*/site-packages/mlx_lm/server.py'), None)
+    try:
+        stamp = (copy / 'source-server-sha256').read_text().strip()
+        current = hashlib.sha256(installed.read_bytes()).hexdigest() if installed else ''
+    except OSError:
+        stamp, current = 'missing', ''
+    if stamp != current:
+        print('SERVE PATCH: skipped, installed mlx-lm changed; rerun serve-patch.sh build', flush=True)
+        return
+    env['PYTHONPATH'] = str(copy) + (':' + env['PYTHONPATH'] if env.get('PYTHONPATH') else '')
+    print('SERVE PATCH: skip-logprob-read + singleton cache', flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('profile', choices=['everyday', 'quality', 'coder9', 'compact', 'personal', 'coder', 'coder7', 'coder-large', 'liquid', 'bonsai', 'compact35'])
@@ -50,6 +75,7 @@ def main():
         # budget. 120k passes the MLX gate with identical output and decodes faster (Qwen 2B 48.9 -> 56.4,
         # Qwen 4B 23.1 -> 27.0 tok/s on Honeykrisp 9323171c12). An explicit value in the environment wins.
         env.setdefault('MLX_OMARCHY_BATCH_WORK', '120000')
+        serve_patch(env, prefix)
         from runtime_recovery import recover
         recovered = recover(prefix)
         if recovered: print(f'RECOVERY: removed {recovered} dead CLI reservations; reserve unchanged', flush=True)
