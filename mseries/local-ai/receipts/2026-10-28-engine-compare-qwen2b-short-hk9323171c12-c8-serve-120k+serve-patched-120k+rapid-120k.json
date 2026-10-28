@@ -1,0 +1,1558 @@
+{
+  "status": "complete",
+  "model_key": "qwen2b",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "weights_sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+  "kernel": "7.2.11-elementary-aurora72-wip4",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "670902196c47f3e70e3f56ab933805713be31aa8",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "serve-120k",
+    "serve-patched-120k",
+    "rapid-120k"
+  ],
+  "concurrency": 8,
+  "runs": [
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.954,
+          "max_temp_c": 46.72,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 14.273,
+          "max_temp_c": 46.653,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 13.616,
+          "max_temp_c": 46.44,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 3.02,
+          "available_gib": 13.596,
+          "max_temp_c": 46.22,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 13.437,
+          "max_temp_c": 46.44,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 5.05,
+          "available_gib": 13.409,
+          "max_temp_c": 47.12,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 13.393,
+          "max_temp_c": 46.993,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 13.237,
+          "max_temp_c": 46.406,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 13.235,
+          "max_temp_c": 45.74,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 13.212,
+          "max_temp_c": 46.566,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 10.13,
+          "available_gib": 13.211,
+          "max_temp_c": 45.386,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 11.16,
+          "available_gib": 13.214,
+          "max_temp_c": 46.593,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 12.18,
+          "available_gib": 13.213,
+          "max_temp_c": 45.933,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 13.19,
+          "available_gib": 13.219,
+          "max_temp_c": 46.406,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 14.2,
+          "available_gib": 13.216,
+          "max_temp_c": 46.593,
+          "max_fan_rpm": 2495.0
+        },
+        {
+          "t": 15.23,
+          "available_gib": 13.259,
+          "max_temp_c": 46.753,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 16.24,
+          "available_gib": 13.267,
+          "max_temp_c": 47.273,
+          "max_fan_rpm": 2501.0
+        }
+      ],
+      "log_tail": "O - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:16,737 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:16] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:17,056 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:54:17,056 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:54:17,056 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:17,056 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:17] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:17,382 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:54:17,382 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:54:17,382 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:17,382 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:17] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:17,713 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:54:17,713 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:54:17,713 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:17,713 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:17] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:18,018 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:54:18,018 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:54:18,018 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:18,018 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:18] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:18,321 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:54:18,321 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:54:18,321 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:18,321 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:18] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:18,772 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:18,873 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:18,913 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:20,028 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:20,129 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:20,175 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:21,287 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:21,388 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:21,425 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:22,547 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:22,650 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:22,688 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:23,787 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:23,889 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:23,924 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:24,977 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:25,075 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:25,118 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:26,307 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:26,408 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:26,453 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:27,587 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:27,688 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:27,725 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:52107\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.95 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.35 GiB\nverdict:      FITS\n",
+      "ready_s": 4.4447040269951685,
+      "concurrency": 8,
+      "wall_s": 12.685811210998509,
+      "aggregate_tok_s": 20.18002599455759,
+      "per_request_decode_median": 28.565284165609622,
+      "ttft_s": 7.869319049001206,
+      "total_s": 12.685811210998509,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 2.865930047999427,
+          "total_s": 3.9511634320006124,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.124982428998919,
+          "total_s": 5.210448979996727,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.370766425003239,
+          "total_s": 6.470429278000665,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 6.63419993500429,
+          "total_s": 7.711039314002846,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 7.869319049001206,
+          "total_s": 8.905545399997209,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 9.063784509999095,
+          "total_s": 10.232091660996957,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 10.400087695998081,
+          "total_s": 11.509510179996141,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 11.667043665001984,
+          "total_s": 12.679702873996575,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 20.18002599455759,
+      "min_available_gib": 13.211,
+      "peak_temp_c": 47.273,
+      "round": 1,
+      "admission_available_gib": 14.954
+    },
+    {
+      "arm": "serve-patched-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 15.066,
+          "max_temp_c": 46.88,
+          "max_fan_rpm": 2483.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.511,
+          "max_temp_c": 47.273,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 13.69,
+          "max_temp_c": 46.28,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 13.601,
+          "max_temp_c": 45.993,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 13.375,
+          "max_temp_c": 46.906,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 13.322,
+          "max_temp_c": 46.72,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 6.06,
+          "available_gib": 13.289,
+          "max_temp_c": 46.72,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 13.154,
+          "max_temp_c": 46.373,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 13.115,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 13.12,
+          "max_temp_c": 46.853,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 10.12,
+          "available_gib": 13.131,
+          "max_temp_c": 46.346,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 11.14,
+          "available_gib": 13.149,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 12.16,
+          "available_gib": 13.167,
+          "max_temp_c": 46.44,
+          "max_fan_rpm": 2509.0
+        }
+      ],
+      "log_tail": "O - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:36,612 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:36] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:36,919 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:54:36,919 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:54:36,919 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:36,919 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:37] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:37,234 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:54:37,234 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:54:37,234 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:37,234 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:37] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:37,547 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:54:37,547 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:54:37,547 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:37,547 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:37] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:37,863 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:54:37,863 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:54:37,863 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:37,863 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:37] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:38,180 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:54:38,180 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:54:38,180 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:54:38,180 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:54:38] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:54:38,645 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:38,742 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:38,757 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:39,439 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:39,548 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:39,566 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:40,246 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:40,346 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:40,360 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:41,053 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:41,154 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:41,166 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:41,853 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:41,955 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:41,972 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:42,651 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:42,759 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:42,776 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:43,467 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:43,570 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:43,583 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:54:44,274 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:54:44,374 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:54:44,388 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:56471\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      15.07 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.47 GiB\nverdict:      FITS\n",
+      "ready_s": 3.9679845689970534,
+      "concurrency": 8,
+      "wall_s": 8.936760963006236,
+      "aggregate_tok_s": 28.645725342740306,
+      "per_request_decode_median": 46.705365969832094,
+      "ttft_s": 5.970996762000141,
+      "total_s": 8.936760963006236,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 2.757798388003721,
+          "total_s": 3.421533685999748,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.361260053003207,
+          "total_s": 5.0380468599978485,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 3.5650869949968182,
+          "total_s": 4.228590583996265,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.16624903200136,
+          "total_s": 5.8337669579996145,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.970996762000141,
+          "total_s": 6.631168640997203,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 8.386967787002504,
+          "total_s": 8.933900961004838,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 6.774626949998492,
+          "total_s": 7.447930171001644,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 7.580758762996993,
+          "total_s": 8.25352494300023,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 28.645725342740306,
+      "min_available_gib": 13.115,
+      "peak_temp_c": 47.38,
+      "round": 1,
+      "admission_available_gib": 15.066
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 15.001,
+          "max_temp_c": 46.506,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.943,
+          "max_temp_c": 46.993,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 14.532,
+          "max_temp_c": 47.76,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 13.627,
+          "max_temp_c": 46.906,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 13.566,
+          "max_temp_c": 46.72,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 5.07,
+          "available_gib": 13.535,
+          "max_temp_c": 46.593,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 6.08,
+          "available_gib": 13.392,
+          "max_temp_c": 46.853,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 7.09,
+          "available_gib": 13.123,
+          "max_temp_c": 46.72,
+          "max_fan_rpm": 2479.0
+        },
+        {
+          "t": 8.11,
+          "available_gib": 12.547,
+          "max_temp_c": 47.273,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 9.12,
+          "available_gib": 12.255,
+          "max_temp_c": 46.566,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 10.14,
+          "available_gib": 12.149,
+          "max_temp_c": 46.593,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 11.15,
+          "available_gib": 12.378,
+          "max_temp_c": 46.313,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 12.16,
+          "available_gib": 12.466,
+          "max_temp_c": 46.753,
+          "max_fan_rpm": 2509.0
+        }
+      ],
+      "log_tail": "6ef160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff9d5347a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1934373]\n",
+      "ready_s": 7.7507372990003205,
+      "concurrency": 8,
+      "wall_s": 5.313347135001095,
+      "aggregate_tok_s": 48.18055238921393,
+      "per_request_decode_median": 9.105539348164672,
+      "ttft_s": 1.9037799990037456,
+      "total_s": 5.313347135001095,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 1.897976619999099,
+          "total_s": 5.312271218004753,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9010537469948758,
+          "total_s": 5.309996548996423,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.8953399099991657,
+          "total_s": 5.30943275699974,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9047476240011747,
+          "total_s": 5.309268632001476,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9039557080031955,
+          "total_s": 5.3083199649991,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9038978329990641,
+          "total_s": 5.3084968399998615,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9037799990037456,
+          "total_s": 5.307512548002705,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9036567069997545,
+          "total_s": 5.308060506999027,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 48.18055238921393,
+      "min_available_gib": 12.149,
+      "peak_temp_c": 47.76,
+      "round": 1,
+      "admission_available_gib": 15.001
+    },
+    {
+      "arm": "serve-patched-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.69,
+          "max_temp_c": 46.406,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.163,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 13.38,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 13.385,
+          "max_temp_c": 46.78,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 13.203,
+          "max_temp_c": 46.533,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 13.155,
+          "max_temp_c": 47.933,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 13.159,
+          "max_temp_c": 46.473,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 13.055,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 8.1,
+          "available_gib": 13.079,
+          "max_temp_c": 48.046,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 9.14,
+          "available_gib": 13.079,
+          "max_temp_c": 48.24,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 10.15,
+          "available_gib": 13.107,
+          "max_temp_c": 46.593,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 11.16,
+          "available_gib": 13.114,
+          "max_temp_c": 46.566,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 12.17,
+          "available_gib": 13.128,
+          "max_temp_c": 46.853,
+          "max_fan_rpm": 2504.0
+        }
+      ],
+      "log_tail": "O - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:09,399 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:09] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:09,686 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:55:09,686 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:55:09,686 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:09,686 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:09] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:09,986 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:55:09,986 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:55:09,986 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:09,986 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:09] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:10,304 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:55:10,304 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:55:10,304 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:10,304 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:10] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:10,620 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:55:10,620 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:55:10,620 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:10,620 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:10] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:10,921 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:55:10,921 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:55:10,921 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:10,921 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:11] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:11,397 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:11,495 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:11,508 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:12,194 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:12,302 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:12,319 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:13,002 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:13,104 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:13,118 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:13,805 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:13,910 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:13,924 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:14,612 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:14,719 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:14,732 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:15,414 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:15,528 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:15,543 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:16,225 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:16,333 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:16,347 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:17,032 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:17,141 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:17,154 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:32863\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.70 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.10 GiB\nverdict:      FITS\n",
+      "ready_s": 3.9928635859978385,
+      "concurrency": 8,
+      "wall_s": 8.915229780999653,
+      "aggregate_tok_s": 28.714907667954137,
+      "per_request_decode_median": 46.6344144659244,
+      "ttft_s": 5.9438269099991885,
+      "total_s": 8.915229780999653,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 3.5312490129945218,
+          "total_s": 4.195994144996803,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 2.720724694998353,
+          "total_s": 3.3878872459972627,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.329820029997791,
+          "total_s": 4.998420455995074,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.136376261994883,
+          "total_s": 5.80592697999964,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.9438269099991885,
+          "total_s": 6.606530414996087,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 6.753259101002186,
+          "total_s": 7.417000856999948,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 8.364686313005222,
+          "total_s": 8.912933905005048,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 7.556635371998709,
+          "total_s": 8.22427363099996,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 28.714907667954137,
+      "min_available_gib": 13.055,
+      "peak_temp_c": 48.24,
+      "round": 2,
+      "admission_available_gib": 14.69
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.04,
+          "available_gib": 15.02,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 1.05,
+          "available_gib": 14.958,
+          "max_temp_c": 46.98,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 2.06,
+          "available_gib": 14.46,
+          "max_temp_c": 48.046,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 13.542,
+          "max_temp_c": 46.633,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 13.488,
+          "max_temp_c": 47.353,
+          "max_fan_rpm": 2479.0
+        },
+        {
+          "t": 5.1,
+          "available_gib": 13.448,
+          "max_temp_c": 46.693,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 6.12,
+          "available_gib": 13.246,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 7.13,
+          "available_gib": 13.029,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 8.14,
+          "available_gib": 12.302,
+          "max_temp_c": 47.56,
+          "max_fan_rpm": 2479.0
+        },
+        {
+          "t": 9.15,
+          "available_gib": 12.183,
+          "max_temp_c": 47.353,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 10.17,
+          "available_gib": 12.156,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 11.19,
+          "available_gib": 12.288,
+          "max_temp_c": 47.4,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 12.19,
+          "available_gib": 12.526,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2500.0
+        }
+      ],
+      "log_tail": "4af160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000fffeef46c7a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.4s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1934771]\n",
+      "ready_s": 7.349692060000962,
+      "concurrency": 8,
+      "wall_s": 5.310645967001619,
+      "aggregate_tok_s": 48.20505859187166,
+      "per_request_decode_median": 9.147119176353165,
+      "ttft_s": 1.9151368820021162,
+      "total_s": 5.310645967001619,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 1.909882669999206,
+          "total_s": 5.309968883004331,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9150223399992683,
+          "total_s": 5.309707091000746,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.915974131996336,
+          "total_s": 5.3049300459970254,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9156937989973812,
+          "total_s": 5.304738961996918,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9151368820021162,
+          "total_s": 5.3061576719992445,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9147814649986685,
+          "total_s": 5.3036666289990535,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.9165537580047385,
+          "total_s": 5.303800337002031,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.915052256998024,
+          "total_s": 5.304816504001792,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 48.20505859187166,
+      "min_available_gib": 12.156,
+      "peak_temp_c": 48.046,
+      "round": 2,
+      "admission_available_gib": 15.021
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 14.742,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 14.085,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 13.319,
+          "max_temp_c": 46.666,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 13.293,
+          "max_temp_c": 47.193,
+          "max_fan_rpm": 2475.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 13.152,
+          "max_temp_c": 47.846,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 13.164,
+          "max_temp_c": 47.713,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 6.08,
+          "available_gib": 13.142,
+          "max_temp_c": 46.953,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 7.1,
+          "available_gib": 13.123,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 8.13,
+          "available_gib": 13.125,
+          "max_temp_c": 47.193,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 9.14,
+          "available_gib": 13.115,
+          "max_temp_c": 47.353,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 10.16,
+          "available_gib": 13.104,
+          "max_temp_c": 47.76,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 11.17,
+          "available_gib": 13.064,
+          "max_temp_c": 48.046,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 12.2,
+          "available_gib": 13.127,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2517.0
+        },
+        {
+          "t": 13.21,
+          "available_gib": 13.138,
+          "max_temp_c": 46.82,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 14.23,
+          "available_gib": 13.183,
+          "max_temp_c": 46.906,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 15.25,
+          "available_gib": 13.195,
+          "max_temp_c": 48.353,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 16.26,
+          "available_gib": 13.244,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2513.0
+        }
+      ],
+      "log_tail": "O - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:42,201 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:42] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:42,497 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:55:42,497 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:55:42,497 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:42,497 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:42] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:42,790 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:55:42,790 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:55:42,790 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:42,790 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:42] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:43,106 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:55:43,106 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:55:43,106 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:43,106 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:43] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:43,406 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:55:43,406 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:55:43,406 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:43,406 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:43] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:43,729 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:55:43,729 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:55:43,729 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:55:43,729 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:55:43] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:55:44,187 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:44,288 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:44,327 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:45,452 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:45,554 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:45,592 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:46,735 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:46,835 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:46,877 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:47,975 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:48,077 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:48,116 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:49,212 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:49,309 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:49,346 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:50,473 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:50,574 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:50,620 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:51,771 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:51,872 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:51,912 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:55:53,022 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:55:53,123 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:55:53,161 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:51695\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.74 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.14 GiB\nverdict:      FITS\n",
+      "ready_s": 4.427209765002772,
+      "concurrency": 8,
+      "wall_s": 12.530723436000699,
+      "aggregate_tok_s": 20.429786141837063,
+      "per_request_decode_median": 28.61645200897186,
+      "ttft_s": 7.7709001889961655,
+      "total_s": 12.530723436000699,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 2.7561535959976027,
+          "total_s": 3.8579183669935446,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.01813668700197,
+          "total_s": 5.137511387001723,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.303919795995171,
+          "total_s": 6.3793373399967095,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 6.5406325360017945,
+          "total_s": 7.613810119997652,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 7.7709001889961655,
+          "total_s": 8.878435339000134,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 9.050539209005365,
+          "total_s": 10.173085993999848,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 10.33961056899716,
+          "total_s": 11.422903493999911,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 11.589030736002314,
+          "total_s": 12.525184974001604,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 20.429786141837063,
+      "min_available_gib": 13.064,
+      "peak_temp_c": 48.353,
+      "round": 2,
+      "admission_available_gib": 14.742
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.966,
+          "max_temp_c": 48.2,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 14.893,
+          "max_temp_c": 47.013,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 14.447,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 13.34,
+          "max_temp_c": 46.82,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 13.331,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 13.305,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 13.15,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 7.09,
+          "available_gib": 12.811,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 8.1,
+          "available_gib": 11.894,
+          "max_temp_c": 47.193,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 11.859,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 10.13,
+          "available_gib": 11.839,
+          "max_temp_c": 47.713,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 11.15,
+          "available_gib": 12.162,
+          "max_temp_c": 48.22,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 12.16,
+          "available_gib": 12.42,
+          "max_temp_c": 47.14,
+          "max_fan_rpm": 2509.0
+        }
+      ],
+      "log_tail": "5ef160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff913f87a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 21 chunks (1 keepalives), elapsed=5.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 21 chunks total, elapsed=5.3s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1936484]\n",
+      "ready_s": 7.533498647004308,
+      "concurrency": 8,
+      "wall_s": 5.268212853996374,
+      "aggregate_tok_s": 48.59332891339098,
+      "per_request_decode_median": 9.144612015659186,
+      "ttft_s": 1.8747326869997778,
+      "total_s": 5.268212853996374,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 1.8720857679945766,
+          "total_s": 5.2665688099950785,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.8750241870002355,
+          "total_s": 5.260666305999621,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.874862436998228,
+          "total_s": 5.261672348999127,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.875254145998042,
+          "total_s": 5.26541135199659,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.8747326869997778,
+          "total_s": 5.264837517999695,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.8741716869990341,
+          "total_s": 5.264455267999438,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.8741625620023115,
+          "total_s": 5.264136892998067,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.8740502689979621,
+          "total_s": 5.259224389003066,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 48.59332891339098,
+      "min_available_gib": 11.839,
+      "peak_temp_c": 48.22,
+      "round": 3,
+      "admission_available_gib": 14.967
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 14.569,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2491.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.934,
+          "max_temp_c": 48.026,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 13.228,
+          "max_temp_c": 48.853,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 13.226,
+          "max_temp_c": 48.373,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 13.091,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 5.07,
+          "available_gib": 13.107,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 13.063,
+          "max_temp_c": 47.46,
+          "max_fan_rpm": 2521.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 13.061,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 12.936,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 12.94,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 10.13,
+          "available_gib": 12.944,
+          "max_temp_c": 49.326,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 11.15,
+          "available_gib": 12.959,
+          "max_temp_c": 48.046,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 12.17,
+          "available_gib": 12.99,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 13.2,
+          "available_gib": 13.025,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 14.21,
+          "available_gib": 13.035,
+          "max_temp_c": 47.8,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 15.22,
+          "available_gib": 13.061,
+          "max_temp_c": 48.14,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 16.23,
+          "available_gib": 13.052,
+          "max_temp_c": 47.78,
+          "max_fan_rpm": 2509.0
+        }
+      ],
+      "log_tail": "O - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:18,824 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:18] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:19,166 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:56:19,166 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:56:19,166 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:19,166 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:19] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:19,507 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:56:19,507 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:56:19,507 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:19,507 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:19] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:19,863 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:56:19,863 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:56:19,863 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:19,863 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:20] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:20,235 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:56:20,235 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:56:20,235 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:20,235 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:20] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:20,566 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:56:20,566 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:56:20,566 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:20,566 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:20] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:21,042 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:21,143 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:21,184 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:22,257 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:22,361 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:22,400 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:23,447 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:23,557 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:23,593 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:24,742 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:24,849 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:24,886 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:25,978 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:26,087 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:26,128 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:27,246 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:27,351 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:27,392 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:28,493 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:28,602 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:28,644 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:29,702 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:29,807 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:29,850 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:51515\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.56 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          7.96 GiB\nverdict:      FITS\n",
+      "ready_s": 4.516983994995826,
+      "concurrency": 8,
+      "wall_s": 12.652038605003327,
+      "aggregate_tok_s": 20.233893366304084,
+      "per_request_decode_median": 29.725988085666653,
+      "ttft_s": 7.98284887799673,
+      "total_s": 12.652038605003327,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 3.0478452159950393,
+          "total_s": 4.090703737994772,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.258741439000005,
+          "total_s": 5.279445861000568,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 6.746917721997306,
+          "total_s": 7.811380134000501,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.450327188998926,
+          "total_s": 6.577951519997441,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 9.249367224001617,
+          "total_s": 10.328218228998594,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 7.98284887799673,
+          "total_s": 9.079324686994369,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 10.50494314399839,
+          "total_s": 11.533881114002725,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 11.704043482997804,
+          "total_s": 12.648632643999008,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 20.233893366304084,
+      "min_available_gib": 12.936,
+      "peak_temp_c": 49.326,
+      "round": 3,
+      "admission_available_gib": 14.569
+    },
+    {
+      "arm": "serve-patched-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.902,
+          "max_temp_c": 49.02,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 14.364,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2483.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 13.535,
+          "max_temp_c": 48.393,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 13.452,
+          "max_temp_c": 47.62,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 13.259,
+          "max_temp_c": 48.493,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 5.09,
+          "available_gib": 13.242,
+          "max_temp_c": 48.666,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 6.1,
+          "available_gib": 13.168,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2526.0
+        },
+        {
+          "t": 7.12,
+          "available_gib": 13.064,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 8.14,
+          "available_gib": 13.05,
+          "max_temp_c": 49.766,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 9.15,
+          "available_gib": 13.048,
+          "max_temp_c": 48.96,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 10.16,
+          "available_gib": 13.041,
+          "max_temp_c": 47.526,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 11.19,
+          "available_gib": 13.04,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 12.21,
+          "available_gib": 13.038,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2504.0
+        }
+      ],
+      "log_tail": "O - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:38,822 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:38] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:39,135 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:56:39,135 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:56:39,135 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:39,135 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:39] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:39,439 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:56:39,439 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:56:39,439 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:39,439 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:39] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:39,736 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:56:39,736 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:56:39,736 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:39,736 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:39] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:40,057 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:56:40,058 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:56:40,058 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:40,058 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:40] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:40,386 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-28 09:56:40,387 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-28 09:56:40,387 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-28 09:56:40,387 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [28/Oct/2026 09:56:40] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-28 09:56:40,878 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:40,975 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:40,988 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:41,679 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:41,782 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:41,795 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:42,479 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:42,585 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:42,601 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:43,287 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:43,390 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:43,402 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:44,094 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:44,195 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:44,209 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:44,900 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:45,004 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:45,018 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:45,698 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:45,804 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:45,818 - INFO - Prompt processing progress: 33/33\n2026-10-28 09:56:46,512 - INFO - Prompt processing progress: 29/33\n2026-10-28 09:56:46,617 - INFO - Prompt processing progress: 32/33\n2026-10-28 09:56:46,630 - INFO - Prompt processing progress: 33/33\nmodel:        /home/sdolbec/.cache/mseries-metal2vk/qwen35-2b\nbackend:      mlx-lm\nbind:         127.0.0.1:47545\ncontext:      4096 tokens\nweights:      1.60 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.90 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 4.60 GiB\nmem:          headroom:          8.30 GiB\nverdict:      FITS\n",
+      "ready_s": 4.087191777005501,
+      "concurrency": 8,
+      "wall_s": 9.02002289599477,
+      "aggregate_tok_s": 28.381302680913773,
+      "per_request_decode_median": 46.212789591950724,
+      "ttft_s": 6.048770484005217,
+      "total_s": 9.02002289599477,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 3.637546919999295,
+          "total_s": 4.300324842995906,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.440606566000497,
+          "total_s": 5.111416536004981,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 2.8274106879980536,
+          "total_s": 3.500084200000856,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.242199209998944,
+          "total_s": 5.917824267002288,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 6.048770484005217,
+          "total_s": 6.720380828999623,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 6.856425131998549,
+          "total_s": 7.517367260996252,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 7.656960318003257,
+          "total_s": 8.331773956000688,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 8.469115343999874,
+          "total_s": 9.017707519000396,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 28.381302680913773,
+      "min_available_gib": 13.038,
+      "peak_temp_c": 49.766,
+      "round": 3,
+      "admission_available_gib": 14.902
+    }
+  ],
+  "summary": {
+    "serve-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 7.869319049001206,
+      "median_total_s": 12.652038605003327,
+      "median_decode_tps": 20.233893366304084,
+      "texts": [
+        "97af50af7f79"
+      ]
+    },
+    "serve-patched-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 5.970996762000141,
+      "median_total_s": 8.936760963006236,
+      "median_decode_tps": 28.645725342740306,
+      "texts": [
+        "97af50af7f79"
+      ]
+    },
+    "rapid-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 1.9037799990037456,
+      "median_total_s": 5.310645967001619,
+      "median_decode_tps": 48.20505859187166,
+      "texts": [
+        "97af50af7f79"
+      ]
+    }
+  }
+}
