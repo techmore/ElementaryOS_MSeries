@@ -71,3 +71,22 @@ export OMARCHY_MLX_SYSTEM_PREFIX=$HOME/.local/share/mlx-omarchy PYTHONPATH=$HOME
 
 Add `--lfm3-module ~/.local/share/mseries-ai/runtime/lfm3.py` for LFM3. The Gemma weights were removed after the run
 (root disk at 97%).
+
+## omarchy-mlx main vs v0.7.33 (2026-10-28, later)
+
+`try-omarchy-mlx-main.sh` built upstream main (`9b87968`, 74 commits past v0.7.33: GDN decode defaults, split-K decode
+attention, row reduce, the #289 logit split) into a side venv and ran both against each other. Nothing under `~/.local`
+changes.
+
+| | v0.7.33 (live) | main `9b87968` |
+|---|---|---|
+| Correctness gate (Qwen 2B vs CPU reference) | PASS, pooled RMSE 0.03647 | PASS, pooled RMSE 0.03647 (identical) |
+| Gate decode, default batch | 37.5 tok/s | 39.8 tok/s |
+| Gate decode, batch 120k | 31.6 tok/s | 28.3 tok/s |
+| Smart Reply first token (Qwen 4B, two runs) | 1.40 / 1.41 s | 1.38 / 1.39 s |
+| Smart Reply total | 2.89 / 2.89 s | 2.86 / 2.84 s |
+| Drafts | — | word-for-word the same |
+
+**Kept v0.7.33.** Main is correct but only ~1–2% faster for Smart Reply (within run-to-run noise) and slower at the
+120k batch setting the service uses. Re-run the script on a later commit (`try-omarchy-mlx-main.sh <commit>`) when
+upstream tags a release.
