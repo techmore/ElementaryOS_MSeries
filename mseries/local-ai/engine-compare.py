@@ -1,0 +1,278 @@
+#!/usr/bin/env python3
+"""Guarded, rotated comparison of local engines on one Qwen3.5-2B checkpoint.
+
+Arms (each a fresh process: load, one warmup on the same prompt, one measured request):
+  mlx-5k      installed omarchy-mlx, default 5,000 work-group submit budget (baseline)
+  mlx-120k    same runtime at last night's best 120,000 budget
+  rapid-120k  Rapid-MLX loopback server at the 120,000 budget
+  tensorfold  TensorFold native Vulkan server (ashhart/TensorFold PR 1517)
+
+All four use the same weights, chat prompt, greedy decoding and token limit,
+the shared worker lock, the 6 GiB desktop reserve and the 80 C limit. MLX arms
+time in-process; server arms time a streamed loopback HTTP request. Those
+boundaries differ, so compare servers with servers and MLX with MLX first.
+"""
+import argparse, fcntl, hashlib, json, os, signal, socket, subprocess, sys, tempfile, threading, time
+import urllib.request, urllib.error
+from pathlib import Path
+
+from machine import GIB, snapshot, violations
+
+HOME = Path.home()
+MODEL = HOME / '.cache/mseries-metal2vk/qwen35-2b'
+WEIGHTS_SHA = '713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5'
+MODEL_ID = 'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3'
+ICD = HOME / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json'
+MLX_PY = HOME / '.local/share/mlx-omarchy/venv/bin/python'
+RAPID_PATH = f"{HOME}/.cache/mseries-metal2vk/rapid-python:{HOME}/.cache/mseries-metal2vk/rapid-src"
+RAPID_REV = '1d09cdb684bbf58fac130f5804b08ee2e1f56558'
+TF_BIN = HOME / '.cache/mseries-tensorfold/src/zig-out/native/bin/tensorfold-native-vulkan'
+TF_REV = '670902196c47f3e70e3f56ab933805713be31aa8'
+PROMPT = 'Explain in plain language how a rainbow forms. Give four distinct sentences.'
+LONG_PROMPT = ('Explain in detail how a rainbow forms, including refraction, reflection, color '
+               'and viewing angle. Write at least 350 words.')
+ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'tensorfold')
+POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
+ALLOWANCE_GIB = 4.5
+DEADLINE_S = 300
+
+
+def mlx_worker(prompt_text, max_tokens, output):
+    """Runs inside the mlx-omarchy venv: load, warm up, time one greedy generation."""
+    t0 = time.monotonic()
+    from mlx_lm import load, stream_generate
+    from mlx_lm.sample_utils import make_sampler
+    import mlx.core as mx
+    model, tok = load(str(MODEL))
+    prompt = tok.apply_chat_template([{'role': 'user', 'content': prompt_text}], tokenize=False,
+                                     add_generation_prompt=True, enable_thinking=False)
+    for _ in stream_generate(model, tok, prompt, max_tokens=max_tokens, sampler=make_sampler(temp=0)):
+        pass
+    mx.synchronize()
+    ready = time.monotonic() - t0
+    start = time.monotonic(); first = None; tokens = []; text = ''
+    for r in stream_generate(model, tok, prompt, max_tokens=max_tokens, sampler=make_sampler(temp=0)):
+        if first is None:
+            first = time.monotonic() - start
+        tokens.append(r.token); text += r.text
+    mx.synchronize()
+    output.write_text(json.dumps({'ready_s': ready, 'ttft_s': first, 'total_s': time.monotonic() - start,
+                                  'completion_tokens': len(tokens), 'text': text}))
+
+
+def served_model(port):
+    with urllib.request.urlopen(f'http://127.0.0.1:{port}/v1/models', timeout=10) as r:
+        return json.load(r)['data'][0]['id']
+
+
+def stream_chat(port, prompt_text, max_tokens, model):
+    payload = {'model': model, 'messages': [{'role': 'user', 'content': prompt_text}],
+               'max_tokens': max_tokens, 'temperature': 0, 'stream': True,
+               'stream_options': {'include_usage': True},
+               'chat_template_kwargs': {'enable_thinking': False}}
+    req = urllib.request.Request(f'http://127.0.0.1:{port}/v1/chat/completions',
+                                 data=json.dumps(payload).encode(), headers={'Content-Type': 'application/json'})
+    start = time.monotonic(); first = None; text = ''; deltas = 0; usage = None
+    with urllib.request.urlopen(req, timeout=DEADLINE_S) as r:
+        for raw in r:
+            line = raw.decode().strip()
+            if not line.startswith('data:'):
+                continue
+            body = line[5:].strip()
+            if body == '[DONE]':
+                break
+            event = json.loads(body)
+            usage = event.get('usage') or usage
+            for choice in event.get('choices') or []:
+                piece = (choice.get('delta') or {}).get('content') or ''
+                if piece:
+                    if first is None:
+                        first = time.monotonic() - start
+                    text += piece; deltas += 1
+    total = time.monotonic() - start
+    count = (usage or {}).get('completion_tokens') or deltas
+    return {'ttft_s': first, 'total_s': total, 'completion_tokens': count,
+            'token_count_source': 'usage' if usage else 'stream deltas', 'text': text}
+
+
+def server_command(arm, port):
+    if arm == 'tensorfold':
+        return [str(TF_BIN), 'serve', str(MODEL), '--backend', 'vulkan', '--host', '127.0.0.1',
+                '--port', str(port), '--context', '1024', '--no-thinking', '--no-update-check']
+    return [str(MLX_PY), '-m', 'rapid_mlx.server', '--model', str(MODEL), '--no-mllm',
+            '--host', '127.0.0.1', '--port', str(port)]
+
+
+def env_for(arm, tmp):
+    env = {k: v for k, v in os.environ.items() if not k.startswith('MLX_OMARCHY_')}
+    env.update(VK_DRIVER_FILES=str(ICD), HF_HUB_OFFLINE='1', OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2')
+    if arm != 'tensorfold':
+        env['MLX_OMARCHY_BATCH_WORK'] = '5000' if arm == 'mlx-5k' else '120000'
+    if arm == 'rapid-120k':
+        env.update(PYTHONPATH=RAPID_PATH, RAPID_MLX_TELEMETRY='0', DO_NOT_TRACK='1',
+                   RAPID_MLX_PREFIX_CACHE_AUTOLOAD='0', XDG_CONFIG_HOME=f'{tmp}/config',
+                   XDG_CACHE_HOME=f'{tmp}/cache', XDG_STATE_HOME=f'{tmp}/state')
+    return env
+
+
+def run_arm(arm, prompt_text, max_tokens, tmp):
+    """One fresh process for `arm` under the resource guard; returns its row."""
+    started = time.monotonic(); outcome = {}
+    log = tempfile.TemporaryFile(mode='w+t', dir=tmp)
+    if arm.startswith('mlx'):
+        out = Path(tmp) / f'{arm}.json'
+        cmd = [str(MLX_PY), __file__, '--worker', '--max-tokens', str(max_tokens),
+               '--prompt', prompt_text, '--worker-output', str(out)]
+    else:
+        with socket.socket() as s:
+            s.bind(('127.0.0.1', 0)); port = s.getsockname()[1]
+        cmd = server_command(arm, port)
+    child = subprocess.Popen(cmd, env=env_for(arm, tmp), stdout=log, stderr=subprocess.STDOUT,
+                             start_new_session=True, cwd=tmp)
+
+    def drive():
+        try:
+            while True:
+                if child.poll() is not None:
+                    raise RuntimeError(f'server exited during startup ({child.returncode})')
+                if time.monotonic() - started > 180:
+                    raise RuntimeError('server readiness timeout')
+                try:
+                    path = '/health' if arm == 'tensorfold' else '/healthz'
+                    with urllib.request.urlopen(f'http://127.0.0.1:{port}{path}', timeout=2):
+                        break
+                except (OSError, urllib.error.HTTPError):
+                    time.sleep(0.5)
+            model = served_model(port)
+            stream_chat(port, prompt_text, max_tokens, model)  # warmup on the same prompt
+            outcome['ready_s'] = time.monotonic() - started
+            outcome.update(stream_chat(port, prompt_text, max_tokens, model), served_model=model)
+        except Exception as exc:
+            outcome['error'] = f'{type(exc).__name__}: {exc}'
+
+    driver = None if arm.startswith('mlx') else threading.Thread(target=drive, daemon=True)
+    if driver:
+        driver.start()
+    samples = []; bad = 0; stopped = None
+    try:
+        while (driver.is_alive() if driver else child.poll() is None):
+            s = snapshot()
+            samples.append({'t': round(time.monotonic() - started, 2), 'available_gib': round(s['available_bytes'] / GIB, 3),
+                            'max_temp_c': max(s['temperatures_c'].values(), default=0),
+                            'max_fan_rpm': max(s['fans_rpm'].values(), default=0)})
+            reasons = violations(s, POLICY); bad = bad + 1 if reasons else 0
+            if bad >= 3 or time.monotonic() - started > DEADLINE_S:
+                stopped = reasons or ['deadline']; break
+            if driver:
+                driver.join(1)
+            else:
+                time.sleep(1)
+    finally:
+        if child.poll() is None:
+            os.killpg(child.pid, signal.SIGTERM)
+            try:
+                child.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                os.killpg(child.pid, signal.SIGKILL); child.wait()
+        if driver:
+            driver.join(timeout=5)
+    if arm.startswith('mlx') and not stopped:
+        if child.returncode == 0 and out.exists():
+            outcome.update(json.loads(out.read_text()))
+        else:
+            outcome['error'] = f'worker exit {child.returncode}'
+    log.seek(0); tail = log.read()[-4000:]; log.close()
+    row = {'arm': arm, 'stopped': stopped, 'samples': samples, 'log_tail': tail, **outcome}
+    if 'text' in row:
+        row['text_sha256'] = hashlib.sha256(row['text'].encode()).hexdigest()
+        n, ttft, total = row['completion_tokens'], row['ttft_s'], row['total_s']
+        row['decode_tps'] = (n - 1) / (total - ttft) if n > 1 and ttft is not None and total > ttft else None
+    row['min_available_gib'] = min((x['available_gib'] for x in samples), default=None)
+    row['peak_temp_c'] = max((x['max_temp_c'] for x in samples), default=None)
+    return row
+
+
+def admit(wait_s):
+    deadline = time.monotonic() + wait_s
+    while True:
+        s = snapshot(); reasons = violations(s, POLICY, extra_bytes=int(ALLOWANCE_GIB * GIB))
+        if not reasons:
+            return s
+        if time.monotonic() >= deadline:
+            raise RuntimeError('Admission refused: ' + '; '.join(reasons))
+        print('waiting for admission: ' + '; '.join(reasons), flush=True)
+        time.sleep(10)
+
+
+def median(xs):
+    xs = sorted(x for x in xs if x is not None)
+    return None if not xs else (xs[len(xs) // 2] if len(xs) % 2 else (xs[len(xs) // 2 - 1] + xs[len(xs) // 2]) / 2)
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
+    p.add_argument('--worker-output', type=Path, help=argparse.SUPPRESS)
+    p.add_argument('--prompt', help=argparse.SUPPRESS)
+    p.add_argument('--max-tokens', type=int, default=32)
+    p.add_argument('--long', action='store_true', help='256 tokens from the long-form prompt')
+    p.add_argument('--rounds', type=int, default=3)
+    p.add_argument('--arms', default=','.join(ARMS))
+    p.add_argument('--admission-wait-seconds', type=int, default=0)
+    p.add_argument('--output', type=Path)
+    a = p.parse_args()
+    if a.worker:
+        return mlx_worker(a.prompt, a.max_tokens, a.worker_output)
+    arms = [x for x in a.arms.split(',') if x]
+    if not arms or any(x not in ARMS for x in arms):
+        p.error(f'--arms must be a subset of {",".join(ARMS)}')
+    prompt_text, max_tokens = (LONG_PROMPT, 256) if a.long else (PROMPT, a.max_tokens)
+    with (MODEL / 'model.safetensors').open('rb') as f:
+        if hashlib.file_digest(f, 'sha256').hexdigest() != WEIGHTS_SHA:
+            raise SystemExit('Qwen weights do not match the pinned checkpoint')
+    if 'tensorfold' in arms and not TF_BIN.exists():
+        raise SystemExit('TensorFold server missing: run tensorfold-vulkan.sh build')
+    out = a.output or Path(__file__).resolve().parent / 'receipts' / (
+        f"{time.strftime('%Y-%m-%d')}-engine-compare-{'long' if a.long else 'short'}.json")
+    lock = (HOME / '.local/state/mseries-ai/worker.lock').open('a')
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    report = {'status': 'running', 'model': MODEL_ID, 'weights_sha256': WEIGHTS_SHA, 'kernel': os.uname().release,
+              'tensorfold_rev': TF_REV, 'rapid_rev': RAPID_REV, 'prompt_sha256': hashlib.sha256(prompt_text.encode()).hexdigest(),
+              'max_tokens': max_tokens, 'policy': {**POLICY, 'max_fan_rpm': None}, 'allowance_gib': ALLOWANCE_GIB,
+              'arms': arms, 'runs': []}
+    try:
+        with tempfile.TemporaryDirectory(prefix='engine-compare-', dir=HOME / '.cache') as tmp:
+            for r in range(a.rounds):
+                order = arms[r % len(arms):] + arms[:r % len(arms)]  # rotate so no arm always goes first
+                for arm in order:
+                    s = admit(a.admission_wait_seconds)
+                    row = run_arm(arm, prompt_text, max_tokens, tmp)
+                    row.update(round=r + 1, admission_available_gib=round(s['available_bytes'] / GIB, 3))
+                    report['runs'].append(row)
+                    out.parent.mkdir(parents=True, exist_ok=True)
+                    out.write_text(json.dumps(report, indent=2) + '\n')
+                    if row.get('error') or row.get('stopped'):
+                        print(f"round {r + 1} {arm}: FAILED {row.get('error') or row.get('stopped')}", flush=True)
+                        print(row['log_tail'][-1500:], flush=True)
+                    else:
+                        print(f"round {r + 1} {arm}: ttft {row['ttft_s']:.3f}s total {row['total_s']:.3f}s "
+                              f"{row['completion_tokens']} tok {row['decode_tps'] or 0:.2f} tok/s", flush=True)
+                    time.sleep(3)
+        report['status'] = 'complete'
+    except BaseException as exc:
+        report['status'] = 'interrupted'; report['error'] = str(exc); raise
+    finally:
+        summary = {}
+        for arm in arms:
+            ok = [x for x in report['runs'] if x['arm'] == arm and 'text' in x and not x.get('error')]
+            summary[arm] = {'ok_runs': len(ok), 'median_ttft_s': median([x['ttft_s'] for x in ok]),
+                            'median_total_s': median([x['total_s'] for x in ok]),
+                            'median_decode_tps': median([x['decode_tps'] for x in ok]),
+                            'texts': sorted({x['text_sha256'][:12] for x in ok})}
+        report['summary'] = summary
+        out.write_text(json.dumps(report, indent=2) + '\n'); lock.close()
+        print(json.dumps(summary, indent=2))
+
+
+if __name__ == '__main__':
+    main()
