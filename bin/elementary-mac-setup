@@ -294,8 +294,8 @@ save_conf() {
       printf 'SETUP_PASSWORD_HASH=%q\n' "$password_hash"
       printf 'SETUP_KEEP_DEFAULT=%q\n' "$keep_default"
       printf 'SETUP_ENHANCE=%q\n' "$enhance"
-      printf 'SETUP_ENABLE_SSH=%q\n' "$enable_ssh"
-      printf 'SETUP_SSH_KEY=%q\n' "$ssh_key"
+      printf 'SETUP_ENABLE_SSH=%q\n' "${enable_ssh:-0}"
+      printf 'SETUP_SSH_KEY=%q\n' "${ssh_key:-}"
       printf 'SETUP_REPO=%q\n' "$repo"
       printf 'SETUP_REF=%q\n' "$ref"
       printf 'SETUP_FORGE=%q\n' "$forge"
@@ -815,9 +815,9 @@ valid_ssh_key() {
 }
 
 configure_ssh() {
-  local user=$1 home="$ELEMENTARY_MNT/home/$1"
-  ((enable_ssh)) || return 0
-  [[ -n $ssh_key ]] || fail "--enable-ssh needs --ssh-key (key-only login; there is no password fallback)"
+  local user=$1
+  ((${enable_ssh:-0})) || return 0
+  [[ -n ${ssh_key:-} ]] || fail "--enable-ssh needs --ssh-key (key-only login; there is no password fallback)"
   mkdir -p "$ELEMENTARY_MNT/etc/ssh/sshd_config.d"
   cat >"$ELEMENTARY_MNT/etc/ssh/sshd_config.d/10-mseries.conf" <<'SSHD'
 PasswordAuthentication no
@@ -828,7 +828,7 @@ SSHD
   # The home may be a separate subvolume that is not mounted here; the
   # first-boot enhancement job installs the key from the staged copy instead.
   install -d -m 700 "$ELEMENTARY_MNT/var/lib/mseries"
-  printf '%s\n' "$ssh_key" >"$ELEMENTARY_MNT/var/lib/mseries/authorized_keys.$user"
+  printf '%s\n' "${ssh_key}" >"$ELEMENTARY_MNT/var/lib/mseries/authorized_keys.$user"
   chmod 600 "$ELEMENTARY_MNT/var/lib/mseries/authorized_keys.$user"
   cat >"$ELEMENTARY_MNT/etc/systemd/system/mseries-ssh-key.service" <<UNIT
 [Unit]
@@ -1067,7 +1067,7 @@ ask_questions() {
   fi
   log "  - build elementary OS from $repo ($ref) and make it the default boot entry"
   ((enhance)) && log "  - enable the M-series enhancements (zram, charge limit, docked-lid, brightness, keyboard light, Brave, gestures, panel fixes)"
-  ((enable_ssh)) && log "  - enable SSH, key-only, for $username"
+  ((${enable_ssh:-0})) && log "  - enable SSH, key-only, for $username"
   log "  - reboot into elementary OS"
   echo
   read -rp "Start? [Y/n] " answer
