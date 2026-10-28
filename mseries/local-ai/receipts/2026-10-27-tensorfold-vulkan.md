@@ -41,9 +41,16 @@ wip4 with no errors, as a ReleaseSafe build. It produced 25 SPIR-V shader module
 under `stage1/` to `stage5/`, the server
 `tensorfold-native-vulkan` (SHA-256 `5acf4452…a867379b`), and the probes
 `tf-qwen35-model` (`0a604cd3…3619d98c`), `tf-vulkan-probe` and
-`tf-stage1-gpu` to `tf-stage5-gpu`. The whole prefix uses 906 MiB. Host tests and
-GPU gates have **not** run yet; a successful build says nothing about
-correctness on G13S. The model probe and server are not yet wrapped in
+`tf-stage1-gpu` to `tf-stage5-gpu`. The whole prefix uses 906 MiB.
+
+**Host tests (2026-10-28, owner-run `test`):** PASS. Of `vulkan-host-test`,
+`qwen35-model-host-test` and `model-host-test`, 68/68 build steps succeeded.
+Most test runs were reported as cached passes from the first invocation; Zig
+caches only passing runs. One test was skipped: the real-checkpoint load, which
+needs `TF_QWEN_DIR`. Zig 0.17 prints passing tests' diagnostic output (the
+admission-refusal and replay lines) under a red "failed command" header, so the
+script now prints an explicit verdict. No GPU work has run yet; stage 1–5 gates
+are next. The model probe and server are not yet wrapped in
 the memory/thermal guard used by `test-mlx-model-smoke.py`; do that before any
 model run.
 
