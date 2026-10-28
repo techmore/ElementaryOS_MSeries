@@ -86,12 +86,13 @@ gpu)
     export VK_DRIVER_FILES=$ICD
     bin=$SRC/zig-out/bin
     [[ -x $bin/tf-stage5-gpu ]] || { echo "run '$0 build' first" >&2; exit 1; }
-    # Apple's PCI vendor id pins the probes to the M1 Pro GPU. Probes exit
-    # 0 pass, 1 fail, 2 usage, 124 fence timeout; every stage runs regardless.
+    # Honeykrisp reports VK_VENDOR_ID_MESA (0x10005), not Apple's PCI id 0x106b;
+    # pinning it refuses any other driver. Probes exit 0 pass, 1 fail, 2 usage,
+    # 124 fence timeout; every stage runs regardless.
     failed=0
     for s in 1 2 3 4 5; do
         echo "== stage $s"
-        rc=0; "$bin/tf-stage${s}-gpu" --vendor 0x106b --timeout-ms 60000 || rc=$?
+        rc=0; "$bin/tf-stage${s}-gpu" --vendor 0x10005 --timeout-ms 60000 || rc=$?
         case $rc in
             0) echo "STAGE $s: PASS" ;;
             124) echo "STAGE $s: GPU TIMEOUT" >&2; failed=1 ;;
