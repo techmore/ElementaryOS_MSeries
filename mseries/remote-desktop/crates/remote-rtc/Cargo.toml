@@ -1,0 +1,23 @@
+[package]
+name = "remote-rtc"
+description = "WebRTC host and viewer peers (webrtc-rs) for the M-Series remote desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+async-trait = "0.1"
+bytes = "1"
+futures = "0.3"
+remote-core = { path = "../remote-core" }
+rtc = "0.21"
+rand = "0.9"
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+tracing = "0.1"
+webrtc = "0.21"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }

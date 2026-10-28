@@ -16,14 +16,15 @@ prefix=${OMARCHY_MLX_SYSTEM_PREFIX:-$HOME/.local/share/mlx-omarchy}
 # model-worker.py and engine-compare.py read the same folder. Never /tmp: RAM-backed.
 out=${MSERIES_SERVE_PATCH_DIR:-$HOME/.local/share/mseries-ai/serve-patch}
 site=$(ls -d "$prefix"/venv/lib/python3.*/site-packages/mlx_lm | head -n1)
-patches=("$here/patches/mlx-lm-0.31.3-server-skip-logprob-read.patch"
-         "$here/patches/mlx-lm-0.31.3-server-singleton-cache.patch"
-         "$here/patches/mlx-lm-0.31.3-detokenizer-tokenmap-cache.patch")
+# upstreams.json is the one list of what we carry; upstream-step.py moves the pin and the files.
+want=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["upstreams"]["mlx-lm"]["pin"].lstrip("v"))' "$here/upstreams.json")
+mapfile -t patches < <(python3 -c 'import json,sys
+for p in json.load(open(sys.argv[1]))["upstreams"]["mlx-lm"]["patches"]: print(sys.argv[2] + "/" + p["file"])' "$here/upstreams.json" "$here")
 
 case ${1:-build} in
   build)
     version=$("$prefix/venv/bin/python" -c 'import mlx_lm; print(mlx_lm.__version__)')
-    [[ $version == 0.31.3 ]] || { echo "installed mlx-lm is $version; these patches are for 0.31.3" >&2; exit 2; }
+    [[ $version == "$want" ]] || { echo "installed mlx-lm is $version; these patches are for $want" >&2; exit 2; }
     mkdir -p "$out"
     rm -rf "$out/mlx_lm.new"
     cp -a "$site" "$out/mlx_lm.new"

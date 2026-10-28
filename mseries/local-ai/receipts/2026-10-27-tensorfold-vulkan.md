@@ -92,6 +92,62 @@ model run.
   readings on M1/M2 hosts, plus PR 7 (surface mapping). These are reference data
   only.
 
+## PR 1544 supersedes PR 1517 (2026-10-28, later)
+
+[PR 1544](https://github.com/ashhart/TensorFold/pull/1544) (draft, head `92bb49db5c31`,
+stacked on [PR 1526](https://github.com/ashhart/TensorFold/pull/1526), now `420127b693`) is
+the same engine re-cut as the second slice of the stack, and states it supersedes 1517.
+`tensorfold-vulkan.sh` now pins it. What changed against our 1517 pin (`670902196c`):
+
+- **Engine: one fix.** The source under `zig/src/vulkan` and the engine shaders are
+  identical except the bf16 store in three GDN shaders, which turned an infinity into a NaN
+  (`isnan` check now; finite values unchanged). Chunked prefill and the single GDN path were
+  already in our 1517 pin. So decode speed is unchanged: the same one-submit-per-op engine
+  that measured 2.4–2.8 tok/s here, against 56 tok/s for the patched upstream MLX server. PR
+  1544 itself says speed was not measured.
+- **Kernel contract for every new kernel.** Six groups, ~5,200 lines: QMM (from 1526), GDN
+  (8 kernels), datamove (7), attention, greedy, pointwise (6). Upstream ran them on M1, M1 Max
+  and M2 Max; all pass, with one KNOWN finding (Honeykrisp flushes fp32 denormals). Our
+  `contract` mode now builds and runs all six on the M1 Pro (G13S), which upstream has not
+  covered. Previously it ran only 1526's QMM runner from a second checkout; one tree now
+  builds everything.
+- **Rebased** onto TensorFold main `dd0a9cc5` (v1.1.8). The server flags we use
+  (`serve --backend vulkan --context --no-thinking --no-update-check`) and every build step
+  in our script still exist; the Zig pin stays 0.17.0.
+- **Fidelity:** upstream's own held packet FAILS (bf16 rounding sensitivity on long
+  documents). That matches the divergence we saw at 256 tokens. Treat it as experimental.
+
+**Our patches:** none to re-apply. We carry no TensorFold source changes, only pins
+(`tensorfold-vulkan.sh`, `engine-compare.py` `TF_REV`). The scoreboard now names the PR
+from each receipt's `tensorfold_rev`, so the 1517 rows stay labelled 1517.
+
+**Does it beat what we have:** no, and it is not expected to; it is a correctness and contract
+release. The speed step is the submit-batching build (`a8b888dd`, referenced in 1544; reported
+~10.6 tok/s on M1 Max and ~6.9 on M1), which is still not public. Owner-run commands, when wanted:
+`tensorfold-vulkan.sh build`, then `test`, `gpu`, `contract`; then
+`engine-compare.py`'s `tensorfold` arm for a 1544 row.
+
+### PR 1544 on the M1 Pro (G13S), owner-run 2026-10-28
+
+`tensorfold-vulkan.sh` at `92bb49db5c31`, Honeykrisp `9323171c12`, kernel
+`7.2.11-elementary-aurora72-wip4`. First device run of this engine's kernel contract on G13S
+(upstream covered M1, M1 Max and M2 Max). Every line below is the runner's own summary.
+
+| Check | Result on M1 Pro |
+| --- | --- |
+| Host tests | PASS: 111/111 build steps, 273/278 tests, 5 skipped (device- or checkpoint-gated). The "Spec … expected 2048, found 2049" and "failed command:" lines are passing negative tests; Zig 0.17 prints their stderr under a red header. |
+| GPU stage gates 1-5 | PASS: 13/13, 9/9, 4/4, 6/6, 7/7 |
+| Contract QMM | 1 kernel passes gates 1-4; 6 of 6 planted controls caught; 0 limit failures |
+| Contract GDN | 8 kernels pass gates 1-4; 6 of 6 controls caught; 0 limit failures |
+| Contract datamove | 7 of 7 kernels pass |
+| Contract attention | 15 of 15, including decode and prefill at the full 7,168-token context |
+| Contract greedy | 1 kernel passes; 1 control red as planted |
+| Contract pointwise | 16 pass, 1 KNOWN: Honeykrisp reports `preserve32=false` and flushes fp32 denormals, so one bf16 subnormal sum reads as zero (the same finding upstream records on all three chips) |
+
+Device limits match upstream's: subgroup 32, 1024 invocations, 32 KiB shared memory, storage
+range 2147483647, offset alignment 16. So G13S behaves like the chips upstream tested. Speed is
+still the unbatched engine; an `engine-compare.py` tensorfold row on 1544 is optional.
+
 ## Compiler completion and `metal::exp` test
 
 The pinned clspv build subsequently completed on the M1 Pro. Source:

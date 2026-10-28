@@ -19,8 +19,10 @@ ARM_SETTINGS = {
     'serve-nolp-120k': ('mlx-omarchy-serve + skip-logprob-read patch only (HTTP server)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'serve-single-120k': ('experiment: serve-nolp-120k + Rapid-MLX singleton module loaded from its checkout', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'serve-patched-120k': ('mlx-omarchy-serve + our three server patches + batching of 4 (HTTP server; runs the everyday model)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
-    'tensorfold': ('TensorFold Vulkan PR 1517 (HTTP server)', 'serve --backend vulkan --context 1024 --no-thinking', None),
+    'tensorfold': ('TensorFold Vulkan (HTTP server)', 'serve --backend vulkan --context 1024 --no-thinking', None),
 }
+# Receipts record the TensorFold revision they ran; name the PR it came from.
+TF_PRS = {'670902196c47f3e70e3f56ab933805713be31aa8': 'PR 1517', '92bb49db5c313c105cbf4b44638d1e1896615174': 'PR 1544'}
 MODEL_NAMES = {'qwen2b': 'Qwen3.5-2B MLX 4-bit', 'qwen4b': 'Qwen3.5-4B MLX 4-bit', 'lfm3': 'LFM3-1.7B MLX 8-bit'}
 FIELDS = ['best', 'model', 'engine', 'settings', 'tokens', 'decode_tok_s', 'ttft_s', 'total_s', 'runs',
           'same_output', 'gate', 'kernel', 'driver', 'date', 'status', 'source']
@@ -94,6 +96,9 @@ def measured_rows():
             i = next((i for i, (u, v) in enumerate(zip(mt, at)) if u != v), min(len(mt), len(at)))
             same = f'no: diverges after {i} of {len(mt)} chars'
         engine, settings, gate_key = ARM_SETTINGS[arm]
+        if arm == 'tensorfold':
+            rev = r.get('tensorfold_rev', '')
+            engine = engine.replace('Vulkan', 'Vulkan ' + TF_PRS.get(rev, rev[:10] or 'unknown rev'))
         if conc > 1:
             settings += f' · {conc} requests at once (decode = total tok/s)'
         gate = gates.get((model, drv, gate_key), (None, None))[0] if gate_key else None
@@ -225,7 +230,7 @@ def main():
            'change defaults in a separate PR.',
            '6. **Version steps follow upstream.** We move mlx-lm (now 0.31.3) and the omarchy-mlx pin (now v0.7.33, '
            '`33630f9c`) only when omarchy-mlx moves its own `install.sh` default or cuts a release. Its 0.32 line '
-           '(mlx-lm `94cdcae`, used by its oMLX packaging) is tested as a separate engine, not adopted as our default.', '',
+           '(mlx-lm `94cdcae`, used by its oMLX packaging) is tested as a separate engine, not adopted as our default. `install-omlx.sh` installs oMLX that way (its own venv under `~/.local/share/omlx-linux`) for engine-compare\'s `omlx-120k` arm.', '',
            'Rules: everything is documented in our own repo only; we do not post to upstream projects. '
            'Rows under "reported elsewhere" are other people\'s numbers on other hardware and are never ranked against ours.', '',
            '## Reproduce', '',

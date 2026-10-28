@@ -1,6 +1,25 @@
 ## wip4 revision 6: DP routing candidate — 2026-10-27
 
 Owner report: dock HDMI and Ethernet not working on wip3; HDMI worked after moving the dock to another port. Journals show `apple-dcp 28cc00000` timing out the DPTX validate call (-110 x6, "Type-C DPTX reconnect failed after 5 retries") on every failing boot, each time on the first plug within ~4 s of resuming from s2idle; the same dock then worked on `289c00000`. wip2 used `28cc00000` successfully; wip3 never did. Ethernet (RTL8153, `r8152`) enumerated but had no carrier this boot (it had carrier on the previous wip3 boot with the identical missing-`rtl8153b-2.fw` message), so that looks physical/cable, not kernel. Candidate: wip4 revision 6 = wip3 source + #157 + local 0002 + upstream #186 (0003-0005; #163 excluded as conflicting duplicate). Full-tree `candidate.py prepare`/`check` and 83 aurora tests pass; kernel build, KUnit and boot are NOT done. Nothing installed, staged, armed or rebooted. `thunderbolt_apple.s2idle_teardown/resume_recovery/router_sleep` remain at the default N (upstream did not test them with a real dock).
+## Proton VPN on ARM64 — 2026-10-18 (merged 2026-10-28)
+
+Proton VPN 4.18.7 was installed from the Flathub source recipe as a native
+ARM64 Flatpak (`com.protonvpn.www`, ref `app/com.protonvpn.www/aarch64/master`).
+The published Flathub ref and Proton's Debian repository lacked ARM64 packages,
+but the Flathub recipe compiles Proton's Rust VPN backend and NetworkManager
+integration on ARM64. Its pinned NetworkManager GitLab source returned HTTP
+502/504, so the build uses the matching GNOME 1.40.18 release archive pinned by
+SHA-256. Recipe: [`install-protonvpn-arm64.sh`](install-protonvpn-arm64.sh),
+based on [Flathub recipe commit `7387931`](https://github.com/flathub/com.protonvpn.www/tree/7387931c14c4d57763618d83644be19b3475c77c).
+
+Proton's own tray item does not show in Pantheon. The Signal Wingpanel
+indicator now provides a StatusNotifierWatcher, but it only displays Signal's
+item. A small GTK4 Wingpanel launcher (`protonvpn-wingpanel/`, installed with
+`bash mseries/install-protonvpn-wingpanel.sh`) opens the app from the top panel.
+It is a launcher only and shows no VPN connection state. Installation was
+confirmed on 2026-10-18 (`libmseries-protonvpn.so` is loaded). Proton sign-in
+and VPN connection are not yet qualified.
+
 ## Rapid prompt cache and ANE references — 2026-10-27
 
 On Qwen3.8 distill, 80k vs 20k Rapid HTTP budget A/B gave a 1.74% median reduction (three pairs; one slower). At 20k, three 586-token cold/repeat requests showed 50.93% median shorter repeat time, 571 tokens cached and identical paired outputs; this is a repeat-prompt cache result, not general decode. maderix/ANE and fork solatticus/ANE add macOS/iOS ANE training references, not the missing Linux converter. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
@@ -132,6 +151,15 @@ The physical Files right-click workflow on the owner boot volume is still
 unverified; #531 stays open for installation/acceptance. #530 Preview remains
 separate. No Files binary, AirDrop destination, panel, audio or boot setting is
 modified. Install/uninstall commands and limits are in the README.
+
+## Build/runtime log audit — 2026-10-26
+
+The audit fixed the dock's null context-menu hover critical, which landed in
+#638. It also found the upstream-watch dashboard overflow, fixed in #598. It
+restored the failed document portal, after which no failed user units remained,
+and the full native UI matrix passed. Popup lifecycle, backup and audio/kernel
+findings remain open; see the [audit receipt](ui-audit/receipts/2026-10-26-log-audit/README.md).
+No kernel, audio, boot or kiosk cutover changes.
 
 ## J314S monitor restoration incident — 2026-10-26
 
@@ -3456,6 +3484,30 @@ this entry records what landed and what is installed here.
 - Note: restarting `nmapui.service` while a scan runs interrupts it (the job becomes `interrupted`).
 
 Next: reconcile with TM-NmapUI-elementary (#249) and replace the dev-server unit; resolve the unmerged Daedalus PRs.
+
+## Remote Desktop (WebRTC, Rust) for phones — 2026-10-21
+
+Owner request: finish the Rust WebRTC desktop-streaming feature and phone support, integrated natively in
+elementary OS and Windows Work Mode. Implemented in `mseries/remote-desktop/` (own Cargo workspace; see its README).
+It supersedes the Node/Python prototype on `feat/webrtc`, which was not touched. The 2026-10-19 media-path decision
+(no SFU/server media plane) is respected: media stays peer-to-peer between host and phone.
+
+- `remote-core`: protocol, single-use invites, HMAC resume tokens, consent state machine (view-only default,
+  separate control grant, grace/idle/length limits), input gate (rate limit, lock check, per-event permission),
+  test-pattern + GStreamer/PipeWire capture, OpenH264 encode/decode, backoff, JSONL audit.
+- `remote-rtc`: webrtc-rs 0.21 host/viewer peers; `remote-hostd`: daemon, axum listener, phone web client
+  (touch gestures, keyboard, reconnect/ICE restart), D-Bus `io.elementary.mseries.Remote`, Mutter backend,
+  `tm-remote-viewer`. Audit now records viewer IP, connect time and a per-session link-quality summary (owner request).
+- Native: GTK4/Granite app + consent prompt + Wingpanel indicator (`native/`), Work Mode taskbar anchor
+  (`dock-taskbar/TaskbarRemote.vala`, `patches/dock-taskbar-remote.patch`), installer `install-remote-desktop.sh`
+  (user-level, remote access off by default, panel module loads at next login, nothing restarted).
+- Verified headless: fmt, clippy -D warnings, 32+10+5+4 Rust tests; daemon/D-Bus smoke on a private bus; headless
+  Chrome with touch decoding the stream and delivering tap/drag/right-click/typing; Mutter D-Bus marshalling against a
+  fake service from mutter's interface XML; GTK renders; full pinned dock build with the anchor (`test-build.sh` PASS).
+- NOT verified: live Gala/Mutter capture+input (current session is the Rust compositor), real phone/iOS Safari,
+  NAT/TURN, indicator loaded in the live shell, CPU cost of software H.264 on M1 Pro, suspend/resume, audio (not built).
+  Nothing was installed or deployed on the owner's desktop.
+- Next: owner-approved install, then a live Gala session test with a real phone; measure encode CPU; decide TURN.
 
 ## Maintenance handoff for the next chat — 2026-10-21
 
@@ -13553,3 +13605,9 @@ Multi-turn chats (2026-10-28, round 3): the worker passed `--prompt-cache-size 1
 prompt each chat turn re-read all history (Qwen 4B first token 0.72 → 1.12 s by turn 4). The worker
 now keeps 4 cache entries at 8k context (2 at 16k), so each turn reads only the last reply and the
 new question and first token stays ~0.65 s. Receipt: `local-ai/receipts/2026-10-28-serve-patch.md`.
+TensorFold PR 1544 (2026-10-28): supersedes PR 1517 and is stacked on PR 1526. Same Vulkan
+engine as our 1517 pin plus one shader fix (an infinity no longer becomes NaN), a kernel
+contract for all six kernel groups, and a rebase onto TensorFold main. No speed change; the
+batching build is still unpublished. `tensorfold-vulkan.sh` now pins 1544 and its `contract`
+mode runs all six groups from one tree; we carry no TensorFold patches. Owner runs the build.
+Receipt: `local-ai/receipts/2026-10-27-tensorfold-vulkan.md`.

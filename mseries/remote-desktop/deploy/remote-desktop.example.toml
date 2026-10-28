@@ -1,0 +1,24 @@
+# ~/.config/mseries/remote-desktop.toml — every key is optional.
+
+# Where the phone connects. Use your Tailscale address to keep it off the LAN.
+listen = "0.0.0.0:8484"
+
+# "mutter" = Pantheon/Gala on Wayland. "test" = synthetic desktop for demos.
+backend = "mutter"
+
+fps = 30
+bitrate_kbps = 4000
+max_width = 1920
+
+# Hostnames/IPs to offer in invite links instead of auto-detected interfaces.
+# advertise = ["matts-macbook.tailnet.ts.net"]
+
+# Phones behind a different NAT need a STUN/TURN server.
+# stun = ["stun:stun.l.google.com:19302"]
+# [turn]
+# urls = ["turn:turn.example.com:3478"]
+# username = "user"
+# credential = "secret"
+
+# Start with sharing already on (off by default, by design).
+# enable_at_start = false

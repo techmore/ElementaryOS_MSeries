@@ -221,6 +221,7 @@ check kernel 'fairydust/debian/test-assemble-m1n1-bootbin.py' 'python3 mseries/f
 check kernel 'fairydust/debian/test-verify-m1n1-esp.py' 'python3 mseries/fairydust/debian/test-verify-m1n1-esp.py'
 check kernel 'fairydust/usb4/test-*.py' 'for f in mseries/fairydust/usb4/test-*.py; do python3 "$f" || exit 1; done'
 check kernel 'fairydust/usb4/tools/test-staging-tools.py' 'python3 mseries/fairydust/usb4/tools/test-staging-tools.py'
+check kernel 'fairydust/usb4/tools/test-archive-check.py' 'python3 mseries/fairydust/usb4/tools/test-archive-check.py'
 check kernel 'boot/test-prepare-uki-kernels.py' 'python3 mseries/boot/test-prepare-uki-kernels.py'
 check kernel 'test-kernel-config.py' 'python3 mseries/test-kernel-config.py'
 check kernel 'test-kernel-pin.py' 'python3 mseries/test-kernel-pin.py'
@@ -231,6 +232,8 @@ check kernel 'touchid-settings/tests/test-pam-helper.sh' 'bash mseries/touchid-s
 # -- power ---------------------------------------------------------------------
 check power 'test-power-cap.py' 'python3 mseries/test-power-cap.py'
 check power 'test-power-install.py' 'python3 mseries/test-power-install.py'
+check power 'optimize: mseries-power-tune (shellcheck) and tests' \
+  'bash -n mseries/power/optimize/mseries-power-tune && shellcheck -S warning mseries/power/optimize/mseries-power-tune && python3 -m py_compile mseries/power/optimize/*.py && python3 mseries/power/optimize/test_optimize.py'
 check power 'macos-baseline unit tests' "python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'"
 check power 'share-cost tests' 'python3 mseries/share-cost/test-summarize-share-cost.py && python3 mseries/share-cost/test-compare-share-cost.py'
 

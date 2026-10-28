@@ -47,6 +47,13 @@ owner-authorized attended hardware trial. Reuse the existing dock/VRR results;
 do not repeat the completed trials. After the docs change merges, verify the new
 Pages run and live status separately.
 
+## Proton VPN ARM64 source build — 2026-10-18
+
+Proton VPN 4.18.7 builds and installs from Flathub's pinned source recipe as an
+ARM64 Flatpak, with a GTK4 Wingpanel launcher that opens the app but does not
+show VPN status. Details are in `mseries/OS9-HANDOFF.md`. Next: the owner signs
+in and confirms a VPN connection in the live elementary session.
+
 ## Public messaging status — 2026-10-27
 
 The public homepage and support matrix now distinguish the scoped October 20 BlueFerry texting observation from the owner’s October 22 decision that the Messages and Signal experience is incomplete and deferred. See [MESSAGING-STATUS.md](MESSAGING-STATUS.md). This documentation update does not change or qualify the apps, phone pairing or hardware.
@@ -2103,6 +2110,12 @@ next login, not currently loaded; no measured speedup. Actual .20 recovery,
 suspend and controlled power remain open. Read latest handoff before proceeding.
 
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
+
+## Remote Desktop (WebRTC) for phones — 2026-10-21
+
+Rust host + phone web client + native GTK/Wingpanel/Work Mode taskbar integration landed in `mseries/remote-desktop/`.
+Headless-verified (loopback WebRTC, headless Chrome touch, D-Bus smoke, dock build); live Gala/phone verification,
+TURN and encode-CPU measurement remain open. See `mseries/remote-desktop/README.md` and the OS9 handoff.
 
 ## AirDrop availability in Windows Work Mode — 2026-10-22
 

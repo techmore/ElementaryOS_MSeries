@@ -182,7 +182,7 @@
   {
     "repo": "ashhart/TensorFold",
     "who": "Ash Hart (maintainer), Joshua Warren (Vulkan)",
-    "why": "Native Vulkan engine (PR 1517) built and gated on our M1 Pro 2026-10-28; watch for the submit-batching follow-up (issue 1420) before re-testing",
+    "why": "Native Vulkan engine: PR 1517 built and gated on our M1 Pro 2026-10-28; PR 1544 (stacked on 1526) supersedes it, same engine plus the full kernel contract, now pinned. Watch for the submit-batching follow-up (commit a8b888dd, issue 1420) before re-testing speed",
     "group": "omarchy-m"
   },
   {

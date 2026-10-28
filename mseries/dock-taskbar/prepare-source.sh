@@ -4,7 +4,7 @@ set -euo pipefail
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo=$(cd -- "$here/../.." && pwd)
 source_dir=${1:?usage: prepare-source.sh UPSTREAM_SOURCE}
-for patch in dock-drawers dock-workspace-startup dock-taskbar dock-taskbar-codexbar dock-taskbar-repobar dock-taskbar-power-buttons dock-taskbar-notifications; do
+for patch in dock-drawers dock-workspace-startup dock-taskbar dock-taskbar-codexbar dock-taskbar-repobar dock-taskbar-power-buttons dock-taskbar-notifications dock-taskbar-remote; do
   git -C "$source_dir" apply "$repo/mseries/patches/$patch.patch"
 done
 git -C "$source_dir" apply "$repo/mseries/patches/dock-tooltip-optional-menu.patch"
@@ -31,12 +31,26 @@ marker = '\npublic Wingpanel.Indicator? get_indicator ('
 assert text.count(marker) == 1, 'RepoBar entry point not found'
 open(sys.argv[2], 'w').write(text[:text.index(marker)] + '\n')
 PY
+# Remote Desktop's consent indicator embeds the same Wingpanel indicator class the native session uses.
+cp "$here/TaskbarRemote.vala" "$source_dir/src/TaskbarRemote.vala"
+mkdir -p "$source_dir/src/remote"
+for source in Model Service UiUtil; do
+  cp "$repo/mseries/remote-desktop/native/src/$source.vala" "$source_dir/src/remote/"
+done
+python3 - "$repo/mseries/remote-desktop/native/indicator/Indicator.vala" "$source_dir/src/remote/Indicator.vala" <<'PY'
+import sys
+text = open(sys.argv[1]).read()
+marker = '\npublic Wingpanel.Indicator? get_indicator ('
+assert text.count(marker) == 1, 'Remote Desktop entry point not found'
+open(sys.argv[2], 'w').write(text[:text.index(marker)] + '\n')
+PY
 # Tracking may change launcher matching/markers, never taskbar/Start/CodexBar.
 sha256sum "$source_dir/src/Taskbar.vala" "$source_dir/src/StartMenu.vala" \
   "$source_dir/src/TaskbarCodexBar.vala" "$source_dir/src/TaskbarRepoBar.vala" \
   "$source_dir/src/TaskbarNotifications.vala" "$source_dir/src/TaskbarAirDrop.vala" "$source_dir/src/TaskbarCalendar.vala" \
   "$source_dir/src/TaskbarT3RPopover.vala" "$source_dir/src/TaskbarT3.vala" "$source_dir/src/AirDropPanel.vala" \
-  "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala > "$source_dir/.mseries-preserved.sha256"
+  "$source_dir"/src/codexbar/*.vala "$source_dir"/src/repobar/*.vala \
+  "$source_dir/src/TaskbarRemote.vala" "$source_dir"/src/remote/*.vala > "$source_dir/.mseries-preserved.sha256"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-unique-launchers.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-mode-geometry.patch"
@@ -94,8 +108,8 @@ python3 - "$source_dir" <<'PY'
 import pathlib, sys
 root = pathlib.Path(sys.argv[1])
 for filename, required in {
-    'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala', 'TaskbarT3RPopover.vala', 'TaskbarCalendar.vala', 'TaskbarMicLight.vala'],
-    'src/Taskbar.vala': ['new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)', 'new TaskbarCalendar (clock_button)', 'new TaskbarMicLight'],
+    'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala', 'TaskbarT3RPopover.vala', 'TaskbarCalendar.vala', 'TaskbarMicLight.vala', 'TaskbarRemote.vala', 'remote/Indicator.vala'],
+    'src/Taskbar.vala': ['new TaskbarNotifications', 'new TaskbarAirDrop', 'new TaskbarRemote', 'end_box.append (status_box)', 'new TaskbarCalendar (clock_button)', 'new TaskbarMicLight'],
     'src/TaskbarT3RPopover.vala': ['"tokenUsage"', '"usedPercent"', '"settings"', 'Timeout.add (250', 'Timeout.add (450'],
     'src/TaskbarAirDrop.vala': ['new MSeries.AirDropPanel'],
     'src/TaskbarCalendar.vala': ['libdatetime.so', 'get_indicator'],

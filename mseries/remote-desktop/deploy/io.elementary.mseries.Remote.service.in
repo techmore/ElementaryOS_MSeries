@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=io.elementary.mseries.Remote
+Exec=@BIN@/mseries-remote-hostd
+SystemdService=mseries-remote-hostd.service
