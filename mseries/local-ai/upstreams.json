@@ -82,6 +82,14 @@
       "pin": "c0b1056b41ebde9422af316cf5038a423eb8f24c",
       "step_rule": "Set by our omarchy-mlx pin's packaging/omlx-linux/install.sh; install-omlx.sh installs it as a test engine (engine-compare omlx-120k), never a default.",
       "patches": []
+    },
+    "tensorfold": {
+      "repo": "ashhart/TensorFold",
+      "track": null,
+      "pin": "92bb49db5c313c105cbf4b44638d1e1896615174",
+      "pin_label": "PR 1544 (stacked on PR 1526; supersedes PR 1517)",
+      "step_rule": "Pin a PR head by hand after reading its new commits; tensorfold-vulkan.sh refuses a moved head. Built and run by the owner (fetched code).",
+      "patches": []
     }
   }
 }

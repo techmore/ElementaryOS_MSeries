@@ -37,6 +37,11 @@ class ManifestTests(unittest.TestCase):
                 lines = re.findall(rf"^checkout {re.escape(up['install_checkout'])} \S+ (\S+)$", text, re.M)
                 self.assertEqual(lines, [up["pin"]], name)
 
+    def test_tensorfold_pins_match(self):
+        pin = DATA["tensorfold"]["pin"]
+        self.assertIn(f"TF_REV={pin}\n", (HERE / "tensorfold-vulkan.sh").read_text())
+        self.assertIn(f"TF_REV = '{pin}'", (HERE / "engine-compare.py").read_text())
+
     def test_serve_patch_reads_the_manifest(self):
         text = (HERE / "serve-patch.sh").read_text()
         self.assertIn("upstreams.json", text)

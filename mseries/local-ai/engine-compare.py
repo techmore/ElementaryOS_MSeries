@@ -11,7 +11,7 @@ Arms (each a fresh process: load, one warmup on the same prompt, one measured re
               MSERIES_SERVE_CONCURRENCY=4 batching (configure-serve-concurrency.py)
               (singleton cache is Rapid-MLX's fast path, vendored); what model-worker.py ships.
               Both serve-n*/serve-p* arms need serve-patch.sh build first (patches/mlx-lm-0.31.3-*).
-  tensorfold  TensorFold native Vulkan server (ashhart/TensorFold PR 1517)
+  tensorfold  TensorFold native Vulkan server (ashhart/TensorFold PR 1544)
   omlx-120k   oMLX (jundot/omlx) as omarchy-mlx packages it for Linux (packaging/omlx-linux), its own
               venv on the mlx-lm 0.32 line, at the 120,000 budget; skipped when not installed
 
@@ -49,7 +49,7 @@ DRIVER = (ICD.parent / 'mesa-git-sha').read_text().strip() if (ICD.parent / 'mes
 RAPID_PATH = f"{HOME}/.cache/mseries-metal2vk/rapid-python:{HOME}/.cache/mseries-metal2vk/rapid-src"
 RAPID_REV = '1d09cdb684bbf58fac130f5804b08ee2e1f56558'
 TF_BIN = HOME / '.cache/mseries-tensorfold/src/zig-out/native/bin/tensorfold-native-vulkan'
-TF_REV = '670902196c47f3e70e3f56ab933805713be31aa8'
+TF_REV = '92bb49db5c313c105cbf4b44638d1e1896615174'  # PR 1544; receipts record the rev they ran
 PROMPT = 'Explain in plain language how a rainbow forms. Give four distinct sentences.'
 LONG_PROMPT = ('Explain in detail how a rainbow forms, including refraction, reflection, color '
                'and viewing angle. Write at least 350 words.')

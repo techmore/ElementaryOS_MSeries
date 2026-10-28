@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Build the opt-in TensorFold native Vulkan backend (ashhart/TensorFold PR 1517)
-# in a private prefix, against our private Honeykrisp ICD. Nothing is installed
-# system-wide; the desktop Mesa, the kernel and the MLX workers are untouched.
+# Build the opt-in TensorFold native Vulkan backend (ashhart/TensorFold PR 1544,
+# stacked on PR 1526; it supersedes PR 1517, whose engine it carries) in a private
+# prefix, against our private Honeykrisp ICD. Nothing is installed system-wide; the
+# desktop Mesa, the kernel and the MLX workers are untouched.
 #
 #   tensorfold-vulkan.sh build    fetch the pinned source + Zig, build server and probes
 #   tensorfold-vulkan.sh test     GPU-free host suites (no device work)
 #   tensorfold-vulkan.sh gpu      stage 1-5 GPU operator gates on the M1 Pro (private ICD only)
-#   tensorfold-vulkan.sh contract kernel contract (gates 1-5 + planted controls) from PR 1526
+#   tensorfold-vulkan.sh contract kernel contract on the M1 Pro: all six groups (QMM, GDN,
+#                                 datamove, attention, greedy, pointwise), gates 1-5 + planted controls
 #
 # Kernel: no change needed. The backend talks to Honeykrisp through the existing
 # Asahi DRM UAPI; it requires a Vulkan 1.3 device and wip4's Honeykrisp reports 1.4.
@@ -14,11 +16,10 @@ set -euo pipefail
 
 # Pinned inputs. Bump together and re-run all three modes.
 TF_REPO=https://github.com/ashhart/TensorFold.git
-TF_REF=pull/1517/head
-TF_REV=670902196c47f3e70e3f56ab933805713be31aa8
-# PR 1526 is the first stacked piece of 1517 (runtime + Q4 projection + kernel contract runner).
-TF_CONTRACT_REF=pull/1526/head
-TF_CONTRACT_REV=68167f428f3415d1623828fe56c20325dd3a51b1
+# PR 1544 contains PR 1526's commits (runtime, Q4 projection, QMM contract), so one tree
+# builds the server, the stage gates and every contract runner.
+TF_REF=pull/1544/head
+TF_REV=92bb49db5c313c105cbf4b44638d1e1896615174
 ZIG_VERSION=0.17.0
 ZIG_URL=https://ziglang.org/download/0.17.0/zig-aarch64-linux-0.17.0.tar.xz
 ZIG_SHA256=9e8d11661d4ae3bd57702a3832781e23ad151dde5798e16a5ccd503f65234ff8
@@ -67,16 +68,21 @@ zb() { (cd "$SRC" && "$ZIG" build -Dvulkan=true -Doptimize=ReleaseSafe "$@"); }
 case ${1:-build} in
 build)
     check_disk; fetch
+    # stage1/3/5 builds also install the datamove, attention and greedy contract runners.
     zb native-vulkan vulkan-model-probe-build vulkan-probe-build \
-       stage1-gpu-build stage2-gpu-build stage3-gpu-build stage4-gpu-build stage5-gpu-build
-    echo "server: $SRC/zig-out/native/bin  probes: $SRC/zig-out/bin"
+       stage1-gpu-build stage2-gpu-build stage3-gpu-build stage4-gpu-build stage5-gpu-build \
+       contract-pointwise-build tf-vulkan-kernel-contract
+    # The GDN contract is the same runner built from another root, under the same name:
+    # give it its own install prefix so it does not replace the QMM runner.
+    zb --prefix "$SRC/zig-out-gdn" -Dcontract-root=zig/tests/vulkan/contract_gdn_main.zig tf-vulkan-kernel-contract
+    echo "server: $SRC/zig-out/native/bin  probes: $SRC/zig-out/bin  gdn contract: $SRC/zig-out-gdn/bin"
     ;;
 test)
     check_disk; fetch
     # Zig 0.17 shows a passing test's stderr under a red "failed command:" header.
     # Only "error:" lines, "'<test>' failed" or a non-zero exit mean a failure.
     if (cd "$SRC" && "$ZIG" build -Dvulkan=true --summary all \
-            vulkan-host-test qwen35-model-host-test model-host-test); then
+            vulkan-host-test qwen35-model-host-test model-host-test contract-pointwise-host-test); then
         echo "HOST TESTS: PASS"
     else
         echo "HOST TESTS: FAIL" >&2; exit 1
@@ -108,18 +114,28 @@ gpu)
 contract)
     check_disk; fetch
     [[ -f $ICD ]] || { echo "private Honeykrisp ICD not found: $ICD" >&2; exit 1; }
-    csrc=$ROOT/src-1526
-    if [[ ! -d $csrc ]]; then
-        git -C "$SRC" fetch -q --depth 1 "$TF_REPO" "$TF_CONTRACT_REF"
-        git -C "$SRC" worktree add -q --detach "$csrc" FETCH_HEAD
-    fi
-    have=$(git -C "$csrc" rev-parse HEAD)
-    [[ $have == "$TF_CONTRACT_REV" ]] || { echo "PR 1526 head moved: have $have, pinned $TF_CONTRACT_REV" >&2; exit 1; }
-    (cd "$csrc" && ZIG_LOCAL_CACHE_DIR=$ROOT/zig-local-1526 "$ZIG" build -Dvulkan=true -Doptimize=ReleaseSafe tf-vulkan-kernel-contract)
+    bin=$SRC/zig-out/bin
+    [[ -x $SRC/zig-out-gdn/bin/tf-vulkan-kernel-contract ]] || { echo "run '$0 build' first" >&2; exit 1; }
     export VK_DRIVER_FILES=$ICD
-    rc=0; "$csrc/zig-out/bin/tf-vulkan-kernel-contract" || rc=$?
-    (( rc == 0 )) && echo "KERNEL CONTRACT: PASS" || { echo "KERNEL CONTRACT: FAIL (exit $rc)" >&2; exit 1; }
+    # Upstream's receipt (M1, M1 Max, M2 Max) expects every group to pass, with one KNOWN
+    # pointwise finding: Honeykrisp flushes fp32 denormals (shaderDenormPreserveFloat32=false).
+    # Planted controls print FAIL lines by design; the runner's exit code is the verdict.
+    failed=0
+    run() {
+        local name=$1; shift
+        echo "== $name"
+        local rc=0; "$@" || rc=$?
+        if (( rc == 0 )); then echo "CONTRACT $name: PASS"; else echo "CONTRACT $name: FAIL (exit $rc)" >&2; failed=1; fi
+    }
+    dev=(--vendor 0x10005 --timeout-ms 60000)
+    run qmm "$bin/tf-vulkan-kernel-contract"
+    run gdn "$SRC/zig-out-gdn/bin/tf-vulkan-kernel-contract"
+    run datamove "$bin/tf-stage1-datamove" "${dev[@]}"
+    run attention "$bin/tf-attention-contract" "${dev[@]}"
+    run greedy "$bin/tf-vulkan-greedy-contract" "${dev[@]}"
+    run pointwise "$bin/tf-contract-pointwise" "${dev[@]}"
+    (( failed == 0 )) && echo "KERNEL CONTRACT: PASS" || { echo "KERNEL CONTRACT: FAIL" >&2; exit 1; }
     ;;
 *)
-    sed -n '2,11p' "$0"; exit 2 ;;
+    sed -n '2,13p' "$0"; exit 2 ;;
 esac
