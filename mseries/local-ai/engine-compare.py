@@ -32,10 +32,12 @@ MODELS = {
     'lfm3': (HOME / '.cache/mseries-metal2vk/lfm3-8bit',
              '2b06cea98d75527c248a0b04383f7cf0a1c72fb4ed7b45096618fc4e59d015ad',
              'LiquidAI/LFM3-1.7B-MLX-8bit@ee7667f3cfccb2a41725f91820531823fcabc6b7', 4.5,
-             HOME / '.local/share/mseries-ai/lfm3-audio-venv/bin/python', ('mlx-5k', 'mlx-120k')),
+             HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k')),
 }
 MODEL, WEIGHTS_SHA, MODEL_ID, ALLOWANCE_GIB, MLX_PY, MODEL_ARMS = MODELS['qwen2b']
-ICD = HOME / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json'
+# MSERIES_HK_ICD selects a candidate driver built by honeykrisp-candidate.sh.
+ICD = Path(os.environ.get('MSERIES_HK_ICD') or HOME / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json')
+DRIVER = (ICD.parent / 'mesa-git-sha').read_text().strip() if (ICD.parent / 'mesa-git-sha').exists() else 'unknown'
 RAPID_PATH = f"{HOME}/.cache/mseries-metal2vk/rapid-python:{HOME}/.cache/mseries-metal2vk/rapid-src"
 RAPID_REV = '1d09cdb684bbf58fac130f5804b08ee2e1f56558'
 TF_BIN = HOME / '.cache/mseries-tensorfold/src/zig-out/native/bin/tensorfold-native-vulkan'
@@ -47,6 +49,7 @@ ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'tensorfold')
 POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
 DEADLINE_S = 300
 MODEL_NAME = 'qwen2b'
+LFM3_MODULE_SHA = 'a4096cddc8f0d3f7923008b2e6afb896dabc9aef963a5ebe7d76d13a6069b0c4'
 
 
 def select_model(name):
@@ -57,6 +60,15 @@ def select_model(name):
 def mlx_worker(prompt_text, max_tokens, output):
     """Runs inside the mlx-omarchy venv: load, warm up, time one greedy generation."""
     t0 = time.monotonic()
+    if MODEL_NAME == 'lfm3':
+        # mlx-lm 0.31.3 has no LFM3; load the pinned model file from mlx-lm PR 2016
+        # (head 9027ac5b), as the 2026-10-27 LFM3 smoke test did.
+        import hashlib as _h, importlib.util as _u
+        f = HOME / '.local/share/mseries-ai/runtime/lfm3.py'
+        if _h.sha256(f.read_bytes()).hexdigest() != LFM3_MODULE_SHA:
+            raise SystemExit('unexpected lfm3.py')
+        spec = _u.spec_from_file_location('mlx_lm.models.lfm3', f)
+        mod = _u.module_from_spec(spec); sys.modules[spec.name] = mod; spec.loader.exec_module(mod)
     from mlx_lm import load, stream_generate
     from mlx_lm.sample_utils import make_sampler
     import mlx.core as mx
@@ -257,10 +269,11 @@ def main():
     if 'tensorfold' in arms and not TF_BIN.exists():
         raise SystemExit('TensorFold server missing: run tensorfold-vulkan.sh build')
     out = a.output or Path(__file__).resolve().parent / 'receipts' / (
-        f"{time.strftime('%Y-%m-%d')}-engine-compare-{a.model}-{'long' if a.long else 'short'}.json")
+        f"{time.strftime('%Y-%m-%d')}-engine-compare-{a.model}-{'long' if a.long else 'short'}"
+        + ('' if DRIVER == '7faf04c065' else f'-hk{DRIVER}') + '.json')
     lock = (HOME / '.local/state/mseries-ai/worker.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    report = {'status': 'running', 'model_key': a.model, 'model': MODEL_ID, 'weights_sha256': WEIGHTS_SHA, 'kernel': os.uname().release, 'driver': 'Honeykrisp Mesa ' + (ICD.parent / 'mesa-git-sha').read_text().strip(),
+    report = {'status': 'running', 'model_key': a.model, 'model': MODEL_ID, 'weights_sha256': WEIGHTS_SHA, 'kernel': os.uname().release, 'driver': 'Honeykrisp Mesa ' + DRIVER,
               'tensorfold_rev': TF_REV, 'rapid_rev': RAPID_REV, 'prompt_sha256': hashlib.sha256(prompt_text.encode()).hexdigest(),
               'max_tokens': max_tokens, 'policy': {**POLICY, 'max_fan_rpm': None}, 'allowance_gib': ALLOWANCE_GIB,
               'arms': arms, 'runs': []}

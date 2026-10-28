@@ -37,8 +37,9 @@ def gate_results():
     for f in sorted(RECEIPTS.glob('*mlx-gate-sweep*.json')):
         r = json.loads(f.read_text())
         key = 'qwen2b' if '2B' in r.get('model', '') else r.get('model_key', '?')
+        drv = r.get('driver', 'Honeykrisp Mesa 7faf04c065')
         for name, row in r.get('configs', {}).items():
-            out[(key, name)] = (row.get('gate'), f.name)
+            out[(key, drv, name)] = (row.get('gate'), f.name)
     return out
 
 
@@ -50,10 +51,11 @@ def measured_rows():
         if r.get('status') != 'complete':
             continue
         model = r.get('model_key', 'qwen2b')
+        drv = r.get('driver', 'Honeykrisp Mesa 7faf04c065')
         for arm in r['arms']:
-            latest[(model, arm, r['max_tokens'])] = (f, r)
+            latest[(model, arm, r['max_tokens'], drv)] = (f, r)
     rows = []
-    for (model, arm, tokens), (f, r) in sorted(latest.items()):
+    for (model, arm, tokens, drv), (f, r) in sorted(latest.items()):
         ok = [x for x in r['runs'] if x['arm'] == arm and 'text' in x and not x.get('error')]
         if not ok:
             continue
@@ -69,14 +71,14 @@ def measured_rows():
             i = next((i for i, (u, v) in enumerate(zip(mt, at)) if u != v), min(len(mt), len(at)))
             same = f'no: diverges after {i} of {len(mt)} chars'
         engine, settings, gate_key = ARM_SETTINGS[arm]
-        gate = gates.get((model, gate_key), (None, None))[0] if gate_key else None
+        gate = gates.get((model, drv, gate_key), (None, None))[0] if gate_key else None
         rows.append({
             'model': MODEL_NAMES.get(model, model), 'engine': engine, 'settings': settings, 'tokens': tokens,
             'decode_tok_s': med([x.get('decode_tps') for x in ok]), 'ttft_s': med([x['ttft_s'] for x in ok]),
             'total_s': med([x['total_s'] for x in ok]), 'runs': len(ok),
             'same_output': same if len(texts) == 1 else f'{same}; {len(texts)} variants across its own runs',
             'gate': gate or 'not gated', 'kernel': r.get('kernel', ''),
-            'driver': r.get('driver', 'Honeykrisp Mesa 7faf04c065'), 'date': f.name[:10],
+            'driver': drv, 'date': f.name[:10],
             'status': 'measured here', 'source': f'receipts/{f.name}', '_model': model})
     # Most functional per model and length: fastest decode among rows whose output matched
     # and whose gate did not fail.
@@ -156,7 +158,10 @@ def main():
            '4. **Publish.** Commit the new receipt JSON, run `scoreboard.py`, and open a PR to `dev` with the regenerated '
            'CSV, SVG and this page. Rows are replaced by the newest receipt; old receipts stay for history.',
            '5. **Adopt.** A setting becomes our default only when it holds ★ *and* passes the MLX gate; '
-           'change defaults in a separate PR.', '',
+           'change defaults in a separate PR.',
+           '6. **Version steps follow upstream.** We move mlx-lm (now 0.31.3) and the omarchy-mlx pin (now v0.7.33, '
+           '`33630f9c`) only when omarchy-mlx moves its own `install.sh` default or cuts a release. Its 0.32 line '
+           '(mlx-lm `94cdcae`, used by its oMLX packaging) is tested as a separate engine, not adopted as our default.', '',
            'Rules: everything is documented in our own repo only; we do not post to upstream projects. '
            'Rows under "reported elsewhere" are other people\'s numbers on other hardware and are never ranked against ours.', '',
            '## Reproduce', '',

@@ -1,0 +1,458 @@
+{
+  "status": "complete",
+  "model_key": "qwen4b",
+  "model": "mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3",
+  "weights_sha256": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db",
+  "kernel": "7.2.11-elementary-aurora72-wip4",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "670902196c47f3e70e3f56ab933805713be31aa8",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 6.5,
+  "arms": [
+    "mlx-5k",
+    "mlx-120k"
+  ],
+  "runs": [
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.352,
+          "max_temp_c": 46.06,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 13.695,
+          "max_temp_c": 46.906,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 11.877,
+          "max_temp_c": 46.026,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 3.02,
+          "available_gib": 11.559,
+          "max_temp_c": 46.313,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 11.476,
+          "max_temp_c": 46.093,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 5.05,
+          "available_gib": 11.44,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 6.06,
+          "available_gib": 11.439,
+          "max_temp_c": 47.96,
+          "max_fan_rpm": 2491.0
+        },
+        {
+          "t": 7.07,
+          "available_gib": 11.408,
+          "max_temp_c": 48.12,
+          "max_fan_rpm": 2509.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 5.37237047200324,
+      "ttft_s": 0.6280053439986659,
+      "total_s": 1.906358108004497,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 24.24995734577893,
+      "min_available_gib": 11.408,
+      "peak_temp_c": 48.12,
+      "round": 1,
+      "admission_available_gib": 14.349
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.217,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 13.535,
+          "max_temp_c": 46.673,
+          "max_fan_rpm": 2526.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 11.735,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 11.458,
+          "max_temp_c": 49.006,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 11.002,
+          "max_temp_c": 47.466,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 11.024,
+          "max_temp_c": 47.8,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 11.314,
+          "max_temp_c": 49.24,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 11.228,
+          "max_temp_c": 48.4,
+          "max_fan_rpm": 2504.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 5.235845848997997,
+      "ttft_s": 0.5990534359953017,
+      "total_s": 1.7722483580000699,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 26.423571580949964,
+      "min_available_gib": 11.002,
+      "peak_temp_c": 49.24,
+      "round": 1,
+      "admission_available_gib": 14.228
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.4,
+          "max_temp_c": 48.893,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.782,
+          "max_temp_c": 49.693,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 11.95,
+          "max_temp_c": 48.826,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 11.662,
+          "max_temp_c": 49.04,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 11.313,
+          "max_temp_c": 50.233,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 5.07,
+          "available_gib": 11.171,
+          "max_temp_c": 48.846,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 6.1,
+          "available_gib": 11.091,
+          "max_temp_c": 49.313,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 7.11,
+          "available_gib": 11.085,
+          "max_temp_c": 48.68,
+          "max_fan_rpm": 2499.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 5.375167304002389,
+      "ttft_s": 0.6414775480006938,
+      "total_s": 1.7810257719975198,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 27.203763164380437,
+      "min_available_gib": 11.085,
+      "peak_temp_c": 50.233,
+      "round": 2,
+      "admission_available_gib": 14.407
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 14.097,
+          "max_temp_c": 48.773,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.476,
+          "max_temp_c": 49.666,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 11.718,
+          "max_temp_c": 49.666,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 11.463,
+          "max_temp_c": 50.403,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 11.217,
+          "max_temp_c": 49.826,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 10.882,
+          "max_temp_c": 49.36,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 10.913,
+          "max_temp_c": 51.37,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 11.3,
+          "max_temp_c": 50.967,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 8.08,
+          "available_gib": 11.261,
+          "max_temp_c": 49.466,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 9.09,
+          "available_gib": 11.269,
+          "max_temp_c": 51.564,
+          "max_fan_rpm": 2507.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 6.360500784998294,
+      "ttft_s": 1.311232210995513,
+      "total_s": 2.746562799999083,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 21.59781184731854,
+      "min_available_gib": 10.882,
+      "peak_temp_c": 51.564,
+      "round": 2,
+      "admission_available_gib": 14.097
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.091,
+          "max_temp_c": 49.62,
+          "max_fan_rpm": 2477.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 13.529,
+          "max_temp_c": 50.153,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 11.654,
+          "max_temp_c": 49.98,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 11.366,
+          "max_temp_c": 49.453,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 11.277,
+          "max_temp_c": 50.766,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 11.151,
+          "max_temp_c": 50.58,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 6.04,
+          "available_gib": 11.138,
+          "max_temp_c": 50.758,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 7.05,
+          "available_gib": 11.142,
+          "max_temp_c": 50.564,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 8.06,
+          "available_gib": 11.248,
+          "max_temp_c": 50.951,
+          "max_fan_rpm": 2498.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 5.806071044004057,
+      "ttft_s": 0.6520995860046241,
+      "total_s": 1.9919909969976288,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 23.13620323681726,
+      "min_available_gib": 11.138,
+      "peak_temp_c": 50.951,
+      "round": 3,
+      "admission_available_gib": 14.091
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.057,
+          "max_temp_c": 52.508,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.425,
+          "max_temp_c": 51.935,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 11.688,
+          "max_temp_c": 51.548,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 11.413,
+          "max_temp_c": 51.548,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 11.168,
+          "max_temp_c": 51.37,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 10.803,
+          "max_temp_c": 50.112,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 6.08,
+          "available_gib": 11.008,
+          "max_temp_c": 51.362,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 7.1,
+          "available_gib": 10.972,
+          "max_temp_c": 52.33,
+          "max_fan_rpm": 2507.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 5.287809624001966,
+      "ttft_s": 0.6546849180012941,
+      "total_s": 1.8023895139995147,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 27.01043466070433,
+      "min_available_gib": 10.803,
+      "peak_temp_c": 52.508,
+      "round": 3,
+      "admission_available_gib": 14.057
+    }
+  ],
+  "summary": {
+    "mlx-5k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.6520995860046241,
+      "median_total_s": 1.9919909969976288,
+      "median_decode_tps": 23.13620323681726,
+      "texts": [
+        "bdb76d67e763"
+      ]
+    },
+    "mlx-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.6414775480006938,
+      "median_total_s": 1.7810257719975198,
+      "median_decode_tps": 27.01043466070433,
+      "texts": [
+        "bdb76d67e763"
+      ]
+    }
+  }
+}

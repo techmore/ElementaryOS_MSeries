@@ -1,0 +1,440 @@
+{
+  "status": "complete",
+  "model_key": "lfm3",
+  "model": "LiquidAI/LFM3-1.7B-MLX-8bit@ee7667f3cfccb2a41725f91820531823fcabc6b7",
+  "weights_sha256": "2b06cea98d75527c248a0b04383f7cf0a1c72fb4ed7b45096618fc4e59d015ad",
+  "kernel": "7.2.11-elementary-aurora72-wip4",
+  "driver": "Honeykrisp Mesa 7faf04c065",
+  "tensorfold_rev": "670902196c47f3e70e3f56ab933805713be31aa8",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "mlx-5k",
+    "mlx-120k"
+  ],
+  "runs": [
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.156,
+          "max_temp_c": 51.75,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 13.687,
+          "max_temp_c": 51.346,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 12.343,
+          "max_temp_c": 51.161,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 3.02,
+          "available_gib": 12.276,
+          "max_temp_c": 53.298,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 12.238,
+          "max_temp_c": 50.975,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 5.05,
+          "available_gib": 12.228,
+          "max_temp_c": 51.161,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 12.218,
+          "max_temp_c": 51.741,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 12.242,
+          "max_temp_c": 52.508,
+          "max_fan_rpm": 2507.0
+        }
+      ],
+      "log_tail": "The repository /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit contains custom code which must be executed to correctly load the model. You can inspect the repository content at /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit .\n You can inspect the repository content at https://hf.co//home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit.\nYou can avoid this prompt in future by passing the argument `trust_remote_code=True`.\n\nDo you wish to run the custom code? [y/N] [transformers] You are using a model of type `lfm3` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.\n",
+      "ready_s": 5.19844698599627,
+      "ttft_s": 0.34890564000670565,
+      "total_s": 2.378871833003359,
+      "completion_tokens": 32,
+      "text": "A rainbow is created when sunlight passes through water droplets in the air and bends (refracts), then reflects off the back of each droplet and bends",
+      "text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+      "decode_tps": 15.271190282355164,
+      "min_available_gib": 12.218,
+      "peak_temp_c": 53.298,
+      "round": 1,
+      "admission_available_gib": 14.164
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.297,
+          "max_temp_c": 50.733,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.671,
+          "max_temp_c": 48.72,
+          "max_fan_rpm": 2524.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 12.228,
+          "max_temp_c": 49.94,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 12.195,
+          "max_temp_c": 51.161,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 12.178,
+          "max_temp_c": 51.346,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 5.07,
+          "available_gib": 12.179,
+          "max_temp_c": 51.354,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 6.08,
+          "available_gib": 12.203,
+          "max_temp_c": 51.935,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 7.1,
+          "available_gib": 12.14,
+          "max_temp_c": 50.338,
+          "max_fan_rpm": 2511.0
+        }
+      ],
+      "log_tail": "The repository /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit contains custom code which must be executed to correctly load the model. You can inspect the repository content at /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit .\n You can inspect the repository content at https://hf.co//home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit.\nYou can avoid this prompt in future by passing the argument `trust_remote_code=True`.\n\nDo you wish to run the custom code? [y/N] [transformers] You are using a model of type `lfm3` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.\n",
+      "ready_s": 5.1416033360001165,
+      "ttft_s": 0.39438504200370517,
+      "total_s": 2.2285385050054174,
+      "completion_tokens": 32,
+      "text": "A rainbow is created when sunlight passes through water droplets in the air and bends (refracts), then reflects off the back of each droplet and bends",
+      "text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+      "decode_tps": 16.901530120204047,
+      "min_available_gib": 12.14,
+      "peak_temp_c": 51.935,
+      "round": 1,
+      "admission_available_gib": 14.306
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.149,
+          "max_temp_c": 51.145,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 13.6,
+          "max_temp_c": 51.145,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 12.131,
+          "max_temp_c": 51.346,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 3.08,
+          "available_gib": 11.939,
+          "max_temp_c": 51.161,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 4.09,
+          "available_gib": 11.912,
+          "max_temp_c": 51.935,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 5.1,
+          "available_gib": 11.911,
+          "max_temp_c": 51.741,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 6.12,
+          "available_gib": 11.922,
+          "max_temp_c": 50.572,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 7.13,
+          "available_gib": 11.949,
+          "max_temp_c": 51.153,
+          "max_fan_rpm": 2502.0
+        }
+      ],
+      "log_tail": "The repository /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit contains custom code which must be executed to correctly load the model. You can inspect the repository content at /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit .\n You can inspect the repository content at https://hf.co//home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit.\nYou can avoid this prompt in future by passing the argument `trust_remote_code=True`.\n\nDo you wish to run the custom code? [y/N] [transformers] You are using a model of type `lfm3` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.\n",
+      "ready_s": 4.96780609999405,
+      "ttft_s": 0.3876400859953719,
+      "total_s": 2.2612461609969614,
+      "completion_tokens": 32,
+      "text": "A rainbow is created when sunlight passes through water droplets in the air and bends (refracts), then reflects off the back of each droplet and bends",
+      "text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+      "decode_tps": 16.545633798702163,
+      "min_available_gib": 11.911,
+      "peak_temp_c": 51.935,
+      "round": 2,
+      "admission_available_gib": 14.149
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.056,
+          "max_temp_c": 51.346,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 13.428,
+          "max_temp_c": 51.161,
+          "max_fan_rpm": 2481.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 11.84,
+          "max_temp_c": 50.967,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 3.07,
+          "available_gib": 11.821,
+          "max_temp_c": 51.741,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 11.863,
+          "max_temp_c": 51.145,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 5.1,
+          "available_gib": 11.882,
+          "max_temp_c": 52.508,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 6.11,
+          "available_gib": 11.887,
+          "max_temp_c": 52.129,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 7.11,
+          "available_gib": 11.896,
+          "max_temp_c": 50.717,
+          "max_fan_rpm": 2507.0
+        }
+      ],
+      "log_tail": "The repository /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit contains custom code which must be executed to correctly load the model. You can inspect the repository content at /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit .\n You can inspect the repository content at https://hf.co//home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit.\nYou can avoid this prompt in future by passing the argument `trust_remote_code=True`.\n\nDo you wish to run the custom code? [y/N] [transformers] You are using a model of type `lfm3` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.\n",
+      "ready_s": 5.144610251998529,
+      "ttft_s": 0.39729920799436513,
+      "total_s": 2.1945781409958727,
+      "completion_tokens": 32,
+      "text": "A rainbow is created when sunlight passes through water droplets in the air and bends (refracts), then reflects off the back of each droplet and bends",
+      "text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+      "decode_tps": 17.248296539162737,
+      "min_available_gib": 11.821,
+      "peak_temp_c": 52.508,
+      "round": 2,
+      "admission_available_gib": 14.056
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.087,
+          "max_temp_c": 50.741,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 13.458,
+          "max_temp_c": 50.75,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 11.972,
+          "max_temp_c": 52.33,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 11.895,
+          "max_temp_c": 52.137,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 11.951,
+          "max_temp_c": 50.75,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 11.989,
+          "max_temp_c": 53.258,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 6.08,
+          "available_gib": 12.011,
+          "max_temp_c": 52.532,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 7.09,
+          "available_gib": 12.019,
+          "max_temp_c": 52.129,
+          "max_fan_rpm": 2503.0
+        }
+      ],
+      "log_tail": "The repository /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit contains custom code which must be executed to correctly load the model. You can inspect the repository content at /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit .\n You can inspect the repository content at https://hf.co//home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit.\nYou can avoid this prompt in future by passing the argument `trust_remote_code=True`.\n\nDo you wish to run the custom code? [y/N] [transformers] You are using a model of type `lfm3` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.\n",
+      "ready_s": 5.0514841149997665,
+      "ttft_s": 0.41225178700551623,
+      "total_s": 2.452390644000843,
+      "completion_tokens": 32,
+      "text": "A rainbow is created when sunlight passes through water droplets in the air and bends (refracts), then reflects off the back of each droplet and bends",
+      "text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+      "decode_tps": 15.195044147953801,
+      "min_available_gib": 11.895,
+      "peak_temp_c": 53.258,
+      "round": 3,
+      "admission_available_gib": 14.087
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 14.157,
+          "max_temp_c": 51.741,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 13.603,
+          "max_temp_c": 51.548,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 2.06,
+          "available_gib": 12.141,
+          "max_temp_c": 51.935,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 3.07,
+          "available_gib": 12.1,
+          "max_temp_c": 53.088,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 4.09,
+          "available_gib": 12.083,
+          "max_temp_c": 51.935,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 5.1,
+          "available_gib": 12.004,
+          "max_temp_c": 51.137,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 6.11,
+          "available_gib": 11.986,
+          "max_temp_c": 53.088,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 7.12,
+          "available_gib": 11.909,
+          "max_temp_c": 52.33,
+          "max_fan_rpm": 2490.0
+        }
+      ],
+      "log_tail": "The repository /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit contains custom code which must be executed to correctly load the model. You can inspect the repository content at /home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit .\n You can inspect the repository content at https://hf.co//home/sdolbec/.cache/mseries-metal2vk/lfm3-8bit.\nYou can avoid this prompt in future by passing the argument `trust_remote_code=True`.\n\nDo you wish to run the custom code? [y/N] [transformers] You are using a model of type `lfm3` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.\n",
+      "ready_s": 4.9072863689943915,
+      "ttft_s": 0.41648974300187547,
+      "total_s": 2.1779088959956425,
+      "completion_tokens": 32,
+      "text": "A rainbow is created when sunlight passes through water droplets in the air and bends (refracts), then reflects off the back of each droplet and bends",
+      "text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+      "decode_tps": 17.599445280989116,
+      "min_available_gib": 11.909,
+      "peak_temp_c": 53.088,
+      "round": 3,
+      "admission_available_gib": 14.167
+    }
+  ],
+  "summary": {
+    "mlx-5k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.39729920799436513,
+      "median_total_s": 2.378871833003359,
+      "median_decode_tps": 15.271190282355164,
+      "texts": [
+        "b8cc5b9478a0"
+      ]
+    },
+    "mlx-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.39438504200370517,
+      "median_total_s": 2.2285385050054174,
+      "median_decode_tps": 16.901530120204047,
+      "texts": [
+        "b8cc5b9478a0"
+      ]
+    }
+  }
+}

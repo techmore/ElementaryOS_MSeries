@@ -1,0 +1,368 @@
+{
+  "status": "complete",
+  "model_key": "qwen2b",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "weights_sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+  "kernel": "7.2.11-elementary-aurora72-wip4",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "670902196c47f3e70e3f56ab933805713be31aa8",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "mlx-5k",
+    "mlx-120k"
+  ],
+  "runs": [
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 13.788,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 13.511,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 12.709,
+          "max_temp_c": 48.986,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 12.69,
+          "max_temp_c": 48.973,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 12.614,
+          "max_temp_c": 47.78,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 12.624,
+          "max_temp_c": 48.82,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 4.251419492997229,
+      "ttft_s": 0.4694931020057993,
+      "total_s": 1.103970276999462,
+      "completion_tokens": 32,
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 48.85912562624438,
+      "min_available_gib": 12.614,
+      "peak_temp_c": 48.986,
+      "round": 1,
+      "admission_available_gib": 13.788
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 13.952,
+          "max_temp_c": 48.14,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 13.649,
+          "max_temp_c": 48.633,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 12.718,
+          "max_temp_c": 48.633,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.02,
+          "available_gib": 12.672,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 570.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 12.489,
+          "max_temp_c": 48.82,
+          "max_fan_rpm": 2165.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 12.516,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2433.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 4.201572758000111,
+      "ttft_s": 0.4404696529963985,
+      "total_s": 0.9843637730009505,
+      "completion_tokens": 32,
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 56.99638745817027,
+      "min_available_gib": 12.489,
+      "peak_temp_c": 48.82,
+      "round": 1,
+      "admission_available_gib": 13.95
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 13.91,
+          "max_temp_c": 48.713,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.581,
+          "max_temp_c": 46.793,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 12.558,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2521.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 12.501,
+          "max_temp_c": 48.973,
+          "max_fan_rpm": 2530.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 12.3,
+          "max_temp_c": 48.713,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 5.07,
+          "available_gib": 12.278,
+          "max_temp_c": 48.666,
+          "max_fan_rpm": 2500.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 4.159727312995528,
+      "ttft_s": 0.45267814899852965,
+      "total_s": 1.0023786419988028,
+      "completion_tokens": 32,
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 56.39434636633043,
+      "min_available_gib": 12.278,
+      "peak_temp_c": 48.973,
+      "round": 2,
+      "admission_available_gib": 13.91
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 13.864,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.614,
+          "max_temp_c": 46.766,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 12.725,
+          "max_temp_c": 48.2,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 12.661,
+          "max_temp_c": 48.026,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 12.613,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 5.05,
+          "available_gib": 12.611,
+          "max_temp_c": 48.493,
+          "max_fan_rpm": 2505.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 4.232402248002472,
+      "ttft_s": 0.4607894380023936,
+      "total_s": 1.0962668210049742,
+      "completion_tokens": 32,
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 48.78222392987055,
+      "min_available_gib": 12.611,
+      "peak_temp_c": 48.493,
+      "round": 2,
+      "admission_available_gib": 13.864
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 13.951,
+          "max_temp_c": 47.713,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.641,
+          "max_temp_c": 48.2,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 2.06,
+          "available_gib": 12.696,
+          "max_temp_c": 48.713,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 3.07,
+          "available_gib": 12.633,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 12.557,
+          "max_temp_c": 46.853,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 12.577,
+          "max_temp_c": 45.76,
+          "max_fan_rpm": 2487.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 4.14972352499899,
+      "ttft_s": 0.43540602899884107,
+      "total_s": 1.069362870999612,
+      "completion_tokens": 32,
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 48.89922774894873,
+      "min_available_gib": 12.557,
+      "peak_temp_c": 48.713,
+      "round": 3,
+      "admission_available_gib": 13.951
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 14.016,
+          "max_temp_c": 46.693,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 13.31,
+          "max_temp_c": 46.026,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 12.664,
+          "max_temp_c": 46.473,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 3.02,
+          "available_gib": 12.614,
+          "max_temp_c": 46.966,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 12.384,
+          "max_temp_c": 46.593,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 12.448,
+          "max_temp_c": 47.933,
+          "max_fan_rpm": 2500.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 3.8014776350028114,
+      "ttft_s": 0.4730794759962009,
+      "total_s": 1.0499767099972814,
+      "completion_tokens": 32,
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 53.735740393482175,
+      "min_available_gib": 12.384,
+      "peak_temp_c": 47.933,
+      "round": 3,
+      "admission_available_gib": 14.011
+    }
+  ],
+  "summary": {
+    "mlx-5k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.4607894380023936,
+      "median_total_s": 1.0962668210049742,
+      "median_decode_tps": 48.85912562624438,
+      "texts": [
+        "ffbf23cb27bb"
+      ]
+    },
+    "mlx-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.45267814899852965,
+      "median_total_s": 1.0023786419988028,
+      "median_decode_tps": 56.39434636633043,
+      "texts": [
+        "ffbf23cb27bb"
+      ]
+    }
+  }
+}
