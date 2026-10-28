@@ -1,6 +1,25 @@
 ## wip4 revision 6: DP routing candidate — 2026-10-27
 
 Owner report: dock HDMI and Ethernet not working on wip3; HDMI worked after moving the dock to another port. Journals show `apple-dcp 28cc00000` timing out the DPTX validate call (-110 x6, "Type-C DPTX reconnect failed after 5 retries") on every failing boot, each time on the first plug within ~4 s of resuming from s2idle; the same dock then worked on `289c00000`. wip2 used `28cc00000` successfully; wip3 never did. Ethernet (RTL8153, `r8152`) enumerated but had no carrier this boot (it had carrier on the previous wip3 boot with the identical missing-`rtl8153b-2.fw` message), so that looks physical/cable, not kernel. Candidate: wip4 revision 6 = wip3 source + #157 + local 0002 + upstream #186 (0003-0005; #163 excluded as conflicting duplicate). Full-tree `candidate.py prepare`/`check` and 83 aurora tests pass; kernel build, KUnit and boot are NOT done. Nothing installed, staged, armed or rebooted. `thunderbolt_apple.s2idle_teardown/resume_recovery/router_sleep` remain at the default N (upstream did not test them with a real dock).
+## Proton VPN on ARM64 — 2026-10-18 (merged 2026-10-28)
+
+Proton VPN 4.18.7 was installed from the Flathub source recipe as a native
+ARM64 Flatpak (`com.protonvpn.www`, ref `app/com.protonvpn.www/aarch64/master`).
+The published Flathub ref and Proton's Debian repository lacked ARM64 packages,
+but the Flathub recipe compiles Proton's Rust VPN backend and NetworkManager
+integration on ARM64. Its pinned NetworkManager GitLab source returned HTTP
+502/504, so the build uses the matching GNOME 1.40.18 release archive pinned by
+SHA-256. Recipe: [`install-protonvpn-arm64.sh`](install-protonvpn-arm64.sh),
+based on [Flathub recipe commit `7387931`](https://github.com/flathub/com.protonvpn.www/tree/7387931c14c4d57763618d83644be19b3475c77c).
+
+Proton's own tray item does not show in Pantheon. The Signal Wingpanel
+indicator now provides a StatusNotifierWatcher, but it only displays Signal's
+item. A small GTK4 Wingpanel launcher (`protonvpn-wingpanel/`, installed with
+`bash mseries/install-protonvpn-wingpanel.sh`) opens the app from the top panel.
+It is a launcher only and shows no VPN connection state. Installation was
+confirmed on 2026-10-18 (`libmseries-protonvpn.so` is loaded). Proton sign-in
+and VPN connection are not yet qualified.
+
 ## Rapid prompt cache and ANE references — 2026-10-27
 
 On Qwen3.8 distill, 80k vs 20k Rapid HTTP budget A/B gave a 1.74% median reduction (three pairs; one slower). At 20k, three 586-token cold/repeat requests showed 50.93% median shorter repeat time, 571 tokens cached and identical paired outputs; this is a repeat-prompt cache result, not general decode. maderix/ANE and fork solatticus/ANE add macOS/iOS ANE training references, not the missing Linux converter. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
