@@ -168,3 +168,15 @@ headroom. Exercise upstream kernel contract and correctness gates on the M1 Pro;
 record failures and exact checkpoint, driver, kernel, toolchain, and resource
 use. Only then compare matched old/new batching runs and the existing local AI
 baseline. Preserve desktop Mesa, boot configuration and installed workers.
+
+For the requested TensorFold batching result specifically, obtain the public
+before/after engine revisions and original prompt and compare on the same M1
+Pro, driver and Qwen3.5-2B checkpoint. Retain generated IDs, full logits,
+submission counts and reset results. Use the upstream 24-token prompt,
+64-token generation and 256 context when the actual inputs are released;
+alternate at least three old/new pairs and report each pair's whole-token
+latency and median gain, rather than comparing against an MLX timing. Apply
+the maintainer's predeclared teacher-forced float64 fidelity gate and record
+all failures. The author's public receipt says the raw inputs and executables
+are private, and the batching code will follow the engine PR, so this is an
+unexecuted plan rather than evidence of a 30% gain on this machine.
