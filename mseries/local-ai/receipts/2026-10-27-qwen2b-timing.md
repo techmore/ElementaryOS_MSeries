@@ -13,6 +13,14 @@ desktop reserve were used. Owner allowed higher fan RPM; 80 C guard remained.
 | mlx-lm 0.31.3, one warmup then one measured request | 2.632 s | 0.563 s, local generator wall time | 2.306 s total | 37.14 tokens/s, mlx-lm reported |
 | Rapid-MLX `1d09cdb684bbf58fac130f5804b08ee2e1f56558`, one server-warmed request | not separately timed | 0.250 s, server-reported | 2.618 s HTTP request wall time | 24.8 tokens/s, server completion log; mean inter-token 34.93 ms |
 
+For context, [upstream TensorFold](https://github.com/ashhart/TensorFold/issues/1420#issuecomment-6452943880)
+reports about 160 → 94 ms/token on M1 Max (about 6.25 → 10.64 tokens/s) and
+about 208 → 145 ms/token on base M1 (about 4.81 → 6.90 tokens/s). The
+reported 41% and 30% are reductions in TensorFold's own token latency after
+batching, not improvements relative to MLX or Rapid-MLX. Those machines,
+engines and timing boundaries differ from our run; no M1 Pro TensorFold
+measurement is available.
+
 Rapid's cache lookup was a miss and all 27 prompt tokens were prefetched. Its
 standalone server rejected `--disable-prefix-cache` before the successful run;
 the successful run used default cache settings. The measurement surfaces and
