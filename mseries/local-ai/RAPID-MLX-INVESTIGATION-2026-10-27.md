@@ -1,16 +1,40 @@
 # Rapid-MLX feasibility — 2026-10-27
 
+## Loopback Qwen smoke
+
+In a separate `~/.cache/mseries-metal2vk/rapid-python` target, installed a
+minimal set of Python dependencies (FastAPI 0.162.0, uvicorn 0.54.0,
+tiktoken 0.13.0, jsonschema 4.26.0, python-multipart 0.0.32 and their
+dependencies). No package was installed into the MLX venv. With this target
+and the pinned Rapid source on `PYTHONPATH`, `rapid_mlx.server` imported;
+`llguidance` was absent, so guided generation was explicitly disabled.
+
+Under the shared worker lock, a 4.5 GiB allowance and six-GiB reserve, a
+loopback-only Rapid server loaded the Qwen3.5-2B checkpoint identified in
+[`receipts/2026-10-27-tensorfold-vulkan.md`](receipts/2026-10-27-tensorfold-vulkan.md)
+using the private Vulkan ICD. A short OpenAI-compatible request returned HTTP
+200 and `19` to the same arithmetic prompt, then the server was terminated and
+shut down. The owner authorized exceeding the 3500 RPM noise cap; temperature
+and memory guards remained. This is one request, not a tool-calling test,
+metal2vk route test, correctness suite or performance comparison.
+
+The initial request used the wrong model identifier and returned 404; the
+successful request used the local model path. Telemetry was disabled and
+isolated XDG paths were set; Rapid nevertheless wrote a prefix cache under
+`~/.cache/rapid-mlx` (approximately 113 MB), which remains on disk. No service
+or persistent runtime configuration was installed.
+
 [Rapid-MLX](https://github.com/raullenchai/Rapid-MLX) source was inspected at
 `1d09cdb684bbf58fac130f5804b08ee2e1f56558`. It offers an MLX server, request
 scheduling, tool parsers and batching that could complement our stack. Its
 advertised model speed measurements are on macOS Apple Silicon; they are not
 evidence of gains on our Linux M1 Pro.
 
-Read-only source imports in the existing private MLX venv: `rapid_mlx` and
+Initial read-only source imports in the existing private MLX venv: `rapid_mlx` and
 `rapid_mlx.scheduler` import successfully with that source on `PYTHONPATH`.
 `rapid_mlx.server` fails immediately because FastAPI is absent; uvicorn,
-tiktoken, orjson and tomli_w are also absent. Nothing was installed. This is
-not a server or inference test.
+tiktoken, orjson and tomli_w were also absent. The later isolated dependency
+and server smoke is described above; orjson was not required for that smoke.
 
 Its `pyproject.toml` requires upstream `mlx>=0.32.1,<0.33` and
 `mlx-lm>=0.31.3,<0.32`; our fork has mlx-lm 0.31.3 but does not expose an
@@ -21,11 +45,8 @@ Vulkan ICD, and Rapid-MLX has several Metal-gated optimizations; whether any
 specific one is usable on this backend must be checked, not assumed. A search
 of its runtime and tests at this revision found no LFM3-specific support.
 
-Next: create a separate environment with reviewed, pinned Python dependencies
-and the existing fork explicitly exposed without overwriting it. Test a
-loopback-only server and deterministic Qwen request under the shared worker
-lock and resource guard. Capture errors, actual backend, custom-kernel routes,
-and exact dependencies. Compare matched workloads and correctness against our
-current runtime only after the basic server works. Investigate LFM3 separately
+Next: lock and review the full dependency set for a separate environment and
+check custom-kernel routes and reproducible teardown. Compare matched
+workloads and correctness against our current runtime. Investigate LFM3 separately
 with its unmerged mlx-lm model support; do not claim its support or Rapid's
 macOS performance numbers on this host before qualification.
