@@ -611,7 +611,7 @@ impl PantheonCompositor {
         serial: smithay::utils::Serial,
     ) {
         if !window_accepts_focus(window)
-            || self.window_app_id(window).as_deref() == Some("org.techmore.mseries.ScreenshotShelf")
+            || crate::overlays::is_no_focus_overlay(self.window_app_id(window).as_deref())
         {
             return;
         }

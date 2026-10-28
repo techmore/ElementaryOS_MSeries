@@ -468,8 +468,10 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
         // so the panel/dock keeps its reserved space.
         let surface_id = surface.id();
         let size = window.geometry().size;
-        let screenshot_shelf =
-            state.window_app_id(&window).as_deref() == Some("org.techmore.mseries.ScreenshotShelf");
+        let app_id = state.window_app_id(&window);
+        let screenshot_shelf = app_id.as_deref() == Some(crate::overlays::SCREENSHOT_SHELF);
+        let dictation_indicator = app_id.as_deref() == Some(crate::overlays::DICTATION_INDICATOR);
+        let no_focus_overlay = crate::overlays::is_no_focus_overlay(app_id.as_deref());
         // Shell panels own their placement and must not take keyboard focus
         // when they first attach a buffer or reappear after autohide.
         if !state.is_panel_surface(surface)
@@ -518,6 +520,15 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
                             (max_y - 16).max(work_area.loc.y),
                         );
                     }
+                    if dictation_indicator {
+                        // Bottom centre, above the dock, like macOS dictation's microphone.
+                        return (
+                            (work_area.loc.x + (work_area.size.w - size.w) / 2)
+                                .clamp(work_area.loc.x, max_x),
+                            (max_y - crate::overlays::DICTATION_INDICATOR_BOTTOM_GAP)
+                                .max(work_area.loc.y),
+                        );
+                    }
                     let x = (work_area.loc.x + (work_area.size.w - size.w) / 2 + cascade)
                         .clamp(work_area.loc.x, max_x);
                     let y = (work_area.loc.y + (work_area.size.h - size.h) / 2 + cascade)
@@ -531,7 +542,7 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
                 state.initially_positioned.insert(surface_id);
 
                 let serial = smithay::utils::SERIAL_COUNTER.next_serial();
-                if !state.session_locked && !screenshot_shelf {
+                if !state.session_locked && !no_focus_overlay {
                     state.focus_window_keyboard(&window, serial);
                 }
                 state.space.elements().for_each(|window| {

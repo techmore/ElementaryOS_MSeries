@@ -200,6 +200,12 @@ impl DesktopIntegrationServer {
         1
     }
 
+    /// The dictation microphone indicator is placed bottom-centre and never focused.
+    #[zbus(property)]
+    fn dictation_indicator_placement_version(&self) -> u32 {
+        1
+    }
+
     fn get_running_applications(&self) -> zbus::fdo::Result<Vec<RunningApplication>> {
         let snapshot = self
             .0

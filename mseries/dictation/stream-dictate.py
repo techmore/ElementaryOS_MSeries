@@ -125,6 +125,87 @@ def tone(freq, ms, vol=0.25):
     subprocess.Popen(["pw-play", path], stderr=subprocess.DEVNULL)
 
 
+def chime(kind):
+    """macOS-style start/stop sounds: two soft bell notes, rising to start and falling to stop."""
+    if QUIET:
+        return
+    path = os.path.join(os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir(), f"mseries-dictation-{kind}.wav")
+    if not os.path.exists(path):
+        rate, notes = 48000, ((784.0, 1174.7) if kind == "start" else (1174.7, 784.0))
+        step, tail = int(rate * 0.085), int(rate * 0.32)
+        out = [0.0] * (step + tail)
+        for k, freq in enumerate(notes):
+            for i in range(tail):
+                t = i / rate
+                env = min(1.0, i / (rate * 0.004)) * math.exp(-t * 14)
+                out[k * step + i] += env * (math.sin(2 * math.pi * freq * t) + 0.25 * math.sin(4 * math.pi * freq * t))
+        peak = max(abs(x) for x in out) or 1.0
+        with wave.open(path, "wb") as w:
+            w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate)
+            w.writeframes(struct.pack("<%dh" % len(out), *(int(32767 * 0.32 * x / peak) for x in out)))
+    subprocess.Popen(["pw-play", "--media-role", "Notification", path], stderr=subprocess.DEVNULL)
+
+
+class MicIndicator:
+    """The floating microphone (dictation-indicator.py) while the mic is open; falls back to a notification."""
+    SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dictation-indicator.py")
+
+    def __init__(self):
+        self.proc = None
+        self.next_level = 0.0
+
+    def show(self):
+        if QUIET or self.proc is not None:
+            return
+        try:
+            self.proc = subprocess.Popen(["/usr/bin/python3", "-I", self.SCRIPT], stdin=subprocess.PIPE,
+                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+        except OSError:
+            self.proc = None
+        threading.Thread(target=self._fallback_if_unsupported, args=(self.proc,), daemon=True).start()
+
+    def _fallback_if_unsupported(self, proc):
+        try:
+            code = proc.wait(timeout=2) if proc else 3
+        except subprocess.TimeoutExpired:
+            return  # running: the indicator is up
+        if code == 3 or proc is None:
+            # No overlay support in this compositor: a notification with the microphone icon instead.
+            subprocess.Popen(["notify-send", "-t", "0", "-i", "audio-input-microphone", "-a", "Dictation",
+                              "-h", "string:x-canonical-private-synchronous:mseries-dictation",
+                              "Listening\u2026"], stderr=subprocess.DEVNULL)
+
+    def feed(self, pcm16):
+        """Send the chunk's level, at most ~25 times a second."""
+        proc = self.proc
+        if proc is None or proc.poll() is not None or not pcm16:
+            return
+        now = time.monotonic()
+        if now < self.next_level:
+            return
+        self.next_level = now + 0.04
+        n = len(pcm16) // 2
+        samples = struct.unpack("<%dh" % n, pcm16[:n * 2])
+        rms = math.sqrt(sum(x * x for x in samples) / max(1, n)) / 32768
+        try:
+            proc.stdin.write(f"{rms:.4f}\n"); proc.stdin.flush()
+        except (BrokenPipeError, OSError, ValueError):
+            pass
+
+    def hide(self):
+        proc, self.proc = self.proc, None
+        if proc is None:
+            return
+        try:
+            proc.stdin.write("quit\n"); proc.stdin.close()
+        except (BrokenPipeError, OSError, ValueError):
+            pass
+        try:
+            proc.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            proc.kill()  # our own child only
+
+
 def whisper_fallback(pcm16, cancelled=lambda: False):
     """One offline Voxtype/Whisper pass over the captured audio (kept in RAM only)."""
     try:
@@ -265,6 +346,8 @@ class Dictation:
         if not 0 <= idle <= 900: raise ValueError('Speech residency must be between0 and900seconds')
         self.models = LazyModel(self.load_model, idle_seconds=idle)
         self.typer = Typer(self.insertion_failed)
+        self.mic = MicIndicator()
+        self.stop_feedback = True
         self.active = False
         self.worker = None
         self.stop_evt = threading.Event()
@@ -375,7 +458,9 @@ class Dictation:
                 capture_started = True
                 status('listening')
                 if not test:
-                    tone(880, 90)
+                    chime('start')
+                    self.mic.show()
+                    self.stop_feedback = False
                     notify('Listening… Press F5 again to finish; Escape cancels.' if TOGGLE else 'Listening… Release F5 to finish; Escape cancels.', persistent=True)
                 self.run(model)
         except ModelHeadroom:
@@ -406,14 +491,23 @@ class Dictation:
                     self.error = 'ModelReleaseUnavailable'
                     log('idle speech model release failed')
             if capture_started and not test:
-                tone(440, 120)
+                self.stopped_listening()
                 notify('Dictation cancelled' if self.cancelled else ('Dictation stopped to preserve cooling or desktop memory' if self.error == 'ResourceGuard' else ('Dictation finished' if not self.error else 'Dictation could not finish')))
             self.active = False
             status('cancelled' if self.cancelled else ('waiting' if self.error == 'ResourceGuard' else ('error' if self.error else 'ready')))
 
+    def stopped_listening(self):
+        """Stop sound and hide the mic once, the moment listening ends (not after typing drains)."""
+        if getattr(self, 'stop_feedback', True):
+            return
+        self.stop_feedback = True
+        self.mic.hide()
+        chime('stop')
+
     def stop(self):
         if self.active:
             self.stop_evt.set()
+            self.stopped_listening()
             status('finishing')
 
     def interrupt(self):
@@ -422,6 +516,7 @@ class Dictation:
             return
         self.interrupted = True
         self.stop_evt.set()
+        self.stopped_listening()
         self.typer.discard()
         self.abort_model()
         if OUTPUT == 'ibus':
@@ -564,6 +659,7 @@ class Dictation:
                 if not select.select([cap.stdout], [], [], .05)[0]:
                     continue
                 data = cap.stdout.read1(CHUNK * 2)
+                self.mic.feed(data)
                 if not data:
                     break
                 kept += data
@@ -631,6 +727,7 @@ class Dictation:
                 if stopped_at and time.time() - stopped_at > 0.15: break
                 if not select.select([cap.stdout], [], [], .1)[0]: continue
                 data = cap.stdout.read1(CHUNK * 2)
+                self.mic.feed(data)
                 if not data: break
                 buf += data
                 while len(buf) >= CHUNK * 2:
@@ -706,6 +803,7 @@ class Dictation:
                     if not select.select([cap.stdout], [], [], .1)[0]:
                         continue  # Keep stop/resource guards live if capture stalls.
                     data = cap.stdout.read1(CHUNK * 2)
+                    self.mic.feed(data)
                     if not data:
                         break
                     buf += data

@@ -40,6 +40,7 @@ mod popup_stack;
 mod prewarm;
 mod protocols;
 pub mod screenshot;
+mod overlays;
 mod terminal_keys;
 pub mod screenshot_pixels;
 pub mod screenshot_save;
