@@ -24,11 +24,11 @@ MODELS = {
     'qwen2b': (HOME / '.cache/mseries-metal2vk/qwen35-2b',
                '713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5',
                'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3', 4.5,
-               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'tensorfold')),
+               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'tensorfold')),
     'qwen4b': (HOME / '.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3',
                '5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db',
                'mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3', 6.5,
-               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k')),
+               HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k')),
     'lfm3': (HOME / '.cache/mseries-metal2vk/lfm3-8bit',
              '2b06cea98d75527c248a0b04383f7cf0a1c72fb4ed7b45096618fc4e59d015ad',
              'LiquidAI/LFM3-1.7B-MLX-8bit@ee7667f3cfccb2a41725f91820531823fcabc6b7', 4.5,
@@ -45,7 +45,9 @@ TF_REV = '670902196c47f3e70e3f56ab933805713be31aa8'
 PROMPT = 'Explain in plain language how a rainbow forms. Give four distinct sentences.'
 LONG_PROMPT = ('Explain in detail how a rainbow forms, including refraction, reflection, color '
                'and viewing angle. Write at least 350 words.')
-ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'tensorfold')
+ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'tensorfold')
+SERVE = HOME / '.local/bin/mlx-omarchy-serve'  # what model-worker.py runs for the everyday model
+CONCURRENCY = 1
 POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
 DEADLINE_S = 300
 MODEL_NAME = 'qwen2b'
@@ -124,7 +126,37 @@ def stream_chat(port, prompt_text, max_tokens, model):
             'token_count_source': 'usage' if usage else 'stream deltas', 'text': text}
 
 
+def concurrent_chat(port, prompt_text, max_tokens, model):
+    """CONCURRENCY streamed requests at once. Each gets its own prefix so no prompt cache
+    can serve one request from another; the aggregate is all tokens over the shared wall time."""
+    results = [None] * CONCURRENCY
+    def one(i):
+        try:
+            results[i] = stream_chat(port, f'Request {i + 1} of {CONCURRENCY}. ' + prompt_text, max_tokens, model)
+        except Exception as exc:
+            results[i] = {'error': f'{type(exc).__name__}: {exc}'}
+    threads = [threading.Thread(target=one, args=(i,)) for i in range(CONCURRENCY)]
+    start = time.monotonic()
+    for t in threads: t.start()
+    for t in threads: t.join()
+    wall = time.monotonic() - start
+    bad = [r for r in results if not r or 'error' in r]
+    if bad:
+        raise RuntimeError(f'{len(bad)} of {CONCURRENCY} concurrent requests failed: {bad[0]}')
+    tokens = sum(r['completion_tokens'] for r in results)
+    per = sorted((r['completion_tokens'] - 1) / (r['total_s'] - r['ttft_s']) for r in results
+                 if r['ttft_s'] is not None and r['total_s'] > r['ttft_s'] and r['completion_tokens'] > 1)
+    return {'concurrency': CONCURRENCY, 'wall_s': wall, 'aggregate_tok_s': tokens / wall,
+            'per_request_decode_median': per[len(per) // 2] if per else None,
+            'ttft_s': sorted(r['ttft_s'] for r in results)[len(results) // 2], 'total_s': wall,
+            'completion_tokens': tokens, 'text': results[0]['text'], 'requests': results}
+
+
 def server_command(arm, port):
+    if arm == 'serve-120k':
+        gib = sum(f.stat().st_size for f in MODEL.glob('*.safetensors')) / GIB
+        return [str(SERVE), 'serve', str(MODEL), '--server', 'mlx-lm', '--context', '4096',
+                '--weights-gib', f'{gib:.2f}', '--host', '127.0.0.1', '--port', str(port), '--offline', '--yes']
     if arm == 'tensorfold':
         return [str(TF_BIN), 'serve', str(MODEL), '--backend', 'vulkan', '--host', '127.0.0.1',
                 '--port', str(port), '--context', '1024', '--no-thinking', '--no-update-check']
@@ -166,16 +198,23 @@ def run_arm(arm, prompt_text, max_tokens, tmp):
                     raise RuntimeError(f'server exited during startup ({child.returncode})')
                 if time.monotonic() - started > 180:
                     raise RuntimeError('server readiness timeout')
-                try:
-                    path = '/health' if arm == 'tensorfold' else '/healthz'
-                    with urllib.request.urlopen(f'http://127.0.0.1:{port}{path}', timeout=2):
-                        break
-                except (OSError, urllib.error.HTTPError):
-                    time.sleep(0.5)
+                ready = False
+                for path in ('/health', '/healthz', '/v1/models'):
+                    try:
+                        with urllib.request.urlopen(f'http://127.0.0.1:{port}{path}', timeout=2):
+                            ready = True; break
+                    except (OSError, urllib.error.HTTPError):
+                        pass
+                if ready:
+                    break
+                time.sleep(0.5)
             model = served_model(port)
             stream_chat(port, prompt_text, max_tokens, model)  # warmup on the same prompt
             outcome['ready_s'] = time.monotonic() - started
-            outcome.update(stream_chat(port, prompt_text, max_tokens, model), served_model=model)
+            if CONCURRENCY == 1:
+                outcome.update(stream_chat(port, prompt_text, max_tokens, model), served_model=model)
+            else:
+                outcome.update(concurrent_chat(port, prompt_text, max_tokens, model), served_model=model)
         except Exception as exc:
             outcome['error'] = f'{type(exc).__name__}: {exc}'
 
@@ -215,7 +254,8 @@ def run_arm(arm, prompt_text, max_tokens, tmp):
     if 'text' in row:
         row['text_sha256'] = hashlib.sha256(row['text'].encode()).hexdigest()
         n, ttft, total = row['completion_tokens'], row['ttft_s'], row['total_s']
-        row['decode_tps'] = (n - 1) / (total - ttft) if n > 1 and ttft is not None and total > ttft else None
+        row['decode_tps'] = (row['aggregate_tok_s'] if 'aggregate_tok_s' in row else
+                             (n - 1) / (total - ttft) if n > 1 and ttft is not None and total > ttft else None)
     row['min_available_gib'] = min((x['available_gib'] for x in samples), default=None)
     row['peak_temp_c'] = max((x['max_temp_c'] for x in samples), default=None)
     return row
@@ -247,16 +287,18 @@ def main():
     p.add_argument('--max-tokens', type=int, default=32)
     p.add_argument('--long', action='store_true', help='256 tokens from the long-form prompt')
     p.add_argument('--rounds', type=int, default=3)
+    p.add_argument('--concurrency', type=int, default=1, help='server arms only: requests at once')
     p.add_argument('--arms', default=','.join(ARMS))
     p.add_argument('--admission-wait-seconds', type=int, default=0)
     p.add_argument('--output', type=Path)
     a = p.parse_args()
-    global MODEL_NAME
+    global MODEL_NAME, CONCURRENCY
     MODEL_NAME = a.model
+    CONCURRENCY = a.concurrency
     select_model(a.model)
     if a.worker:
         return mlx_worker(a.prompt, a.max_tokens, a.worker_output)
-    arms = [x for x in a.arms.split(',') if x and x in MODEL_ARMS]
+    arms = [x for x in a.arms.split(',') if x and x in MODEL_ARMS and not (CONCURRENCY > 1 and x.startswith('mlx'))]
     if not arms:
         p.error(f'no runnable arms for {a.model}; it supports {",".join(MODEL_ARMS)}')
     prompt_text, max_tokens = (LONG_PROMPT, 256) if a.long else (PROMPT, a.max_tokens)
@@ -270,13 +312,14 @@ def main():
         raise SystemExit('TensorFold server missing: run tensorfold-vulkan.sh build')
     out = a.output or Path(__file__).resolve().parent / 'receipts' / (
         f"{time.strftime('%Y-%m-%d')}-engine-compare-{a.model}-{'long' if a.long else 'short'}"
-        + ('' if DRIVER == '7faf04c065' else f'-hk{DRIVER}') + '.json')
+        + ('' if DRIVER == '7faf04c065' else f'-hk{DRIVER}') + (f'-c{CONCURRENCY}' if CONCURRENCY > 1 else '')
+        + ('' if tuple(arms) == tuple(x for x in MODEL_ARMS if x != 'serve-120k') else '-' + '+'.join(arms)) + '.json')
     lock = (HOME / '.local/state/mseries-ai/worker.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     report = {'status': 'running', 'model_key': a.model, 'model': MODEL_ID, 'weights_sha256': WEIGHTS_SHA, 'kernel': os.uname().release, 'driver': 'Honeykrisp Mesa ' + DRIVER,
               'tensorfold_rev': TF_REV, 'rapid_rev': RAPID_REV, 'prompt_sha256': hashlib.sha256(prompt_text.encode()).hexdigest(),
               'max_tokens': max_tokens, 'policy': {**POLICY, 'max_fan_rpm': None}, 'allowance_gib': ALLOWANCE_GIB,
-              'arms': arms, 'runs': []}
+              'arms': arms, 'concurrency': CONCURRENCY, 'runs': []}
     try:
         with tempfile.TemporaryDirectory(prefix='engine-compare-', dir=HOME / '.cache') as tmp:
             for r in range(a.rounds):
