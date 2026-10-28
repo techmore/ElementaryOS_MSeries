@@ -1,0 +1,583 @@
+{
+  "status": "complete",
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "model": "nvythong/Qwen3.8-2B-Distill-mlx-4Bit@0afdb6850d218024c7788eda5659aa25475b7d51",
+  "weights_sha256": "b0d5de688567bf4acd5e421027acd410dabcdc255a5bd46fdbf06c75dc2e6863",
+  "admission_gib": 4.5,
+  "sequence": [
+    5000,
+    20000,
+    20000,
+    5000,
+    5000,
+    20000
+  ],
+  "max_tokens": 32,
+  "wave_ab": false,
+  "runs": [
+    {
+      "budget": 5000,
+      "wave_enabled": false,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 15445917696,
+      "samples": [
+        {
+          "available_bytes": 15445917696,
+          "max_fan_rpm": 2503.0,
+          "max_temp_c": 45.38
+        },
+        {
+          "available_bytes": 14701215744,
+          "max_fan_rpm": 2490.0,
+          "max_temp_c": 45.5
+        },
+        {
+          "available_bytes": 13916110848,
+          "max_fan_rpm": 2491.0,
+          "max_temp_c": 45.146
+        },
+        {
+          "available_bytes": 13848920064,
+          "max_fan_rpm": 2508.0,
+          "max_temp_c": 45.533
+        },
+        {
+          "available_bytes": 13766639616,
+          "max_fan_rpm": 2491.0,
+          "max_temp_c": 46.066
+        },
+        {
+          "available_bytes": 13771243520,
+          "max_fan_rpm": 2499.0,
+          "max_temp_c": 45.146
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.5240752720019373,
+        "total_s": 1.353050567999162,
+        "tokens": [
+          16,
+          13,
+          7806,
+          4009,
+          15734,
+          1472,
+          2919,
+          6756,
+          86412,
+          303,
+          279,
+          3594,
+          11,
+          321,
+          279,
+          6756,
+          86412,
+          35600,
+          279,
+          3000,
+          13,
+          271,
+          17,
+          13,
+          561,
+          3000,
+          1179,
+          89600,
+          1495,
+          430,
+          424,
+          15734
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 39.63346083664639,
+        "measured_start_monotonic": 29926.977432777,
+        "measured_end_monotonic": 29928.330561553,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 429,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8949,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 429,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8713,
+          "barriers_skipped": 1073
+        }
+      }
+    },
+    {
+      "budget": 20000,
+      "wave_enabled": false,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 15326691328,
+      "samples": [
+        {
+          "available_bytes": 15325495296,
+          "max_fan_rpm": 2512.0,
+          "max_temp_c": 45.846
+        },
+        {
+          "available_bytes": 14505705472,
+          "max_fan_rpm": 2499.0,
+          "max_temp_c": 44.864
+        },
+        {
+          "available_bytes": 13771718656,
+          "max_fan_rpm": 2503.0,
+          "max_temp_c": 44.929
+        },
+        {
+          "available_bytes": 13699448832,
+          "max_fan_rpm": 2507.0,
+          "max_temp_c": 45.533
+        },
+        {
+          "available_bytes": 13439811584,
+          "max_fan_rpm": 2486.0,
+          "max_temp_c": 45.5
+        },
+        {
+          "available_bytes": 13444120576,
+          "max_fan_rpm": 2495.0,
+          "max_temp_c": 44.896
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.48837964899939834,
+        "total_s": 1.193509788998199,
+        "tokens": [
+          16,
+          13,
+          7806,
+          4009,
+          15734,
+          1472,
+          2919,
+          6756,
+          86412,
+          303,
+          279,
+          3594,
+          11,
+          321,
+          279,
+          6756,
+          86412,
+          35600,
+          279,
+          3000,
+          13,
+          271,
+          17,
+          13,
+          561,
+          3000,
+          1179,
+          89600,
+          1495,
+          430,
+          424,
+          15734
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 46.778504442182545,
+        "measured_start_monotonic": 29934.894133644,
+        "measured_end_monotonic": 29936.087718892,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 141,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8949,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 141,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8353,
+          "barriers_skipped": 1145
+        }
+      }
+    },
+    {
+      "budget": 20000,
+      "wave_enabled": false,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 15075950592,
+      "samples": [
+        {
+          "available_bytes": 15076884480,
+          "max_fan_rpm": 2512.0,
+          "max_temp_c": 45.466
+        },
+        {
+          "available_bytes": 14359838720,
+          "max_fan_rpm": 2512.0,
+          "max_temp_c": 45.913
+        },
+        {
+          "available_bytes": 13772226560,
+          "max_fan_rpm": 2516.0,
+          "max_temp_c": 45.5
+        },
+        {
+          "available_bytes": 13716881408,
+          "max_fan_rpm": 2469.0,
+          "max_temp_c": 46.56
+        },
+        {
+          "available_bytes": 13515898880,
+          "max_fan_rpm": 2507.0,
+          "max_temp_c": 46.193
+        },
+        {
+          "available_bytes": 13514145792,
+          "max_fan_rpm": 2511.0,
+          "max_temp_c": 46.593
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.4816650920001848,
+        "total_s": 1.1866591490033898,
+        "tokens": [
+          16,
+          13,
+          7806,
+          4009,
+          15734,
+          1472,
+          2919,
+          6756,
+          86412,
+          303,
+          279,
+          3594,
+          11,
+          321,
+          279,
+          6756,
+          86412,
+          35600,
+          279,
+          3000,
+          13,
+          271,
+          17,
+          13,
+          561,
+          3000,
+          1179,
+          89600,
+          1495,
+          430,
+          424,
+          15734
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 46.47657214179842,
+        "measured_start_monotonic": 29943.151638325,
+        "measured_end_monotonic": 29944.338361641,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 141,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8949,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 141,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8353,
+          "barriers_skipped": 1145
+        }
+      }
+    },
+    {
+      "budget": 5000,
+      "wave_enabled": false,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 15176777728,
+      "samples": [
+        {
+          "available_bytes": 15176777728,
+          "max_fan_rpm": 2508.0,
+          "max_temp_c": 44.961
+        },
+        {
+          "available_bytes": 14417838080,
+          "max_fan_rpm": 2491.0,
+          "max_temp_c": 46.193
+        },
+        {
+          "available_bytes": 13726203904,
+          "max_fan_rpm": 2512.0,
+          "max_temp_c": 46.313
+        },
+        {
+          "available_bytes": 13678641152,
+          "max_fan_rpm": 2491.0,
+          "max_temp_c": 45.76
+        },
+        {
+          "available_bytes": 13604978688,
+          "max_fan_rpm": 2496.0,
+          "max_temp_c": 45.586
+        },
+        {
+          "available_bytes": 13586743296,
+          "max_fan_rpm": 2504.0,
+          "max_temp_c": 45.966
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.5137654979989748,
+        "total_s": 1.3446757570018235,
+        "tokens": [
+          16,
+          13,
+          7806,
+          4009,
+          15734,
+          1472,
+          2919,
+          6756,
+          86412,
+          303,
+          279,
+          3594,
+          11,
+          321,
+          279,
+          6756,
+          86412,
+          35600,
+          279,
+          3000,
+          13,
+          271,
+          17,
+          13,
+          561,
+          3000,
+          1179,
+          89600,
+          1495,
+          430,
+          424,
+          15734
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 39.31762763176899,
+        "measured_start_monotonic": 29951.330212203,
+        "measured_end_monotonic": 29952.674965668,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 429,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8949,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 429,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8713,
+          "barriers_skipped": 1073
+        }
+      }
+    },
+    {
+      "budget": 5000,
+      "wave_enabled": false,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 15173009408,
+      "samples": [
+        {
+          "available_bytes": 15173009408,
+          "max_fan_rpm": 2499.0,
+          "max_temp_c": 46.253
+        },
+        {
+          "available_bytes": 14471856128,
+          "max_fan_rpm": 2499.0,
+          "max_temp_c": 45.813
+        },
+        {
+          "available_bytes": 13661569024,
+          "max_fan_rpm": 2491.0,
+          "max_temp_c": 46.093
+        },
+        {
+          "available_bytes": 13685424128,
+          "max_fan_rpm": 2508.0,
+          "max_temp_c": 46.753
+        },
+        {
+          "available_bytes": 13622460416,
+          "max_fan_rpm": 2491.0,
+          "max_temp_c": 46.466
+        },
+        {
+          "available_bytes": 13649969152,
+          "max_fan_rpm": 2507.0,
+          "max_temp_c": 45.586
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.5222020590008469,
+        "total_s": 1.3877038130012807,
+        "tokens": [
+          16,
+          13,
+          7806,
+          4009,
+          15734,
+          1472,
+          2919,
+          6756,
+          86412,
+          303,
+          279,
+          3594,
+          11,
+          321,
+          279,
+          6756,
+          86412,
+          35600,
+          279,
+          3000,
+          13,
+          271,
+          17,
+          13,
+          561,
+          3000,
+          1179,
+          89600,
+          1495,
+          430,
+          424,
+          15734
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 37.818051944163116,
+        "measured_start_monotonic": 29959.487535032,
+        "measured_end_monotonic": 29960.875313887,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 429,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8949,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 429,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8713,
+          "barriers_skipped": 1073
+        }
+      }
+    },
+    {
+      "budget": 20000,
+      "wave_enabled": false,
+      "exit": 0,
+      "stopped": null,
+      "admission_available_bytes": 15265923072,
+      "samples": [
+        {
+          "available_bytes": 15265923072,
+          "max_fan_rpm": 2511.0,
+          "max_temp_c": 46.126
+        },
+        {
+          "available_bytes": 14502723584,
+          "max_fan_rpm": 2485.0,
+          "max_temp_c": 46.06
+        },
+        {
+          "available_bytes": 13704921088,
+          "max_fan_rpm": 2516.0,
+          "max_temp_c": 46.466
+        },
+        {
+          "available_bytes": 13642268672,
+          "max_fan_rpm": 2512.0,
+          "max_temp_c": 46.44
+        },
+        {
+          "available_bytes": 13401554944,
+          "max_fan_rpm": 2499.0,
+          "max_temp_c": 47.093
+        },
+        {
+          "available_bytes": 13405470720,
+          "max_fan_rpm": 2486.0,
+          "max_temp_c": 46.753
+        }
+      ],
+      "log_tail": "",
+      "result": {
+        "first_s": 0.4958018319994153,
+        "total_s": 1.2094079090020387,
+        "tokens": [
+          16,
+          13,
+          7806,
+          4009,
+          15734,
+          1472,
+          2919,
+          6756,
+          86412,
+          303,
+          279,
+          3594,
+          11,
+          321,
+          279,
+          6756,
+          86412,
+          35600,
+          279,
+          3000,
+          13,
+          271,
+          17,
+          13,
+          561,
+          3000,
+          1179,
+          89600,
+          1495,
+          430,
+          424,
+          15734
+        ],
+        "prompt_tokens": 27,
+        "generation_tps": 46.21188686178967,
+        "measured_start_monotonic": 29967.367567274,
+        "measured_end_monotonic": 29968.577073016,
+        "counter_delta": {
+          "gpu_primitive_dispatches": 22208,
+          "vk_submissions": 141,
+          "vk_buffer_copies": 408,
+          "vk_buffer_fills": 0,
+          "vk_compute_dispatches": 8949,
+          "omarchy_finalize_calls": 34,
+          "commit_calls_with_work": 141,
+          "commit_calls_noop": 35,
+          "barriers_emitted": 8353,
+          "barriers_skipped": 1145
+        }
+      }
+    }
+  ]
+}

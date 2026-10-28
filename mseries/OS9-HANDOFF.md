@@ -1,3 +1,38 @@
+## Rapid prompt cache and ANE references — 2026-10-27
+
+On Qwen3.8 distill, 80k vs 20k Rapid HTTP budget A/B gave a 1.74% median reduction (three pairs; one slower). At 20k, three 586-token cold/repeat requests showed 50.93% median shorter repeat time, 571 tokens cached and identical paired outputs; this is a repeat-prompt cache result, not general decode. maderix/ANE and fork solatticus/ANE add macOS/iOS ANE training references, not the missing Linux converter. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
+
+## Qwen H13 export and Rapid batching — 2026-10-27
+
+M4 macOS mini cross-compiled all 38 staged Qwen programs for h13 from a hash-verified GGUF; files remain in its isolated cache, checksums retained locally. Upstream ANEC conversion fails before first output: undefined `uniform_task_relayout`; `payload` is also referenced before assignment. No ANE execution. Qwen3.8 distill on M1 Pro: direct MLX 20k vs 5k median paired request time −11.79% (3 pairs); Rapid loopback HTTP −17.95% (2 pairs), outputs text-matched but measurement boundaries/warmups differ, so not an engine ranking. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
+
+## ANE converter unit follow-up — 2026-10-27
+
+The converter writes 512-byte tile counts, whereas historical probe/staged paths used 16-KiB counts. A branch-only patch updates stale tests and requires explicit unit selection before the direct staged decoder opens the device; 84 offline tests pass on a clean archive. The separate libane runner, real bundle layout and hardware remain unverified. Public ANEForge commit 2ea941c is reachable, but no compiled Qwen bundle appears in repository/release assets or local cache; no model comparison ran. [Receipt](local-ai/receipts/2026-10-27-ane-qwen-preflight.md).
+
+## Qwen 4B batching qualification — 2026-10-27
+
+Memory rose naturally; guarded Qwen 4B smoke passed at 12.69 GiB admission. Three matched 20k vs 5k 32-token pairs gave median 12.86% lower request time, 19.46 → 23.29 reported tokens/s, 823 → 249 submissions and identical outputs. One candidate GTK callback gap was 50.49 ms; sustained presentation/input and numerical fidelity remain open. No default changed. ANE still needs compiled assets and converter ABI resolution. [4B receipt](local-ai/receipts/2026-10-27-qwen4b-20k.md).
+
+## Qwen ANE preflight — 2026-10-27
+
+Inspected current public ane-linux-experiments and omarchy-ane: Qwen staged decoder needs 38 compiled ANE programs, a guarded manifest and matched model assets not found locally. Upstream reports 8.38 GB peak RSS; available desktop memory was about 10.26 GiB, insufficient alongside the 6 GiB reserve. Host-only Qwen contract/reference suite passed 18 tests; five converter header-geometry tests failed because source uses 512-byte units while tests expect 16-KiB units, with ABI correctness unresolved. No ANE model or comparison ran; no driver/system changes. [Preflight](local-ai/receipts/2026-10-27-ane-qwen-preflight.md).
+
+## MLX longer generation follow-up — 2026-10-27
+
+Qwen 2B 256-token tests: 80k budget median paired request reduction 21.06% (two pairs, interrupted at admission); 120k 20.69% (three pairs), with matching outputs. GTK callback probe saw no intervals over 33.33 ms over individual 6–8 second requests; this is not sustained desktop or input qualification. Wave scheduling offered no compelling gain. 4B admission remained refused at 10.61 GiB versus 12.5 required. ANE is a separate accelerator and not yet an MLX Qwen path. Leave defaults unchanged; 4B, longer interaction/fidelity and later Rapid comparison remain open. [Receipts](local-ai/receipts/2026-10-27-batch-work.md).
+
+## MLX batch follow-up — 2026-10-27
+
+A 20k and 80k Qwen 2B sweep with a GTK animation probe showed median paired request reductions of 14.29% and 17.55%, respectively; no callback gaps over 33.33 ms during the short measured requests. This is not presentation or input-latency qualification. Qwen 4B was refused at 11.28 GiB available against a 12.5 GiB admission requirement; reserve unchanged. Keep opt-in and test sustained desktop behavior, larger models, and numerical fidelity before any default. Rapid-MLX remains a later matched comparison. [Raw results](local-ai/receipts/2026-10-27-batch-work.md).
+
+## TensorFold Vulkan investigation — 2026-10-27
+
+M1 Pro Qwen3.5 2B process-local submission-budget experiment: 20,000 versus the uncalibrated-board fallback 5,000 reduced median paired 32-token request time 16.37% with identical token IDs across three pairs; 10,000 and 40,000 were also tested. The branch includes the guarded harness, graph and raw receipts. Desktop frame pacing and broader model correctness are not qualified, so this is opt-in only and is not the unavailable TensorFold batching patch. [`local-ai/receipts/2026-10-27-batch-work.md`](local-ai/receipts/2026-10-27-batch-work.md).
+
+Qwen3.5 2B initial MLX and Rapid-MLX timings, identical 64-token output, admission refusals and measurement limits: [`local-ai/receipts/2026-10-27-qwen2b-timing.md`](local-ai/receipts/2026-10-27-qwen2b-timing.md). Rapid's isolated loopback server smoke and dependency snapshot: [`local-ai/RAPID-MLX-INVESTIGATION-2026-10-27.md`](local-ai/RAPID-MLX-INVESTIGATION-2026-10-27.md). The test helper now requires an explicit model-specific admission allowance; guard refusals report available, model allowance and reserve. The six-GiB reserve remains in force. Timing surfaces and warmups differ, so the one pair is not a speed ranking.
+
+The private Honeykrisp ICD enumerates the M1 Pro on the running Aurora wip4 kernel. The metal2vk compiler build completed in `~/.cache/mseries-metal2vk`; both the shipped `metal::precise::exp` and freshly compiled `metal::exp` SiLU probes ran through MLX metal2vk without fallback and matched a bounded independent reference. LFM3 1.7B 8-bit answered a short prompt on the Mac with an isolated unmerged mlx-lm PR; it did not invoke a metal2vk custom kernel. Qwen 4B admission was refused with 12.22 GiB available against the 12.5 GiB requirement. No model or compiler job remains running. Full-model correctness, TensorFold batching and speed improvements are unqualified. Exact results: [`local-ai/receipts/2026-10-27-tensorfold-vulkan.md`](local-ai/receipts/2026-10-27-tensorfold-vulkan.md).
 ## T3 Dock launcher and Wingpanel — 2026-10-27
 
 The owner chose to retain the unified Wingpanel menu. The Dock launcher opens the T3 window and its taskbar status area does not add a second T3 menu. The Dock source-preparation guard checks these boundaries; the Wingpanel module is not retired. Source preparation is verified against the pinned upstream Dock, with live desktop acceptance still outstanding.
@@ -13374,6 +13409,14 @@ nested compositor, a second client was refused while the first lived, got its ke
 ungrabbing, and a same-client regrab-then-release left the key held. Not verified: a physical key press end to end and the
 installed session (needs a compositor reload, i.e. the next login). Separate, unaddressed: `gsd-media-keys` logs
 `Unable to get default sink` when pressed before PipeWire's default sink exists.
+
+## Qwen ANE binding audit — 2026-10-27
+
+Offline audit identifies six incorrectly packed 128-byte surfaces, 18 surfaces not named in decoded selectors and 20 extended `0x300` descriptors requiring T6000 validation. No Qwen ANE execution or speed comparison yet; available memory remains below the admission estimate. The reproducible audit and next steps are in `local-ai/receipts/2026-10-27-ane-binding-handoff.md`.
+
+## Qwen ANE conversion — 2026-10-27
+
+The Mac mini built and converted all 38 H13 Qwen programs; transfer hashes match and the converter and group-state fixes pass 70 targeted tests. Execution remains gated on memory reserve, descriptor safety, and surface binding validation; no Linux ANE timing or fidelity result is claimed. Details and reference hashes: `local-ai/receipts/2026-10-27-ane-qwen-conversion.md`.
 
 ## SDK dock panel protocol — 2026-10-23
 

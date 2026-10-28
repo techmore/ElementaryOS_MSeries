@@ -272,7 +272,10 @@ class AssistantContracts(unittest.TestCase):
     def test_desktop_reserve_and_quiet_limits(self):
         sample = {'available_bytes': 16 * machine.GIB, 'fans_rpm': {'fan': 2500}, 'temperatures_c': {'soc': 55}}
         self.assertFalse(machine.violations(sample, extra_bytes=9 * machine.GIB))
-        self.assertTrue(machine.violations(sample, extra_bytes=11 * machine.GIB))
+        refusal = machine.violations(sample, extra_bytes=11 * machine.GIB)
+        self.assertTrue(refusal)
+        self.assertIn('model allowance 11.00 GiB', refusal[0])
+        self.assertIn('reserve 6.00 GiB', refusal[0])
         sample['fans_rpm']['fan'] = 4000
         self.assertTrue(machine.violations(sample))
 
@@ -325,6 +328,29 @@ class AssistantContracts(unittest.TestCase):
             self.assertEqual(calls.count(signal.SIGSTOP), 1)
             self.assertLess(calls.index(signal.SIGCONT), calls.index('terminate'))
             child.wait.assert_called_once()
+            child.terminate.assert_called_once()
+
+    def test_memory_guard_stop_reports_failure(self):
+        with tempfile.TemporaryDirectory() as root:
+            home = Path(root); config = home / '.config/mseries-ai'; config.mkdir(parents=True)
+            (config / 'profiles.json').write_text(json.dumps({'profiles': {'coder': {
+                'engine': 'llama', 'model': 'fixture', 'context': 8192, 'port': 8768, 'admission_gib': 1}}}))
+            base = {'available_bytes': 32 * machine.GIB, 'fans_rpm': {'fan': 2300}, 'temperatures_c': {'soc': 55}}
+            low = base | {'available_bytes': 5 * machine.GIB}
+            child = MagicMock(pid=123)
+            child.poll.return_value = None
+            def wait(timeout):
+                child.poll.return_value = 0
+                child.returncode = 0
+            child.wait.side_effect = wait
+            with patch.object(worker.Path, 'home', return_value=home), \
+                 patch('sys.argv', ['worker', 'coder']), \
+                 patch.object(worker, 'snapshot', side_effect=[base, low, low, low]), \
+                 patch.object(worker.subprocess, 'Popen', return_value=child), \
+                 patch.object(worker.signal, 'signal'), \
+                 patch.object(worker.os, 'killpg'), \
+                 patch.object(worker.time, 'sleep'):
+                self.assertEqual(worker.main(), 3)
             child.terminate.assert_called_once()
 
     def test_kernel_events_and_changing_addresses_are_grouped(self):
