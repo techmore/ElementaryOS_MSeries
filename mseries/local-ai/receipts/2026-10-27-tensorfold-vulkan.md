@@ -303,3 +303,16 @@ the maintainer's predeclared teacher-forced float64 fidelity gate and record
 all failures. The author's public receipt says the raw inputs and executables
 are private, and the batching code will follow the engine PR, so this is an
 unexecuted plan rather than evidence of a 30% gain on this machine.
+
+## Four-engine comparison (2026-10-28)
+
+Same Qwen3.5-2B MLX 4-bit checkpoint (`93760be4`), same prompts, greedy, no thinking, three rotated rounds, each run a fresh process with one warmup; shared lock, 6 GiB reserve, 80 °C limit; wip4, Honeykrisp `7faf04c065`. Medians:
+
+| Engine | 32 tok decode | 32 tok TTFT | 256 tok decode | 256 tok output vs MLX default |
+| --- | ---: | ---: | ---: | --- |
+| MLX default (5k budget) | 36.0 tok/s | 0.51 s | 37.2 tok/s | reference |
+| MLX 120k budget | **47.2** | 0.46 s | **49.3** | identical |
+| Rapid-MLX 120k (HTTP) | 42.4 | **0.19 s** | 43.2 | identical |
+| TensorFold Vulkan PR 1517 (HTTP) | 2.4 | 2.00 s | 2.8 | diverges after 880 of 1,301 chars |
+
+TensorFold's slowness is structural: `Pipeline.run` (`zig/src/vulkan/dispatch.zig`) records one dispatch, submits it and waits on its fence before the next, so a token costs a few hundred CPU↔GPU round trips. Its server log agrees (`tok/s=2.4–2.6`). Upstream's unpublished submit-batching follow-up targets exactly this. Its 256-token text matched MLX for ~170 tokens and then took a different, coherent continuation, consistent with upstream's reported divergence. Raw data: `2026-10-28-engine-compare-short.json`, `2026-10-28-engine-compare-long.json`; live table in `ENGINE-SCOREBOARD.md`.

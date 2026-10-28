@@ -6,12 +6,16 @@ One table for every engine we run or watch on the M1 Pro. ★ marks the most fun
 
 ## Measured on this machine
 
-| ★ | Model | Engine | Settings | Tokens | Decode tok/s | TTFT s | Total s | Runs | Same output | Gate | Kernel | Driver | Date | Receipt |
+| ★ | Model | Engine | Settings | Tokens | Decode tok/s | TTFT s | Total s | Runs | Same output as MLX default | Gate | Kernel | Driver | Date | Receipt |
 |---|---|---|---|---:|---:|---:|---:|---:|---|---|---|---|---|---|
 | ★ | Qwen3.5-2B MLX 4-bit | **MLX (omarchy-mlx, in-process)** | `MLX_OMARCHY_BATCH_WORK=120000` | 32 | **47.19** | 0.46 | 1.13 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-short.json](receipts/2026-10-28-engine-compare-short.json) |
 |  | Qwen3.5-2B MLX 4-bit | Rapid-MLX 1d09cdb (HTTP server) | `MLX_OMARCHY_BATCH_WORK=120000` | 32 | 42.42 | 0.19 | 0.92 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-short.json](receipts/2026-10-28-engine-compare-short.json) |
-|  | Qwen3.5-2B MLX 4-bit | MLX (omarchy-mlx, in-process) | `defaults (MLX_OMARCHY_BATCH_WORK fallback 5000)` | 32 | 36.02 | 0.51 | 1.37 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-short.json](receipts/2026-10-28-engine-compare-short.json) |
+|  | Qwen3.5-2B MLX 4-bit | MLX (omarchy-mlx, in-process) | `defaults (MLX_OMARCHY_BATCH_WORK fallback 5000)` | 32 | 36.02 | 0.51 | 1.37 | 3 | reference | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-short.json](receipts/2026-10-28-engine-compare-short.json) |
 |  | Qwen3.5-2B MLX 4-bit | TensorFold Vulkan PR 1517 (HTTP server) | `serve --backend vulkan --context 1024 --no-thinking` | 32 | 2.40 | 2.00 | 14.92 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-short.json](receipts/2026-10-28-engine-compare-short.json) |
+| ★ | Qwen3.5-2B MLX 4-bit | **MLX (omarchy-mlx, in-process)** | `MLX_OMARCHY_BATCH_WORK=120000` | 256 | **49.28** | 0.56 | 5.74 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-long.json](receipts/2026-10-28-engine-compare-long.json) |
+|  | Qwen3.5-2B MLX 4-bit | Rapid-MLX 1d09cdb (HTTP server) | `MLX_OMARCHY_BATCH_WORK=120000` | 256 | 43.17 | 0.40 | 6.27 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-long.json](receipts/2026-10-28-engine-compare-long.json) |
+|  | Qwen3.5-2B MLX 4-bit | MLX (omarchy-mlx, in-process) | `defaults (MLX_OMARCHY_BATCH_WORK fallback 5000)` | 256 | 37.19 | 0.55 | 7.41 | 3 | reference | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-long.json](receipts/2026-10-28-engine-compare-long.json) |
+|  | Qwen3.5-2B MLX 4-bit | TensorFold Vulkan PR 1517 (HTTP server) | `serve --backend vulkan --context 1024 --no-thinking` | 256 | 2.77 | 3.12 | 95.26 | 3 | no: diverges after 880 of 1301 chars | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-long.json](receipts/2026-10-28-engine-compare-long.json) |
 
 ## Watched or reported elsewhere (not comparable to the table above)
 

@@ -1,0 +1,4808 @@
+{
+  "status": "complete",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "weights_sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+  "kernel": "7.2.11-elementary-aurora72-wip4",
+  "tensorfold_rev": "670902196c47f3e70e3f56ab933805713be31aa8",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "prompt_sha256": "2f23962cfdcb7ce0c2b482c4dd71e415f72113b963cfe6594fd5dc1fd4347921",
+  "max_tokens": 256,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "mlx-5k",
+    "mlx-120k",
+    "rapid-120k",
+    "tensorfold"
+  ],
+  "runs": [
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 11.252,
+          "max_temp_c": 47.913,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 10.554,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 9.846,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 9.784,
+          "max_temp_c": 47.4,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 9.735,
+          "max_temp_c": 46.88,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 9.745,
+          "max_temp_c": 46.853,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 9.718,
+          "max_temp_c": 47.713,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 9.733,
+          "max_temp_c": 48.58,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 9.714,
+          "max_temp_c": 46.78,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 9.715,
+          "max_temp_c": 48.046,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 10.11,
+          "available_gib": 9.71,
+          "max_temp_c": 47.14,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 11.14,
+          "available_gib": 9.691,
+          "max_temp_c": 46.6,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 12.14,
+          "available_gib": 9.718,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 13.17,
+          "available_gib": 9.73,
+          "max_temp_c": 47.246,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 14.18,
+          "available_gib": 9.756,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 15.21,
+          "available_gib": 9.761,
+          "max_temp_c": 48.353,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 16.22,
+          "available_gib": 9.777,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 17.24,
+          "available_gib": 9.802,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 18.25,
+          "available_gib": 10.171,
+          "max_temp_c": 48.353,
+          "max_fan_rpm": 2497.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 10.354950797998754,
+      "ttft_s": 0.5874293700035196,
+      "total_s": 7.628496978002659,
+      "completion_tokens": 256,
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 36.21609877887018,
+      "min_available_gib": 9.691,
+      "peak_temp_c": 48.58,
+      "round": 1,
+      "admission_available_gib": 11.252
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 11.137,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 10.512,
+          "max_temp_c": 48.14,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 9.781,
+          "max_temp_c": 49.44,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 9.617,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 9.336,
+          "max_temp_c": 47.96,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 9.269,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 6.09,
+          "available_gib": 9.274,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 7.1,
+          "available_gib": 9.325,
+          "max_temp_c": 47.8,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 8.11,
+          "available_gib": 9.393,
+          "max_temp_c": 48.333,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 9.21,
+          "max_temp_c": 48.353,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 10.13,
+          "available_gib": 9.21,
+          "max_temp_c": 48.633,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 11.14,
+          "available_gib": 9.252,
+          "max_temp_c": 48.986,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 12.15,
+          "available_gib": 9.264,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 13.17,
+          "available_gib": 9.225,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 14.18,
+          "available_gib": 9.495,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2515.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 8.62513161500101,
+      "ttft_s": 0.5593528610042995,
+      "total_s": 5.804364346004149,
+      "completion_tokens": 256,
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 48.61762471431601,
+      "min_available_gib": 9.21,
+      "peak_temp_c": 49.44,
+      "round": 1,
+      "admission_available_gib": 11.137
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 11.207,
+          "max_temp_c": 49.086,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 11.207,
+          "max_temp_c": 49.746,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 10.947,
+          "max_temp_c": 48.893,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 9.724,
+          "max_temp_c": 49.766,
+          "max_fan_rpm": 2471.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 9.669,
+          "max_temp_c": 48.4,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 9.577,
+          "max_temp_c": 48.28,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 9.586,
+          "max_temp_c": 48.633,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 7.1,
+          "available_gib": 9.564,
+          "max_temp_c": 49.04,
+          "max_fan_rpm": 2471.0
+        },
+        {
+          "t": 8.11,
+          "available_gib": 9.266,
+          "max_temp_c": 49.44,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 9.13,
+          "available_gib": 9.066,
+          "max_temp_c": 49.213,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 10.14,
+          "available_gib": 9.021,
+          "max_temp_c": 48.913,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 11.15,
+          "available_gib": 9.015,
+          "max_temp_c": 49.1,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 12.16,
+          "available_gib": 9.0,
+          "max_temp_c": 48.94,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 13.18,
+          "available_gib": 9.058,
+          "max_temp_c": 50.83,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 14.21,
+          "available_gib": 9.101,
+          "max_temp_c": 49.386,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 15.22,
+          "available_gib": 8.993,
+          "max_temp_c": 50.629,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 16.23,
+          "available_gib": 9.062,
+          "max_temp_c": 48.893,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 17.24,
+          "available_gib": 9.094,
+          "max_temp_c": 50.266,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 18.25,
+          "available_gib": 9.122,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 19.27,
+          "available_gib": 9.179,
+          "max_temp_c": 49.566,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 20.28,
+          "available_gib": 9.167,
+          "max_temp_c": 49.726,
+          "max_fan_rpm": 2522.0
+        }
+      ],
+      "log_tail": " first chunk arrived, elapsed=0.0s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] post-first-chunk keepalive (R15 #291), elapsed=0.0s\nINFO:rapid_mlx.scheduler:[schedule] request=chatcmpl-a55 uid=2 prompt_tokens=41 tokens_to_prefill=15, 26 cached max_tokens=256 running=1 waiting=0\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-a55 first token after 0.2s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] poll #10 disconnected=False elapsed=5.0s\nINFO:rapid_mlx.scheduler:[cache_store] request=chatcmpl-a55 tokens=297 (41 prompt + 256 output) stored=True time=0.000s cache_entries=4 cache_mem=121MB\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-a55 finished normally, 256 tokens in 6.2s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-a55 cleanup done\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 256 tokens in 6.15s (41.6 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffedffff160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff5ed4b160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff7cca87a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 259 chunks (1 keepalives), elapsed=6.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 259 chunks total, elapsed=6.3s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1586548]\n",
+      "ready_s": 14.971681981995062,
+      "ttft_s": 0.3582988740017754,
+      "total_s": 6.265561171996524,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 43.167204558795554,
+      "min_available_gib": 8.993,
+      "peak_temp_c": 50.83,
+      "round": 1,
+      "admission_available_gib": 11.207
+    },
+    {
+      "arm": "tensorfold",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.04,
+          "available_gib": 11.206,
+          "max_temp_c": 50.427,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 1.05,
+          "available_gib": 9.987,
+          "max_temp_c": 49.88,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 2.06,
+          "available_gib": 9.964,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 3.07,
+          "available_gib": 9.973,
+          "max_temp_c": 49.726,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 9.969,
+          "max_temp_c": 49.733,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 5.12,
+          "available_gib": 9.953,
+          "max_temp_c": 49.7,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 6.13,
+          "available_gib": 9.947,
+          "max_temp_c": 50.048,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 7.14,
+          "available_gib": 9.963,
+          "max_temp_c": 50.233,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 8.15,
+          "available_gib": 9.941,
+          "max_temp_c": 50.451,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 9.16,
+          "available_gib": 9.957,
+          "max_temp_c": 50.822,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 10.2,
+          "available_gib": 9.957,
+          "max_temp_c": 49.766,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 11.21,
+          "available_gib": 9.961,
+          "max_temp_c": 51.008,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 12.22,
+          "available_gib": 9.979,
+          "max_temp_c": 49.726,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 13.24,
+          "available_gib": 10.005,
+          "max_temp_c": 51.177,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 14.25,
+          "available_gib": 9.973,
+          "max_temp_c": 50.814,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 15.27,
+          "available_gib": 9.979,
+          "max_temp_c": 50.427,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 16.29,
+          "available_gib": 9.978,
+          "max_temp_c": 49.546,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 17.3,
+          "available_gib": 9.958,
+          "max_temp_c": 50.459,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 18.32,
+          "available_gib": 9.978,
+          "max_temp_c": 49.533,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 19.34,
+          "available_gib": 9.966,
+          "max_temp_c": 49.88,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 20.35,
+          "available_gib": 9.975,
+          "max_temp_c": 49.9,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 21.36,
+          "available_gib": 10.002,
+          "max_temp_c": 50.629,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 22.37,
+          "available_gib": 10.003,
+          "max_temp_c": 51.008,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 23.43,
+          "available_gib": 10.009,
+          "max_temp_c": 49.373,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 24.44,
+          "available_gib": 10.023,
+          "max_temp_c": 51.0,
+          "max_fan_rpm": 2462.0
+        },
+        {
+          "t": 25.49,
+          "available_gib": 10.02,
+          "max_temp_c": 49.56,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 26.5,
+          "available_gib": 9.807,
+          "max_temp_c": 49.873,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 27.52,
+          "available_gib": 9.869,
+          "max_temp_c": 49.9,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 28.53,
+          "available_gib": 9.795,
+          "max_temp_c": 49.713,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 29.55,
+          "available_gib": 9.774,
+          "max_temp_c": 50.443,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 30.56,
+          "available_gib": 9.826,
+          "max_temp_c": 50.806,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 31.58,
+          "available_gib": 9.815,
+          "max_temp_c": 49.873,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 32.6,
+          "available_gib": 9.87,
+          "max_temp_c": 50.258,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 33.61,
+          "available_gib": 9.878,
+          "max_temp_c": 49.386,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 34.63,
+          "available_gib": 9.873,
+          "max_temp_c": 50.62,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 35.65,
+          "available_gib": 9.861,
+          "max_temp_c": 49.726,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 36.66,
+          "available_gib": 9.849,
+          "max_temp_c": 50.048,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 37.67,
+          "available_gib": 9.815,
+          "max_temp_c": 49.9,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 38.71,
+          "available_gib": 9.827,
+          "max_temp_c": 50.258,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 39.72,
+          "available_gib": 9.848,
+          "max_temp_c": 49.893,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 40.73,
+          "available_gib": 9.89,
+          "max_temp_c": 50.072,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 41.74,
+          "available_gib": 9.893,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 42.75,
+          "available_gib": 9.67,
+          "max_temp_c": 49.726,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 43.77,
+          "available_gib": 9.68,
+          "max_temp_c": 49.86,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 44.78,
+          "available_gib": 9.657,
+          "max_temp_c": 49.4,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 45.78,
+          "available_gib": 9.659,
+          "max_temp_c": 49.426,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 46.82,
+          "available_gib": 9.66,
+          "max_temp_c": 49.266,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 47.83,
+          "available_gib": 9.662,
+          "max_temp_c": 50.83,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 48.85,
+          "available_gib": 9.66,
+          "max_temp_c": 49.726,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 49.86,
+          "available_gib": 9.612,
+          "max_temp_c": 48.753,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 50.88,
+          "available_gib": 9.598,
+          "max_temp_c": 50.443,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 51.89,
+          "available_gib": 9.613,
+          "max_temp_c": 49.213,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 52.9,
+          "available_gib": 9.617,
+          "max_temp_c": 49.386,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 53.91,
+          "available_gib": 9.616,
+          "max_temp_c": 49.606,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 54.92,
+          "available_gib": 9.629,
+          "max_temp_c": 50.685,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 55.94,
+          "available_gib": 9.652,
+          "max_temp_c": 49.9,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 56.95,
+          "available_gib": 9.653,
+          "max_temp_c": 50.443,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 57.97,
+          "available_gib": 9.674,
+          "max_temp_c": 50.258,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 58.99,
+          "available_gib": 9.618,
+          "max_temp_c": 49.546,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 60.01,
+          "available_gib": 9.617,
+          "max_temp_c": 49.733,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 61.02,
+          "available_gib": 9.821,
+          "max_temp_c": 49.746,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 62.05,
+          "available_gib": 9.816,
+          "max_temp_c": 48.56,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 63.06,
+          "available_gib": 9.832,
+          "max_temp_c": 49.913,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 64.08,
+          "available_gib": 9.826,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 65.09,
+          "available_gib": 9.833,
+          "max_temp_c": 49.386,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 66.1,
+          "available_gib": 9.854,
+          "max_temp_c": 49.746,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 67.12,
+          "available_gib": 9.873,
+          "max_temp_c": 49.213,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 68.14,
+          "available_gib": 9.863,
+          "max_temp_c": 49.593,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 69.16,
+          "available_gib": 9.866,
+          "max_temp_c": 49.566,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 70.18,
+          "available_gib": 9.881,
+          "max_temp_c": 49.4,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 71.19,
+          "available_gib": 9.845,
+          "max_temp_c": 49.1,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 72.22,
+          "available_gib": 9.848,
+          "max_temp_c": 49.126,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 73.24,
+          "available_gib": 9.848,
+          "max_temp_c": 49.286,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 74.25,
+          "available_gib": 9.836,
+          "max_temp_c": 48.786,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 75.27,
+          "available_gib": 9.828,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 76.28,
+          "available_gib": 9.82,
+          "max_temp_c": 49.253,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 77.3,
+          "available_gib": 9.826,
+          "max_temp_c": 48.893,
+          "max_fan_rpm": 2463.0
+        },
+        {
+          "t": 78.31,
+          "available_gib": 9.847,
+          "max_temp_c": 48.573,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 79.33,
+          "available_gib": 9.877,
+          "max_temp_c": 48.633,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 80.34,
+          "available_gib": 9.876,
+          "max_temp_c": 48.96,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 81.35,
+          "available_gib": 9.933,
+          "max_temp_c": 49.766,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 82.39,
+          "available_gib": 9.933,
+          "max_temp_c": 49.1,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 83.41,
+          "available_gib": 9.879,
+          "max_temp_c": 49.253,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 84.41,
+          "available_gib": 9.881,
+          "max_temp_c": 48.8,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 85.46,
+          "available_gib": 9.888,
+          "max_temp_c": 49.4,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 86.48,
+          "available_gib": 9.899,
+          "max_temp_c": 48.94,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 87.5,
+          "available_gib": 9.892,
+          "max_temp_c": 48.733,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 88.51,
+          "available_gib": 9.917,
+          "max_temp_c": 48.766,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 89.52,
+          "available_gib": 9.923,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 90.54,
+          "available_gib": 9.927,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 91.55,
+          "available_gib": 9.873,
+          "max_temp_c": 49.1,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 92.56,
+          "available_gib": 9.869,
+          "max_temp_c": 49.253,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 93.57,
+          "available_gib": 9.867,
+          "max_temp_c": 50.306,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 94.59,
+          "available_gib": 9.854,
+          "max_temp_c": 48.82,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 95.61,
+          "available_gib": 9.85,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 96.62,
+          "available_gib": 9.83,
+          "max_temp_c": 49.426,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 97.63,
+          "available_gib": 9.855,
+          "max_temp_c": 49.113,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 98.67,
+          "available_gib": 9.869,
+          "max_temp_c": 48.786,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 99.68,
+          "available_gib": 9.868,
+          "max_temp_c": 49.286,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 100.69,
+          "available_gib": 9.869,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 101.71,
+          "available_gib": 9.863,
+          "max_temp_c": 49.266,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 102.72,
+          "available_gib": 9.85,
+          "max_temp_c": 48.926,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 103.73,
+          "available_gib": 9.805,
+          "max_temp_c": 48.96,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 104.75,
+          "available_gib": 9.788,
+          "max_temp_c": 48.473,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 105.77,
+          "available_gib": 9.807,
+          "max_temp_c": 48.926,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 106.8,
+          "available_gib": 9.822,
+          "max_temp_c": 47.94,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 107.81,
+          "available_gib": 9.85,
+          "max_temp_c": 48.973,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 108.82,
+          "available_gib": 9.836,
+          "max_temp_c": 48.453,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 109.84,
+          "available_gib": 9.821,
+          "max_temp_c": 49.253,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 110.85,
+          "available_gib": 9.783,
+          "max_temp_c": 48.14,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 111.86,
+          "available_gib": 9.793,
+          "max_temp_c": 48.96,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 112.88,
+          "available_gib": 9.805,
+          "max_temp_c": 48.913,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 113.91,
+          "available_gib": 9.784,
+          "max_temp_c": 48.28,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 114.94,
+          "available_gib": 9.786,
+          "max_temp_c": 49.606,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 115.96,
+          "available_gib": 9.783,
+          "max_temp_c": 48.766,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 116.97,
+          "available_gib": 9.806,
+          "max_temp_c": 48.12,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 118.0,
+          "available_gib": 9.798,
+          "max_temp_c": 49.146,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 119.01,
+          "available_gib": 9.834,
+          "max_temp_c": 48.28,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 120.04,
+          "available_gib": 9.824,
+          "max_temp_c": 48.72,
+          "max_fan_rpm": 2483.0
+        },
+        {
+          "t": 121.05,
+          "available_gib": 9.846,
+          "max_temp_c": 48.593,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 122.08,
+          "available_gib": 9.857,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 123.1,
+          "available_gib": 9.859,
+          "max_temp_c": 48.073,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 124.12,
+          "available_gib": 9.869,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 125.13,
+          "available_gib": 9.858,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 126.14,
+          "available_gib": 9.88,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 127.15,
+          "available_gib": 9.879,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 128.16,
+          "available_gib": 9.887,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 129.2,
+          "available_gib": 9.861,
+          "max_temp_c": 49.126,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 130.22,
+          "available_gib": 9.856,
+          "max_temp_c": 48.28,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 131.23,
+          "available_gib": 9.856,
+          "max_temp_c": 48.333,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 132.25,
+          "available_gib": 9.849,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 133.26,
+          "available_gib": 9.849,
+          "max_temp_c": 48.986,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 134.27,
+          "available_gib": 9.912,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 135.29,
+          "available_gib": 9.899,
+          "max_temp_c": 47.96,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 136.31,
+          "available_gib": 9.905,
+          "max_temp_c": 48.453,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 137.32,
+          "available_gib": 9.89,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 138.33,
+          "available_gib": 9.938,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 139.34,
+          "available_gib": 9.954,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 140.36,
+          "available_gib": 9.959,
+          "max_temp_c": 48.573,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 141.38,
+          "available_gib": 9.952,
+          "max_temp_c": 47.646,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 142.39,
+          "available_gib": 9.961,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 143.4,
+          "available_gib": 9.95,
+          "max_temp_c": 48.14,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 144.41,
+          "available_gib": 9.943,
+          "max_temp_c": 49.146,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 145.46,
+          "available_gib": 9.946,
+          "max_temp_c": 48.453,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 146.48,
+          "available_gib": 9.928,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2518.0
+        },
+        {
+          "t": 147.49,
+          "available_gib": 9.936,
+          "max_temp_c": 48.8,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 148.51,
+          "available_gib": 9.923,
+          "max_temp_c": 48.32,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 149.51,
+          "available_gib": 9.936,
+          "max_temp_c": 48.8,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 150.55,
+          "available_gib": 9.926,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 151.56,
+          "available_gib": 9.926,
+          "max_temp_c": 48.333,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 152.57,
+          "available_gib": 9.926,
+          "max_temp_c": 48.493,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 153.61,
+          "available_gib": 9.914,
+          "max_temp_c": 48.2,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 154.63,
+          "available_gib": 9.919,
+          "max_temp_c": 48.8,
+          "max_fan_rpm": 2536.0
+        },
+        {
+          "t": 155.67,
+          "available_gib": 9.921,
+          "max_temp_c": 47.94,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 156.68,
+          "available_gib": 9.914,
+          "max_temp_c": 48.766,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 157.69,
+          "available_gib": 9.921,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 158.73,
+          "available_gib": 9.908,
+          "max_temp_c": 47.8,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 159.75,
+          "available_gib": 9.905,
+          "max_temp_c": 47.8,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 160.79,
+          "available_gib": 9.894,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 161.8,
+          "available_gib": 9.863,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 162.81,
+          "available_gib": 9.909,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 163.83,
+          "available_gib": 9.901,
+          "max_temp_c": 48.82,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 164.84,
+          "available_gib": 9.906,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 165.87,
+          "available_gib": 9.902,
+          "max_temp_c": 47.846,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 166.89,
+          "available_gib": 9.931,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 167.91,
+          "available_gib": 9.933,
+          "max_temp_c": 48.666,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 168.92,
+          "available_gib": 9.869,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 169.93,
+          "available_gib": 9.887,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 170.94,
+          "available_gib": 9.879,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 171.96,
+          "available_gib": 9.91,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 172.97,
+          "available_gib": 9.909,
+          "max_temp_c": 48.333,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 174.0,
+          "available_gib": 9.921,
+          "max_temp_c": 48.32,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 175.0,
+          "available_gib": 9.911,
+          "max_temp_c": 47.486,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 176.02,
+          "available_gib": 9.903,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 177.03,
+          "available_gib": 9.913,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 178.03,
+          "available_gib": 9.902,
+          "max_temp_c": 48.82,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 179.04,
+          "available_gib": 9.898,
+          "max_temp_c": 47.913,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 180.06,
+          "available_gib": 9.883,
+          "max_temp_c": 47.94,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 181.07,
+          "available_gib": 9.911,
+          "max_temp_c": 48.493,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 182.11,
+          "available_gib": 9.904,
+          "max_temp_c": 48.12,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 183.12,
+          "available_gib": 9.906,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 184.14,
+          "available_gib": 9.916,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 185.16,
+          "available_gib": 9.908,
+          "max_temp_c": 47.693,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 186.2,
+          "available_gib": 9.917,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 187.21,
+          "available_gib": 9.916,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 188.23,
+          "available_gib": 9.926,
+          "max_temp_c": 48.12,
+          "max_fan_rpm": 2472.0
+        },
+        {
+          "t": 189.25,
+          "available_gib": 9.918,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 190.28,
+          "available_gib": 9.924,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2471.0
+        },
+        {
+          "t": 191.29,
+          "available_gib": 9.921,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 192.31,
+          "available_gib": 9.929,
+          "max_temp_c": 47.46,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 193.33,
+          "available_gib": 9.918,
+          "max_temp_c": 47.273,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 194.34,
+          "available_gib": 9.93,
+          "max_temp_c": 48.333,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 195.35,
+          "available_gib": 9.91,
+          "max_temp_c": 46.793,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 196.36,
+          "available_gib": 9.892,
+          "max_temp_c": 48.513,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 197.37,
+          "available_gib": 9.915,
+          "max_temp_c": 48.026,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 198.39,
+          "available_gib": 9.937,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 199.4,
+          "available_gib": 9.942,
+          "max_temp_c": 47.353,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 200.41,
+          "available_gib": 9.943,
+          "max_temp_c": 48.12,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 201.44,
+          "available_gib": 9.937,
+          "max_temp_c": 47.8,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 202.45,
+          "available_gib": 9.945,
+          "max_temp_c": 47.78,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 203.46,
+          "available_gib": 9.948,
+          "max_temp_c": 47.846,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 204.5,
+          "available_gib": 9.915,
+          "max_temp_c": 47.013,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 205.51,
+          "available_gib": 9.9,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 206.52,
+          "available_gib": 9.899,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 207.54,
+          "available_gib": 9.899,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 208.54,
+          "available_gib": 9.844,
+          "max_temp_c": 48.7,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 209.55,
+          "available_gib": 9.883,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 210.57,
+          "available_gib": 9.896,
+          "max_temp_c": 48.353,
+          "max_fan_rpm": 2501.0
+        }
+      ],
+      "log_tail": "[tensorfold] prompt chunks of up to 32 tokens, cut at replies 256+ tokens apart\nwarning: libtfgrammar.so is required for structured output and required tool calls (HTTP 400 when missing); restore the matching release archive's lib/ directory or run zig build grammar -Dxgrammar=DIR; prepare DIR with git clone --branch v0.2.8 --recurse-submodules https://github.com/mlc-ai/xgrammar\n[tensorfold] serving qwen35-2b at http://127.0.0.1:46981/v1 (sampling: greedy; drafts: on; context: 1024; loaded in 0.5s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-c613a8999f1c997388a39bbdd3ec2481 prompt=41 cached=0 thinking=False effort=none tokens=256 sha=f87626954a51 finish=length rounds=255 accepted=0/0 ttft=3.209 decode=100.425 elapsed=103.634 queued=0.000 tok/s=2.5\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-8aacc3a4b47c2a47253d2e054649af04 prompt=41 cached=0 thinking=False effort=none tokens=256 sha=f87626954a51 finish=length rounds=255 accepted=0/0 ttft=3.121 decode=103.797 elapsed=106.918 queued=0.000 tok/s=2.5\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 104.6403054830007,
+      "ttft_s": 3.1231333750038175,
+      "total_s": 106.91948010700435,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. This phenomenon is called dispersion. Violet light, having the shortest wavelength, bends the most, while red light, with the longest wavelength, bends the least.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is crucial because it sets",
+      "served_model": "qwen35-2b",
+      "text_sha256": "83887b098d88ea16a47c6d0aad022a58cf6a9ee6565c6b33e5633a90ff4a80d5",
+      "decode_tps": 2.4567338642313046,
+      "min_available_gib": 9.598,
+      "peak_temp_c": 51.177,
+      "round": 1,
+      "admission_available_gib": 11.206
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 11.199,
+          "max_temp_c": 47.646,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 10.393,
+          "max_temp_c": 48.373,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 9.752,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 9.695,
+          "max_temp_c": 47.78,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 9.332,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 9.317,
+          "max_temp_c": 48.833,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 6.05,
+          "available_gib": 9.315,
+          "max_temp_c": 48.2,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 7.05,
+          "available_gib": 9.253,
+          "max_temp_c": 47.62,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 8.06,
+          "available_gib": 9.394,
+          "max_temp_c": 47.273,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 9.07,
+          "available_gib": 9.181,
+          "max_temp_c": 47.573,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 10.08,
+          "available_gib": 9.165,
+          "max_temp_c": 48.513,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 11.1,
+          "available_gib": 9.168,
+          "max_temp_c": 48.68,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 12.11,
+          "available_gib": 9.156,
+          "max_temp_c": 48.8,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 13.13,
+          "available_gib": 9.171,
+          "max_temp_c": 48.12,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 14.14,
+          "available_gib": 9.324,
+          "max_temp_c": 49.466,
+          "max_fan_rpm": 2475.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 8.4292342560002,
+      "ttft_s": 0.5688798640039749,
+      "total_s": 5.743813449000299,
+      "completion_tokens": 256,
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 49.275994717945956,
+      "min_available_gib": 9.156,
+      "peak_temp_c": 49.466,
+      "round": 2,
+      "admission_available_gib": 11.199
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 11.06,
+          "max_temp_c": 49.613,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 10.999,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 10.603,
+          "max_temp_c": 50.459,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 9.623,
+          "max_temp_c": 49.726,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 9.591,
+          "max_temp_c": 49.746,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 5.05,
+          "available_gib": 9.493,
+          "max_temp_c": 48.973,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 6.06,
+          "available_gib": 9.479,
+          "max_temp_c": 51.233,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 7.09,
+          "available_gib": 9.058,
+          "max_temp_c": 48.593,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 8.1,
+          "available_gib": 8.879,
+          "max_temp_c": 49.566,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 8.842,
+          "max_temp_c": 49.226,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 10.12,
+          "available_gib": 8.966,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 11.13,
+          "available_gib": 8.97,
+          "max_temp_c": 48.926,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 12.14,
+          "available_gib": 9.035,
+          "max_temp_c": 50.266,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 13.15,
+          "available_gib": 9.059,
+          "max_temp_c": 49.4,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 14.16,
+          "available_gib": 8.98,
+          "max_temp_c": 48.913,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 15.19,
+          "available_gib": 8.969,
+          "max_temp_c": 49.746,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 16.22,
+          "available_gib": 9.002,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 17.23,
+          "available_gib": 9.095,
+          "max_temp_c": 49.88,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 18.24,
+          "available_gib": 9.079,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 19.26,
+          "available_gib": 9.107,
+          "max_temp_c": 48.88,
+          "max_fan_rpm": 2488.0
+        }
+      ],
+      "log_tail": " first chunk arrived, elapsed=0.0s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] post-first-chunk keepalive (R15 #291), elapsed=0.0s\nINFO:rapid_mlx.scheduler:[schedule] request=chatcmpl-ebc uid=2 prompt_tokens=41 tokens_to_prefill=15, 26 cached max_tokens=256 running=1 waiting=0\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-ebc first token after 0.3s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] poll #10 disconnected=False elapsed=5.0s\nINFO:rapid_mlx.scheduler:[cache_store] request=chatcmpl-ebc tokens=297 (41 prompt + 256 output) stored=True time=0.000s cache_entries=4 cache_mem=121MB\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-ebc finished normally, 256 tokens in 6.2s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-ebc cleanup done\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 256 tokens in 6.20s (41.3 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000ffff33353160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff8defb160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffffabe687a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:     Shutting down\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 259 chunks (1 keepalives), elapsed=6.4s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 259 chunks total, elapsed=6.4s\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1593934]\n",
+      "ready_s": 13.911340822000057,
+      "ttft_s": 0.4034204729978228,
+      "total_s": 6.330224278004607,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 43.024876204706445,
+      "min_available_gib": 8.842,
+      "peak_temp_c": 51.233,
+      "round": 2,
+      "admission_available_gib": 11.06
+    },
+    {
+      "arm": "tensorfold",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.03,
+          "available_gib": 11.051,
+          "max_temp_c": 51.379,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 1.05,
+          "available_gib": 9.797,
+          "max_temp_c": 49.88,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 2.07,
+          "available_gib": 9.812,
+          "max_temp_c": 49.88,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 3.09,
+          "available_gib": 9.805,
+          "max_temp_c": 50.032,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 4.12,
+          "available_gib": 9.811,
+          "max_temp_c": 49.373,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 5.14,
+          "available_gib": 9.803,
+          "max_temp_c": 50.427,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 6.15,
+          "available_gib": 9.784,
+          "max_temp_c": 49.7,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 7.16,
+          "available_gib": 9.776,
+          "max_temp_c": 50.233,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 8.17,
+          "available_gib": 9.783,
+          "max_temp_c": 50.604,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 9.18,
+          "available_gib": 9.805,
+          "max_temp_c": 49.053,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 10.21,
+          "available_gib": 9.79,
+          "max_temp_c": 49.386,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 11.23,
+          "available_gib": 9.803,
+          "max_temp_c": 49.546,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 12.26,
+          "available_gib": 9.781,
+          "max_temp_c": 50.604,
+          "max_fan_rpm": 2479.0
+        },
+        {
+          "t": 13.27,
+          "available_gib": 9.791,
+          "max_temp_c": 50.241,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 14.3,
+          "available_gib": 9.779,
+          "max_temp_c": 49.226,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 15.31,
+          "available_gib": 9.785,
+          "max_temp_c": 49.546,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 16.33,
+          "available_gib": 9.812,
+          "max_temp_c": 49.426,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 17.37,
+          "available_gib": 9.787,
+          "max_temp_c": 50.443,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 18.38,
+          "available_gib": 9.805,
+          "max_temp_c": 50.427,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 19.42,
+          "available_gib": 9.822,
+          "max_temp_c": 49.566,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 20.43,
+          "available_gib": 9.828,
+          "max_temp_c": 49.36,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 21.44,
+          "available_gib": 9.845,
+          "max_temp_c": 49.533,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 22.46,
+          "available_gib": 9.845,
+          "max_temp_c": 50.217,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 23.47,
+          "available_gib": 9.857,
+          "max_temp_c": 49.546,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 24.48,
+          "available_gib": 9.865,
+          "max_temp_c": 51.379,
+          "max_fan_rpm": 2518.0
+        },
+        {
+          "t": 25.52,
+          "available_gib": 9.885,
+          "max_temp_c": 49.36,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 26.53,
+          "available_gib": 9.869,
+          "max_temp_c": 50.241,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 27.55,
+          "available_gib": 9.869,
+          "max_temp_c": 50.032,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 28.56,
+          "available_gib": 9.85,
+          "max_temp_c": 48.88,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 29.56,
+          "available_gib": 9.858,
+          "max_temp_c": 50.83,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 30.58,
+          "available_gib": 9.861,
+          "max_temp_c": 50.008,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 31.59,
+          "available_gib": 9.873,
+          "max_temp_c": 49.24,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 32.61,
+          "available_gib": 9.869,
+          "max_temp_c": 50.056,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 33.62,
+          "available_gib": 9.872,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 34.64,
+          "available_gib": 9.878,
+          "max_temp_c": 50.08,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 35.66,
+          "available_gib": 9.886,
+          "max_temp_c": 49.893,
+          "max_fan_rpm": 2471.0
+        },
+        {
+          "t": 36.66,
+          "available_gib": 9.887,
+          "max_temp_c": 49.86,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 37.69,
+          "available_gib": 9.889,
+          "max_temp_c": 48.88,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 38.7,
+          "available_gib": 9.884,
+          "max_temp_c": 49.253,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 39.72,
+          "available_gib": 9.846,
+          "max_temp_c": 49.9,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 40.73,
+          "available_gib": 9.851,
+          "max_temp_c": 49.566,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 41.74,
+          "available_gib": 9.861,
+          "max_temp_c": 50.048,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 42.76,
+          "available_gib": 9.861,
+          "max_temp_c": 49.24,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 43.8,
+          "available_gib": 9.83,
+          "max_temp_c": 49.893,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 44.81,
+          "available_gib": 9.847,
+          "max_temp_c": 50.459,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 45.82,
+          "available_gib": 9.853,
+          "max_temp_c": 49.7,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 46.84,
+          "available_gib": 9.855,
+          "max_temp_c": 50.258,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 47.85,
+          "available_gib": 9.844,
+          "max_temp_c": 50.241,
+          "max_fan_rpm": 2518.0
+        },
+        {
+          "t": 48.86,
+          "available_gib": 9.826,
+          "max_temp_c": 49.4,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 49.88,
+          "available_gib": 9.855,
+          "max_temp_c": 48.766,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 50.89,
+          "available_gib": 9.869,
+          "max_temp_c": 48.88,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 51.9,
+          "available_gib": 9.878,
+          "max_temp_c": 49.593,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 52.91,
+          "available_gib": 9.832,
+          "max_temp_c": 49.44,
+          "max_fan_rpm": 2471.0
+        },
+        {
+          "t": 53.93,
+          "available_gib": 9.83,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 54.94,
+          "available_gib": 9.829,
+          "max_temp_c": 48.926,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 55.95,
+          "available_gib": 9.838,
+          "max_temp_c": 49.58,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 56.96,
+          "available_gib": 9.839,
+          "max_temp_c": 48.94,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 57.97,
+          "available_gib": 9.86,
+          "max_temp_c": 49.086,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 58.99,
+          "available_gib": 9.847,
+          "max_temp_c": 48.913,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 60.0,
+          "available_gib": 9.848,
+          "max_temp_c": 48.593,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 61.02,
+          "available_gib": 9.853,
+          "max_temp_c": 49.566,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 62.03,
+          "available_gib": 9.86,
+          "max_temp_c": 49.593,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 63.04,
+          "available_gib": 9.856,
+          "max_temp_c": 49.613,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 64.05,
+          "available_gib": 9.862,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 65.07,
+          "available_gib": 9.872,
+          "max_temp_c": 49.226,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 66.09,
+          "available_gib": 9.871,
+          "max_temp_c": 49.226,
+          "max_fan_rpm": 2517.0
+        },
+        {
+          "t": 67.1,
+          "available_gib": 9.853,
+          "max_temp_c": 49.1,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 68.12,
+          "available_gib": 9.828,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 69.14,
+          "available_gib": 9.715,
+          "max_temp_c": 48.926,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 70.15,
+          "available_gib": 9.67,
+          "max_temp_c": 49.1,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 71.17,
+          "available_gib": 9.734,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 72.18,
+          "available_gib": 9.691,
+          "max_temp_c": 48.453,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 73.21,
+          "available_gib": 9.753,
+          "max_temp_c": 48.14,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 74.23,
+          "available_gib": 9.776,
+          "max_temp_c": 48.473,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 75.25,
+          "available_gib": 9.789,
+          "max_temp_c": 48.593,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 76.27,
+          "available_gib": 9.827,
+          "max_temp_c": 48.766,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 77.28,
+          "available_gib": 9.824,
+          "max_temp_c": 48.733,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 78.29,
+          "available_gib": 9.805,
+          "max_temp_c": 48.493,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 79.31,
+          "available_gib": 9.788,
+          "max_temp_c": 49.086,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 80.32,
+          "available_gib": 9.792,
+          "max_temp_c": 49.126,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 81.34,
+          "available_gib": 9.718,
+          "max_temp_c": 48.453,
+          "max_fan_rpm": 2518.0
+        },
+        {
+          "t": 82.34,
+          "available_gib": 9.663,
+          "max_temp_c": 48.233,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 83.36,
+          "available_gib": 9.774,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 84.38,
+          "available_gib": 9.793,
+          "max_temp_c": 48.453,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 85.4,
+          "available_gib": 9.796,
+          "max_temp_c": 48.96,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 86.41,
+          "available_gib": 9.837,
+          "max_temp_c": 49.286,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 87.46,
+          "available_gib": 9.838,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 88.48,
+          "available_gib": 9.857,
+          "max_temp_c": 49.3,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 89.5,
+          "available_gib": 9.805,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 90.51,
+          "available_gib": 9.791,
+          "max_temp_c": 48.073,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 91.53,
+          "available_gib": 9.789,
+          "max_temp_c": 48.453,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 92.58,
+          "available_gib": 9.788,
+          "max_temp_c": 49.146,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 93.59,
+          "available_gib": 9.772,
+          "max_temp_c": 47.94,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 94.59,
+          "available_gib": 9.815,
+          "max_temp_c": 48.96,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 95.6,
+          "available_gib": 9.824,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 96.62,
+          "available_gib": 9.827,
+          "max_temp_c": 48.96,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 97.64,
+          "available_gib": 9.832,
+          "max_temp_c": 48.513,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 98.66,
+          "available_gib": 9.848,
+          "max_temp_c": 48.786,
+          "max_fan_rpm": 2471.0
+        },
+        {
+          "t": 99.69,
+          "available_gib": 9.856,
+          "max_temp_c": 48.12,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 100.71,
+          "available_gib": 9.864,
+          "max_temp_c": 49.253,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 101.72,
+          "available_gib": 9.813,
+          "max_temp_c": 48.433,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 102.73,
+          "available_gib": 9.819,
+          "max_temp_c": 48.413,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 103.75,
+          "available_gib": 9.817,
+          "max_temp_c": 47.94,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 104.76,
+          "available_gib": 9.821,
+          "max_temp_c": 48.973,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 105.78,
+          "available_gib": 9.82,
+          "max_temp_c": 48.453,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 106.79,
+          "available_gib": 9.843,
+          "max_temp_c": 48.833,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 107.8,
+          "available_gib": 9.84,
+          "max_temp_c": 47.96,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 108.81,
+          "available_gib": 9.811,
+          "max_temp_c": 49.126,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 109.83,
+          "available_gib": 9.831,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 110.85,
+          "available_gib": 9.844,
+          "max_temp_c": 48.633,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 111.86,
+          "available_gib": 9.833,
+          "max_temp_c": 48.786,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 112.88,
+          "available_gib": 9.852,
+          "max_temp_c": 48.8,
+          "max_fan_rpm": 2472.0
+        },
+        {
+          "t": 113.89,
+          "available_gib": 9.864,
+          "max_temp_c": 48.633,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 114.91,
+          "available_gib": 9.873,
+          "max_temp_c": 48.96,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 115.92,
+          "available_gib": 9.899,
+          "max_temp_c": 48.786,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 116.95,
+          "available_gib": 9.882,
+          "max_temp_c": 48.493,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 117.97,
+          "available_gib": 9.892,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 118.98,
+          "available_gib": 9.909,
+          "max_temp_c": 47.94,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 119.99,
+          "available_gib": 9.898,
+          "max_temp_c": 47.96,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 121.02,
+          "available_gib": 9.886,
+          "max_temp_c": 47.96,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 122.03,
+          "available_gib": 9.885,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 123.05,
+          "available_gib": 9.883,
+          "max_temp_c": 48.8,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 124.06,
+          "available_gib": 9.85,
+          "max_temp_c": 48.473,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 125.08,
+          "available_gib": 9.854,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2522.0
+        },
+        {
+          "t": 126.1,
+          "available_gib": 9.857,
+          "max_temp_c": 48.28,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 127.12,
+          "available_gib": 9.865,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 128.15,
+          "available_gib": 9.872,
+          "max_temp_c": 48.473,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 129.16,
+          "available_gib": 9.869,
+          "max_temp_c": 48.973,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 130.17,
+          "available_gib": 9.887,
+          "max_temp_c": 48.786,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 131.18,
+          "available_gib": 9.896,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 132.19,
+          "available_gib": 9.896,
+          "max_temp_c": 49.16,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 133.21,
+          "available_gib": 9.912,
+          "max_temp_c": 48.14,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 134.22,
+          "available_gib": 9.929,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 135.24,
+          "available_gib": 9.919,
+          "max_temp_c": 48.473,
+          "max_fan_rpm": 2476.0
+        },
+        {
+          "t": 136.26,
+          "available_gib": 9.913,
+          "max_temp_c": 48.513,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 137.27,
+          "available_gib": 9.919,
+          "max_temp_c": 48.8,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 138.29,
+          "available_gib": 9.885,
+          "max_temp_c": 48.14,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 139.31,
+          "available_gib": 9.894,
+          "max_temp_c": 49.266,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 140.33,
+          "available_gib": 9.893,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 141.35,
+          "available_gib": 9.907,
+          "max_temp_c": 48.973,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 142.37,
+          "available_gib": 9.91,
+          "max_temp_c": 48.333,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 143.39,
+          "available_gib": 9.909,
+          "max_temp_c": 49.126,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 144.41,
+          "available_gib": 9.923,
+          "max_temp_c": 48.94,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 145.43,
+          "available_gib": 9.949,
+          "max_temp_c": 47.646,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 146.45,
+          "available_gib": 9.938,
+          "max_temp_c": 48.7,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 147.47,
+          "available_gib": 9.945,
+          "max_temp_c": 48.753,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 148.49,
+          "available_gib": 9.951,
+          "max_temp_c": 48.2,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 149.51,
+          "available_gib": 9.951,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 150.52,
+          "available_gib": 9.965,
+          "max_temp_c": 48.333,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 151.54,
+          "available_gib": 9.968,
+          "max_temp_c": 48.026,
+          "max_fan_rpm": 2518.0
+        },
+        {
+          "t": 152.56,
+          "available_gib": 9.97,
+          "max_temp_c": 48.026,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 153.58,
+          "available_gib": 9.972,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 154.6,
+          "available_gib": 9.968,
+          "max_temp_c": 47.8,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 155.62,
+          "available_gib": 9.969,
+          "max_temp_c": 47.693,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 156.65,
+          "available_gib": 9.973,
+          "max_temp_c": 47.406,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 157.67,
+          "available_gib": 9.976,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 158.69,
+          "available_gib": 9.978,
+          "max_temp_c": 47.96,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 159.71,
+          "available_gib": 9.978,
+          "max_temp_c": 48.473,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 160.72,
+          "available_gib": 9.98,
+          "max_temp_c": 47.74,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 161.74,
+          "available_gib": 9.986,
+          "max_temp_c": 47.426,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 162.76,
+          "available_gib": 9.988,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 163.77,
+          "available_gib": 9.982,
+          "max_temp_c": 47.96,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 164.79,
+          "available_gib": 9.976,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 165.8,
+          "available_gib": 9.98,
+          "max_temp_c": 47.46,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 166.81,
+          "available_gib": 9.981,
+          "max_temp_c": 48.68,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 167.83,
+          "available_gib": 9.977,
+          "max_temp_c": 48.526,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 168.85,
+          "available_gib": 9.96,
+          "max_temp_c": 47.646,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 169.86,
+          "available_gib": 9.962,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2471.0
+        },
+        {
+          "t": 170.87,
+          "available_gib": 9.965,
+          "max_temp_c": 47.713,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 171.9,
+          "available_gib": 9.966,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 172.92,
+          "available_gib": 9.963,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 2528.0
+        },
+        {
+          "t": 173.93,
+          "available_gib": 9.964,
+          "max_temp_c": 47.846,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 174.94,
+          "available_gib": 9.97,
+          "max_temp_c": 48.353,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 175.96,
+          "available_gib": 9.981,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 176.98,
+          "available_gib": 9.983,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 177.99,
+          "available_gib": 9.985,
+          "max_temp_c": 48.24,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 179.01,
+          "available_gib": 9.969,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 180.05,
+          "available_gib": 9.969,
+          "max_temp_c": 47.013,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 181.07,
+          "available_gib": 9.968,
+          "max_temp_c": 46.853,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 182.09,
+          "available_gib": 9.977,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 183.11,
+          "available_gib": 9.983,
+          "max_temp_c": 47.626,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 184.13,
+          "available_gib": 9.999,
+          "max_temp_c": 46.633,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 185.15,
+          "available_gib": 9.999,
+          "max_temp_c": 47.713,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 186.16,
+          "available_gib": 10.001,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 187.17,
+          "available_gib": 10.003,
+          "max_temp_c": 47.713,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 188.19,
+          "available_gib": 9.998,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 189.2,
+          "available_gib": 9.998,
+          "max_temp_c": 47.693,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 190.23,
+          "available_gib": 10.001,
+          "max_temp_c": 47.14,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 191.25,
+          "available_gib": 10.004,
+          "max_temp_c": 47.74,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 192.27,
+          "available_gib": 10.002,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 193.28,
+          "available_gib": 10.001,
+          "max_temp_c": 47.353,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 194.31,
+          "available_gib": 10.002,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 195.32,
+          "available_gib": 10.007,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 196.34,
+          "available_gib": 10.007,
+          "max_temp_c": 48.026,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 197.36,
+          "available_gib": 10.005,
+          "max_temp_c": 48.026,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 198.37,
+          "available_gib": 10.012,
+          "max_temp_c": 47.193,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 199.39,
+          "available_gib": 10.012,
+          "max_temp_c": 49.413,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 200.41,
+          "available_gib": 10.012,
+          "max_temp_c": 47.193,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 201.43,
+          "available_gib": 10.012,
+          "max_temp_c": 47.513,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 202.44,
+          "available_gib": 10.011,
+          "max_temp_c": 46.906,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 203.46,
+          "available_gib": 10.002,
+          "max_temp_c": 47.066,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 204.48,
+          "available_gib": 9.999,
+          "max_temp_c": 47.78,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 205.5,
+          "available_gib": 10.005,
+          "max_temp_c": 47.426,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 206.52,
+          "available_gib": 10.005,
+          "max_temp_c": 46.82,
+          "max_fan_rpm": 2515.0
+        }
+      ],
+      "log_tail": "[tensorfold] prompt chunks of up to 32 tokens, cut at replies 256+ tokens apart\nwarning: libtfgrammar.so is required for structured output and required tool calls (HTTP 400 when missing); restore the matching release archive's lib/ directory or run zig build grammar -Dxgrammar=DIR; prepare DIR with git clone --branch v0.2.8 --recurse-submodules https://github.com/mlc-ai/xgrammar\n[tensorfold] serving qwen35-2b at http://127.0.0.1:59049/v1 (sampling: greedy; drafts: on; context: 1024; loaded in 0.6s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-c1bd2fd165bce814d72a06eedd5134c2 prompt=41 cached=0 thinking=False effort=none tokens=256 sha=f87626954a51 finish=length rounds=255 accepted=0/0 ttft=3.179 decode=107.140 elapsed=110.319 queued=0.000 tok/s=2.4\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-3374001f7e1f3f1bb04ff335a2c002c3 prompt=41 cached=0 thinking=False effort=none tokens=256 sha=f87626954a51 finish=length rounds=255 accepted=0/0 ttft=3.133 decode=92.128 elapsed=95.262 queued=0.000 tok/s=2.8\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 111.33909683500679,
+      "ttft_s": 3.134666653997556,
+      "total_s": 95.26329574899864,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. This phenomenon is called dispersion. Violet light, having the shortest wavelength, bends the most, while red light, with the longest wavelength, bends the least.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is crucial because it sets",
+      "served_model": "qwen35-2b",
+      "text_sha256": "83887b098d88ea16a47c6d0aad022a58cf6a9ee6565c6b33e5633a90ff4a80d5",
+      "decode_tps": 2.7678692552458304,
+      "min_available_gib": 9.663,
+      "peak_temp_c": 51.379,
+      "round": 2,
+      "admission_available_gib": 11.05
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 11.313,
+          "max_temp_c": 46.88,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 10.54,
+          "max_temp_c": 47.606,
+          "max_fan_rpm": 2519.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 9.857,
+          "max_temp_c": 47.74,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 9.79,
+          "max_temp_c": 47.426,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 9.763,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 9.75,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 6.09,
+          "available_gib": 9.757,
+          "max_temp_c": 46.533,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 7.1,
+          "available_gib": 9.757,
+          "max_temp_c": 47.4,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 8.11,
+          "available_gib": 9.755,
+          "max_temp_c": 46.82,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 9.12,
+          "available_gib": 9.773,
+          "max_temp_c": 47.486,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 10.13,
+          "available_gib": 9.777,
+          "max_temp_c": 47.4,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 11.14,
+          "available_gib": 9.75,
+          "max_temp_c": 47.96,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 12.15,
+          "available_gib": 9.752,
+          "max_temp_c": 45.966,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 13.16,
+          "available_gib": 9.754,
+          "max_temp_c": 46.213,
+          "max_fan_rpm": 2464.0
+        },
+        {
+          "t": 14.18,
+          "available_gib": 9.736,
+          "max_temp_c": 47.4,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 15.19,
+          "available_gib": 9.737,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 16.2,
+          "available_gib": 9.738,
+          "max_temp_c": 46.533,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 17.21,
+          "available_gib": 9.78,
+          "max_temp_c": 47.066,
+          "max_fan_rpm": 2510.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 9.886949542997172,
+      "ttft_s": 0.5508741699959501,
+      "total_s": 7.407378256000811,
+      "completion_tokens": 256,
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 37.19096449172877,
+      "min_available_gib": 9.736,
+      "peak_temp_c": 47.96,
+      "round": 2,
+      "admission_available_gib": 11.313
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 11.158,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 11.072,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2472.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 10.439,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2528.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 9.729,
+          "max_temp_c": 48.066,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 9.689,
+          "max_temp_c": 47.74,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 5.1,
+          "available_gib": 9.676,
+          "max_temp_c": 48.066,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 6.12,
+          "available_gib": 9.679,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 7.15,
+          "available_gib": 9.349,
+          "max_temp_c": 46.853,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 8.17,
+          "available_gib": 9.162,
+          "max_temp_c": 47.353,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 9.18,
+          "available_gib": 9.018,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 10.19,
+          "available_gib": 9.017,
+          "max_temp_c": 47.14,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 11.2,
+          "available_gib": 9.242,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 12.22,
+          "available_gib": 9.256,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 13.24,
+          "available_gib": 9.253,
+          "max_temp_c": 48.353,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 14.26,
+          "available_gib": 9.26,
+          "max_temp_c": 46.853,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 15.27,
+          "available_gib": 9.167,
+          "max_temp_c": 47.56,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 16.29,
+          "available_gib": 9.17,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 17.31,
+          "available_gib": 9.177,
+          "max_temp_c": 47.933,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 18.33,
+          "available_gib": 9.193,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 19.35,
+          "available_gib": 9.215,
+          "max_temp_c": 48.026,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 20.38,
+          "available_gib": 9.241,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2510.0
+        }
+      ],
+      "log_tail": " first chunk arrived, elapsed=0.0s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] post-first-chunk keepalive (R15 #291), elapsed=0.0s\nINFO:rapid_mlx.scheduler:[schedule] request=chatcmpl-d8f uid=2 prompt_tokens=41 tokens_to_prefill=15, 26 cached max_tokens=256 running=1 waiting=0\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-d8f first token after 0.2s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] poll #10 disconnected=False elapsed=5.0s\nINFO:rapid_mlx.scheduler:[cache_store] request=chatcmpl-d8f tokens=297 (41 prompt + 256 output) stored=True time=0.000s cache_entries=4 cache_mem=121MB\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-d8f finished normally, 256 tokens in 5.9s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-d8f cleanup done\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 256 tokens in 5.95s (43.0 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffe5dc97160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000fffeb1c7b160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000fffecfbf47a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 259 chunks (1 keepalives), elapsed=6.1s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 259 chunks total, elapsed=6.1s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1599495]\n",
+      "ready_s": 14.25447158600582,
+      "ttft_s": 0.39503248000255553,
+      "total_s": 6.1046589449979365,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "served_model": "/home/sdolbec/.cache/mseries-metal2vk/qwen35-2b",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 44.66141551699675,
+      "min_available_gib": 9.017,
+      "peak_temp_c": 48.353,
+      "round": 3,
+      "admission_available_gib": 11.158
+    },
+    {
+      "arm": "tensorfold",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 11.197,
+          "max_temp_c": 47.646,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 1.04,
+          "available_gib": 9.935,
+          "max_temp_c": 48.493,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 9.949,
+          "max_temp_c": 48.666,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 3.07,
+          "available_gib": 9.953,
+          "max_temp_c": 48.453,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 9.934,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 5.1,
+          "available_gib": 9.942,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 6.12,
+          "available_gib": 9.944,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 7.14,
+          "available_gib": 9.963,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2519.0
+        },
+        {
+          "t": 8.16,
+          "available_gib": 9.962,
+          "max_temp_c": 48.613,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 9.17,
+          "available_gib": 9.962,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 10.19,
+          "available_gib": 9.962,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 11.21,
+          "available_gib": 9.96,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 12.22,
+          "available_gib": 9.974,
+          "max_temp_c": 47.46,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 13.23,
+          "available_gib": 9.955,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 14.25,
+          "available_gib": 9.965,
+          "max_temp_c": 48.786,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 15.26,
+          "available_gib": 9.98,
+          "max_temp_c": 48.26,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 16.28,
+          "available_gib": 9.983,
+          "max_temp_c": 47.866,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 17.3,
+          "available_gib": 9.987,
+          "max_temp_c": 49.16,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 18.32,
+          "available_gib": 9.986,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 19.34,
+          "available_gib": 9.989,
+          "max_temp_c": 48.68,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 20.35,
+          "available_gib": 9.985,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 21.37,
+          "available_gib": 9.994,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 22.39,
+          "available_gib": 9.999,
+          "max_temp_c": 48.666,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 23.41,
+          "available_gib": 10.014,
+          "max_temp_c": 47.826,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 24.43,
+          "available_gib": 10.013,
+          "max_temp_c": 47.96,
+          "max_fan_rpm": 2476.0
+        },
+        {
+          "t": 25.44,
+          "available_gib": 10.017,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 26.45,
+          "available_gib": 10.01,
+          "max_temp_c": 47.433,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 27.47,
+          "available_gib": 10.01,
+          "max_temp_c": 47.273,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 28.49,
+          "available_gib": 10.015,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 29.51,
+          "available_gib": 10.001,
+          "max_temp_c": 48.82,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 30.54,
+          "available_gib": 10.001,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 31.55,
+          "available_gib": 10.006,
+          "max_temp_c": 48.16,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 32.57,
+          "available_gib": 10.003,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 33.58,
+          "available_gib": 9.985,
+          "max_temp_c": 47.486,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 34.6,
+          "available_gib": 9.993,
+          "max_temp_c": 48.3,
+          "max_fan_rpm": 2476.0
+        },
+        {
+          "t": 35.62,
+          "available_gib": 9.993,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 36.63,
+          "available_gib": 9.997,
+          "max_temp_c": 47.273,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 37.65,
+          "available_gib": 9.996,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 38.66,
+          "available_gib": 9.992,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 39.68,
+          "available_gib": 9.992,
+          "max_temp_c": 48.18,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 40.69,
+          "available_gib": 9.992,
+          "max_temp_c": 47.0,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 41.71,
+          "available_gib": 9.993,
+          "max_temp_c": 48.646,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 42.73,
+          "available_gib": 9.993,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 43.75,
+          "available_gib": 9.972,
+          "max_temp_c": 48.026,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 44.76,
+          "available_gib": 9.972,
+          "max_temp_c": 46.98,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 45.79,
+          "available_gib": 9.993,
+          "max_temp_c": 47.166,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 46.8,
+          "available_gib": 10.012,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 47.82,
+          "available_gib": 10.012,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 48.84,
+          "available_gib": 10.012,
+          "max_temp_c": 47.846,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 49.85,
+          "available_gib": 10.012,
+          "max_temp_c": 48.066,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 50.87,
+          "available_gib": 10.015,
+          "max_temp_c": 47.98,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 51.88,
+          "available_gib": 10.015,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 52.9,
+          "available_gib": 10.015,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 53.91,
+          "available_gib": 10.025,
+          "max_temp_c": 47.113,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 54.93,
+          "available_gib": 10.029,
+          "max_temp_c": 47.893,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 55.95,
+          "available_gib": 10.028,
+          "max_temp_c": 47.933,
+          "max_fan_rpm": 2519.0
+        },
+        {
+          "t": 56.96,
+          "available_gib": 9.97,
+          "max_temp_c": 46.933,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 57.98,
+          "available_gib": 9.987,
+          "max_temp_c": 46.953,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 58.99,
+          "available_gib": 9.987,
+          "max_temp_c": 47.14,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 60.0,
+          "available_gib": 9.88,
+          "max_temp_c": 47.013,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 61.03,
+          "available_gib": 9.888,
+          "max_temp_c": 46.633,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 62.05,
+          "available_gib": 9.889,
+          "max_temp_c": 46.88,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 63.06,
+          "available_gib": 9.881,
+          "max_temp_c": 47.713,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 64.08,
+          "available_gib": 9.875,
+          "max_temp_c": 47.426,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 65.09,
+          "available_gib": 9.873,
+          "max_temp_c": 46.766,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 66.11,
+          "available_gib": 9.864,
+          "max_temp_c": 46.82,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 67.12,
+          "available_gib": 9.871,
+          "max_temp_c": 46.72,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 68.14,
+          "available_gib": 9.877,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 69.15,
+          "available_gib": 9.894,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 70.18,
+          "available_gib": 9.883,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 71.21,
+          "available_gib": 9.897,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 72.23,
+          "available_gib": 9.824,
+          "max_temp_c": 47.913,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 73.25,
+          "available_gib": 9.833,
+          "max_temp_c": 46.98,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 74.26,
+          "available_gib": 10.387,
+          "max_temp_c": 47.58,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 75.28,
+          "available_gib": 12.56,
+          "max_temp_c": 46.98,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 76.33,
+          "available_gib": 12.592,
+          "max_temp_c": 46.933,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 77.35,
+          "available_gib": 12.522,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 78.37,
+          "available_gib": 12.523,
+          "max_temp_c": 47.193,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 79.41,
+          "available_gib": 12.479,
+          "max_temp_c": 47.846,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 80.43,
+          "available_gib": 12.476,
+          "max_temp_c": 47.353,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 81.46,
+          "available_gib": 12.415,
+          "max_temp_c": 46.72,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 82.48,
+          "available_gib": 12.443,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 83.5,
+          "available_gib": 12.459,
+          "max_temp_c": 47.353,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 84.5,
+          "available_gib": 12.461,
+          "max_temp_c": 47.76,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 85.53,
+          "available_gib": 12.449,
+          "max_temp_c": 47.56,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 86.54,
+          "available_gib": 12.47,
+          "max_temp_c": 47.76,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 87.55,
+          "available_gib": 12.473,
+          "max_temp_c": 46.373,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 88.57,
+          "available_gib": 12.574,
+          "max_temp_c": 48.713,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 89.6,
+          "available_gib": 12.578,
+          "max_temp_c": 47.193,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 90.62,
+          "available_gib": 12.579,
+          "max_temp_c": 46.72,
+          "max_fan_rpm": 2472.0
+        },
+        {
+          "t": 91.64,
+          "available_gib": 12.58,
+          "max_temp_c": 47.56,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 92.66,
+          "available_gib": 12.591,
+          "max_temp_c": 47.56,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 93.68,
+          "available_gib": 12.589,
+          "max_temp_c": 47.066,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 94.7,
+          "available_gib": 12.595,
+          "max_temp_c": 46.793,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 95.72,
+          "available_gib": 12.617,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 96.73,
+          "available_gib": 12.62,
+          "max_temp_c": 47.166,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 97.75,
+          "available_gib": 12.638,
+          "max_temp_c": 47.166,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 98.77,
+          "available_gib": 12.637,
+          "max_temp_c": 47.666,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 99.79,
+          "available_gib": 12.639,
+          "max_temp_c": 47.56,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 100.8,
+          "available_gib": 12.641,
+          "max_temp_c": 47.4,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 101.82,
+          "available_gib": 12.669,
+          "max_temp_c": 46.346,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 102.84,
+          "available_gib": 12.662,
+          "max_temp_c": 47.626,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 103.86,
+          "available_gib": 12.661,
+          "max_temp_c": 47.846,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 104.87,
+          "available_gib": 12.665,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 105.89,
+          "available_gib": 12.679,
+          "max_temp_c": 47.78,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 106.9,
+          "available_gib": 12.682,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 107.92,
+          "available_gib": 12.682,
+          "max_temp_c": 47.066,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 108.94,
+          "available_gib": 12.682,
+          "max_temp_c": 47.606,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 109.96,
+          "available_gib": 12.686,
+          "max_temp_c": 47.193,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 110.98,
+          "available_gib": 12.687,
+          "max_temp_c": 47.353,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 111.99,
+          "available_gib": 12.688,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 113.01,
+          "available_gib": 12.685,
+          "max_temp_c": 47.58,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 114.03,
+          "available_gib": 12.616,
+          "max_temp_c": 46.533,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 115.04,
+          "available_gib": 12.57,
+          "max_temp_c": 47.933,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 116.05,
+          "available_gib": 12.522,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2480.0
+        },
+        {
+          "t": 117.07,
+          "available_gib": 12.535,
+          "max_temp_c": 47.58,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 118.09,
+          "available_gib": 12.528,
+          "max_temp_c": 47.4,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 119.1,
+          "available_gib": 12.527,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 120.12,
+          "available_gib": 12.541,
+          "max_temp_c": 47.74,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 121.13,
+          "available_gib": 12.592,
+          "max_temp_c": 46.533,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 122.14,
+          "available_gib": 12.582,
+          "max_temp_c": 47.166,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 123.15,
+          "available_gib": 12.572,
+          "max_temp_c": 47.066,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 124.16,
+          "available_gib": 12.561,
+          "max_temp_c": 46.473,
+          "max_fan_rpm": 2476.0
+        },
+        {
+          "t": 125.17,
+          "available_gib": 12.557,
+          "max_temp_c": 47.56,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 126.18,
+          "available_gib": 12.52,
+          "max_temp_c": 48.026,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 127.19,
+          "available_gib": 12.527,
+          "max_temp_c": 48.546,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 128.2,
+          "available_gib": 12.547,
+          "max_temp_c": 47.533,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 129.21,
+          "available_gib": 12.621,
+          "max_temp_c": 46.98,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 130.23,
+          "available_gib": 12.611,
+          "max_temp_c": 46.666,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 131.24,
+          "available_gib": 12.609,
+          "max_temp_c": 47.193,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 132.26,
+          "available_gib": 12.609,
+          "max_temp_c": 48.046,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 133.27,
+          "available_gib": 12.608,
+          "max_temp_c": 46.906,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 134.29,
+          "available_gib": 12.604,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 135.3,
+          "available_gib": 12.616,
+          "max_temp_c": 46.6,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 136.32,
+          "available_gib": 12.618,
+          "max_temp_c": 46.806,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 137.33,
+          "available_gib": 12.621,
+          "max_temp_c": 47.933,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 138.35,
+          "available_gib": 12.623,
+          "max_temp_c": 45.433,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 139.37,
+          "available_gib": 12.668,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 140.38,
+          "available_gib": 12.665,
+          "max_temp_c": 49.006,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 141.4,
+          "available_gib": 12.671,
+          "max_temp_c": 47.626,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 142.42,
+          "available_gib": 12.671,
+          "max_temp_c": 47.58,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 143.44,
+          "available_gib": 12.676,
+          "max_temp_c": 46.88,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 144.46,
+          "available_gib": 12.673,
+          "max_temp_c": 46.186,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 145.48,
+          "available_gib": 12.674,
+          "max_temp_c": 46.793,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 146.5,
+          "available_gib": 12.678,
+          "max_temp_c": 46.086,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 147.52,
+          "available_gib": 12.678,
+          "max_temp_c": 47.4,
+          "max_fan_rpm": 2523.0
+        },
+        {
+          "t": 148.54,
+          "available_gib": 12.671,
+          "max_temp_c": 47.76,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 149.55,
+          "available_gib": 12.674,
+          "max_temp_c": 47.653,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 150.57,
+          "available_gib": 12.671,
+          "max_temp_c": 46.693,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 151.6,
+          "available_gib": 12.679,
+          "max_temp_c": 47.273,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 152.62,
+          "available_gib": 12.679,
+          "max_temp_c": 46.566,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 153.63,
+          "available_gib": 12.675,
+          "max_temp_c": 46.28,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 154.64,
+          "available_gib": 12.676,
+          "max_temp_c": 46.853,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 155.65,
+          "available_gib": 12.678,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 156.67,
+          "available_gib": 12.68,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 157.69,
+          "available_gib": 12.678,
+          "max_temp_c": 46.593,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 158.71,
+          "available_gib": 12.68,
+          "max_temp_c": 47.56,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 159.73,
+          "available_gib": 12.681,
+          "max_temp_c": 46.626,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 160.75,
+          "available_gib": 12.694,
+          "max_temp_c": 47.3,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 161.77,
+          "available_gib": 12.695,
+          "max_temp_c": 47.913,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 162.79,
+          "available_gib": 12.695,
+          "max_temp_c": 46.78,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 163.81,
+          "available_gib": 12.682,
+          "max_temp_c": 46.78,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 164.82,
+          "available_gib": 12.682,
+          "max_temp_c": 46.506,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 165.84,
+          "available_gib": 12.683,
+          "max_temp_c": 47.56,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 166.85,
+          "available_gib": 12.699,
+          "max_temp_c": 46.693,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 167.87,
+          "available_gib": 12.699,
+          "max_temp_c": 47.353,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 168.88,
+          "available_gib": 12.7,
+          "max_temp_c": 46.566,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 169.9,
+          "available_gib": 12.699,
+          "max_temp_c": 46.573,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 170.92,
+          "available_gib": 12.7,
+          "max_temp_c": 46.253,
+          "max_fan_rpm": 2476.0
+        },
+        {
+          "t": 171.94,
+          "available_gib": 12.703,
+          "max_temp_c": 47.246,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 172.96,
+          "available_gib": 12.698,
+          "max_temp_c": 46.373,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 173.97,
+          "available_gib": 12.693,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 174.99,
+          "available_gib": 12.693,
+          "max_temp_c": 46.933,
+          "max_fan_rpm": 2467.0
+        },
+        {
+          "t": 176.01,
+          "available_gib": 12.692,
+          "max_temp_c": 46.28,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 177.03,
+          "available_gib": 12.722,
+          "max_temp_c": 46.926,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 178.05,
+          "available_gib": 12.719,
+          "max_temp_c": 47.48,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 179.06,
+          "available_gib": 12.718,
+          "max_temp_c": 47.426,
+          "max_fan_rpm": 2484.0
+        },
+        {
+          "t": 180.07,
+          "available_gib": 12.716,
+          "max_temp_c": 47.5,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 181.09,
+          "available_gib": 12.709,
+          "max_temp_c": 47.3,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 182.1,
+          "available_gib": 12.702,
+          "max_temp_c": 46.5,
+          "max_fan_rpm": 2515.0
+        }
+      ],
+      "log_tail": "[tensorfold] prompt chunks of up to 32 tokens, cut at replies 256+ tokens apart\nwarning: libtfgrammar.so is required for structured output and required tool calls (HTTP 400 when missing); restore the matching release archive's lib/ directory or run zig build grammar -Dxgrammar=DIR; prepare DIR with git clone --branch v0.2.8 --recurse-submodules https://github.com/mlc-ai/xgrammar\n[tensorfold] serving qwen35-2b at http://127.0.0.1:47479/v1 (sampling: greedy; drafts: on; context: 1024; loaded in 0.5s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-7feab0de675c3727825a53aa458854b5 prompt=41 cached=0 thinking=False effort=none tokens=256 sha=f87626954a51 finish=length rounds=255 accepted=0/0 ttft=2.898 decode=91.615 elapsed=94.513 queued=0.000 tok/s=2.8\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-5418f404e44eb77e7ae12eae2dcc766d prompt=41 cached=0 thinking=False effort=none tokens=256 sha=f87626954a51 finish=length rounds=255 accepted=0/0 ttft=2.901 decode=83.939 elapsed=86.840 queued=0.000 tok/s=3.0\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 95.51999934299965,
+      "ttft_s": 2.9029555359957158,
+      "total_s": 86.84325562999584,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. This phenomenon is called dispersion. Violet light, having the shortest wavelength, bends the most, while red light, with the longest wavelength, bends the least.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is crucial because it sets",
+      "served_model": "qwen35-2b",
+      "text_sha256": "83887b098d88ea16a47c6d0aad022a58cf6a9ee6565c6b33e5633a90ff4a80d5",
+      "decode_tps": 3.037873342297318,
+      "min_available_gib": 9.824,
+      "peak_temp_c": 49.16,
+      "round": 3,
+      "admission_available_gib": 11.192
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 13.995,
+          "max_temp_c": 46.373,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.103,
+          "max_temp_c": 45.933,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 12.544,
+          "max_temp_c": 46.22,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 12.421,
+          "max_temp_c": 46.506,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 12.391,
+          "max_temp_c": 46.026,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 5.07,
+          "available_gib": 12.388,
+          "max_temp_c": 46.466,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 12.39,
+          "max_temp_c": 46.373,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 12.39,
+          "max_temp_c": 46.72,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 8.1,
+          "available_gib": 12.39,
+          "max_temp_c": 46.666,
+          "max_fan_rpm": 2481.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 12.41,
+          "max_temp_c": 46.966,
+          "max_fan_rpm": 2524.0
+        },
+        {
+          "t": 10.12,
+          "available_gib": 12.424,
+          "max_temp_c": 46.966,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 11.13,
+          "available_gib": 12.401,
+          "max_temp_c": 45.513,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 12.14,
+          "available_gib": 12.4,
+          "max_temp_c": 46.253,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 13.15,
+          "available_gib": 12.407,
+          "max_temp_c": 45.833,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 14.16,
+          "available_gib": 12.408,
+          "max_temp_c": 46.346,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 15.17,
+          "available_gib": 12.409,
+          "max_temp_c": 47.246,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 16.19,
+          "available_gib": 12.413,
+          "max_temp_c": 46.566,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 17.2,
+          "available_gib": 12.387,
+          "max_temp_c": 46.346,
+          "max_fan_rpm": 2497.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 9.874843284997041,
+      "ttft_s": 0.5493252939995728,
+      "total_s": 7.263980616000481,
+      "completion_tokens": 256,
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 37.97663286818008,
+      "min_available_gib": 12.387,
+      "peak_temp_c": 47.246,
+      "round": 3,
+      "admission_available_gib": 13.995
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 13.882,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.046,
+          "max_temp_c": 46.753,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 12.441,
+          "max_temp_c": 46.806,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 12.126,
+          "max_temp_c": 46.28,
+          "max_fan_rpm": 2460.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 12.0,
+          "max_temp_c": 46.766,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 5.07,
+          "available_gib": 12.004,
+          "max_temp_c": 47.246,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 6.09,
+          "available_gib": 12.01,
+          "max_temp_c": 47.146,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 7.1,
+          "available_gib": 12.021,
+          "max_temp_c": 46.88,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 8.11,
+          "available_gib": 12.109,
+          "max_temp_c": 47.246,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 9.12,
+          "available_gib": 11.949,
+          "max_temp_c": 47.56,
+          "max_fan_rpm": 2498.0
+        },
+        {
+          "t": 10.14,
+          "available_gib": 11.961,
+          "max_temp_c": 46.88,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 11.15,
+          "available_gib": 11.964,
+          "max_temp_c": 47.4,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 12.16,
+          "available_gib": 11.968,
+          "max_temp_c": 47.713,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 13.17,
+          "available_gib": 12.207,
+          "max_temp_c": 47.58,
+          "max_fan_rpm": 2506.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 8.210749058001966,
+      "ttft_s": 0.5051646810024977,
+      "total_s": 5.580210710002575,
+      "completion_tokens": 256,
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 50.24584970123748,
+      "min_available_gib": 11.949,
+      "peak_temp_c": 47.713,
+      "round": 3,
+      "admission_available_gib": 13.882
+    }
+  ],
+  "summary": {
+    "mlx-5k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.5508741699959501,
+      "median_total_s": 7.407378256000811,
+      "median_decode_tps": 37.19096449172877,
+      "texts": [
+        "3f3ac70c5d72"
+      ]
+    },
+    "mlx-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.5593528610042995,
+      "median_total_s": 5.743813449000299,
+      "median_decode_tps": 49.275994717945956,
+      "texts": [
+        "3f3ac70c5d72"
+      ]
+    },
+    "rapid-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.39503248000255553,
+      "median_total_s": 6.265561171996524,
+      "median_decode_tps": 43.167204558795554,
+      "texts": [
+        "3f3ac70c5d72"
+      ]
+    },
+    "tensorfold": {
+      "ok_runs": 3,
+      "median_ttft_s": 3.1231333750038175,
+      "median_total_s": 95.26329574899864,
+      "median_decode_tps": 2.7678692552458304,
+      "texts": [
+        "83887b098d88"
+      ]
+    }
+  }
+}

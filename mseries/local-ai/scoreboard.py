@@ -57,14 +57,24 @@ def measured_rows():
         ok = [x for x in r['runs'] if x['arm'] == arm and 'text' in x and not x.get('error')]
         if not ok:
             continue
-        texts = {x['text_sha256'] for x in r['runs'] if 'text_sha256' in x}
+        texts = {x['text_sha256'] for x in ok}
+        base = {x['text_sha256'] for x in r['runs'] if x['arm'] == 'mlx-5k' and 'text_sha256' in x}
+        if arm == 'mlx-5k' or not base:
+            same = 'reference' if arm == 'mlx-5k' else 'n/a'
+        elif texts == base:
+            same = 'yes'
+        else:
+            mt = next(x['text'] for x in r['runs'] if x['arm'] == 'mlx-5k' and 'text' in x)
+            at = ok[0]['text']
+            i = next((i for i, (u, v) in enumerate(zip(mt, at)) if u != v), min(len(mt), len(at)))
+            same = f'no: diverges after {i} of {len(mt)} chars'
         engine, settings, gate_key = ARM_SETTINGS[arm]
         gate = gates.get((model, gate_key), (None, None))[0] if gate_key else None
         rows.append({
             'model': MODEL_NAMES.get(model, model), 'engine': engine, 'settings': settings, 'tokens': tokens,
             'decode_tok_s': med([x.get('decode_tps') for x in ok]), 'ttft_s': med([x['ttft_s'] for x in ok]),
             'total_s': med([x['total_s'] for x in ok]), 'runs': len(ok),
-            'same_output': 'yes' if len(texts) == 1 else f'no ({len(texts)} variants across engines)',
+            'same_output': same if len(texts) == 1 else f'{same}; {len(texts)} variants across its own runs',
             'gate': gate or 'not gated', 'kernel': r.get('kernel', ''),
             'driver': r.get('driver', 'Honeykrisp Mesa 7faf04c065'), 'date': f.name[:10],
             'status': 'measured here', 'source': f'receipts/{f.name}', '_model': model})
@@ -72,7 +82,7 @@ def measured_rows():
     # and whose gate did not fail.
     for key in {(x['_model'], x['tokens']) for x in rows}:
         group = [x for x in rows if (x['_model'], x['tokens']) == key and x['gate'] != 'FAIL'
-                 and x['same_output'] == 'yes' and x['decode_tok_s']]
+                 and x['same_output'] in ('yes', 'reference') and x['decode_tok_s']]
         if group:
             max(group, key=lambda x: x['decode_tok_s'])['best'] = '★'
     return rows
@@ -121,7 +131,7 @@ def main():
           '"Local AI engine scoreboard" issue.', '',
           '![Decode speed by engine](engine-scoreboard.svg)', '',
           '## Measured on this machine', '',
-          '| ★ | Model | Engine | Settings | Tokens | Decode tok/s | TTFT s | Total s | Runs | Same output | Gate | Kernel | Driver | Date | Receipt |',
+          '| ★ | Model | Engine | Settings | Tokens | Decode tok/s | TTFT s | Total s | Runs | Same output as MLX default | Gate | Kernel | Driver | Date | Receipt |',
           '|---|---|---|---|---:|---:|---:|---:|---:|---|---|---|---|---|---|']
     for x in sorted(rows, key=lambda x: (x['_model'], x['tokens'], -(x['decode_tok_s'] or 0))):
         b = '**' if x.get('best') else ''
