@@ -7,8 +7,9 @@ Arms (each a fresh process: load, one warmup on the same prompt, one measured re
   rapid-120k  Rapid-MLX loopback server at the 120,000 budget
   serve-120k  mlx-omarchy-serve (mlx-lm backend; what model-worker.py runs) at 120,000
   serve-nolp-120k  the same launcher with only our skip-logprob-read patch
-  serve-patched-120k  both private patches: skip-logprob-read and the singleton cache
-              (Rapid-MLX's fast path, vendored); what model-worker.py ships.
+  serve-patched-120k  our server patches (skip-logprob-read, singleton cache, detokenizer map) and
+              MSERIES_SERVE_CONCURRENCY=4 batching (configure-serve-concurrency.py)
+              (singleton cache is Rapid-MLX's fast path, vendored); what model-worker.py ships.
               Both serve-n*/serve-p* arms need serve-patch.sh build first (patches/mlx-lm-0.31.3-*).
   tensorfold  TensorFold native Vulkan server (ashhart/TensorFold PR 1517)
 
@@ -170,6 +171,19 @@ def server_command(arm, port):
             '--host', '127.0.0.1', '--port', str(port)]
 
 
+def kv_bytes_per_token(model_dir):
+    """Full-attention KV per token from config.json (bf16 K and V); Qwen 3.5's linear-attention layers
+    keep a fixed-size state instead. Lets the launcher budget extra concurrent requests for a local folder."""
+    cfg = json.loads((Path(model_dir) / 'config.json').read_text())
+    t = cfg.get('text_config', cfg)
+    layers = t['layer_types'].count('full_attention') if 'layer_types' in t else t['num_hidden_layers']
+    head_dim = t.get('head_dim') or t['hidden_size'] // t['num_attention_heads']
+    return layers * t['num_key_value_heads'] * head_dim * 2 * 2
+
+
+SERVE_CONCURRENCY = os.environ.get('MSERIES_SERVE_CONCURRENCY', '4')  # what model-worker.py ships
+
+
 def env_for(arm, tmp):
     env = {k: v for k, v in os.environ.items() if not k.startswith('MLX_OMARCHY_')}
     env.update(VK_DRIVER_FILES=str(ICD), HF_HUB_OFFLINE='1', OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2')
@@ -178,6 +192,8 @@ def env_for(arm, tmp):
     if arm in ('serve-nolp-120k', 'serve-patched-120k'):
         env['PYTHONPATH'] = str(SERVE_PATCH)
         env['MSERIES_SERVE_SINGLETON'] = '1' if arm == 'serve-patched-120k' else '0'
+    if arm == 'serve-patched-120k':
+        env.update(MSERIES_SERVE_CONCURRENCY=SERVE_CONCURRENCY, MSERIES_SERVE_KV_BYTES_PER_TOKEN=str(kv_bytes_per_token(MODEL)))
     if arm == 'rapid-120k':
         env.update(PYTHONPATH=RAPID_PATH, RAPID_MLX_TELEMETRY='0', DO_NOT_TRACK='1',
                    RAPID_MLX_PREFIX_CACHE_AUTOLOAD='0', XDG_CONFIG_HOME=f'{tmp}/config',
@@ -328,7 +344,7 @@ def main():
     lock = (HOME / '.local/state/mseries-ai/worker.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     report = {'status': 'running', 'model_key': a.model, 'model': MODEL_ID, 'weights_sha256': WEIGHTS_SHA, 'kernel': os.uname().release, 'driver': 'Honeykrisp Mesa ' + DRIVER,
-              'tensorfold_rev': TF_REV, 'rapid_rev': RAPID_REV, 'prompt_sha256': hashlib.sha256(prompt_text.encode()).hexdigest(),
+              'tensorfold_rev': TF_REV, 'rapid_rev': RAPID_REV, 'serve_concurrency': int(SERVE_CONCURRENCY), 'prompt_sha256': hashlib.sha256(prompt_text.encode()).hexdigest(),
               'max_tokens': max_tokens, 'policy': {**POLICY, 'max_fan_rpm': None}, 'allowance_gib': ALLOWANCE_GIB,
               'arms': arms, 'concurrency': CONCURRENCY, 'runs': []}
     try:

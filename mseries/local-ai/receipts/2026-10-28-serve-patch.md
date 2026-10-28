@@ -57,20 +57,58 @@ Receipts: `2026-10-28-engine-compare-qwen{2b,4b}-short-hk9323171c12[-c4|-c8]-ser
 `…-qwen2b-short-hk9323171c12-serve-120k+serve-nolp-120k+rapid-120k.json` (logprob patch alone) and
 `…-serve-nolp-120k+serve-single-120k+rapid-120k.json` (the trial).
 
+## Round 2: first token and parallel requests (same day, PR after #672)
+
+**First token.** A trace of the 0.6 s first token on a 27-token prompt (launcher's
+`MLX_OMARCHY_TTFT_TRACE=1` plus per-step timing) showed reading the prompt took 0.23 s, and
+0.31 s went to building two streaming detokenizers per request, each copying Qwen 3.5's
+248k-token vocabulary (`get_vocab`, ~0.15 s each, holding the GIL).
+`patches/mlx-lm-0.31.3-detokenizer-tokenmap-cache.patch` builds that map once per tokenizer.
+
+**Parallel requests.** Upstream's launcher passes `--decode-concurrency 1 --prompt-concurrency 1`
+so its admission only has to reserve one request's KV: 8 parallel requests got their first tokens
+one by one, 0.8 s apart (5.9 s for the last). `configure-serve-concurrency.py` (applied in place
+by `install.sh`, like `configure-prefill.py`) makes `MSERIES_SERVE_CONCURRENCY=N` pass N to both
+flags and adds (N-1) x the context's KV to admission, refusing when KV-per-token is unknown, as
+upstream does for `--prompt-cache-size`. Unset, upstream behavior is unchanged. `model-worker.py`
+sets 4 for MLX profiles (`concurrency` in a profile overrides): +0.75 GiB reserved for the
+everyday Qwen 4B at 8,192 tokens (32 KiB/token; only 8 of its 32 layers keep a growing cache).
+For local folders `engine-compare.py` computes `MSERIES_SERVE_KV_BYTES_PER_TOKEN` from config.json.
+
+Decode tok/s (several requests: total) and median first token; text identical in every run:
+
+| | Stock upstream | Patched + batching of 4 | Rapid-MLX |
+| --- | ---: | ---: | ---: |
+| Qwen 2B, 1 request | 33.0 (0.62 s) | **56.2** (0.25 s) | 50.6 (**0.21 s**) |
+| Qwen 2B, 4 at once | 20.2 (4.08 s) | **57.0** (**0.77 s**) | 42.6 (1.15 s) |
+| Qwen 2B, 8 at once | 20.3 (8.08 s) | **57.7** (2.97 s) | 49.2 (**1.93 s**) |
+| Qwen 4B, 1 request | 20.4 (0.85 s) | **27.9** (0.51 s) | 25.7 (**0.22 s**) |
+| Qwen 4B, 4 at once | 12.8 (6.27 s) | **25.8** (**2.04 s**) | 21.2 (2.25 s) |
+
+Receipts: the same names as above with `-round2`, plus
+`…-qwen4b-short-hk9323171c12-c4-serve-120k+serve-patched-120k+rapid-120k.json`.
+Through the installed worker: plain answer, tool call, logprobs, and 4 parallel requests answered
+together in 2.2 s.
+
 ## Still open
 
-- **Several requests at once.** Rapid-MLX is still 1.5–1.7x faster in total and reaches the first
-  token 3x sooner. The singleton path only covers one request; Rapid's scheduler (and Locals'
-  batching) is the next thing to study for agents that send parallel requests.
-- **First token for one request.** 0.6–0.85 s against Rapid's 0.2 s. Not investigated yet; part
-  may be prompt-cache reuse between the warmup and the measured request in Rapid.
+- **Batching does not add throughput here.** 4 or 8 requests share about the same total
+  tok/s as one (56-58 on Qwen 2B), on Rapid too; batching buys fairness and first-token time,
+  not more tokens. Worth a look at the batched decode path on Honeykrisp.
+- **First token for one request.** 0.25 s (2B) and 0.51 s (4B) against Rapid's 0.21-0.22 s.
+  The prompt is read in two GPU passes (user part, then a 4-token tail kept for the prompt
+  cache), and each pass with more than one token has ~70 ms fixed cost on this stack.
+- **Prompt cache.** Upstream disables it by default; our worker keeps 1 entry. Qwen 3.5's
+  recurrent layers cannot be trimmed, so a cache that includes the reply cannot be reused;
+  Rapid saves a prompt-only copy before decoding. Not measured yet (the benchmark sends a fresh
+  server each run and does not record cache hits).
 - **Sampling.** Benchmarks are greedy. Assistants use temperature 0.2; Rapid also fuses the
   top-p sampler (`_sampler_fast_path.py`), which these numbers do not cover.
 
 ## Rollback
 
 ```bash
-systemctl --user set-environment MSERIES_SERVE_PATCH=0   # stock server until unset or logout
+systemctl --user set-environment MSERIES_SERVE_PATCH=0 MSERIES_SERVE_CONCURRENCY=1   # stock server, one at a time
 systemctl --user restart mseries-ai-everyday
 rm -rf ~/.local/share/mseries-ai/serve-patch            # or remove the copy for good
 ```

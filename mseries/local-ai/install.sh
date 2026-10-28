@@ -102,6 +102,7 @@ PY
 export OMARCHY_MLX_SYSTEM_PREFIX=$prefix
 MLX_OMARCHY_VERSION=v0.7.33 bash "$installer"
 python3 "$script_dir/configure-prefill.py" "$prefix/mlx_omarchy_serve/__main__.py"
+python3 "$script_dir/configure-serve-concurrency.py" "$prefix/mlx_omarchy_serve/__main__.py"
 # Our two private mlx-lm server patches, in a side copy that model-worker.py puts first on
 # PYTHONPATH only while it matches the installed server.py (receipts/2026-10-28-serve-patch.md).
 OMARCHY_MLX_SYSTEM_PREFIX=$prefix bash "$script_dir/serve-patch.sh" build

@@ -1,0 +1,71 @@
+# mseries: build each tokenizer's detokenizer token map once instead of on every request.
+# The 0.31.3 server builds two streaming detokenizers per request and each copied the whole
+# vocabulary (get_vocab, ~0.15 s for Qwen 3.5 while holding the GIL): ~0.3 s of first-token time.
+--- a/mlx_lm/tokenizer_utils.py
++++ b/mlx_lm/tokenizer_utils.py
+@@ -8,6 +8,39 @@
+ from transformers import AutoTokenizer, PreTrainedTokenizerFast
+ 
+ 
++# mseries: every request builds a new streaming detokenizer, and each one copied the whole
++# vocabulary (tokenizer.vocab is get_vocab(): ~0.15 s for Qwen 3.5's 248k tokens, holding the
++# GIL). The server builds two per request, so first token waited ~0.3 s. The map is read-only
++# and fixed for a tokenizer's life, so build it once per tokenizer and share it.
++_TOKENMAPS = {}
++
++
++def _shared_tokenmap(tokenizer, kind, build):
++    key = (id(tokenizer), kind)
++    entry = _TOKENMAPS.get(key)
++    if entry is None or entry[0] is not tokenizer:
++        entry = _TOKENMAPS[key] = (tokenizer, build(tokenizer.vocab))
++    return entry[1]
++
++
++def _spm_tokenmap(vocab):
++    tokenmap = [""] * (max(vocab.values()) + 1)
++    for value, tokenid in vocab.items():
++        if value.startswith("<0x"):
++            # Replace bytes with their value
++            tokenmap[tokenid] = bytes([int(value[3:5], 16)])
++        else:
++            tokenmap[tokenid] = value.encode()
++    return tokenmap
++
++
++def _bpe_tokenmap(vocab):
++    tokenmap = [None] * len(vocab)
++    for value, tokenid in vocab.items():
++        tokenmap[tokenid] = value
++    return tokenmap
++
++
+ class StreamingDetokenizer:
+     """The streaming detokenizer interface so that we can detokenize one token at a time.
+ 
+@@ -116,13 +149,7 @@
+         self._sep = "\u2581".encode()
+ 
+         # Extract the tokens in a list from id to text
+-        self.tokenmap = [""] * (max(tokenizer.vocab.values()) + 1)
+-        for value, tokenid in tokenizer.vocab.items():
+-            if value.startswith("<0x"):
+-                # Replace bytes with their value
+-                self.tokenmap[tokenid] = bytes([int(value[3:5], 16)])
+-            else:
+-                self.tokenmap[tokenid] = value.encode()
++        self.tokenmap = _shared_tokenmap(tokenizer, "spm", _spm_tokenmap)
+ 
+         self.reset()
+ 
+@@ -166,9 +193,7 @@
+         self.clean_spaces = tokenizer.clean_up_tokenization_spaces
+ 
+         # Extract the tokens in a list from id to text
+-        self.tokenmap = [None] * len(tokenizer.vocab)
+-        for value, tokenid in tokenizer.vocab.items():
+-            self.tokenmap[tokenid] = value
++        self.tokenmap = _shared_tokenmap(tokenizer, "bpe", _bpe_tokenmap)
+ 
+         self.reset()
+ 
