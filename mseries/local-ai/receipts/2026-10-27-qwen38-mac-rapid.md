@@ -74,3 +74,53 @@ repository (`beef0000ab38df4807acef6dc331ddc97525b897`, MIT) is a general ANE
 research reference. Its reverse-engineering section links external work, but
 it does not supply the missing task-stream relayout implementation or qualify
 this Linux Qwen bundle. Keep it as background rather than evidence of a fix.
+
+## Rapid follow-up: 80k budget and prompt cache
+
+A new 6-process alternating Rapid loopback sweep compared 20k against 80k,
+using the same short Qwen distillation prompt and warmup as above. Three pairs
+were 1.107→1.121 s, 1.106→1.087 s, and 1.145→1.104 s; the median paired
+reduction was 1.74%, with one pair slower. All outputs matched. This is not
+clear evidence that 80k is preferable to 20k. Minimum sampled available memory
+was 9.82 GiB; highest sampled temperature 48.18 C and fan 2528 RPM. See
+[80k Rapid receipt](2026-10-27-qwen38-rapid-80k.json).
+
+A separate single 20k Rapid server then tested three long-prompt cold/repeat
+pairs. Each 586-token prompt generated 21 tokens; the first request was a cache
+miss and the identical second request a hit. Both text outputs matched within
+each pair. The server logged 571 cached tokens and 15 tokens to prefill for
+each repeat:
+
+| Pair | Cold HTTP | Repeated HTTP | Time reduction |
+| --- | ---: | ---: | ---: |
+| 1 | 1.889 s | 0.948 s | 49.79% |
+| 2 | 1.831 s | 0.898 s | 50.93% |
+| 3 | 1.868 s | 0.899 s | 51.87% |
+
+The median paired reduction was **50.93%** for repeated long prompts in the
+same server, not a general decode improvement, a TensorFold improvement, or
+an MLX-versus-Rapid ranking. Three related synthetic prompts and short outputs
+are not a broad benchmark; first requests may share a tiny template prefix but
+were logged as misses. The user-visible HTTP boundary includes scheduling,
+prefill, decode and network loopback. Memory and thermal guards remained;
+minimum sampled available memory was 10.15 GiB, maximum temperature 48.646 C,
+maximum fan 2523 RPM. Raw request usage, server cache logs and samples:
+[prefix-cache receipt](2026-10-27-qwen38-rapid-prefix.json).
+
+## Additional ANE sources
+
+[maderix/ANE](https://github.com/maderix/ANE/tree/d91c9845c0784dec7753048954fc6d0e8411fe29)
+(commit `d91c9845c0784dec7753048954fc6d0e8411fe29`, MIT) is a macOS ANE
+training/benchmark research project. Its Qwen3-0.6B training example and
+IOSurface-based GPU/ANE experiments are useful design references, but its
+Foundation/IOSurface bridge uses macOS private APIs and does not provide the
+Linux HWX task-stream relayout we need. Its M4 benchmark is not our M1 Pro
+Qwen3.8 measurement.
+
+[solatticus/ANE](https://github.com/solatticus/ANE/tree/679929db93f1ee3b21758b87494b49b72e5a55a4)
+(commit `679929db93f1ee3b21758b87494b49b72e5a55a4`, MIT) is a diverged fork
+adding iOS experiments and Qwen2.5-3B LoRA training. The reviewed bridge and
+training paths also use Apple's Foundation/IOSurface and private APIs; no
+Linux `.anec` converter or `uniform_task_relayout` implementation was found.
+It is not a ready-made fix for the current Qwen3.8 Linux decoder. Both repos
+may inform later work; neither was installed or executed.

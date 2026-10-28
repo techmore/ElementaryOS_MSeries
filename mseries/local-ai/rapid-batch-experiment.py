@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Guarded loopback-only Rapid-MLX batch-budget comparison."""
-import fcntl, hashlib, json, os, signal, socket, subprocess, sys, tempfile, threading, time
+import argparse, fcntl, hashlib, json, os, signal, socket, subprocess, sys, tempfile, threading, time
 import urllib.request, urllib.error
 from pathlib import Path
 from machine import GIB, snapshot, violations
@@ -13,6 +13,14 @@ OUT = Path(__file__).resolve().parent / 'receipts/2026-10-27-qwen38-rapid-batch.
 POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--baseline", type=int, choices=[5000, 20000, 80000], default=5000)
+    parser.add_argument("--candidate", type=int, choices=[20000, 80000], default=20000)
+    parser.add_argument("--output", type=Path, default=OUT)
+    parser.add_argument("--prefix-cache-probe", action="store_true", help="Measure cold and repeat long prompts in one server")
+    args = parser.parse_args()
+    if args.baseline == args.candidate:
+        parser.error("baseline and candidate must differ")
     with (MODEL / 'model.safetensors').open('rb') as f:
         if hashlib.file_digest(f, 'sha256').hexdigest() != SHA:
             raise SystemExit('Unrecognized model weights')
@@ -20,10 +28,11 @@ def main():
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     report = {'status': 'running', 'model': 'nvythong/Qwen3.8-2B-Distill-mlx-4Bit@0afdb6850d218024c7788eda5659aa25475b7d51',
               'weights_sha256': SHA, 'rapid_revision': '1d09cdb684bbf58fac130f5804b08ee2e1f56558',
-              'runs': []}
+              'mode': 'prefix_cache' if args.prefix_cache_probe else 'batch_budget', 'runs': []}
     try:
         with tempfile.TemporaryDirectory(prefix='rapid-mseries-ab-') as tmp:
-            for i, budget in enumerate((5000, 20000, 20000, 5000)):
+            sequence = (args.candidate,) if args.prefix_cache_probe else (args.baseline, args.candidate, args.candidate, args.baseline, args.baseline, args.candidate)
+            for i, budget in enumerate(sequence):
                 s = snapshot(); reasons = violations(s, POLICY, extra_bytes=int(4.5*GIB))
                 if reasons: raise RuntimeError('Admission refused: ' + '; '.join(reasons))
                 with socket.socket() as sock:
@@ -58,7 +67,14 @@ def main():
                             except (OSError, urllib.error.HTTPError): time.sleep(.5)
                         else: raise RuntimeError('Server readiness timeout')
                         outcome['warmup']=request('What is 12 plus 7? Reply with the number only.')
-                        outcome['measured']=request(PROMPT)
+                        if args.prefix_cache_probe:
+                            outcome['pairs'] = []
+                            for pair in range(3):
+                                text = f'Case {pair}: Summarize the following explanation in two sentences. ' + (
+                                    'Sunlight enters raindrops and changes direction. Internal reflection returns light, while refraction separates colors. ' * 28)
+                                outcome['pairs'].append({'cold': request(text), 'repeat': request(text)})
+                        else:
+                            outcome['measured']=request(PROMPT)
                     except Exception as exc: outcome['error']=str(exc)
                 thread=threading.Thread(target=work, daemon=True); thread.start(); bad=0; stopped=None
                 try:
@@ -77,15 +93,19 @@ def main():
                         except subprocess.TimeoutExpired: os.killpg(child.pid,signal.SIGKILL); child.wait()
                     thread.join(timeout=2)
                 log.seek(0); row={'budget':budget,'admission_available_bytes':s['available_bytes'],
-                    'samples':samples,'outcome':outcome,'stopped':stopped,'log_tail':log.read()[-6000:]}; log.close()
+                    'samples':samples,'outcome':outcome,'stopped':stopped,'log_tail':log.read()[-30000:]}; log.close()
                 report['runs'].append(row)
-                if stopped or 'error' in outcome or 'measured' not in outcome: raise RuntimeError(str(stopped or outcome))
-                print(f"run {i+1} budget={budget} HTTP={outcome['measured']['elapsed_s']:.3f}s",flush=True)
+                if stopped or 'error' in outcome or ('pairs' if args.prefix_cache_probe else 'measured') not in outcome: raise RuntimeError(str(stopped or outcome))
+                if args.prefix_cache_probe:
+                    print(f"prefix probe completed {len(outcome['pairs'])} cold/repeat pairs at budget={budget}", flush=True)
+                else:
+                    print(f"run {i+1} budget={budget} HTTP={outcome['measured']['elapsed_s']:.3f}s",flush=True)
                 time.sleep(2)
         report['status']='complete'
     except BaseException as exc:
         report['status']='interrupted'; report['error']=str(exc); raise
     finally:
-        OUT.write_text(json.dumps(report,indent=2)+'\n'); lock.close()
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(report,indent=2)+'\n'); lock.close()
 
 if __name__=='__main__': main()

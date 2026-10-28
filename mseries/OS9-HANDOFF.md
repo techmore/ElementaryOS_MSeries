@@ -1,3 +1,7 @@
+## Rapid prompt cache and ANE references — 2026-10-27
+
+On Qwen3.8 distill, 80k vs 20k Rapid HTTP budget A/B gave a 1.74% median reduction (three pairs; one slower). At 20k, three 586-token cold/repeat requests showed 50.93% median shorter repeat time, 571 tokens cached and identical paired outputs; this is a repeat-prompt cache result, not general decode. maderix/ANE and fork solatticus/ANE add macOS/iOS ANE training references, not the missing Linux converter. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
+
 ## Qwen H13 export and Rapid batching — 2026-10-27
 
 M4 macOS mini cross-compiled all 38 staged Qwen programs for h13 from a hash-verified GGUF; files remain in its isolated cache, checksums retained locally. Upstream ANEC conversion fails before first output: undefined `uniform_task_relayout`; `payload` is also referenced before assignment. No ANE execution. Qwen3.8 distill on M1 Pro: direct MLX 20k vs 5k median paired request time −11.79% (3 pairs); Rapid loopback HTTP −17.95% (2 pairs), outputs text-matched but measurement boundaries/warmups differ, so not an engine ranking. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
