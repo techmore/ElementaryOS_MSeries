@@ -13,7 +13,19 @@ Click it to see:
   The row briefly says "Copied …".
 - **Admin Console…** opens login.tailscale.com.
 
-The icon is dimmed when Tailscale is off.
+The icon is the Tailscale logo when connected and all-grey dots when not, the
+same on/off look as Tailscale's own tray icon.
+
+## Icon source
+
+`mseries-tailscale-symbolic.svg` and `mseries-tailscale-offline-symbolic.svg` redraw
+the Tailscale logo from the dot layout in Tailscale's own tray code,
+[`client/systray/logo.go`](https://github.com/tailscale/tailscale/blob/v1.104.4/client/systray/logo.go)
+(BSD-3-Clause, © Tailscale Inc & contributors): a 3×3 grid, dot radius r, centres
+at (1 + 3i)·r, lit dots for "connected", all grey for "disconnected". Here r = 2 on a
+16 px canvas, with grey dots at 40%. They are monochrome so the panel can recolour
+them. The Tailscale name and logo are Tailscale Inc. trademarks. We use them only
+to label Tailscale's own status, not to suggest Tailscale endorses this project.
 
 ## How it works
 
@@ -36,7 +48,7 @@ supports tray icons, and the native menu matches the other panel menus.
 ## Install
 
 ```sh
-bash mseries/install-tailscale-wingpanel.sh     # top panel (asks for sudo, no restart)
+bash mseries/install-tailscale-wingpanel.sh     # top panel (sudo for the plugin; icons go in ~/.local/share)
 bash mseries/install-dock-drawers.sh            # taskbar, then: systemctl --user restart pantheon-dock
 ```
 

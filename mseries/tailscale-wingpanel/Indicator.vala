@@ -25,9 +25,9 @@ namespace MSeries.Tailscale {
         }
 
         private void update_icon () {
+            // Tailscale's own on/off look: the logo when connected, all-grey dots when not.
             var on = panel.state == State.CONNECTED;
-            if (on) icon.remove_css_class (Granite.CssClass.DIM);
-            else icon.add_css_class (Granite.CssClass.DIM);
+            icon.icon_name = on ? "mseries-tailscale-symbolic" : "mseries-tailscale-offline-symbolic";
             icon.tooltip_markup = "Tailscale\n" + Granite.TOOLTIP_SECONDARY_TEXT_MARKUP.printf (on ? "Connected" : "Not connected");
         }
 

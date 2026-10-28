@@ -7,7 +7,7 @@ shared_module('mseries-tailscale', 'Indicator.vala', 'TailscalePanel.vala',
   dependencies: deps, install: true,
   install_dir: wingpanel.get_variable(pkgconfig: 'indicatorsdir'))
 
-install_data('mseries-tailscale-symbolic.svg',
+install_data('mseries-tailscale-symbolic.svg', 'mseries-tailscale-offline-symbolic.svg',
   install_dir: get_option('datadir') / 'icons/hicolor/symbolic/apps')
 
 # Standalone window with the same menu, for screenshots and checks without the panel.

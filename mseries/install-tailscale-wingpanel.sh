@@ -10,10 +10,11 @@
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9 2>/dev/null || echo /usr/lib/aarch64-linux-gnu/wingpanel-9)
-icon=/usr/share/icons/hicolor/symbolic/apps/mseries-tailscale-symbolic.svg
+icons=${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor/symbolic/apps
 
 if [[ ${1:-} == --uninstall ]]; then
-  sudo rm -f "$indicators_dir/libmseries-tailscale.so" "$icon"
+  sudo rm -f "$indicators_dir/libmseries-tailscale.so"
+  rm -f "$icons"/mseries-tailscale-symbolic.svg "$icons"/mseries-tailscale-offline-symbolic.svg
   echo 'Tailscale menu removed from the top panel.'
   exit 0
 fi
@@ -33,8 +34,8 @@ rm -rf "$build"
 meson setup "$build" "$repo/mseries/tailscale-wingpanel" --prefix=/usr >/dev/null
 ninja -C "$build" >/dev/null
 
-sudo install -Dm0644 "$repo/mseries/tailscale-wingpanel/mseries-tailscale-symbolic.svg" "$icon"
-sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor 2>/dev/null || :
+# Icons go in your own icon folder (no sudo); the Work Mode taskbar uses them too.
+install -Dm0644 -t "$icons" "$repo"/mseries/tailscale-wingpanel/mseries-tailscale{,-offline}-symbolic.svg
 # Wingpanel loads any new file in its folder, so stage outside it and move in at once.
 pending="$indicators_dir/../mseries-pending-indicators"
 sudo install -Dm0755 "$build/libmseries-tailscale.so" "$pending/libmseries-tailscale.so"

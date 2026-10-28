@@ -12,7 +12,7 @@ public class Dock.TaskbarTailscale : Gtk.Button {
         icon = new Gtk.Image.from_icon_name ("mseries-tailscale-symbolic");
         child = icon;
 
-        // Built now so its light timer keeps the icon dim when disconnected.
+        // Built now so its light timer switches the icon when disconnected.
         panel = new MSeries.Tailscale.Panel ();
         panel.notify["state"].connect (update_icon);
         update_icon ();
@@ -45,7 +45,7 @@ public class Dock.TaskbarTailscale : Gtk.Button {
 
     private void update_icon () {
         var on = panel.state == MSeries.Tailscale.State.CONNECTED;
-        icon.opacity = on ? 1.0 : 0.5;
+        icon.icon_name = on ? "mseries-tailscale-symbolic" : "mseries-tailscale-offline-symbolic";
         tooltip_text = on ? "Tailscale: connected" : "Tailscale: not connected";
     }
 
