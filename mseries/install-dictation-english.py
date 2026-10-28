@@ -27,7 +27,7 @@ BASE = HOME / ".local/share/mseries/stream"
 STATE = HOME / ".local/state/mseries-dictation-english"
 RUNTIME_FILES = (
     "stream-dictate.py", "dictation-input.py", "dictation-input-client.py", "dictation_status.py",
-    "dictation_resources.py", "dictation_model.py", "dictation_ane.py", "ane-worker-shim.py",
+    "dictation_resources.py", "dictation_model.py", "dictation_media.py", "dictation_ane.py", "ane-worker-shim.py",
     "dictation_mlx.py", "mlx-speech-worker.py", "dictation-engine.py", "dictation-launch.py",
     "dictation_review.py", "dictation_pipeline.py", "dictation_live.py", "dictation-panel.py",
 )
