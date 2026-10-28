@@ -35,6 +35,8 @@ def worker(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', required=True, type=Path)
+    parser.add_argument('--admission-gib', required=True, type=float,
+                        help='Model-specific memory allowance, in addition to the 6 GiB desktop reserve')
     parser.add_argument('--lfm3-module', type=Path)
     parser.add_argument('--allow-fan-above-3500', action='store_true',
                         help='Only when the owner explicitly authorizes more fan noise')
@@ -43,6 +45,8 @@ def main():
     if args.worker:
         worker(args)
         return
+    if not 0 < args.admission_gib <= 64:
+        raise SystemExit('Admission allowance must be greater than 0 and at most 64 GiB')
     if not args.model.is_dir():
         raise SystemExit('Local model directory not found')
     home = Path.home()
@@ -51,7 +55,7 @@ def main():
     policy = {'reserve_gib': 6, 'max_fan_rpm': float('inf') if args.allow_fan_above_3500 else 3500,
               'max_temp_c': 80}
     initial = snapshot()
-    reasons = violations(initial, policy, extra_bytes=int(4.5 * GIB))
+    reasons = violations(initial, policy, extra_bytes=int(args.admission_gib * GIB))
     print('ADMISSION_AVAILABLE_GIB', round(initial['available_bytes'] / GIB, 2), 'reasons', reasons, flush=True)
     if reasons:
         raise SystemExit('Admission refused')
@@ -62,7 +66,8 @@ def main():
     env.update(VK_DRIVER_FILES=str(home / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json'),
                MLX_OMARCHY_METAL_KERNEL_BACKEND='auto', MLX_OMARCHY_M2V_SUMMARY='1',
                HF_HUB_OFFLINE='1', OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2')
-    command = [str(home / '.local/share/mlx-omarchy/venv/bin/python'), __file__, '--worker', '--model', str(args.model)]
+    command = [str(home / '.local/share/mlx-omarchy/venv/bin/python'), __file__, '--worker', '--model', str(args.model),
+               '--admission-gib', str(args.admission_gib)]
     if args.lfm3_module:
         command += ['--lfm3-module', str(args.lfm3_module)]
     child = subprocess.Popen(command, env=env, start_new_session=True)

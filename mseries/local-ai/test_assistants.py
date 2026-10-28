@@ -272,7 +272,10 @@ class AssistantContracts(unittest.TestCase):
     def test_desktop_reserve_and_quiet_limits(self):
         sample = {'available_bytes': 16 * machine.GIB, 'fans_rpm': {'fan': 2500}, 'temperatures_c': {'soc': 55}}
         self.assertFalse(machine.violations(sample, extra_bytes=9 * machine.GIB))
-        self.assertTrue(machine.violations(sample, extra_bytes=11 * machine.GIB))
+        refusal = machine.violations(sample, extra_bytes=11 * machine.GIB)
+        self.assertTrue(refusal)
+        self.assertIn('model allowance 11.00 GiB', refusal[0])
+        self.assertIn('reserve 6.00 GiB', refusal[0])
         sample['fans_rpm']['fan'] = 4000
         self.assertTrue(machine.violations(sample))
 
