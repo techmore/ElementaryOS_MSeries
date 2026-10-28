@@ -77,6 +77,19 @@ expanded visibility, duration and received-files controls. It uses the existing
 Mode hides the top panel, this taskbar button keeps AirDrop available in that
 desktop mode.
 
+## Taskbar clock opens the panel calendar
+
+Work Mode hides Wingpanel, so the taskbar clock opens the same calendar the top
+panel shows: `TaskbarCalendar.vala` loads the installed Wingpanel datetime
+indicator (`wingpanel-9/libdatetime.so`, patched by
+[`../calendar/`](../calendar/README.md)) into the dock on first click and shows
+its widget in a popover above the clock. The month grid, Events, Tasks (EDS,
+including Homeboard lists), GitHub and Bible tabs are the panel's own code, so
+they behave and theme the same. Clicking the clock again, clicking outside or an
+indicator action closes it. If the indicator is not installed, the clock opens
+the Calendar app as before. `test-calendar.sh [DIR]` checks open/close in light
+and dark plus the fallback, and can save screenshots.
+
 Build without changing the desktop:
 
 ```sh
