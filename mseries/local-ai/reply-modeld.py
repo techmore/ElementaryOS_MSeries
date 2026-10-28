@@ -33,6 +33,7 @@ DEFAULT_REVISION = '32f3e8ecf65426fc3306969496342d504bfa13f3'
 RESERVE_GIB = float(os.environ.get('MSERIES_REPLY_RESERVE_GIB', '4'))  # desktop headroom kept free
 ADMISSION_GIB = float(os.environ.get('MSERIES_REPLY_ADMISSION_GIB', '3.5'))  # weights plus working memory
 TIGHT_IDLE_SECONDS = 60
+PREFIX_CACHE = os.environ.get('MSERIES_REPLY_PREFIX_CACHE', '1') == '1'
 MAX_BODY = 1024 * 1024
 MAX_TOKENS = 1400
 
@@ -75,6 +76,7 @@ class Engine:
         self.model = None
         self.tokenizer = None
         self.load_seconds = None
+        self.prefix_cache = self.prefix_tokens = None
         self.last_used = time.monotonic()
         threading.Thread(target=self._idle_watch, daemon=True).start()
 
@@ -97,6 +99,7 @@ class Engine:
     def _unload(self, why):
         import mlx.core as mx
         self.model = self.tokenizer = None
+        self.prefix_cache = self.prefix_tokens = None
         gc.collect()
         mx.clear_cache()
         print(f'reply-modeld: unloaded ({why})', flush=True)
@@ -117,18 +120,58 @@ class Engine:
                 elif idle > TIGHT_IDLE_SECONDS and available_gib() < RESERVE_GIB:
                     self._unload('memory is tight')
 
+    def _ids(self, messages, **kwargs):
+        ids = self.tokenizer.apply_chat_template(messages, tokenize=True, **kwargs)
+        return list(ids['input_ids'] if hasattr(ids, 'keys') else ids)
+
+    def _prefix_cache(self, tokens, system, kwargs):
+        """The model state after reading the system message, built once and reused while prompts start with it.
+
+        Every Smart Reply draft starts with the same fixed instructions (~170 tokens), which were most of the time to
+        the first token. The shared prefix is where the prompt and a probe (the system message plus a dummy user line)
+        stop agreeing. Returns (cache copy, prefix length), or (None, 0).
+        """
+        import copy
+        import mlx.core as mx
+        from mlx_lm.models.cache import make_prompt_cache
+        cached = self.prefix_tokens
+        if not (cached and len(cached) < len(tokens) and tokens[:len(cached)] == cached):
+            probe = self._ids([system, {'role': 'user', 'content': '.'}], add_generation_prompt=True, **kwargs)
+            length = 0
+            # Keep at least one new token for the generation step.
+            while length < min(len(probe), len(tokens) - 1) and probe[length] == tokens[length]:
+                length += 1
+            if length < 16:
+                return None, 0
+            cached = tokens[:length]
+            cache = make_prompt_cache(self.model)
+            self.model(mx.array(cached)[None], cache=cache)
+            mx.eval([c.state for c in cache])
+            self.prefix_cache, self.prefix_tokens = cache, cached
+        return copy.deepcopy(self.prefix_cache), len(cached)
+
     def chat(self, messages, max_tokens, temperature, template_kwargs):
-        from mlx_lm import generate
+        from mlx_lm import stream_generate
         from mlx_lm.sample_utils import make_sampler
         with self.lock:
             self._ensure()
             try:
                 kwargs = {'enable_thinking': False}
                 kwargs.update({k: v for k, v in template_kwargs.items() if k == 'enable_thinking'})
-                prompt = self.tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False,
-                                                            **kwargs)
-                text = generate(self.model, self.tokenizer, prompt, max_tokens=max_tokens,
-                                sampler=make_sampler(temp=temperature))
+                tokens = self._ids(messages, add_generation_prompt=True, **kwargs)
+                started = time.monotonic()
+                cache, skip = None, 0
+                if PREFIX_CACHE and messages[0]['role'] == 'system':
+                    cache, skip = self._prefix_cache(tokens, messages[0], kwargs)
+                first = None
+                text = ''
+                for response in stream_generate(self.model, self.tokenizer, tokens[skip:], max_tokens=max_tokens,
+                                                 sampler=make_sampler(temp=temperature), prompt_cache=cache):
+                    if first is None:
+                        first = time.monotonic() - started
+                    text += response.text
+                print(f'reply-modeld: first token {first or 0:.2f}s, {len(tokens)} prompt tokens '
+                      f'({skip} from the system-prompt cache)', flush=True)
                 return text
             finally:
                 self.last_used = time.monotonic()

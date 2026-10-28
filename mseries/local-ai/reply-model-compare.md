@@ -44,6 +44,23 @@ nothing, so `mseries-ai` falls back to the assistant model instead of failing. I
 Measured through `mseries-reply draft rust/mseries-reply/fixtures/lunch.json`: 5.8 s for the first draft (3.2 s of it
 loading), 1.8 s after.
 
+## Speed-ups (2026-10-28, later)
+
+`reply-modeld.py` now keeps the model state after the fixed system prompt (181 of ~225 prompt tokens) and reuses a copy
+for every draft, so only the conversation lines are read each time. Same five threads through the server, Qwen3.5-4B,
+warm averages:
+
+| Server setting | First token | Total |
+|---|---|---|
+| No cache, batch 20k (before) | 1.40 s | 2.75 s |
+| No cache, batch 120k | 1.36 s | 2.89 s |
+| System-prompt cache, batch 20k | 0.81 s | 2.41 s |
+| **System-prompt cache, batch 120k (now)** | **0.81 s** | **2.27 s** |
+
+Totals vary with reply length; the first-token drop is the reliable gain. `mseries-reply draft
+rust/mseries-reply/fixtures/lunch.json` went from 1.8 s to 1.4 s warm. Set `MSERIES_REPLY_PREFIX_CACHE=0` to turn the
+cache off.
+
 ## Re-run
 
 ```sh
