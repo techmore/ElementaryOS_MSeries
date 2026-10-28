@@ -256,6 +256,8 @@ load_conf() {
   password_hash=""
   keep_default=0
   enhance=1
+  enable_ssh=0
+  ssh_key=""
   repo=$DEFAULT_REPO
   ref=$DEFAULT_REF
   forge=$DEFAULT_FORGE
@@ -270,6 +272,8 @@ load_conf() {
     password_hash=${SETUP_PASSWORD_HASH:-$password_hash}
     keep_default=${SETUP_KEEP_DEFAULT:-$keep_default}
     enhance=${SETUP_ENHANCE:-$enhance}
+    enable_ssh=${SETUP_ENABLE_SSH:-$enable_ssh}
+    ssh_key=${SETUP_SSH_KEY:-$ssh_key}
     repo=${SETUP_REPO:-$repo}
     ref=${SETUP_REF:-$ref}
     forge=${SETUP_FORGE:-$forge}
@@ -290,6 +294,8 @@ save_conf() {
       printf 'SETUP_PASSWORD_HASH=%q\n' "$password_hash"
       printf 'SETUP_KEEP_DEFAULT=%q\n' "$keep_default"
       printf 'SETUP_ENHANCE=%q\n' "$enhance"
+      printf 'SETUP_ENABLE_SSH=%q\n' "$enable_ssh"
+      printf 'SETUP_SSH_KEY=%q\n' "$ssh_key"
       printf 'SETUP_REPO=%q\n' "$repo"
       printf 'SETUP_REF=%q\n' "$ref"
       printf 'SETUP_FORGE=%q\n' "$forge"
@@ -370,6 +376,7 @@ print_help() {
 
 Options: [--encrypt|--no-encrypt] [--user NAME] [--hostname NAME] [--keymap NAME]
          [--repo OWNER/REPO] [--ref BRANCH] [--forge HOST] [--keep-default] [--no-enhancements]
+         [--enable-ssh --ssh-key 'ssh-ed25519 AAAA...|FILE]   (key-only login; off by default)
          [--status] [--step NAME] [--fonts] [--unlock-screen] [--resume] [--abort]
 EOF
   else
@@ -764,6 +771,7 @@ Operation = Upgrade
 Type = Package
 Target = linux-asahi*
 Target = linux-aarch64*
+Target = linux-aurora*
 
 [Action]
 Description = Graft the new kernel modules into elementary OS (@elementary)
@@ -771,6 +779,76 @@ When = PostTransaction
 Exec = $SRC/transform/elementary-grow.sh --sync-kernel
 HOOK
   log "Installed a pacman hook that keeps elementary's kernel modules in step with kernel updates"
+}
+
+# Model gate. Stock Asahi Alarm does not boot M4-family Macs; they need the
+# Aurora kernel (linux-aurora, from aurora-silicon/linux). Say so, and make the
+# user opt in, rather than letting a build run on a machine nobody has tested.
+apple_model() {
+  tr '\0' '\n' </proc/device-tree/compatible 2>/dev/null | grep -m1 '^apple,j' || true
+}
+
+is_m4_family() {
+  case $(apple_model) in
+    apple,j773* | apple,j713*) return 0 ;;
+  esac
+  grep -Faq -e 't8132' -e 't6040' -e 't6041' /proc/device-tree/compatible 2>/dev/null
+}
+
+check_model_gate() {
+  is_m4_family || return 0
+  warn "This looks like an M4-family Mac ($(apple_model)). The elementary build has only been run on an M1 Pro."
+  warn "Aurora lists the M4 Mac mini (J773g) as booting; its installer catalog does not list it yet."
+  if [[ ${ELEMENTARY_ACCEPT_M4:-0} != 1 ]]; then
+    fail "set ELEMENTARY_ACCEPT_M4=1 to continue on an M4 (experimental; see mseries/M4-MINI-INSTALL.md)"
+  fi
+  case $(uname -r) in
+    *aurora* | *ARCH*) ;;
+    *) warn "The running kernel ($(uname -r)) does not look like linux-aurora; kernel flavour sync may need --repair-grub." ;;
+  esac
+}
+
+# Opt-in remote login. Key-only: password and root login stay off, and the
+# Asahi Alarm rescue system's stock root/root login is closed to the network.
+valid_ssh_key() {
+  [[ $1 =~ ^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp[0-9]+|sk-ssh-ed25519@openssh.com)\ [A-Za-z0-9+/=]+(\ .*)?$ ]]
+}
+
+configure_ssh() {
+  local user=$1 home="$ELEMENTARY_MNT/home/$1"
+  ((enable_ssh)) || return 0
+  [[ -n $ssh_key ]] || fail "--enable-ssh needs --ssh-key (key-only login; there is no password fallback)"
+  mkdir -p "$ELEMENTARY_MNT/etc/ssh/sshd_config.d"
+  cat >"$ELEMENTARY_MNT/etc/ssh/sshd_config.d/10-mseries.conf" <<'SSHD'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+PubkeyAuthentication yes
+SSHD
+  # The home may be a separate subvolume that is not mounted here; the
+  # first-boot enhancement job installs the key from the staged copy instead.
+  install -d -m 700 "$ELEMENTARY_MNT/var/lib/mseries"
+  printf '%s\n' "$ssh_key" >"$ELEMENTARY_MNT/var/lib/mseries/authorized_keys.$user"
+  chmod 600 "$ELEMENTARY_MNT/var/lib/mseries/authorized_keys.$user"
+  cat >"$ELEMENTARY_MNT/etc/systemd/system/mseries-ssh-key.service" <<UNIT
+[Unit]
+Description=Install the SSH key staged by elementary-mac-setup
+ConditionPathExists=/var/lib/mseries/authorized_keys.$user
+Wants=network-online.target
+After=local-fs.target network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'install -d -m 700 -o $user -g $user /home/$user/.ssh && cat /var/lib/mseries/authorized_keys.$user >> /home/$user/.ssh/authorized_keys && sort -u -o /home/$user/.ssh/authorized_keys /home/$user/.ssh/authorized_keys && chown $user:$user /home/$user/.ssh/authorized_keys && chmod 600 /home/$user/.ssh/authorized_keys && rm /var/lib/mseries/authorized_keys.$user'
+ExecStartPre=/bin/sh -c 'dpkg -s openssh-server >/dev/null 2>&1 || DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server'
+ExecStartPost=/bin/systemctl enable --now ssh.service
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+  mkdir -p "$ELEMENTARY_MNT/etc/systemd/system/multi-user.target.wants"
+  ln -sf ../mseries-ssh-key.service "$ELEMENTARY_MNT/etc/systemd/system/multi-user.target.wants/mseries-ssh-key.service"
+  log "SSH: key-only login for $user will be enabled on first boot (openssh-server is installed from apt on that boot, so it needs network)"
 }
 
 step_elementary() {
@@ -802,6 +880,7 @@ step_elementary() {
 
   mount_elementary || fail "cannot mount $SUBVOL_NAME to finish it"
   trap 'unmount_elementary; on_exit' EXIT
+  configure_ssh "$username"
   if root_is_encrypted; then
     configure_autologin "$username"
     install_unlock_screen
@@ -977,6 +1056,7 @@ ask_questions() {
   fi
   log "  - build elementary OS from $repo ($ref) and make it the default boot entry"
   ((enhance)) && log "  - enable the M-series enhancements (zram, charge limit, docked-lid, brightness, keyboard light, Brave, gestures, panel fixes)"
+  ((enable_ssh)) && log "  - enable SSH, key-only, for $username"
   log "  - reboot into elementary OS"
   echo
   read -rp "Start? [Y/n] " answer
@@ -987,7 +1067,7 @@ ask_questions() {
 }
 
 main() {
-  local resume=0 status=0 abort=0 step_only="" encrypt_flag="" want_encrypt username hostname keymap password_hash keep_default enhance repo ref forge
+  local resume=0 status=0 abort=0 step_only="" encrypt_flag="" want_encrypt username hostname keymap password_hash keep_default enhance enable_ssh ssh_key repo ref forge
 
   # The parse loop shifts every argument away, so keep a copy first. The piped
   # re-exec has to hand the same arguments to the copy on disk.
@@ -1011,6 +1091,13 @@ main() {
       --forge) forge=${2:?--forge needs a host}; shift ;;
       --keep-default) keep_default=1 ;;
       --no-enhancements) enhance=0 ;;
+      --enable-ssh) enable_ssh=1 ;;
+      --ssh-key)
+        ssh_key=${2:?--ssh-key needs a public key or a file}
+        [[ -f $ssh_key ]] && ssh_key=$(head -n1 "$ssh_key")
+        valid_ssh_key "$ssh_key" || fail "not a valid SSH public key"
+        shift
+        ;;
       --resume) resume=1 ;;
       --status) status=1 ;;
       --step) step_only=${2:?--step needs a name}; shift ;;
@@ -1057,6 +1144,7 @@ main() {
   [[ $(uname -m) == "aarch64" ]] || fail "this tool is for Apple Silicon (aarch64) installs"
   grep -Faiq 'apple,' /proc/device-tree/compatible 2>/dev/null || fail "no Apple device tree -- run this on the Mac, from Linux"
 
+  check_model_gate
   mkdir -p "$STATE_DIR"
 
   if (( ! resume )) && [[ $(current_step) == "done" ]]; then
