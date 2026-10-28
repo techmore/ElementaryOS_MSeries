@@ -1,3 +1,7 @@
+## Qwen ANE preflight — 2026-10-27
+
+Inspected current public ane-linux-experiments and omarchy-ane: Qwen staged decoder needs 38 compiled ANE programs, a guarded manifest and matched model assets not found locally. Upstream reports 8.38 GB peak RSS; available desktop memory was about 10.26 GiB, insufficient alongside the 6 GiB reserve. Host-only Qwen contract/reference suite passed 18 tests; five converter header-geometry tests failed because source uses 512-byte units while tests expect 16-KiB units, with ABI correctness unresolved. No ANE model or comparison ran; no driver/system changes. [Preflight](local-ai/receipts/2026-10-27-ane-qwen-preflight.md).
+
 ## MLX longer generation follow-up — 2026-10-27
 
 Qwen 2B 256-token tests: 80k budget median paired request reduction 21.06% (two pairs, interrupted at admission); 120k 20.69% (three pairs), with matching outputs. GTK callback probe saw no intervals over 33.33 ms over individual 6–8 second requests; this is not sustained desktop or input qualification. Wave scheduling offered no compelling gain. 4B admission remained refused at 10.61 GiB versus 12.5 required. ANE is a separate accelerator and not yet an MLX Qwen path. Leave defaults unchanged; 4B, longer interaction/fidelity and later Rapid comparison remain open. [Receipts](local-ai/receipts/2026-10-27-batch-work.md).
