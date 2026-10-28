@@ -1,5 +1,28 @@
 # TensorFold Vulkan feasibility — 2026-10-27
 
+## Related metal2vk route
+
+[metal2vk](https://github.com/joshuaswarren/metal2vk) is a separate Metal
+compute-to-Vulkan compiler, not the unpublished TensorFold engine and submit
+batching implementation. Its `main` was `de6faa02c42455963645ac55cbc8191e15b3ac68`
+at inspection. [omarchy-mlx PR 70](https://github.com/joshuaswarren/omarchy-mlx/pull/70)
+merged an opt-in metal2vk route for custom MLX kernels. Its merge commit
+`242a86509a6f88b49e7c5265d78bfc60dabbc2b7` is an ancestor of our pinned
+omarchy-mlx source `33630f9c1eeefe5fc985a28bed0585432c2c014e`. The installed
+`libmlx.so` contains the route and summary environment variable names, and its
+adjacent `m2v_aot` directory contains 67 files. This establishes presence, not
+that a particular module dispatched or produced correct output on this host.
+The normal route remains the translator by default; `auto` is opt-in and may
+fall back. The compiler toolchain itself is not installed (`clang-23`, `opt-23`
+and `clspv` were not found on PATH). No runtime or setting was changed.
+
+Next, use a controlled custom-kernel fixture from the pinned MLX/metal2vk
+contract, with process-local private ICD and `MLX_OMARCHY_METAL_KERNEL_BACKEND=auto`,
+and collect route summary plus numerical reference and fallback results before
+making any performance or integration claim. Avoid concurrent GPU work. A full
+translator build requires LLVM/clspv and sufficient disk; 16 GiB was free on
+the root filesystem at inspection.
+
 The requested native Vulkan engine and subsequent per-token submit batching are
 being developed upstream in [TensorFold issue 1420](https://github.com/ashhart/TensorFold/issues/1420).
 The author reports that the batching code is not yet in a public branch; the
