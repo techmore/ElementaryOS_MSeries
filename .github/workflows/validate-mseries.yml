@@ -53,6 +53,8 @@ jobs:
         run: |
           python3 -B mseries/dictation/speech-only-panel-smoke.py
           python3 -B mseries/dictation/speech-only-panel-smoke.py --default-review
+      - name: Dictation pauses and mutes other audio, then restores it (fake PipeWire and D-Bus)
+        run: python3 -B mseries/dictation/test_media.py -v
 
   ui-scale:
     name: Size system ladder and Quick Settings text size (arm64)

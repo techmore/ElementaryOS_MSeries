@@ -59,6 +59,7 @@ if [[ $universal == false || ! -f stream-dictate.py ]]; then
   install -m644 "$here/dictation_status.py" dictation_status.py
   install -m644 "$here/dictation_resources.py" dictation_resources.py
   install -m644 "$here/dictation_model.py" dictation_model.py
+  install -m644 "$here/dictation_media.py" dictation_media.py
   install -m644 "$here/dictation_ane.py" dictation_ane.py
   install -m644 "$here/ane-worker-shim.py" ane-worker-shim.py
   install -m644 "$here/../local-ai/machine.py" machine.py
