@@ -46,6 +46,10 @@ def main():
     env['OMARCHY_MLX_SYSTEM_PREFIX'] = str(prefix)
     env['VK_DRIVER_FILES'] = str(prefix / 'vulkan/honeykrisp_icd.aarch64.json')
     if profile['engine'] == 'mlx':
+        # The M1 Pro (G13S) is uncalibrated in omarchy-mlx and falls back to a 5000 work-group submit
+        # budget. 120k passes the MLX gate with identical output and decodes faster (Qwen 2B 48.9 -> 56.4,
+        # Qwen 4B 23.1 -> 27.0 tok/s on Honeykrisp 9323171c12). An explicit value in the environment wins.
+        env.setdefault('MLX_OMARCHY_BATCH_WORK', '120000')
         from runtime_recovery import recover
         recovered = recover(prefix)
         if recovered: print(f'RECOVERY: removed {recovered} dead CLI reservations; reserve unchanged', flush=True)

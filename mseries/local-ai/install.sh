@@ -53,7 +53,9 @@ checkout() {
 }
 checkout coreglass coreglass 25603cbf1f95fd2819b11d914afec58997ef1b8b
 checkout omarchy-mlx omarchy-mlx 33630f9c1eeefe5fc985a28bed0585432c2c014e
-checkout mesa-mlx-compute mesa-1 7faf04c065c5376d2d58a1e5b33a60118109c99e
+# 9323171c12 (2026-10-25): identical MLX gate results to 7faf04c065 and faster decode on the
+# M1 Pro (Qwen 2B +36%, Qwen 4B +24%, LFM3 +48% at defaults); see ENGINE-SCOREBOARD.md.
+checkout mesa-mlx-compute mesa-1 9323171c12c5aa6055f1031ea26c16c247191987
 if git -C "$work/coreglass" apply --check "$script_dir/coreglass-local.patch" 2>/dev/null; then
   git -C "$work/coreglass" apply "$script_dir/coreglass-local.patch"
 else

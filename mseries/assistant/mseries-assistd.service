@@ -8,8 +8,9 @@ PartOf=graphical-session.target
 Environment=OMARCHY_MLX_SYSTEM_PREFIX=%h/.local/share/mlx-omarchy
 Environment=VK_DRIVER_FILES=%h/.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json
 Environment=HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1
-# Vulkan submission budget: 20k measured 7% faster suggestions and 13% faster speech-to-text than the default (PR #648 value).
-Environment=MLX_OMARCHY_BATCH_WORK=20000
+# Vulkan submission budget. The M1 Pro (G13S) is uncalibrated upstream and falls back to 5000.
+# 120k: LFM3-1.7B 22.6 -> 27.5 tok/s on Honeykrisp 9323171c12, output identical, MLX gate PASS.
+Environment=MLX_OMARCHY_BATCH_WORK=120000
 Environment=MSERIES_ASSIST_IDLE=600
 ExecStart=%h/.local/share/mseries-ai/lfm3-audio-venv/bin/python -I %h/.local/libexec/mseries-assistant/assistd.py
 Nice=5
