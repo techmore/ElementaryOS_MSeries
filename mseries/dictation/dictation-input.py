@@ -180,6 +180,11 @@ def main():
                 if not safe_accessible(role, focused, editable, active):
                     raise ValueError('Focused field is sensitive, inactive or not editable')
                 return budget.call(self.identity,source)
+            except ValueError as error:
+                # "No focused field" is the one refusal the controller may answer by typing (apps that hide their
+                # fields from accessibility); it must reach the client distinctly. Every other reason stays hard.
+                if str(error) == 'No accessible focused field': raise
+                raise ValueError('Accessible field metadata unavailable or unsafe') from None
             except Exception:
                 raise ValueError('Accessible field metadata unavailable or unsafe') from None
 

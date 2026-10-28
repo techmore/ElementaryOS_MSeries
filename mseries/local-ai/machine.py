@@ -60,7 +60,10 @@ def violations(sample, policy=None, extra_bytes=0):
     if not sample['fans_rpm'] or not sample['temperatures_c']:
         reasons.append('fan or temperature telemetry unavailable; quiet limits cannot be checked')
     if sample['available_bytes'] - extra_bytes < policy['reserve_gib'] * GIB:
-        reasons.append('desktop memory reserve would be crossed')
+        reasons.append('desktop memory reserve would be crossed '
+                       f"(available {sample['available_bytes'] / GIB:.2f} GiB, "
+                       f"model allowance {extra_bytes / GIB:.2f} GiB, "
+                       f"reserve {policy['reserve_gib']:.2f} GiB)")
     if max(sample['fans_rpm'].values(), default=0) > policy['max_fan_rpm']:
         reasons.append('fan RPM exceeds the quiet profile limit')
     if max(sample['temperatures_c'].values(), default=0) > policy['max_temp_c']:

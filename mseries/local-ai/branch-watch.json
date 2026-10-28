@@ -93,6 +93,49 @@
       "base": "main",
       "open_prs": true,
       "discover_branches": true
+    },
+    {
+      "repo": "ashhart/TensorFold",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/TensorFold",
+      "base_repo": "ashhart/TensorFold",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/metal2vk",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/omarchy-cluster",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/ane-linux-experiments",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/coreglass",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "Generated-Computers/Locals",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": false
     }
   ]
 }

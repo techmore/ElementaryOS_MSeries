@@ -1,3 +1,52 @@
+## WD22TB4 and wip4 candidate status — 2026-10-28
+
+Current `dev` is `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`. Pages deployment
+`40628638433` succeeded for that exact revision. The live homepage and build
+monitor still showed the October 23 #533 candidate paragraph; a focused status
+correction is prepared in this docs change and is not published until it merges
+and a Pages deployment succeeds for the resulting `dev` revision.
+
+The attended October 21 wip2 trial confirmed WD22TB4 picture at 1080p/60 on all
+three USB-C ports. Retained wip3 observations from October 20–27 show three DPTX
+failures when the dock was first plugged within about four seconds of resume;
+there were no matching failures on .20, wip2, or a wip3 boot with the dock
+connected at boot. Moving to another port restored picture in one observed
+incident. This pattern is consistent with, not proof of, a post-resume DCP state
+problem. A separate user-space monitor-profile watcher restored the saved layout
+on two observed same-port cycles; automatic restore was confirmed only on
+the later cycle after a fallback association fix. This does not establish kernel
+recovery or wip4 acceptance.
+
+Two wip4 revision-6 proposals remain open: #533 at head
+`f68fd1d9833d4895607df1951726b163542c71f0` and draft #619 at head
+`1dfb6ecc43400b2051bdd7c81c3408defd45e305`. Their patch lists differ, and the
+#619 conversation records that the intended revision must be resolved before
+either merges. PR #619 is based on older `dev` `44644d852cf70d12068ebbbba73726ffbf9a0338`;
+against current `dev` `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`, its head is
+eight commits behind and four ahead. Do not choose or refresh one candidate until
+the owner settles the overlap.
+
+On exact #619 head `1dfb6ecc`, Aurora candidate run
+[40605242087](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40605242087)
+passed both ARM64 candidate and unified72 profile jobs: pinned-source preparation,
+selected production-kernel logic checks, kernel/modules/DTB builds, payload-only
+Debian package builds, and package-boundary checks. Actions uploaded
+`elementary-aurora-enhancements-candidate-40605242087` (artifact 12782705133,
+SHA-256 `6601d97a59fb070fc6a2b0aa4bf74711b49216ddecf151fc068b0150d69f9a94`) and
+`elementary-aurora-enhancements-unified72-40605242087` (artifact 12782670058,
+SHA-256 `31ffc75baec619e3e466751d890b8d483df78901a934530117e424c7a8be20c8`).
+The workflow did not run DCP KUnit, and no independent post-upload artifact audit
+is recorded. No wip4 package was installed or armed, and no wip4 hardware boot,
+dock recovery, suspend, long-run stability, or paired-power qualification was
+performed. The .20 kernel remains the documented persistent boot default; factory
+image boot remains unverified.
+
+Next: obtain the owner’s choice between #533 and #619, then review the chosen
+current-head patch interactions and required KUnit/build evidence before any
+owner-authorized attended hardware trial. Reuse the existing dock/VRR results;
+do not repeat the completed trials. After the docs change merges, verify the new
+Pages run and live status separately.
+
 ## Public messaging status — 2026-10-27
 
 The public homepage and support matrix now distinguish the scoped October 20 BlueFerry texting observation from the owner’s October 22 decision that the Messages and Signal experience is incomplete and deferred. See [MESSAGING-STATUS.md](MESSAGING-STATUS.md). This documentation update does not change or qualify the apps, phone pairing or hardware.
@@ -4885,7 +4934,7 @@ with the corrected live-session hardware overlay before progressing.
 
 | Feature | How | Evidence |
 |---|---|---|
-| Local desktop and personal AI | Private MLX v0.7.33 + Newelle summary memory + typed OS MCP | Default Qwen3.5 4B: 9/15 short tasks, 9/9 corrected MCP workflows and personal-memory recall; Qwen9: 12/15 short tasks, later reserve interruption; [full qualification](local-ai/receipts/2026-10-16.md) |
+| Local desktop and personal AI | Private MLX v0.7.33 + Newelle summary memory + typed OS MCP | Default Qwen3.5 4B: 9/15 short tasks, 9/9 corrected MCP workflows and personal-memory recall; Qwen9: 12/15 short tasks, later reserve interruption; [full qualification](local-ai/receipts/2026-10-16.md). TensorFold native Vulkan: upstream code pending; [metal2vk SiLU](local-ai/receipts/2026-10-27-tensorfold-vulkan.md) and [opt-in MLX batch budget](local-ai/receipts/2026-10-27-batch-work.md) have bounded M1 Pro results; 256-token Qwen 2B trials reached about 21% request-time reduction while GTK callbacks were monitored; a guarded 4B smoke and three-pair A/B completed (12.86% median request reduction), with one 50 ms GTK callback gap; sustained desktop and fidelity remain open. Rapid 20k vs 80k A/B showed little extra gain; a three-pair 586-token repeated-prompt cache test cut median repeat HTTP time 50.93%, not general decode. Qwen ANE remains preflight-only: an offline tile-unit patch passed tests, but 38 H13 HWX programs were cross-compiled but ANEC conversion, libane layout and device verification remain open; see [ANE preflight](local-ai/receipts/2026-10-27-ane-qwen-preflight.md). |
 | Quiet inference and coding profiles | One worker, six-GiB reserve, early cooling and hard fan/temperature limits; Crush 16K profile | Real Crush edit passed; Bonsai corrected MCP 9/9 and native decode 5.571 tokens/s complete; resumed 12/15 short tasks retain earlier fan interruption and are not a quiet-policy pass |
 | Kernel and developer branch watch | Live fault signatures/previous boot; six-hour all-head and PR discovery | Six-hour watcher active on main; verified repair run retained 1,180 public branch heads and 193 PR heads, zero fetch errors; small-model repair advice remains excluded after two failed trials |
 | CodexBar quota ETA | Visible per-limit forecasts and the earliest available limit in the bar; exhausted quotas show reset time | 11 ETA tests, 5 refresh tests, GTK render probe, and installed-module/live-snapshot checks passed |
@@ -5554,6 +5603,14 @@ Confirmed and fixed fake-QMP child reaping/output-EOF race; regression tests use
 only owned synthetic peers. No application behavior or VM acceptance change.
 See `upstream-audits/housekeeping/2026-10-21-machine-lab-qmp-teardown.md`.
 
+### Qwen ANE binding audit — 2026-10-27
+
+Offline analysis found six surface-packing mismatches and unverified T6000 descriptor sizes; the full model run and matched MLX/Rapid-MLX comparison remain outstanding. See `local-ai/receipts/2026-10-27-ane-binding-handoff.md`.
+
+### Qwen ANE conversion — 2026-10-27
+
+38 H13 programs converted and hash-verified; Linux ANE submission and comparison remain gated on safe descriptor and surface bindings and sufficient desktop memory. See `local-ai/receipts/2026-10-27-ane-qwen-conversion.md`.
+
 ### SDK dock anchoring — 2026-10-23
 
 Pantheon panel protocol adapter implemented in msdk-gtk; dock builds with bottom anchor, size and hide mode. Next: live placement review and pin editing.
@@ -5566,3 +5623,7 @@ run `39944207967` and validation run `39944207727`. PR #533 is still open and
 conflicts with `dev`; refresh/review remains required. Wip4 hardware acceptance
 remains open. The current live site byte-matches `dev` `7053069f` from Pages run
 `39954620306`; this correction is prepared in a PR and awaits publication.
+
+## T3 launcher and panel decision (2026-10-27)
+
+Keep the unified T3 Wingpanel menu and use the Dock launcher to open the T3 window. Validate the combined experience on the target desktop before claiming acceptance.

@@ -1,0 +1,834 @@
+{
+  "status": "complete",
+  "model_key": "qwen4b",
+  "model": "mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3",
+  "weights_sha256": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db",
+  "kernel": "7.2.11-elementary-aurora72-wip4",
+  "driver": "Honeykrisp Mesa 7faf04c065",
+  "tensorfold_rev": "670902196c47f3e70e3f56ab933805713be31aa8",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 6.5,
+  "arms": [
+    "mlx-5k",
+    "mlx-120k",
+    "rapid-120k"
+  ],
+  "runs": [
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 17.747,
+          "max_temp_c": 42.298,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 17.4,
+          "max_temp_c": 42.201,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 15.784,
+          "max_temp_c": 43.239,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 14.905,
+          "max_temp_c": 42.864,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 14.878,
+          "max_temp_c": 42.521,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 14.689,
+          "max_temp_c": 41.809,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.05,
+          "available_gib": 14.751,
+          "max_temp_c": 42.217,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.05,
+          "available_gib": 14.666,
+          "max_temp_c": 42.554,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.06,
+          "available_gib": 14.613,
+          "max_temp_c": 42.472,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 9.08,
+          "available_gib": 14.524,
+          "max_temp_c": 41.989,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 6.484015215995896,
+      "ttft_s": 0.8006452310000896,
+      "total_s": 2.35083185100666,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 19.997592289803535,
+      "min_available_gib": 14.524,
+      "peak_temp_c": 43.239,
+      "round": 1,
+      "admission_available_gib": 17.747
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 16.919,
+          "max_temp_c": 42.554,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 16.604,
+          "max_temp_c": 42.423,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 14.837,
+          "max_temp_c": 42.635,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 13.899,
+          "max_temp_c": 43.108,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 13.733,
+          "max_temp_c": 42.728,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 13.744,
+          "max_temp_c": 43.114,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 13.637,
+          "max_temp_c": 43.407,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 13.547,
+          "max_temp_c": 43.451,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 13.427,
+          "max_temp_c": 43.364,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 6.182467660997645,
+      "ttft_s": 0.7153526620022603,
+      "total_s": 1.9814969660001225,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 24.483781115720554,
+      "min_available_gib": 13.427,
+      "peak_temp_c": 43.451,
+      "round": 1,
+      "admission_available_gib": 16.919
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 16.655,
+          "max_temp_c": 43.413,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 16.656,
+          "max_temp_c": 43.413,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 16.678,
+          "max_temp_c": 43.788,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 16.635,
+          "max_temp_c": 43.913,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 15.175,
+          "max_temp_c": 43.369,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 14.576,
+          "max_temp_c": 44.13,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 14.377,
+          "max_temp_c": 44.548,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.09,
+          "available_gib": 14.384,
+          "max_temp_c": 43.875,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.1,
+          "available_gib": 14.352,
+          "max_temp_c": 44.902,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 14.388,
+          "max_temp_c": 45.186,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 10.11,
+          "available_gib": 14.477,
+          "max_temp_c": 43.798,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 11.12,
+          "available_gib": 13.955,
+          "max_temp_c": 43.967,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 12.14,
+          "available_gib": 13.929,
+          "max_temp_c": 44.929,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 13.15,
+          "available_gib": 13.414,
+          "max_temp_c": 45.033,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 14.15,
+          "available_gib": 13.596,
+          "max_temp_c": 44.516,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 15.16,
+          "available_gib": 13.925,
+          "max_temp_c": 44.57,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "irst chunk arrived, elapsed=0.0s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] post-first-chunk keepalive (R15 #291), elapsed=0.0s\nINFO:rapid_mlx.scheduler:[schedule] request=chatcmpl-a98 uid=2 prompt_tokens=27 tokens_to_prefill=1, 26 cached max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[prompt_cache_save] request=chatcmpl-a98 prompt_tokens=27 store_time=0.001s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-a98 first token after 0.1s\nINFO:rapid_mlx.scheduler:[cache_store] request=chatcmpl-a98 tokens=59 (27 prompt + 32 output) stored=True time=0.000s cache_entries=5 cache_mem=365MB\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-a98 finished normally, 32 tokens in 1.4s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-a98 cleanup done\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 1.43s (22.3 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000ffff6a897160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff7b7ef160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff9d81c7a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=1.6s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=1.6s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1745160]\n",
+      "ready_s": 14.434216231005848,
+      "ttft_s": 0.2584104990019114,
+      "total_s": 1.5808923090007738,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 23.440776096592714,
+      "min_available_gib": 13.414,
+      "peak_temp_c": 45.186,
+      "round": 1,
+      "admission_available_gib": 16.657
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 17.371,
+          "max_temp_c": 45.793,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 17.081,
+          "max_temp_c": 45.38,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 15.228,
+          "max_temp_c": 45.66,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 14.31,
+          "max_temp_c": 45.26,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 14.034,
+          "max_temp_c": 44.538,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 13.404,
+          "max_temp_c": 44.929,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 13.152,
+          "max_temp_c": 44.5,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 12.941,
+          "max_temp_c": 44.771,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 12.836,
+          "max_temp_c": 46.22,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 6.478095051999844,
+      "ttft_s": 0.7083500410008128,
+      "total_s": 1.9591059390004375,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 24.78501204717829,
+      "min_available_gib": 12.836,
+      "peak_temp_c": 46.22,
+      "round": 2,
+      "admission_available_gib": 17.371
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 16.523,
+          "max_temp_c": 46.22,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 16.867,
+          "max_temp_c": 44.826,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 16.755,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 15.558,
+          "max_temp_c": 45.153,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 14.398,
+          "max_temp_c": 45.88,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 14.053,
+          "max_temp_c": 46.406,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 13.985,
+          "max_temp_c": 47.066,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.08,
+          "available_gib": 13.891,
+          "max_temp_c": 47.453,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 13.875,
+          "max_temp_c": 46.533,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 9.1,
+          "available_gib": 13.843,
+          "max_temp_c": 47.273,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 10.11,
+          "available_gib": 13.307,
+          "max_temp_c": 45.473,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 11.11,
+          "available_gib": 13.769,
+          "max_temp_c": 48.546,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 12.12,
+          "available_gib": 13.567,
+          "max_temp_c": 46.906,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 13.12,
+          "available_gib": 13.326,
+          "max_temp_c": 47.246,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "irst chunk arrived, elapsed=0.0s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] post-first-chunk keepalive (R15 #291), elapsed=0.0s\nINFO:rapid_mlx.scheduler:[schedule] request=chatcmpl-904 uid=2 prompt_tokens=27 tokens_to_prefill=1, 26 cached max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[prompt_cache_save] request=chatcmpl-904 prompt_tokens=27 store_time=0.001s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-904 first token after 0.1s\nINFO:rapid_mlx.scheduler:[cache_store] request=chatcmpl-904 tokens=59 (27 prompt + 32 output) stored=True time=0.000s cache_entries=5 cache_mem=365MB\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-904 finished normally, 32 tokens in 1.4s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-904 cleanup done\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 1.40s (22.8 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffef3ccf160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000ffff04ddb160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000ffff22d047a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=1.5s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=1.5s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1746668]\n",
+      "ready_s": 12.511935602000449,
+      "ttft_s": 0.23887809500592994,
+      "total_s": 1.5633397370038438,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 23.40573635129014,
+      "min_available_gib": 13.307,
+      "peak_temp_c": 48.546,
+      "round": 2,
+      "admission_available_gib": 16.523
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 17.118,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 16.813,
+          "max_temp_c": 48.22,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 15.105,
+          "max_temp_c": 47.713,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 14.45,
+          "max_temp_c": 47.013,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 14.562,
+          "max_temp_c": 48.353,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.09,
+          "available_gib": 14.46,
+          "max_temp_c": 48.68,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.1,
+          "available_gib": 14.476,
+          "max_temp_c": 46.6,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.11,
+          "available_gib": 14.474,
+          "max_temp_c": 47.3,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.12,
+          "available_gib": 14.489,
+          "max_temp_c": 47.326,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 9.13,
+          "available_gib": 16.528,
+          "max_temp_c": 47.693,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 6.340742266998859,
+      "ttft_s": 0.7117712889958057,
+      "total_s": 2.3826388309971662,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 18.55323610085111,
+      "min_available_gib": 14.45,
+      "peak_temp_c": 48.68,
+      "round": 2,
+      "admission_available_gib": 17.106
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 17.199,
+          "max_temp_c": 47.846,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 17.221,
+          "max_temp_c": 47.76,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 17.223,
+          "max_temp_c": 47.646,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 15.998,
+          "max_temp_c": 47.273,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 14.979,
+          "max_temp_c": 48.513,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 14.74,
+          "max_temp_c": 48.32,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 14.71,
+          "max_temp_c": 47.693,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.09,
+          "available_gib": 14.712,
+          "max_temp_c": 47.3,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.11,
+          "available_gib": 14.713,
+          "max_temp_c": 47.013,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 9.12,
+          "available_gib": 14.716,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 10.13,
+          "available_gib": 14.335,
+          "max_temp_c": 47.246,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 11.16,
+          "available_gib": 13.91,
+          "max_temp_c": 47.693,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 12.17,
+          "available_gib": 13.648,
+          "max_temp_c": 48.006,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 13.18,
+          "available_gib": 13.824,
+          "max_temp_c": 46.406,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 14.2,
+          "available_gib": 13.625,
+          "max_temp_c": 48.2,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "irst chunk arrived, elapsed=0.0s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] post-first-chunk keepalive (R15 #291), elapsed=0.0s\nINFO:rapid_mlx.scheduler:[schedule] request=chatcmpl-d7d uid=2 prompt_tokens=27 tokens_to_prefill=1, 26 cached max_tokens=32 running=1 waiting=0\nINFO:rapid_mlx.scheduler:[prompt_cache_save] request=chatcmpl-d7d prompt_tokens=27 store_time=0.001s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-d7d first token after 0.1s\nINFO:rapid_mlx.scheduler:[cache_store] request=chatcmpl-d7d tokens=59 (27 prompt + 32 output) stored=True time=0.000s cache_entries=5 cache_mem=365MB\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-d7d finished normally, 32 tokens in 1.4s\nINFO:rapid_mlx.engine_core:[stream_outputs] chatcmpl-d7d cleanup done\nINFO:rapid_mlx.routes.chat:Chat completion (stream): 32 tokens in 1.42s (22.6 tok/s)\nWARNING:rapid_mlx._signal_observability:rapid-mlx received signal SIGTERM; thread stacks follow (faulthandler)\nThread 0x0000fffdf1637160 [rapid-mlx-infer] (most recent call first):\n  File \"/usr/lib/python3.14/threading.py\", line 369 in wait\n  File \"/usr/lib/python3.14/queue.py\", line 199 in get\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/telemetry/inference.py\", line 44 in _worker_main\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nThread 0x0000fffeae8eb160 [mlx-step_0] (most recent call first):\n  File \"/usr/lib/python3.14/concurrent/futures/thread.py\", line 116 in _worker\n  File \"/usr/lib/python3.14/threading.py\", line 1024 in run\n  File \"/usr/lib/python3.14/threading.py\", line 1082 in _bootstrap_inner\n  File \"/usr/lib/python3.14/threading.py\", line 1044 in _bootstrap\n\nCurrent thread 0x0000fffecc8f07a0 [python] (most recent call first):\n  Garbage-collecting\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_signal_observability.py\", line 694 in _on_signal\n  File \"/usr/lib/python3.14/_weakrefset.py\", line 15 in _remove\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/routes/chat.py\", line 8898 in stream_chat_completion\n  File \"/usr/lib/python3.14/asyncio/events.py\", line 94 in _run\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 2057 in _run_once\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 677 in run_forever\n  File \"/usr/lib/python3.14/asyncio/base_events.py\", line 706 in run_until_complete\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 127 in run\n  File \"/usr/lib/python3.14/asyncio/runners.py\", line 204 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-python/uvicorn/server.py\", line 86 in run\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 258 in _run_server\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/_uvicorn.py\", line 285 in run_uvicorn\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4758 in main\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 3750 in wrapped\n  File \"/home/sdolbec/.cache/mseries-metal2vk/rapid-src/rapid_mlx/server.py\", line 4776 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\nINFO:rapid_mlx.service.helpers:[disconnect_guard] generator exhausted normally, 35 chunks (1 keepalives), elapsed=1.6s\nINFO:rapid_mlx.service.helpers:[disconnect_guard] CLEANUP done, 35 chunks total, elapsed=1.6s\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:__main__:[lifespan] Prefix-cache auto-save disabled with auto-load by RAPID_MLX_PREFIX_CACHE_AUTOLOAD\nINFO:rapid_mlx.engine_core:Engine stopped\nINFO:rapid_mlx.scheduler:Deep reset completed - all caches cleared\nINFO:rapid_mlx.engine.batched:BatchedEngine stopped\nINFO:__main__:Engine stopped\nINFO:     Application shutdown complete.\nINFO:     Finished server process [1747669]\n",
+      "ready_s": 13.399323608995473,
+      "ttft_s": 0.2289219759986736,
+      "total_s": 1.5363169210031629,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 23.711274178051493,
+      "min_available_gib": 13.625,
+      "peak_temp_c": 48.513,
+      "round": 3,
+      "admission_available_gib": 17.199
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 16.997,
+          "max_temp_c": 47.74,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 16.791,
+          "max_temp_c": 47.8,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 15.134,
+          "max_temp_c": 46.593,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 14.549,
+          "max_temp_c": 46.186,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.05,
+          "available_gib": 14.558,
+          "max_temp_c": 47.04,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 14.468,
+          "max_temp_c": 46.82,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 14.479,
+          "max_temp_c": 47.693,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.09,
+          "available_gib": 14.458,
+          "max_temp_c": 48.22,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.1,
+          "available_gib": 14.479,
+          "max_temp_c": 47.38,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 14.723,
+          "max_temp_c": 46.793,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 6.36809916600032,
+      "ttft_s": 0.7304631099977996,
+      "total_s": 2.470208108003135,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 17.818703336145436,
+      "min_available_gib": 14.458,
+      "peak_temp_c": 48.22,
+      "round": 3,
+      "admission_available_gib": 16.997
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 17.28,
+          "max_temp_c": 46.793,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 17.033,
+          "max_temp_c": 46.88,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 15.347,
+          "max_temp_c": 47.22,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 14.768,
+          "max_temp_c": 46.693,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 14.738,
+          "max_temp_c": 47.846,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.04,
+          "available_gib": 14.212,
+          "max_temp_c": 46.966,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.06,
+          "available_gib": 14.243,
+          "max_temp_c": 46.626,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.06,
+          "available_gib": 14.219,
+          "max_temp_c": 47.58,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.08,
+          "available_gib": 15.954,
+          "max_temp_c": 45.673,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 5.758785351994447,
+      "ttft_s": 0.6271309270014171,
+      "total_s": 1.8391853920038557,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, creating a spectrum. Each raindrop acts like a tiny prism,",
+      "text_sha256": "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84",
+      "decode_tps": 25.576408400044656,
+      "min_available_gib": 14.212,
+      "peak_temp_c": 47.846,
+      "round": 3,
+      "admission_available_gib": 17.28
+    }
+  ],
+  "summary": {
+    "mlx-5k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.7304631099977996,
+      "median_total_s": 2.3826388309971662,
+      "median_decode_tps": 18.55323610085111,
+      "texts": [
+        "bdb76d67e763"
+      ]
+    },
+    "mlx-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.7083500410008128,
+      "median_total_s": 1.9591059390004375,
+      "median_decode_tps": 24.78501204717829,
+      "texts": [
+        "bdb76d67e763"
+      ]
+    },
+    "rapid-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.23887809500592994,
+      "median_total_s": 1.5633397370038438,
+      "median_decode_tps": 23.440776096592714,
+      "texts": [
+        "bdb76d67e763"
+      ]
+    }
+  }
+}

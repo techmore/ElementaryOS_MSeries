@@ -1,0 +1,102 @@
+diff --git a/tools/hwxv2-to-anec.py b/tools/hwxv2-to-anec.py
+index 36bc130..dad3f32 100644
+--- a/tools/hwxv2-to-anec.py
++++ b/tools/hwxv2-to-anec.py
+@@ -694,0 +695,25 @@ def convert_hwx(
++def uniform_task_relayout(stream: bytes, bases: tuple[int, ...], stream_size: int, stride: int):
++    """Normalize linked task slots, refusing ambiguous or truncated streams."""
++    if stream_size != len(stream) or not bases or bases[0] != 0:
++        raise ValueError("invalid task stream geometry")
++    if stride < TASK_HEADER_SIZE or stride % 0x100:
++        raise ValueError("task stride must be at least a header and 0x100 aligned")
++    if tuple(sorted(set(bases))) != tuple(bases) or bases[-1] >= stream_size:
++        raise ValueError("invalid task bases")
++    out = bytearray(len(bases) * stride)
++    mapping = {old: i * stride for i, old in enumerate(bases)}
++    for i, base in enumerate(bases):
++        end = bases[i + 1] if i + 1 < len(bases) else stream_size
++        extent = end - base
++        if extent < TASK_HEADER_SIZE or extent > stride:
++            raise ValueError("task extent is outside the normalized slot")
++        next_ptr = struct.unpack_from("<I", stream, base + 0x1c)[0]
++        expected = bases[i + 1] if i + 1 < len(bases) else 0
++        if next_ptr != expected:
++            raise ValueError("task chain does not match discovered bases")
++        new_base = mapping[base]
++        out[new_base:new_base + extent] = stream[base:end]
++        struct.pack_into("<I", out, new_base + 0x1c, mapping[next_ptr] if next_ptr else 0)
++    return bytes(out), mapping
++
++
+@@ -722 +747,3 @@ def convert_hwx_file(
+-            rel_bases = [b - image.content_offset for b in bases]
++            if len(bases) != image.td_count:
++                raise ValueError("task count does not match HWX header")
++            rel_bases = bases  # find_task_offsets already returns content-relative offsets
+@@ -727,0 +755 @@ def convert_hwx_file(
++            payload = kernel_payload(image, blob)
+@@ -738,2 +766,6 @@ def convert_hwx_file(
+-            kernel_offset = (-len(new_stream)) % 16
+-            content_size = len(new_stream) + kernel_offset + len(payload)
++            padding = (-len(new_stream)) % 16
++            kernel_offset = len(new_stream) + padding
++            original_kernel_end = image.kernel_offset + image.kernel_size
++            tail = data[image.content_offset + original_kernel_end + image.kernel_gap:
++                        image.content_offset + image.content_size + image.kernel_gap]
++            content_size = kernel_offset + len(payload) + len(tail)
+@@ -753 +785 @@ def convert_hwx_file(
+-                output.write(b"\0" * kernel_offset)
++                output.write(b"\0" * padding)
+@@ -754,0 +787 @@ def convert_hwx_file(
++                output.write(tail)
+diff --git a/tools/test_uniform_relayout.py b/tools/test_uniform_relayout.py
+new file mode 100644
+index 0000000..e035e09
+--- /dev/null
++++ b/tools/test_uniform_relayout.py
+@@ -0,0 +1,45 @@
++"""Offline structural tests for normalized ANE task streams."""
++import importlib.util
++import struct
++import tempfile
++import unittest
++from pathlib import Path
++
++spec = importlib.util.spec_from_file_location('converter', Path(__file__).with_name('hwxv2-to-anec.py'))
++converter = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(converter)
++
++class UniformRelayoutTests(unittest.TestCase):
++    def stream(self):
++        stream = bytearray(0x500)
++        struct.pack_into('<I', stream, 0x1c, 0x200)
++        struct.pack_into('<I', stream, 0x200 + 0x1c, 0)
++        stream[0x40:0x44] = b'one!'
++        stream[0x240:0x244] = b'two!'
++        return bytes(stream)
++
++    def test_preserves_task_bytes_and_rewrites_link(self):
++        source = self.stream()
++        output, mapping = converter.uniform_task_relayout(source, (0, 0x200), len(source), 0x300)
++        self.assertEqual(mapping, {0: 0, 0x200: 0x300})
++        self.assertEqual(struct.unpack_from('<I', output, 0x1c)[0], 0x300)
++        self.assertEqual(struct.unpack_from('<I', output, 0x300+0x1c)[0], 0)
++        self.assertEqual(output[0x40:0x44], b'one!')
++        self.assertEqual(output[0x340:0x344], b'two!')
++        self.assertEqual(output[0x200:0x300], bytes(0x100))
++
++    def test_rejects_unaligned_and_truncated_slots(self):
++        source = self.stream()
++        for stride in (0x280, 0x200):
++            with self.assertRaises(ValueError):
++                converter.uniform_task_relayout(source, (0, 0x200), len(source), stride)
++
++    def test_rejects_wrong_or_cyclic_links(self):
++        source = bytearray(self.stream())
++        struct.pack_into('<I', source, 0x1c, 0x100)
++        with self.assertRaises(ValueError):
++            converter.uniform_task_relayout(bytes(source), (0, 0x200), len(source), 0x300)
++        struct.pack_into('<I', source, 0x1c, 0x200)
++        struct.pack_into('<I', source, 0x200+0x1c, 0x200)
++        with self.assertRaises(ValueError):
++            converter.uniform_task_relayout(bytes(source), (0, 0x200), len(source), 0x300)

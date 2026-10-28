@@ -1,6 +1,97 @@
 ## wip4 revision 6: DP routing candidate — 2026-10-27
 
 Owner report: dock HDMI and Ethernet not working on wip3; HDMI worked after moving the dock to another port. Journals show `apple-dcp 28cc00000` timing out the DPTX validate call (-110 x6, "Type-C DPTX reconnect failed after 5 retries") on every failing boot, each time on the first plug within ~4 s of resuming from s2idle; the same dock then worked on `289c00000`. wip2 used `28cc00000` successfully; wip3 never did. Ethernet (RTL8153, `r8152`) enumerated but had no carrier this boot (it had carrier on the previous wip3 boot with the identical missing-`rtl8153b-2.fw` message), so that looks physical/cable, not kernel. Candidate: wip4 revision 6 = wip3 source + #157 + local 0002 + upstream #186 (0003-0005; #163 excluded as conflicting duplicate). Full-tree `candidate.py prepare`/`check` and 83 aurora tests pass; kernel build, KUnit and boot are NOT done. Nothing installed, staged, armed or rebooted. `thunderbolt_apple.s2idle_teardown/resume_recovery/router_sleep` remain at the default N (upstream did not test them with a real dock).
+## Rapid prompt cache and ANE references — 2026-10-27
+
+On Qwen3.8 distill, 80k vs 20k Rapid HTTP budget A/B gave a 1.74% median reduction (three pairs; one slower). At 20k, three 586-token cold/repeat requests showed 50.93% median shorter repeat time, 571 tokens cached and identical paired outputs; this is a repeat-prompt cache result, not general decode. maderix/ANE and fork solatticus/ANE add macOS/iOS ANE training references, not the missing Linux converter. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
+
+## Qwen H13 export and Rapid batching — 2026-10-27
+
+M4 macOS mini cross-compiled all 38 staged Qwen programs for h13 from a hash-verified GGUF; files remain in its isolated cache, checksums retained locally. Upstream ANEC conversion fails before first output: undefined `uniform_task_relayout`; `payload` is also referenced before assignment. No ANE execution. Qwen3.8 distill on M1 Pro: direct MLX 20k vs 5k median paired request time −11.79% (3 pairs); Rapid loopback HTTP −17.95% (2 pairs), outputs text-matched but measurement boundaries/warmups differ, so not an engine ranking. [Receipt](local-ai/receipts/2026-10-27-qwen38-mac-rapid.md).
+
+## ANE converter unit follow-up — 2026-10-27
+
+The converter writes 512-byte tile counts, whereas historical probe/staged paths used 16-KiB counts. A branch-only patch updates stale tests and requires explicit unit selection before the direct staged decoder opens the device; 84 offline tests pass on a clean archive. The separate libane runner, real bundle layout and hardware remain unverified. Public ANEForge commit 2ea941c is reachable, but no compiled Qwen bundle appears in repository/release assets or local cache; no model comparison ran. [Receipt](local-ai/receipts/2026-10-27-ane-qwen-preflight.md).
+
+## Qwen 4B batching qualification — 2026-10-27
+
+Memory rose naturally; guarded Qwen 4B smoke passed at 12.69 GiB admission. Three matched 20k vs 5k 32-token pairs gave median 12.86% lower request time, 19.46 → 23.29 reported tokens/s, 823 → 249 submissions and identical outputs. One candidate GTK callback gap was 50.49 ms; sustained presentation/input and numerical fidelity remain open. No default changed. ANE still needs compiled assets and converter ABI resolution. [4B receipt](local-ai/receipts/2026-10-27-qwen4b-20k.md).
+
+## Qwen ANE preflight — 2026-10-27
+
+Inspected current public ane-linux-experiments and omarchy-ane: Qwen staged decoder needs 38 compiled ANE programs, a guarded manifest and matched model assets not found locally. Upstream reports 8.38 GB peak RSS; available desktop memory was about 10.26 GiB, insufficient alongside the 6 GiB reserve. Host-only Qwen contract/reference suite passed 18 tests; five converter header-geometry tests failed because source uses 512-byte units while tests expect 16-KiB units, with ABI correctness unresolved. No ANE model or comparison ran; no driver/system changes. [Preflight](local-ai/receipts/2026-10-27-ane-qwen-preflight.md).
+
+## MLX longer generation follow-up — 2026-10-27
+
+Qwen 2B 256-token tests: 80k budget median paired request reduction 21.06% (two pairs, interrupted at admission); 120k 20.69% (three pairs), with matching outputs. GTK callback probe saw no intervals over 33.33 ms over individual 6–8 second requests; this is not sustained desktop or input qualification. Wave scheduling offered no compelling gain. 4B admission remained refused at 10.61 GiB versus 12.5 required. ANE is a separate accelerator and not yet an MLX Qwen path. Leave defaults unchanged; 4B, longer interaction/fidelity and later Rapid comparison remain open. [Receipts](local-ai/receipts/2026-10-27-batch-work.md).
+
+## MLX batch follow-up — 2026-10-27
+
+A 20k and 80k Qwen 2B sweep with a GTK animation probe showed median paired request reductions of 14.29% and 17.55%, respectively; no callback gaps over 33.33 ms during the short measured requests. This is not presentation or input-latency qualification. Qwen 4B was refused at 11.28 GiB available against a 12.5 GiB admission requirement; reserve unchanged. Keep opt-in and test sustained desktop behavior, larger models, and numerical fidelity before any default. Rapid-MLX remains a later matched comparison. [Raw results](local-ai/receipts/2026-10-27-batch-work.md).
+
+## TensorFold Vulkan investigation — 2026-10-27
+
+M1 Pro Qwen3.5 2B process-local submission-budget experiment: 20,000 versus the uncalibrated-board fallback 5,000 reduced median paired 32-token request time 16.37% with identical token IDs across three pairs; 10,000 and 40,000 were also tested. The branch includes the guarded harness, graph and raw receipts. Desktop frame pacing and broader model correctness are not qualified, so this is opt-in only and is not the unavailable TensorFold batching patch. [`local-ai/receipts/2026-10-27-batch-work.md`](local-ai/receipts/2026-10-27-batch-work.md).
+
+Qwen3.5 2B initial MLX and Rapid-MLX timings, identical 64-token output, admission refusals and measurement limits: [`local-ai/receipts/2026-10-27-qwen2b-timing.md`](local-ai/receipts/2026-10-27-qwen2b-timing.md). Rapid's isolated loopback server smoke and dependency snapshot: [`local-ai/RAPID-MLX-INVESTIGATION-2026-10-27.md`](local-ai/RAPID-MLX-INVESTIGATION-2026-10-27.md). The test helper now requires an explicit model-specific admission allowance; guard refusals report available, model allowance and reserve. The six-GiB reserve remains in force. Timing surfaces and warmups differ, so the one pair is not a speed ranking.
+
+The private Honeykrisp ICD enumerates the M1 Pro on the running Aurora wip4 kernel. The metal2vk compiler build completed in `~/.cache/mseries-metal2vk`; both the shipped `metal::precise::exp` and freshly compiled `metal::exp` SiLU probes ran through MLX metal2vk without fallback and matched a bounded independent reference. LFM3 1.7B 8-bit answered a short prompt on the Mac with an isolated unmerged mlx-lm PR; it did not invoke a metal2vk custom kernel. Qwen 4B admission was refused with 12.22 GiB available against the 12.5 GiB requirement. No model or compiler job remains running. Full-model correctness, TensorFold batching and speed improvements are unqualified. Exact results: [`local-ai/receipts/2026-10-27-tensorfold-vulkan.md`](local-ai/receipts/2026-10-27-tensorfold-vulkan.md).
+## T3 Dock launcher and Wingpanel — 2026-10-27
+
+The owner chose to retain the unified Wingpanel menu. The Dock launcher opens the T3 window and its taskbar status area does not add a second T3 menu. The Dock source-preparation guard checks these boundaries; the Wingpanel module is not retired. Source preparation is verified against the pinned upstream Dock, with live desktop acceptance still outstanding.
+## WD22TB4 and wip4 candidate status — 2026-10-28
+
+Current `dev` is `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`. Pages deployment
+`40628638433` succeeded for that exact revision. The live homepage and build
+monitor still showed the October 23 #533 candidate paragraph; a focused status
+correction is prepared in this docs change and is not published until it merges
+and a Pages deployment succeeds for the resulting `dev` revision.
+
+The attended October 21 wip2 trial confirmed WD22TB4 picture at 1080p/60 on all
+three USB-C ports. Retained wip3 observations from October 20–27 show three DPTX
+failures when the dock was first plugged within about four seconds of resume;
+there were no matching failures on .20, wip2, or a wip3 boot with the dock
+connected at boot. Moving to another port restored picture in one observed
+incident. This pattern is consistent with, not proof of, a post-resume DCP state
+problem. A separate user-space monitor-profile watcher restored the saved layout
+on two observed same-port cycles; automatic restore was confirmed only on
+the later cycle after a fallback association fix. This does not establish kernel
+recovery or wip4 acceptance.
+
+Two wip4 revision-6 proposals remain open: #533 at head
+`f68fd1d9833d4895607df1951726b163542c71f0` and draft #619 at head
+`1dfb6ecc43400b2051bdd7c81c3408defd45e305`. Their patch lists differ, and the
+#619 conversation records that the intended revision must be resolved before
+either merges. PR #619 is based on older `dev` `44644d852cf70d12068ebbbba73726ffbf9a0338`;
+against current `dev` `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`, its head is
+eight commits behind and four ahead. Do not choose or refresh one candidate until
+the owner settles the overlap.
+
+On exact #619 head `1dfb6ecc`, Aurora candidate run
+[40605242087](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40605242087)
+passed both ARM64 candidate and unified72 profile jobs: pinned-source preparation,
+selected production-kernel logic checks, kernel/modules/DTB builds, payload-only
+Debian package builds, and package-boundary checks. Actions uploaded
+`elementary-aurora-enhancements-candidate-40605242087` (artifact 12782705133,
+SHA-256 `6601d97a59fb070fc6a2b0aa4bf74711b49216ddecf151fc068b0150d69f9a94`) and
+`elementary-aurora-enhancements-unified72-40605242087` (artifact 12782670058,
+SHA-256 `31ffc75baec619e3e466751d890b8d483df78901a934530117e424c7a8be20c8`).
+The workflow did not run DCP KUnit, and no independent post-upload artifact audit
+is recorded. No wip4 package was installed or armed, and no wip4 hardware boot,
+dock recovery, suspend, long-run stability, or paired-power qualification was
+performed. The .20 kernel remains the documented persistent boot default; factory
+image boot remains unverified.
+
+Next: obtain the owner’s choice between #533 and #619, then review the chosen
+current-head patch interactions and required KUnit/build evidence before any
+owner-authorized attended hardware trial. Reuse the existing dock/VRR results;
+do not repeat the completed trials. After the docs change merges, verify the new
+Pages run and live status separately.
+
+## T3 panel menu HIG audit — 2026-10-27
+
+Audit of the unified T3 Wingpanel menu against the elementary HIG: [`t3-wingpanel/HIG-AUDIT.md`](t3-wingpanel/HIG-AUDIT.md). Fixed in source: nested scrollers that hid the second plan window and running threads, menu width jumping between tabs, idle tooltip "0 running" and a never-updated accessible name, raw token counts/cost/timestamps, and the double use of "Activity". Fixture tests pass (`t3-wingpanel/test.sh`); before/after renders in `t3-wingpanel/receipts/2026-10-27-hig-audit/`. Not installed or loaded into the live panel. Owner then approved H1–H5, done in the same PR: one tab bar, plain menu-item footer (Open T3, Activity, Fleet, T3 Settings…), 16 px embedded icons, system text size, badge only for approvals.
+
 ## Public messaging status — 2026-10-27
 
 The public homepage and support matrix now distinguish the scoped October 20 BlueFerry texting observation from the owner’s October 22 decision that the Messages and Signal experience is incomplete and deferred. See [MESSAGING-STATUS.md](MESSAGING-STATUS.md). This documentation update does not change or qualify the apps, phone pairing or hardware.
@@ -13337,6 +13428,14 @@ ungrabbing, and a same-client regrab-then-release left the key held. Not verifie
 installed session (needs a compositor reload, i.e. the next login). Separate, unaddressed: `gsd-media-keys` logs
 `Unable to get default sink` when pressed before PipeWire's default sink exists.
 
+## Qwen ANE binding audit — 2026-10-27
+
+Offline audit identifies six incorrectly packed 128-byte surfaces, 18 surfaces not named in decoded selectors and 20 extended `0x300` descriptors requiring T6000 validation. No Qwen ANE execution or speed comparison yet; available memory remains below the admission estimate. The reproducible audit and next steps are in `local-ai/receipts/2026-10-27-ane-binding-handoff.md`.
+
+## Qwen ANE conversion — 2026-10-27
+
+The Mac mini built and converted all 38 H13 Qwen programs; transfer hashes match and the converter and group-state fixes pass 70 targeted tests. Execution remains gated on memory reserve, descriptor safety, and surface binding validation; no Linux ANE timing or fidelity result is claimed. Details and reference hashes: `local-ai/receipts/2026-10-27-ane-qwen-conversion.md`.
+
 ## SDK dock panel protocol — 2026-10-23
 
 PR 556 merged. The SDK now registers panel surfaces using the compositor's Pantheon shell protocol on realization, before presentation. The dock requests bottom anchoring, 64 logical pixels and overlap hiding. A private Wayland event queue discovers the shell without dispatching GDK events; only adapter-owned proxies are destroyed. Incremental dock build succeeded. Live placement has not been reviewed. Build dependencies: wayland-scanner, gtk4-wayland and wayland-client development files, plus cc/pkg-config Rust build helpers.
@@ -13401,3 +13500,43 @@ that revision. This PR updates the candidate links/status; it is not published
 until merge and a new successful Pages deployment. No host, boot, panel, kernel,
 audio or power state changed. Next: merge after required review/current-head
 checks, then verify Pages deployment and live bytes for the merged revision.
+
+## Local AI engines: scoreboard, gate and 45–80% faster decode — 2026-10-28
+
+TensorFold PR 1517 (native Vulkan Qwen 2B) was ported as a pinned private-prefix build
+(`mseries/local-ai/tensorfold-vulkan.sh`): host tests and 39/39 GPU operator gates pass on the
+M1 Pro, but it decodes at 2.4–2.8 tok/s because each GPU op is submitted and waited on alone;
+upstream's batching PR is not public. No kernel change was needed (wip4 already exposes
+Honeykrisp Vulkan 1.4 and `/dev/accel/accel0`). PR 1526 is the first stacked slice (runtime +
+Q4 projection + kernel contract); `tensorfold-vulkan.sh contract` runs it on G13S when wanted.
+
+Added `engine-compare.py` (MLX in-process, Rapid-MLX, mlx-omarchy-serve, TensorFold; Qwen 2B,
+Qwen 4B, LFM3; optional concurrency), `mlx-gate.py` (TensorFold-style correctness gate against
+a CPU float32 reference; omarchy-mlx's CPU backend lacks `mx.fast` rms_norm/rope/SDPA, so the
+reference uses plain-op versions), `honeykrisp-candidate.sh` (side driver builds selected with
+`MSERIES_HK_ICD`) and `scoreboard.py` → `ENGINE-SCOREBOARD.md` + CSV + SVG. Tracking issue #659
+holds triage; the watch lists cover joshuaswarren (user), TensorFold, coreglass, metal2vk,
+omarchy-cluster, ane-linux-experiments and Generated-Computers/Locals. Documentation stays in
+this repo; nothing is posted upstream. mlx-lm / omarchy-mlx steps follow upstream's own default
+(still mlx-lm 0.31.3 on omarchy-mlx main).
+
+Adopted in #664 and installed here: Honeykrisp `7faf04c065` → `9323171c12` and a 120k MLX
+submit budget (G13S has no upstream calibration row and fell back to 5000). The gate passes on
+both drivers with identical RMSE; text is identical. Decode: Qwen 2B 36.0 → 56.4, Qwen 4B
+18.6 → 27.0, LFM3 15.3 → 27.5 tok/s; llama.cpp +8%. Receipt and rollback:
+`mseries/local-ai/receipts/2026-10-28-honeykrisp-9323-adoption.md`.
+
+Memory audit the same day: the LFM3 assistant kept ~3 GiB of GPU memory pinned after its idle
+unload (fixed in #661: exit after unload, systemd restarts it); wingpanel restarts killed
+panel-launched apps (fixed in #662: `KillMode=process`). Open: mlx-omarchy-serve (what the
+everyday model runs) decodes well below in-process MLX — see the server rows on the scoreboard.
+
+Later the same day: instead of switching the everyday model to Rapid-MLX (which would drop
+upstream's memory reservation, context cap and speech yield gate), two private patches now run
+inside upstream's own launcher: omarchy-mlx's 0.32-line skip-logprob-read fix ported to 0.31.3,
+and Rapid-MLX's singleton-cache fast path (Apache-2.0, vendored). Built by
+`mseries/local-ai/serve-patch.sh` into a side copy that `model-worker.py` uses only while it
+matches the installed mlx-lm. One request: Qwen 2B 32.6 → 56.5, Qwen 4B 19.2 → 27.4 tok/s,
+identical text, faster than Rapid-MLX. Several requests at once still trail Rapid (28 vs 43–48
+total). The scoreboard chart now shows first token, streaming speed and a typical 200-token reply
+side by side. Receipt and rollback: `mseries/local-ai/receipts/2026-10-28-serve-patch.md`.

@@ -1,4 +1,14 @@
-# Unified native T3 taskbar menu
+# T3 in the Dock and Wingpanel
+
+**2026-10-27:** The pinned T3 launcher opens or raises the T3
+window like any other app; right-click shows the app's quicklist (New Thread, Usage, Repositories,
+Activity). The launcher no longer opens the dropdown below, the taskbar status area no longer has a
+T3 (or CodexBar/RepoBar) button. The unified T3 Wingpanel menu remains available; Usage, the repository overview and Activity also live in the T3 window's sidebar
+(techmore/mseries-sdk-apps `rust/claude-pantheon-rs`). `prepare-source.sh` refuses a build that
+attaches the dropdown again. `TaskbarT3.vala` and `TaskbarT3RPopover.vala` stay compiled for their
+tests; the notes below describe that retired menu.
+
+## Retired: unified native T3 taskbar menu
 
 `TaskbarT3.vala` replaces the separate CodexBar and RepoBar taskbar anchors with
 one T3 button in the existing status group. It reuses the custom CodexBar native
@@ -66,6 +76,19 @@ expanded visibility, duration and received-files controls. It uses the existing
 `omdrop` backend and polls only while the popover is open. Since Windows Work
 Mode hides the top panel, this taskbar button keeps AirDrop available in that
 desktop mode.
+
+## Taskbar clock opens the panel calendar
+
+Work Mode hides Wingpanel, so the taskbar clock opens the same calendar the top
+panel shows: `TaskbarCalendar.vala` loads the installed Wingpanel datetime
+indicator (`wingpanel-9/libdatetime.so`, patched by
+[`../calendar/`](../calendar/README.md)) into the dock on first click and shows
+its widget in a popover above the clock. The month grid, Events, Tasks (EDS,
+including Homeboard lists), GitHub and Bible tabs are the panel's own code, so
+they behave and theme the same. Clicking the clock again, clicking outside or an
+indicator action closes it. If the indicator is not installed, the clock opens
+the Calendar app as before. `test-calendar.sh [DIR]` checks open/close in light
+and dark plus the fallback, and can save screenshots.
 
 Build without changing the desktop:
 

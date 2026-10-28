@@ -17,3 +17,6 @@ ExecStart=/usr/bin/io.elementary.wingpanel
 Restart=on-failure
 RestartSec=2s
 TimeoutStopSec=5s
+# Apps opened from the panel (Applications menu, indicators) live in this unit's
+# cgroup. Restarting or replacing the panel must end only the panel, not them.
+KillMode=process
