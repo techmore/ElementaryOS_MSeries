@@ -13,8 +13,9 @@ Environment=MLX_OMARCHY_BATCH_WORK=20000
 Environment=MSERIES_ASSIST_IDLE=600
 ExecStart=%h/.local/share/mseries-ai/lfm3-audio-venv/bin/python -I %h/.local/libexec/mseries-assistant/assistd.py
 Nice=5
-Restart=on-failure
-RestartSec=5
+# Always: the server exits after its idle unload to release pinned GPU memory (MSERIES_ASSIST_EXIT_ON_UNLOAD).
+Restart=always
+RestartSec=1
 NoNewPrivileges=yes
 
 [Install]

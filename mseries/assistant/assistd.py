@@ -118,6 +118,14 @@ class Engine:
             with self.lock:
                 if self.model is not None and time.monotonic() - self.last_used > self.idle_seconds:
                     self._unload()
+                    if os.environ.get('MSERIES_ASSIST_EXIT_ON_UNLOAD', '1') == '1':
+                        # Dropping the model and clearing MLX's cache leaves the Vulkan device's
+                        # buffers pinned for the life of the process: ~3.1 GiB on the M1 Pro,
+                        # measured 2026-10-28. Exiting returns all of it; systemd restarts this
+                        # server within a second and the model loads again on the next request.
+                        print('assistd: exiting to release GPU memory', flush=True)
+                        sys.stdout.flush()
+                        os._exit(0)
 
     # Generation ------------------------------------------------------------------------------------------------
     def _prompt(self, messages, audios=0, tts=False):
