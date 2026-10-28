@@ -32,7 +32,7 @@ MODELS = {
     'lfm3': (HOME / '.cache/mseries-metal2vk/lfm3-8bit',
              '2b06cea98d75527c248a0b04383f7cf0a1c72fb4ed7b45096618fc4e59d015ad',
              'LiquidAI/LFM3-1.7B-MLX-8bit@ee7667f3cfccb2a41725f91820531823fcabc6b7', 4.5,
-             HOME / '.local/share/mseries-ai/lfm3-audio-venv/bin/python', ('mlx-5k', 'mlx-120k')),
+             HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k')),
 }
 MODEL, WEIGHTS_SHA, MODEL_ID, ALLOWANCE_GIB, MLX_PY, MODEL_ARMS = MODELS['qwen2b']
 # MSERIES_HK_ICD selects a candidate driver built by honeykrisp-candidate.sh.
@@ -49,6 +49,7 @@ ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'tensorfold')
 POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
 DEADLINE_S = 300
 MODEL_NAME = 'qwen2b'
+LFM3_MODULE_SHA = 'a4096cddc8f0d3f7923008b2e6afb896dabc9aef963a5ebe7d76d13a6069b0c4'
 
 
 def select_model(name):
@@ -59,6 +60,15 @@ def select_model(name):
 def mlx_worker(prompt_text, max_tokens, output):
     """Runs inside the mlx-omarchy venv: load, warm up, time one greedy generation."""
     t0 = time.monotonic()
+    if MODEL_NAME == 'lfm3':
+        # mlx-lm 0.31.3 has no LFM3; load the pinned model file from mlx-lm PR 2016
+        # (head 9027ac5b), as the 2026-10-27 LFM3 smoke test did.
+        import hashlib as _h, importlib.util as _u
+        f = HOME / '.local/share/mseries-ai/runtime/lfm3.py'
+        if _h.sha256(f.read_bytes()).hexdigest() != LFM3_MODULE_SHA:
+            raise SystemExit('unexpected lfm3.py')
+        spec = _u.spec_from_file_location('mlx_lm.models.lfm3', f)
+        mod = _u.module_from_spec(spec); sys.modules[spec.name] = mod; spec.loader.exec_module(mod)
     from mlx_lm import load, stream_generate
     from mlx_lm.sample_utils import make_sampler
     import mlx.core as mx

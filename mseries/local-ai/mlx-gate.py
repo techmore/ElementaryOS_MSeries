@@ -277,6 +277,10 @@ def main():
     a = p.parse_args()
     if a.worker:
         return worker(a.worker, a.out)
+    try:
+        import numpy  # noqa: F401  scoring needs it; the system python has none
+    except ModuleNotFoundError:
+        os.execv(str(MLX_PY), [str(MLX_PY), __file__] + sys.argv[1:])
     if not a.mode:
         p.error('mode required')
     with (MODEL / 'model.safetensors').open('rb') as f:
