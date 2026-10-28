@@ -24,6 +24,20 @@ isolated XDG paths were set; Rapid nevertheless wrote a prefix cache under
 `~/.cache/rapid-mlx` (approximately 113 MB), which remains on disk. No service
 or persistent runtime configuration was installed.
 
+## LFM3 8-bit loopback smoke
+
+With the same isolated server setup, the LFM3 model and mlx-lm PR model module
+identified in the [TensorFold receipt](receipts/2026-10-27-tensorfold-vulkan.md)
+were loaded on the Mac. The first 24-token request returned HTTP 200 but spent
+its token budget on thinking text without an answer; it is retained as a failed
+bounded answer check. A second request explicitly set
+`chat_template_kwargs.enable_thinking=false` and returned `19` with HTTP 200,
+two completion tokens and 24 cached prompt tokens. The latter reported 181 ms
+to first token and 50 ms mean inter-token latency; cached input, one request
+and differing output lengths make this unsuitable for speed comparison. Both
+servers were stopped. Guided tool generation and broader correctness remain
+untested, and the unmerged LFM3 support is not installed into the live runtime.
+
 [Rapid-MLX](https://github.com/raullenchai/Rapid-MLX) source was inspected at
 `1d09cdb684bbf58fac130f5804b08ee2e1f56558`. It offers an MLX server, request
 scheduling, tool parsers and batching that could complement our stack. Its
