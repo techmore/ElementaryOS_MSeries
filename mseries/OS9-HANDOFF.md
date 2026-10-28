@@ -1,3 +1,7 @@
+## ANE converter unit follow-up — 2026-10-27
+
+The converter writes 512-byte tile counts, whereas historical probe/staged paths used 16-KiB counts. A branch-only patch updates stale tests and requires explicit unit selection before the direct staged decoder opens the device; 84 offline tests pass on a clean archive. The separate libane runner, real bundle layout and hardware remain unverified. Public ANEForge commit 2ea941c is reachable, but no compiled Qwen bundle appears in repository/release assets or local cache; no model comparison ran. [Receipt](local-ai/receipts/2026-10-27-ane-qwen-preflight.md).
+
 ## Qwen 4B batching qualification — 2026-10-27
 
 Memory rose naturally; guarded Qwen 4B smoke passed at 12.69 GiB admission. Three matched 20k vs 5k 32-token pairs gave median 12.86% lower request time, 19.46 → 23.29 reported tokens/s, 823 → 249 submissions and identical outputs. One candidate GTK callback gap was 50.49 ms; sustained presentation/input and numerical fidelity remain open. No default changed. ANE still needs compiled assets and converter ABI resolution. [4B receipt](local-ai/receipts/2026-10-27-qwen4b-20k.md).

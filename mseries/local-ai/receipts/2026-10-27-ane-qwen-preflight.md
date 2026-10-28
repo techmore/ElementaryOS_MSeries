@@ -72,3 +72,47 @@ when there is sufficient memory. Perform a bounded correctness and model timing
 comparison against matching MLX inputs and report route evidence. ANE/GPU
 coexecution and any TensorFold integration would require separate measurement;
 no speedup can be inferred from these preflight checks.
+
+## Converter and runner follow-up
+
+The converter/test disagreement is now explained by the unit convention:
+`hwxv2-to-anec.py` at `b1f2cbe` writes header tile counts in 512-byte units.
+The current [libane API](https://github.com/joshuaswarren/omarchy-ane/blob/0916411a8a9419ca589d14b53d89c425e8083685/libane/ane.h)
+describes `__ane_init_shift(..., 9)` for those artifacts and shift 14 for
+legacy H13 island containers. The public `production-anec-probe.py` and
+`staged-decode-runtime.py` had been interpreting header counts as 16 KiB;
+the separate `tools/staged-qwen/libane_model.py` path also uses the default
+shift 14 and needs a bundle-specific layout/ABI audit. Mixing units can make
+allocations 32 times larger than intended. Do not assume all historical or
+layout-rewritten artifacts use one convention.
+
+An isolated [patch](../patches/ane-linux-experiments-b1f2cbe-tile-unit-tests.patch)
+updates stale converter expectations, adds an explicit required header-unit
+choice to the production probe and staged decoder, and ensures the staged
+constructor rejects a missing unit before opening the device. It does not
+modify the installed runtime or the separate libane-based staged runner. On a
+clean archive of `b1f2cbe`, `git apply --unidiff-zero <patch>` applied it and 84 host-only converter,
+probe, guard, and Qwen contract/reference tests passed. No real Qwen artifact
+or hardware execution validated the patch. An operator must identify the
+bundle's format; the choice alone does not establish a safe layout. The
+upstream Qwen layout guard and device-specific correctness gates still apply.
+
+The exact ANEForge split-decoder commit is publicly reachable at
+[2ea941c](https://github.com/sbryngelson/ANEForge/commit/2ea941ce7ec58a802de792c152726c3a9a881706),
+correcting the earlier implication that its source is unavailable. Its source
+alone is not the compiled 38-program bundle. Both GitHub release asset lists
+were empty, the public experiment repository tree contains no Qwen `.anec` or
+HWX program bundle, and no matching local bundle was found. The documented
+export was made using ANEForge plus macOS compilation, weights and the
+matching manifest. The separate public Linux MIL compiler has a limited
+verified H13 operation/shape envelope, and has not been shown to compile this
+38-program Qwen model. There is no safe basis yet to claim a full bundle can be
+created with it.
+
+To finish the requested benchmark, obtain an authorized copy of the complete
+38-program staged bundle, manifest, binding/layout guard, matched Qwen model
+and reference outputs, or access to a suitable macOS compilation/export
+setup. Confirm source revision and hashes, tile units for each execution
+route, numerical correctness, memory admission, and bounded device behavior
+before comparing against MLX. No Qwen ANE run or performance comparison was
+performed in this follow-up.
