@@ -19,9 +19,10 @@ FIELDS = ('gpu_primitive_dispatches', 'vk_submissions', 'vk_buffer_copies',
           'vk_buffer_fills', 'vk_compute_dispatches', 'omarchy_finalize_calls',
           'commit_calls_with_work', 'commit_calls_noop', 'barriers_emitted', 'barriers_skipped')
 PROMPT = 'Explain in plain language how a rainbow forms. Give four distinct sentences.'
+LONG_PROMPT = 'Explain in detail how a rainbow forms, including refraction, reflection, color and viewing angle. Write at least 350 words.'
 
 
-def worker(model, output):
+def worker(model, output, long_run):
     import mlx.core as mx
     from mlx_lm import load, stream_generate
     from mlx_lm.sample_utils import make_sampler
@@ -42,7 +43,7 @@ def worker(model, output):
         return {key: int(getattr(trace, key)) for key in FIELDS}
 
     model_obj, tokenizer = load(str(model))
-    prompt = tokenizer.apply_chat_template([{'role': 'user', 'content': PROMPT}],
+    prompt = tokenizer.apply_chat_template([{'role': 'user', 'content': LONG_PROMPT if long_run else PROMPT}],
                                           tokenize=False, add_generation_prompt=True,
                                           enable_thinking=False)
     # One full warmup on exactly the same prompt; no model cache is shared.
@@ -54,7 +55,7 @@ def worker(model, output):
     first = None
     tokens = []
     last = None
-    for result in stream_generate(model_obj, tokenizer, prompt, max_tokens=32, sampler=make_sampler(temp=0)):
+    for result in stream_generate(model_obj, tokenizer, prompt, max_tokens=256 if long_run else 32, sampler=make_sampler(temp=0)):
         if first is None:
             first = time.monotonic() - started
         tokens.append(result.token)
@@ -74,12 +75,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--candidate', type=int, choices=[10000, 20000, 40000, 80000], default=10000)
+    parser.add_argument('--candidate', type=int, choices=[10000, 20000, 40000, 80000, 120000], default=10000)
     parser.add_argument('--worker', action='store_true')
     parser.add_argument('--desktop-probe', action='store_true')
+    parser.add_argument('--long-run', action='store_true', help='Generate up to 256 tokens with a long-form prompt')
+    parser.add_argument('--wave-ab', action='store_true', help='Compare wave scheduling off/on at the candidate budget')
+    parser.add_argument('--admission-wait-seconds', type=int, default=0, help='Wait up to this long for each guarded admission')
     args = parser.parse_args()
+    if not 0 <= args.admission_wait_seconds <= 300:
+        parser.error('--admission-wait-seconds must be between 0 and 300')
     if args.worker:
-        worker(args.model, args.output)
+        worker(args.model, args.output, args.long_run)
         return
     weights = args.model / 'model.safetensors'
     if not weights.is_file():
@@ -93,17 +99,26 @@ def main():
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     policy = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
     rows = []
-    report = {'status': 'running', 'prompt_sha256': hashlib.sha256(PROMPT.encode()).hexdigest(),
+    report = {'status': 'running', 'prompt_sha256': hashlib.sha256((LONG_PROMPT if args.long_run else PROMPT).encode()).hexdigest(),
               'model': 'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3',
-              'sequence': [5000, args.candidate, args.candidate, 5000, 5000, args.candidate], 'runs': rows}
+              'sequence': [5000, args.candidate, args.candidate, 5000, 5000, args.candidate],
+              'max_tokens': 256 if args.long_run else 32, 'wave_ab': args.wave_ab, 'runs': rows}
+    if args.wave_ab:
+        report['sequence'] = [args.candidate] * 6
     args.output.parent.mkdir(parents=True, exist_ok=True)
     try:
         with tempfile.TemporaryDirectory(prefix='mseries-batch-work-') as temp:
             for index, budget in enumerate(report['sequence']):
-                initial = snapshot()
-                reasons = violations(initial, policy, extra_bytes=int(4.5 * GIB))
-                if reasons:
-                    raise RuntimeError('Admission refused: ' + '; '.join(reasons))
+                deadline = time.monotonic() + args.admission_wait_seconds
+                while True:
+                    initial = snapshot()
+                    reasons = violations(initial, policy, extra_bytes=int(4.5 * GIB))
+                    if not reasons:
+                        break
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError('Admission refused: ' + '; '.join(reasons))
+                    print('Waiting for admission: ' + '; '.join(reasons), flush=True)
+                    time.sleep(min(5, max(0, deadline - time.monotonic())))
                 result = Path(temp) / f'{index}.json'
                 env = os.environ.copy()
                 for key in list(env):
@@ -112,8 +127,13 @@ def main():
                 env.update(VK_DRIVER_FILES=str(home / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json'),
                            MLX_OMARCHY_BATCH_WORK=str(budget), HF_HUB_OFFLINE='1',
                            OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2')
+                wave_enabled = args.wave_ab and index in (1, 2, 5)
+                if wave_enabled:
+                    env['MLX_OMARCHY_WAVE_SCHED'] = '1'
                 command = [str(home / '.local/share/mlx-omarchy/venv/bin/python'), __file__, '--worker',
                            '--model', str(args.model), '--output', str(result)]
+                if args.long_run:
+                    command.append('--long-run')
                 probe_file = Path(temp) / f'frames-{index}.json'
                 probe = None
                 if args.desktop_probe:
@@ -153,7 +173,7 @@ def main():
                             probe.terminate()
                             probe.wait(timeout=10)
                     log.seek(0)
-                    entry = {'budget': budget, 'exit': child.returncode, 'stopped': stopped,
+                    entry = {'budget': budget, 'wave_enabled': wave_enabled, 'exit': child.returncode, 'stopped': stopped,
                              'admission_available_bytes': initial['available_bytes'], 'samples': samples,
                              'log_tail': log.read()[-1500:]}
                     rows.append(entry)
@@ -165,7 +185,7 @@ def main():
                             raise RuntimeError('Desktop frame probe did not complete')
                         entry['desktop_probe'] = json.loads(probe_file.read_text())
                 print(f"run {index + 1} budget {budget}: {entry['result']['total_s']:.3f}s, "
-                      f"{entry['result']['counter_delta']['vk_submissions']} submits", flush=True)
+                      f"{entry['result']['counter_delta']['vk_submissions']} submits, wave={wave_enabled}", flush=True)
                 time.sleep(2)
         report['status'] = 'complete'
     except BaseException as exc:

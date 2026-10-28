@@ -92,3 +92,56 @@ fidelity before considering a default. After the MLX path is characterized,
 repeat a matched Rapid-MLX comparison; the earlier Rapid numbers are not a
 valid apples-to-apples ranking. The unpublished TensorFold engine remains
 separate from this MLX budget experiment.
+
+## Longer generation and scheduling follow-up
+
+A long-form prompt generated 256 tokens per measured request with the same
+GTK callback probe active. The 80k sweep completed two of three pairs before
+the guard refused the fifth admission at 10.30 GiB available. A separate 120k
+sweep completed all three pairs; the waiting option never weakens admission.
+All ten 256-token outputs matched. Measurements are from one prompt on Qwen
+2B and do not establish broad numerical fidelity.
+
+| Budget | Completed pairs | Median paired request-time reduction | Submissions per request | Median MLX-reported decode rate, baseline → candidate |
+| --- | ---: | ---: | ---: | ---: |
+| 80,000 | 2 of 3 | 21.06% | 3,139 → 519 | 35.82 → 46.21 tokens/s |
+| 120,000 | 3 of 3 | 20.69% | 3,139 → 263 | 37.12 → 47.77 tokens/s |
+
+The 120k decode-rate medians indicate about 28.7% higher throughput; this is
+not a 28.7% reduction in latency. These are small samples, and the different
+sweeps ran at different times; 120k is not shown to outperform 80k.
+The callback probe ran for approximately 6–8 seconds per measured request,
+not continuously for a long session. Across the 120k sweep, baseline maximum
+callback gap was 32.47 ms and candidate maximum was 31.51 ms, with none over
+33.33 ms in either group. At 80k the maxima were 26.64 and 26.31 ms,
+respectively, with none over 33.33 ms. The recorded ~60 Hz GTK callback
+intervals do not measure display presentation, input responsiveness, or
+sustained interactive use. Minimum sampled available memory across both
+sweeps was 8.76 GiB and maximum temperature 53.241 C; the 6 GiB reserve and
+80 C guard remained in force. No default was changed.
+
+![Longer-generation pairs](2026-10-27-batch-work-long.png)
+
+An existing opt-in `MLX_OMARCHY_WAVE_SCHED=1` mode from the pinned runtime's
+[encoder source](https://github.com/joshuaswarren/omarchy-mlx/blob/33630f9c1eeefe5fc985a28bed0585432c2c014e/overlay/mlx/backend/omarchy/encoder.cpp)
+was separately compared with wave scheduling off at 80k on the original
+32-token prompt. The three matched time changes were +0.74%, +0.80%, and
+−0.19% reductions; outputs matched and emitted barrier counts fell from
+8,261 to 8,142. This provides no compelling speed gain and does not qualify
+the scheduling mode. The first trial stopped after its baseline due to
+admission; its receipt is retained, along with the successful retry.
+
+The 4B admission was retried and refused at 10.61 GiB available versus
+12.5 GiB required. No 4B or Rapid-MLX run occurred in this follow-up. Larger
+model, sustained presentation/input tests, teacher-forced fidelity and a
+matched Rapid-MLX comparison remain open. The ANE is a separate accelerator,
+not a replacement for MLX: this host has its ANE driver, but the existing
+experimental upstream Qwen ANE decoder uses separate compiled packages and
+has not been tested here. An ANE/GPU split requires its own correctness,
+performance and contention measurements; prior investigation is in
+[UZU-AND-ANE-EVALUATION-2026-10-27.md](../UZU-AND-ANE-EVALUATION-2026-10-27.md).
+
+Raw receipts: [80k long, interrupted](2026-10-27-batch-work-80k-long.json),
+[120k long](2026-10-27-batch-work-120k-long.json),
+[wave initial, interrupted](2026-10-27-wave-80k-ab.json), and
+[wave retry](2026-10-27-wave-80k-retry.json).

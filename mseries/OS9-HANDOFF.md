@@ -1,3 +1,7 @@
+## MLX longer generation follow-up — 2026-10-27
+
+Qwen 2B 256-token tests: 80k budget median paired request reduction 21.06% (two pairs, interrupted at admission); 120k 20.69% (three pairs), with matching outputs. GTK callback probe saw no intervals over 33.33 ms over individual 6–8 second requests; this is not sustained desktop or input qualification. Wave scheduling offered no compelling gain. 4B admission remained refused at 10.61 GiB versus 12.5 required. ANE is a separate accelerator and not yet an MLX Qwen path. Leave defaults unchanged; 4B, longer interaction/fidelity and later Rapid comparison remain open. [Receipts](local-ai/receipts/2026-10-27-batch-work.md).
+
 ## MLX batch follow-up — 2026-10-27
 
 A 20k and 80k Qwen 2B sweep with a GTK animation probe showed median paired request reductions of 14.29% and 17.55%, respectively; no callback gaps over 33.33 ms during the short measured requests. This is not presentation or input-latency qualification. Qwen 4B was refused at 11.28 GiB available against a 12.5 GiB admission requirement; reserve unchanged. Keep opt-in and test sustained desktop behavior, larger models, and numerical fidelity before any default. Rapid-MLX remains a later matched comparison. [Raw results](local-ai/receipts/2026-10-27-batch-work.md).
