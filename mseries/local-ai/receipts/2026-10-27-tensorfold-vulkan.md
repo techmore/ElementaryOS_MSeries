@@ -1,6 +1,28 @@
 # TensorFold Vulkan feasibility — 2026-10-27
 
-## Compiler build status
+## Qwen3.5 2B checkpoint smoke
+
+Upstream identifies checkpoint revision `93760be4f1f69842a46bc13dbdc0f19e291392a3`;
+this resolves to `mlx-community/Qwen3.5-2B-MLX-4bit`. The downloaded
+`model.safetensors` SHA-256 is
+`713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5`.
+With the compiler paused, the first admission attempt found only 10.39 GiB
+available against the 10.5 GiB minimum and refused. After the compiler was
+stopped and its memory released, admission passed at 11.4 GiB. The isolated
+MLX worker on the Mac loaded the checkpoint in 2.43 seconds, answered `19` to
+the short arithmetic prompt and exited successfully in 6.07 seconds. The
+reproducible guarded driver is [`test-mlx-model-smoke.py`](../test-mlx-model-smoke.py).
+The owner authorized fan operation above 3500 RPM; the 80 C and 6 GiB limits
+were retained. No MLX custom-kernel route summary was emitted, so this is not a
+metal2vk model qualification or performance test.
+
+Upstream's TensorFold source, binaries, original test inputs and raw receipts
+are private according to its [evidence summary](https://gist.github.com/joshuaswarren/0dd7a155bd9d9a691edcf0a51833ed8b).
+Consequently this MLX run cannot reproduce its same-engine batching speedup.
+The 4B profile retains its separate 6.5 GiB admission allowance; it was not
+run when the available memory failed that threshold.
+
+## Earlier compiler build checkpoint
 
 The metal2vk compiler build is **incomplete**. Cloned clspv at upstream's
 documented `f2b01dd6dce7058585eb4bcdb5326997cfeebfd4`, fetched its pinned
@@ -15,7 +37,11 @@ retained for resumption. `metal::exp` is still untested through metal2vk, and
 the compiler was not installed. Root filesystem had 13 GiB free at last
 check; preserve the 5 GiB disk floor and the existing memory/thermal guard.
 
-When the Mac is cool and has capacity, resume with `ninja -C
+The owner subsequently authorized higher fan speeds; the build was resumed
+with six jobs and independent temperature, memory and disk guards. Its final
+result should be recorded before describing the compiler as usable.
+
+To resume a stopped build, use `ninja -C
 ~/.cache/mseries-metal2vk/clspv/build -j2 clspv clang opt` under continuous
 guard, then point `CLANG`, `OPT`, `CLSPV` and
 `MLX_OMARCHY_M2V_COMPILE` at the isolated tools and metal2vk checkout. Repeat
