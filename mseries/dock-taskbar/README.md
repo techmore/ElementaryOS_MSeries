@@ -8,6 +8,14 @@ T3 (or CodexBar/RepoBar) button. The unified T3 Wingpanel menu remains available
 attaches the dropdown again. `TaskbarT3.vala` and `TaskbarT3RPopover.vala` stay compiled for their
 tests; the notes below describe that retired menu.
 
+## Microphone-in-use light
+
+**2026-10-28:** `TaskbarMicLight.vala` puts an amber dot (macOS's #ff9f0a) at the start of the
+status area while any microphone is capturing. It polls `/proc/asound/card*/pcm*c/sub*/status`
+every 500 ms, so it lights for any app holding the mic (F5 dictation included). The speaker
+codec card (`AppleJ314`) is skipped, since its always-running capture is speaker-protection
+sensing. Bluetooth headset mics that only exist inside PipeWire are not covered.
+
 ## Retired: unified native T3 taskbar menu
 
 `TaskbarT3.vala` replaces the separate CodexBar and RepoBar taskbar anchors with

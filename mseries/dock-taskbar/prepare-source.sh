@@ -13,6 +13,7 @@ cp "$here/TaskbarCodexBar.vala" "$source_dir/src/TaskbarCodexBar.vala"
 cp "$repo/mseries/quick-settings/AirDropPanel.vala" "$source_dir/src/AirDropPanel.vala"
 cp "$here/TaskbarAirDrop.vala" "$source_dir/src/TaskbarAirDrop.vala"
 cp "$here/TaskbarCalendar.vala" "$source_dir/src/TaskbarCalendar.vala"
+cp "$here/TaskbarMicLight.vala" "$source_dir/src/TaskbarMicLight.vala"
 cp "$here/TaskbarT3.vala" "$source_dir/src/TaskbarT3.vala"
 cp "$here/TaskbarT3RPopover.vala" "$source_dir/src/TaskbarT3RPopover.vala"
 mkdir -p "$source_dir/src/codexbar"
@@ -80,17 +81,21 @@ s = s.replace(old, '''        var clock_calendar = new TaskbarCalendar (clock_bu
                 return;
             }
             if (Environment.find_program_in_path ("io.elementary.calendar") != null) {''')
+# Amber "microphone in use" light at the start of the status area, like macOS.
+old = '        status_box.append (network_button);'
+assert s.count(old) == 1, 'Taskbar status area changed'
+s = s.replace(old, '        status_box.append (new TaskbarMicLight ());\n' + old)
 p.write_text(s)
 p = root / 'src/meson.build'
-p.write_text(p.read_text().replace("    'TaskbarT3RPopover.vala',", "    'TaskbarT3RPopover.vala',\n    'TaskbarT3.vala',\n    'TaskbarCalendar.vala',"))
+p.write_text(p.read_text().replace("    'TaskbarT3RPopover.vala',", "    'TaskbarT3RPopover.vala',\n    'TaskbarT3.vala',\n    'TaskbarCalendar.vala',\n    'TaskbarMicLight.vala',"))
 PYUNIFIED
 # Refuse a partial/stock rebuild instead of silently losing the Windows taskbar.
 python3 - "$source_dir" <<'PY'
 import pathlib, sys
 root = pathlib.Path(sys.argv[1])
 for filename, required in {
-    'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala', 'TaskbarT3RPopover.vala', 'TaskbarCalendar.vala'],
-    'src/Taskbar.vala': ['new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)', 'new TaskbarCalendar (clock_button)'],
+    'src/meson.build': ['Taskbar.vala', 'StartMenu.vala', 'TaskbarCodexBar.vala', 'codexbar/Indicator.vala', 'TaskbarRepoBar.vala', 'repobar/Indicator.vala', 'TaskbarNotifications.vala', 'AirDropPanel.vala', 'TaskbarAirDrop.vala', 'TaskbarT3RPopover.vala', 'TaskbarCalendar.vala', 'TaskbarMicLight.vala'],
+    'src/Taskbar.vala': ['new TaskbarNotifications', 'new TaskbarAirDrop', 'end_box.append (status_box)', 'new TaskbarCalendar (clock_button)', 'new TaskbarMicLight'],
     'src/TaskbarT3RPopover.vala': ['"tokenUsage"', '"usedPercent"', '"settings"', 'Timeout.add (250', 'Timeout.add (450'],
     'src/TaskbarAirDrop.vala': ['new MSeries.AirDropPanel'],
     'src/TaskbarCalendar.vala': ['libdatetime.so', 'get_indicator'],
