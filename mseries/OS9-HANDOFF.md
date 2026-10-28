@@ -13572,3 +13572,10 @@ makes `MSERIES_SERVE_CONCURRENCY` batch N requests and reserves their KV up fron
 +0.75 GiB for the everyday 4B). Qwen 2B with 4 at once: 20 → 57 tok/s total, first token 4.1 →
 0.8 s; Qwen 4B with 4 at once: 12.8 → 25.8, 6.3 → 2.0 s. Ahead of Rapid-MLX on throughput in
 every case; Rapid still reaches a single request's first token sooner.
+
+TensorFold PR 1544 (2026-10-28): supersedes PR 1517 and is stacked on PR 1526. Same Vulkan
+engine as our 1517 pin plus one shader fix (an infinity no longer becomes NaN), a kernel
+contract for all six kernel groups, and a rebase onto TensorFold main. No speed change; the
+batching build is still unpublished. `tensorfold-vulkan.sh` now pins 1544 and its `contract`
+mode runs all six groups from one tree; we carry no TensorFold patches. Owner runs the build.
+Receipt: `local-ai/receipts/2026-10-27-tensorfold-vulkan.md`.
