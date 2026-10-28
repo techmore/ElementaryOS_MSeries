@@ -144,6 +144,10 @@ jobs:
           meson setup "$RUNNER_TEMP/orchard-native" mseries/orchard -Dwingpanel=enabled
           meson compile -C "$RUNNER_TEMP/orchard-native"
           xvfb-run -a env GSK_RENDERER=cairo dbus-run-session -- meson test -C "$RUNNER_TEMP/orchard-native" --print-errorlogs
+      - name: Build and test the Tailscale panel menu
+        run: |
+          meson setup "$RUNNER_TEMP/tailscale-wingpanel" mseries/tailscale-wingpanel
+          meson test -C "$RUNNER_TEMP/tailscale-wingpanel" --print-errorlogs
 
   work-mode:
     name: Windows Work Mode schedule and work-network rules (arm64)
