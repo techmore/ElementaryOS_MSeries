@@ -69,7 +69,14 @@ build)
     ;;
 test)
     check_disk; fetch
-    (cd "$SRC" && "$ZIG" build -Dvulkan=true vulkan-host-test qwen35-model-host-test model-host-test)
+    # Zig 0.17 shows a passing test's stderr under a red "failed command:" header.
+    # Only "error:" lines, "'<test>' failed" or a non-zero exit mean a failure.
+    if (cd "$SRC" && "$ZIG" build -Dvulkan=true --summary all \
+            vulkan-host-test qwen35-model-host-test model-host-test); then
+        echo "HOST TESTS: PASS"
+    else
+        echo "HOST TESTS: FAIL" >&2; exit 1
+    fi
     ;;
 gpu)
     check_disk; fetch
