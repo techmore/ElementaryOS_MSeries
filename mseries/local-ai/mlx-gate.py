@@ -34,7 +34,8 @@ WEIGHTS_SHA = '713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5'
 # MSERIES_HK_ICD selects a candidate driver built by honeykrisp-candidate.sh.
 ICD = Path(os.environ.get('MSERIES_HK_ICD') or HOME / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json')
 DRIVER = (ICD.parent / 'mesa-git-sha').read_text().strip() if (ICD.parent / 'mesa-git-sha').exists() else 'unknown'
-MLX_PY = HOME / '.local/share/mlx-omarchy/venv/bin/python'
+# MSERIES_MLX_PYTHON points the gate at a side venv (try-omarchy-mlx-main.sh).
+MLX_PY = Path(os.environ.get('MSERIES_MLX_PYTHON') or HOME / '.local/share/mlx-omarchy/venv/bin/python')
 REF_DIR = HOME / '.cache/mseries-mlx-gate/reference-v1'
 POLICY = {'reserve_gib': 6, 'max_fan_rpm': float('inf'), 'max_temp_c': 80}
 ALLOWANCE_GIB = 4.5
