@@ -65,7 +65,15 @@ def main():
     parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument('--max-tokens', type=int, default=220)
     parser.add_argument('--temperature', type=float, default=0.35)
+    parser.add_argument('--lfm3-module', type=Path,
+                        help='LFM3 model file for mlx-lm 0.31.3 (the pinned one engine-compare.py uses)')
     args = parser.parse_args()
+    if args.lfm3_module:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('mlx_lm.models.lfm3', args.lfm3_module)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
 
     import mlx.core as mx
     from mlx_lm import load, stream_generate
