@@ -23,6 +23,8 @@ python3 "$here/mark-newelle-chat.py"  # Smart Reply chat-app marker; harmless wh
 "$runtime" - <<'PY'
 from huggingface_hub import snapshot_download
 snapshot_download('mlx-community/Qwen3.5-9B-MLX-4bit',revision='938d8919941c6e7efd3c7150eff7fe9d12afa631',max_workers=2)
+# Smart Reply drafting model (reply-model-compare.md).
+snapshot_download('mlx-community/Qwen3.5-4B-MLX-4bit',revision='32f3e8ecf65426fc3306969496342d504bfa13f3',max_workers=2)
 PY
 python3 "$here/prepare-compact35.py"
 python3 "$here/install-crush.py"
@@ -30,6 +32,8 @@ python3 "$here/prepare-coder.py" --python "$runtime" --runtime-only
 python3 "$here/configure-assistants.py" --adopt-compact-defaults
 bash "$here/install-troubleshooter.sh"
 install -Dm755 "$here/crash-watch.py" "$HOME/.local/libexec/mseries-crash-watch"
+install -Dm755 "$here/reply-modeld.py" "$HOME/.local/libexec/mseries-ai/reply-modeld.py"
+install -Dm644 "$here/mseries-reply-model.service" "$HOME/.config/systemd/user/mseries-reply-model.service"
 mkdir -p "$HOME/.config/systemd/user"
 cat > "$HOME/.config/systemd/user/mseries-crash-watch.service" <<'EOF'
 [Unit]
@@ -50,5 +54,7 @@ if [[ $legacy == *'/mlx-omarchy-chat '* ]]; then
   systemctl --user disable --now mlx-omarchy-chat.service
 fi
 systemctl --user enable --now mseries-crash-watch.service
-systemctl --user enable --now mseries-ai-everyday.service
+# Smart Reply's 8766 endpoint now loads on demand instead of keeping the everyday model resident.
+systemctl --user disable --now mseries-ai-everyday.service 2>/dev/null || true
+systemctl --user enable --now mseries-reply-model.service
 echo 'Installed assistant profiles and fault watcher. Quiet policy may refuse a model when desktop headroom is short.'
