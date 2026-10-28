@@ -214,5 +214,11 @@
     "who": "Joshua Warren",
     "why": "Profiler and daily ledger of local inference on M1/M1 Max/M2 Max under Linux; its release-vs-main rows show which MLX wheel and Honeykrisp driver are faster before we test them. Pinned in install.sh",
     "group": "omarchy-m"
+  },
+  {
+    "repo": "Generated-Computers/Locals",
+    "who": "Generated Computers",
+    "why": "MLX agent server (Apache-2.0): multi-request batching 1.6-3x at 4-8 requests on macOS, plus a pure-MLX LFM3 model file. Its speedups use Metal kernels and mlx-lm 0.32; re-test on omarchy-mlx when our MLX stack reaches mlx-lm 0.32",
+    "group": "omarchy-m"
   }
 ]

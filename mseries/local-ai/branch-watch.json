@@ -130,6 +130,12 @@
       "base": "main",
       "open_prs": true,
       "discover_branches": true
+    },
+    {
+      "repo": "Generated-Computers/Locals",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": false
     }
   ]
 }
