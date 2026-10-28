@@ -1,5 +1,34 @@
 # TensorFold Vulkan feasibility — 2026-10-27
 
+## M1 Pro kernel trial
+
+On the running `7.2.11-elementary-aurora72-wip4`, using the private ICD and
+the installed MLX runtime, tested `omlx_gdn_sigmoid_probe` on 131,072 float32
+values evenly spaced from -8 to 8, with 256 threads per workgroup. The
+independent reference was float64 `x / (1 + exp(-x))`, tolerance 1e-5
+absolute and relative. Source: the sigmoid probe in
+[oMLX qwen35_gdn_verify_fused.py at e2396c7](https://github.com/jundot/omlx/blob/e2396c765d274785ce23abb764dc7eaf6b13db11/omlx/patches/qwen35_gdn_verify_fused.py).
+
+* MLX `auto` returned finite values within tolerance (maximum absolute error
+  4.65e-7), **but did not run metal2vk**: the exact generated source missed
+  the AOT cache and the compiler was absent. Its route summary was `m2v=0
+  translator=1 fallbacks=1 refusals=0`.
+* As a separate test, the installed AOT sigmoid module was dispatched directly
+  with the upstream `metal2vk` Vulkan runner (`metal2vk` commit
+  `de6faa02c42455963645ac55cbc8191e15b3ac68`, runner source SHA-256
+  `6d282a1d1abddc029d8c287c22a923eb26bc022265edac9d28706df8f8616de6`).
+  Its module SHA-256 was
+  `6eb3c7d0ea5aa30d35c7c430ef706b7f183259b8e4d563aca815b03d39006ca8`.
+  One dispatch on M1 Pro completed; all output was finite and within the same
+  reference tolerance, maximum absolute error 4.65e-7. Maximum difference from
+  the MLX translator result was 4.77e-7; results were not bit-identical.
+
+This demonstrates one translated module executing on the GPU, **not** a
+successful MLX metal2vk route, general model correctness or a speedup. One
+dispatch is not a benchmark. Next resolve the exact source/cache-key mismatch
+or build the pinned compiler in an isolated location, then require `m2v>0` and
+`fallbacks=0` for the same numerical fixture. No installed settings changed.
+
 ## Related metal2vk route
 
 [metal2vk](https://github.com/joshuaswarren/metal2vk) is a separate Metal
