@@ -123,7 +123,7 @@ p.parent.mkdir(parents=True,exist_ok=True)
 text=p.read_text() if p.exists() else ''
 if '[local]' not in text:
     prefix=Path.home()/'.local/share/mlx-omarchy'
-    text+=f'\n[local]\nssh = "local"\nchip = "Apple Silicon"\ngpu_lock = "/tmp/mseries-ai-gpu.lock"\nmlx_python = "{prefix}/venv/bin/python"\nenv = {{ OMARCHY_MLX_SYSTEM_PREFIX = "{prefix}" }}\n'
+    text+=f'\n[local]\nssh = "local"\nchip = "Apple Silicon"\ngpu_lock = "/tmp/mseries-ai-gpu.lock"\nmlx_python = "{prefix}/venv/bin/python"\nenv = {{ OMARCHY_MLX_SYSTEM_PREFIX = "{prefix}", VK_DRIVER_FILES = "{prefix}/vulkan/honeykrisp_icd.aarch64.json" }}\n'
     p.write_text(text)
 CONFIG
 "$HOME/.local/bin/mlx-omarchy-info"
