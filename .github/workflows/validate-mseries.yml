@@ -311,6 +311,7 @@ jobs:
           path: ${{ runner.temp }}/fairydust.tar.gz
           key: fairydust-source-ce9f2eba72c061a50b2d790450e90af3439d8c24
       - name: Download the pinned Fairydust source tarball
+        id: fairydust-download
         if: steps.fairydust-cache.outputs.cache-hit != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -339,16 +340,23 @@ jobs:
             git -C "$src" archive --format=tar.gz --prefix="linux-$sha/" -o "$out" FETCH_HEAD
           fi
           test -s "$out"
+          echo "source=$([ "$fetched" = true ] && echo codeload || echo git)" >> "$GITHUB_OUTPUT"
+      # Cache only the real codeload tarball: a git-archive copy never matches ARCHIVE_SHA256, and caching it
+      # made every rerun of the same branch fail (#390, #675, #677 on 2026-10-28).
       - name: Save the pinned Fairydust source tarball
-        if: steps.fairydust-cache.outputs.cache-hit != 'true'
+        if: steps.fairydust-cache.outputs.cache-hit != 'true' && steps.fairydust-download.outputs.source == 'codeload'
         uses: actions/cache/save@v6
         with:
           path: ${{ runner.temp }}/fairydust.tar.gz
           key: fairydust-source-ce9f2eba72c061a50b2d790450e90af3439d8c24
       - name: Validate experimental dock patches offline
+        env:
+          FAIRYDUST_SOURCE: ${{ steps.fairydust-download.outputs.source }}
         run: |
           set -euo pipefail
-          python3 mseries/fairydust/usb4/tools/validate-dock-patches.py --archive "$RUNNER_TEMP/fairydust.tar.gz" --output "$RUNNER_TEMP/dock-patch-validation"
+          extra=()
+          [ "${FAIRYDUST_SOURCE:-}" = git ] && extra=(--git-archive)
+          python3 mseries/fairydust/usb4/tools/validate-dock-patches.py --archive "$RUNNER_TEMP/fairydust.tar.gz" --output "$RUNNER_TEMP/dock-patch-validation" "${extra[@]}"
 
       - name: mkosi config parse check (all images)
         run: |

@@ -221,6 +221,7 @@ check kernel 'fairydust/debian/test-assemble-m1n1-bootbin.py' 'python3 mseries/f
 check kernel 'fairydust/debian/test-verify-m1n1-esp.py' 'python3 mseries/fairydust/debian/test-verify-m1n1-esp.py'
 check kernel 'fairydust/usb4/test-*.py' 'for f in mseries/fairydust/usb4/test-*.py; do python3 "$f" || exit 1; done'
 check kernel 'fairydust/usb4/tools/test-staging-tools.py' 'python3 mseries/fairydust/usb4/tools/test-staging-tools.py'
+check kernel 'fairydust/usb4/tools/test-archive-check.py' 'python3 mseries/fairydust/usb4/tools/test-archive-check.py'
 check kernel 'boot/test-prepare-uki-kernels.py' 'python3 mseries/boot/test-prepare-uki-kernels.py'
 check kernel 'test-kernel-config.py' 'python3 mseries/test-kernel-config.py'
 check kernel 'test-kernel-pin.py' 'python3 mseries/test-kernel-pin.py'
