@@ -1,3 +1,7 @@
+## T3 Dock launcher and Wingpanel — 2026-10-27
+
+The owner chose to retain the unified Wingpanel menu. The Dock launcher opens the T3 window and its taskbar status area does not add a second T3 menu. The Dock source-preparation guard checks these boundaries; the Wingpanel module is not retired. Source preparation is verified against the pinned upstream Dock, with live desktop acceptance still outstanding.
+
 ## T3 panel menu HIG audit — 2026-10-27
 
 Audit of the unified T3 Wingpanel menu against the elementary HIG: [`t3-wingpanel/HIG-AUDIT.md`](t3-wingpanel/HIG-AUDIT.md). Fixed in source: nested scrollers that hid the second plan window and running threads, menu width jumping between tabs, idle tooltip "0 running" and a never-updated accessible name, raw token counts/cost/timestamps, and the double use of "Activity". Fixture tests pass (`t3-wingpanel/test.sh`); before/after renders in `t3-wingpanel/receipts/2026-10-27-hig-audit/`. Not installed or loaded into the live panel. Owner then approved H1–H5, done in the same PR: one tab bar, plain menu-item footer (Open T3, Activity, Fleet, T3 Settings…), 16 px embedded icons, system text size, badge only for approvals.

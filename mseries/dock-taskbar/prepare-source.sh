@@ -39,8 +39,8 @@ git -C "$source_dir" apply "$repo/mseries/patches/dock-running-apps.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-unique-launchers.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/dock-mode-geometry.patch"
 git -C "$source_dir" apply --unidiff-zero "$repo/mseries/patches/dock-launcher-binding-lifecycle.patch"
-# T3 has one presence: its launcher opens the app window like any other app (no dropdown on click,
-# no second status-area button, no Wingpanel module). The menu sources stay linked for their tests.
+# The T3 launcher opens the app window; the unified Wingpanel menu remains available.
+# No extra status-area button is added. Menu sources stay linked for their tests.
 git -C "$source_dir" apply "$repo/mseries/patches/dock-taskbar-t3r-popup.patch"
 python3 - "$source_dir/src/AppSystem/Launcher.vala" <<'PY'
 import pathlib, sys
@@ -90,7 +90,7 @@ for filename, required in {
             raise SystemExit(f'Incomplete Windows taskbar source: {filename} lacks {token}')
 PY
 
-# One T3 presence: neither the launcher nor the status area may host the T3 dropdown.
+# Neither the launcher nor the taskbar status area may host the T3 dropdown.
 python3 - "$source_dir" <<'PYONE'
 from pathlib import Path
 import sys

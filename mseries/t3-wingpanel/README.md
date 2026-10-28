@@ -1,10 +1,4 @@
-# Unified native T3 panel (retired)
-
-**2026-10-27:** retired. T3 has one presence, its Dock launcher and window (see
-[dock-taskbar](../dock-taskbar/README.md)). Remove an installed module with
-`sudo bash mseries/install-t3-wingpanel.sh --uninstall` (then the panel reloads at the next login, or
-restart it). The notes below are kept for history.
-
+# Unified native T3 panel
 
 One GTK 4 / Granite 7 Wingpanel module replaces the standalone CodexBar,
 RepoBar and T3 indicators. It embeds the **same** maintained menu used by the
