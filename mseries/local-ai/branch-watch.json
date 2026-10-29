@@ -51,7 +51,9 @@
       "branches": [
         "aurora-rc",
         "aurora-edge",
-        "aurora-wip"
+        "aurora-wip",
+        "integration/aurora",
+        "m4/j713-t8132-integ-20261023"
       ],
       "open_prs": true,
       "discover_branches": true
@@ -59,6 +61,50 @@
     {
       "repo": "omacom/linux-aurora",
       "base": "integration/aurora",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/linux-aurora",
+      "base_repo": "omacom/linux-aurora",
+      "base": "integration/aurora",
+      "branches": [
+        "config/udmabuf-zero-copy-host-memory",
+        "egpu-nonposted-bars",
+        "w86/tas27xx-quiet-probe-defer"
+      ],
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/linux-omarchy-m6",
+      "base": "m6-bringup",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "omacom/m1n1",
+      "base": "integration/aurora",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/m1n1",
+      "base_repo": "omacom/m1n1",
+      "base": "integration/aurora",
+      "branches": [
+        "main",
+        "m6-bringup"
+      ],
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "GravityLinux/linux",
+      "base": "gravity-m4",
+      "branches": [
+        "replacement/210-gpu"
+      ],
       "open_prs": true,
       "discover_branches": true
     },
