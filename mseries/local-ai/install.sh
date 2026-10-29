@@ -44,8 +44,10 @@ checkout() {
   [[ $(git -C "$work/$name" rev-parse HEAD) == "$pin" ]] || {
     echo "Unexpected source revision in $work/$name; use a separate MSERIES_AI_SOURCES directory." >&2; exit 1;
   }
-  if [[ $name == coreglass ]] && cmp -s <(git -C "$work/$name" diff) "$script_dir/coreglass-local.patch"; then
-    return
+  # A rerun finds our coreglass patch from the last run; take it back out (it is applied again
+  # below). Comparing bytes with the patch file breaks once its index lines are from an older pin.
+  if [[ $name == coreglass ]] && git -C "$work/$name" apply -R --check "$script_dir/coreglass-local.patch" 2>/dev/null; then
+    git -C "$work/$name" apply -R "$script_dir/coreglass-local.patch"
   fi
   [[ -z $(git -C "$work/$name" status --porcelain --untracked-files=no) ]] || {
     echo "Tracked changes in $work/$name; refusing to build a modified source." >&2; exit 1;
