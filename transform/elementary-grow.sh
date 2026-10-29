@@ -423,6 +423,7 @@ EOF
     # shellcheck source=/dev/null
     . "$REPO_ROOT/mseries/lib-device.sh"
     if [[ $(mseries_device_class) == desktop ]]; then
+      # shellcheck disable=SC2054  # --skip takes one comma-joined list, not an array
       enhance_args=(--skip power,battery)
       log "desktop Mac ($(mseries_dt_boards | grep -m1 '^apple,j')): skipping the power and battery modules"
     fi
