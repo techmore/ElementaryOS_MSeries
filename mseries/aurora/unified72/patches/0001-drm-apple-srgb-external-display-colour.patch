@@ -1,5 +1,5 @@
 diff --git a/drivers/gpu/drm/apple/dcp-internal.h b/drivers/gpu/drm/apple/dcp-internal.h
-index 5aedd1acb59451..4c439ac9355af2 100644
+index 0db9ff616da7f9..19c4bed14c2b1a 100644
 --- a/drivers/gpu/drm/apple/dcp-internal.h
 +++ b/drivers/gpu/drm/apple/dcp-internal.h
 @@ -24,6 +24,9 @@
@@ -9,11 +9,11 @@ index 5aedd1acb59451..4c439ac9355af2 100644
 +
 +/* dcp.c: appledrm.external_srgb module parameter */
 +extern bool external_srgb;
+ #include "dcp-panel-edid.h"
  #include "dcp-180hz.h"
  #include "iomfb.h"
- #include "iomfb_h17p.h"
 diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
-index e84af350c7e081..0839eafc280b88 100644
+index 14d3bdf6403357..4bb8c7ca1e6ea4 100644
 --- a/drivers/gpu/drm/apple/dcp.c
 +++ b/drivers/gpu/drm/apple/dcp.c
 @@ -208,6 +208,11 @@ static bool unstable_edid = true;
@@ -29,10 +29,10 @@ index e84af350c7e081..0839eafc280b88 100644
  
  bool dcp_is_external_h17p(struct apple_dcp *dcp)
 diff --git a/drivers/gpu/drm/apple/iomfb_template.c b/drivers/gpu/drm/apple/iomfb_template.c
-index ad3f1a5291bae1..b7227ff8136063 100644
+index c1b0e21b65e5e6..38e681615c5551 100644
 --- a/drivers/gpu/drm/apple/iomfb_template.c
 +++ b/drivers/gpu/drm/apple/iomfb_template.c
-@@ -2503,6 +2503,19 @@ void DCP_FW_NAME(iomfb_flush)(struct apple_dcp *dcp, struct drm_crtc *crtc, stru
+@@ -2515,6 +2515,19 @@ void DCP_FW_NAME(iomfb_flush)(struct apple_dcp *dcp, struct drm_crtc *crtc, stru
  		    req->surf[l].base.colorspace == DCP_COLORSPACE_BG_SRGB)
  			req->surf[l].base.colorspace = DCP_COLORSPACE_NATIVE;
  
@@ -53,7 +53,7 @@ index ad3f1a5291bae1..b7227ff8136063 100644
  		/* H17P external SDR RGB needs an sRGB source tag. Native
  		 * tagging washes out the same pixel values on this profile.
 diff --git a/drivers/gpu/drm/apple/parser.c b/drivers/gpu/drm/apple/parser.c
-index 0de67aa8fe710e..bb8a49378fb005 100644
+index 1d0638360251c6..f3265976768a7d 100644
 --- a/drivers/gpu/drm/apple/parser.c
 +++ b/drivers/gpu/drm/apple/parser.c
 @@ -8,6 +8,7 @@
@@ -150,12 +150,12 @@ index 0de67aa8fe710e..bb8a49378fb005 100644
  					&unsafe_rgb8 : NULL);
  		else if (!strcmp(key, "ID"))
 diff --git a/drivers/gpu/drm/apple/plane.c b/drivers/gpu/drm/apple/plane.c
-index aa5bbc9551d2ce..f97bef93e9be35 100644
+index cde215f62b1436..f922c6f24ce28d 100644
 --- a/drivers/gpu/drm/apple/plane.c
 +++ b/drivers/gpu/drm/apple/plane.c
-@@ -228,12 +228,15 @@ static void apple_plane_atomic_update(struct drm_plane *plane,
- 	struct drm_framebuffer *fb = base->fb;
- 	const struct drm_format_info *fmt = fb->format;
+@@ -422,12 +422,15 @@ static void apple_plane_atomic_update(struct drm_plane *plane,
+ 	}
+ 
  	/*
 -	 * DCP doesn't support XBGR8 / XRGB8 / XBGR2101010 natively. Blending as
 +	 * DCP doesn't support XBGR8 / XRGB8 / XRGB2101010 / XBGR2101010

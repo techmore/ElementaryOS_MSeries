@@ -1,5 +1,26 @@
 # Unified Aurora 7.2.10 build candidate
 
+## wip5 revision 7 — October 29, 2026 (booted on the J314S; install record in [wip5/README.md](wip5/README.md))
+
+The owner chose this re-pin. **Revision 7 pins `7.2.11-elementary-aurora72-wip5`**: merged omacom
+`integration/aurora` at `2f725546` (still 7.2.11). Upstream #158, the wip4 source `bd526b3c`, merged on 2026-10-23
+and is an ancestor of it, 388 commits back. The package is `linux-image-elementary-aurora72-wip5`, version
+`7.2.11+elementary.aurora72.wip5-1`, so it cannot overwrite the installed wip4.
+
+The five patches stay. **0001 (#157) is rebased on context only.** Its `dcp-internal.h` hunk now sits above the new
+`dcp-panel-edid.h` include. Its `plane.c` hunk is regenerated 194 lines lower, because the old file applied there only
+with fuzz 2. The added and removed lines are byte-identical to the wip4 file. 0002 (local) and 0003-0005 (#186) are
+unchanged and apply with offsets only. `candidate.py prepare --profile unified72` applied all five to the full archive
+in order (`git apply --check`, no fuzz) and passed the config gate.
+
+**The `UDMABUF`/`DMABUF_HEAPS` overlay stays.** Upstream turned these on only in the `asahi.config` fragment
+(`1b4997bb`). This build configures the `.20` recipe's full config, which has them off, so dropping the overlay
+would turn udmabuf off. The enhancements lane (`enh1`, base `.20`) is unchanged for the same reason. Its
+`0001-udmabuf` and `0006-egpu` patches stay.
+
+**Not done:** native build (CI), KUnit, any boot. Receipt: [review-wip5-2026-10-29.json](review-wip5-2026-10-29.json).
+wip4 revision 5 stays installed and is the running kernel; nothing is staged or armed.
+
 ## Upstream resync — October 29, 2026 (read-only)
 
 Receipt: [upstream-resync-2026-10-29.json](upstream-resync-2026-10-29.json); branch snapshot:
