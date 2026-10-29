@@ -1,31 +1,32 @@
 {
   "schema": 1,
   "base_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
-  "revision": 6,
+  "revision": 7,
   "source": {
-    "repository": "aurora-silicon/linux",
-    "commit": "bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+    "repository": "omacom/linux-aurora",
+    "commit": "2f725546d6ac6afe0bd5abfa1a844971519f0076",
     "git_url": "https://github.com/omacom/linux-aurora.git",
-    "git_tree_sha1": "a305f231d9137847c7f0ececca98e214cc30e792",
-    "upstream_pr": "https://github.com/omacom/linux-aurora/pull/158",
-    "name": "linux-aurora-bd526b3c11ccf8e91d6240261beb3219d8f17f03.tar.gz",
-    "url": "https://codeload.github.com/omacom/linux-aurora/tar.gz/bd526b3c11ccf8e91d6240261beb3219d8f17f03",
-    "archive_root": "linux-aurora-bd526b3c11ccf8e91d6240261beb3219d8f17f03",
-    "sha256": "881d5a061efa212ed28489311cc97ab6d9bf52891a6c7a00b18f0bbaff131957"
+    "git_tree_sha1": "1702c514fd6373bd0a81846c28dd1c030ebd663c",
+    "upstream_pr": null,
+    "upstream_ref": "integration/aurora (head on 2026-10-29; contains merged #158)",
+    "name": "linux-aurora-2f725546d6ac6afe0bd5abfa1a844971519f0076.tar.gz",
+    "url": "https://codeload.github.com/omacom/linux-aurora/tar.gz/2f725546d6ac6afe0bd5abfa1a844971519f0076",
+    "archive_root": "linux-aurora-2f725546d6ac6afe0bd5abfa1a844971519f0076",
+    "sha256": "3f1b9cd779cc4ff94b8ff0575388223e1da0894160763133eb6b836352272bad"
   },
   "kernel_release": {
-    "unified72": "7.2.11-elementary-aurora72-wip4"
+    "unified72": "7.2.11-elementary-aurora72-wip5"
   },
-  "debian_package": "linux-image-elementary-aurora72-wip4",
-  "debian_version": "7.2.11+elementary.aurora72.wip4-1",
+  "debian_package": "linux-image-elementary-aurora72-wip5",
+  "debian_version": "7.2.11+elementary.aurora72.wip5-1",
   "patches": [
     {
       "file": "0001-drm-apple-srgb-external-display-colour.patch",
-      "sha256": "9cd617e413c69006349e8ffa914ee0c16d1d7ba246d5afd9e1031aafbbf09573",
+      "sha256": "6dc8aadcdc0c7c39710d3b9164c388f11b0b2fa111b73e8e14a63bb759ba8fe1",
       "upstream": "https://github.com/omacom/linux-aurora/pull/157",
       "head": "9d3aeb24cb864d5f99a7172e9004884bf3c1a9a0",
       "profile": "candidate",
-      "note": "drm/apple: sRGB surfaces and an sRGB link colorimetry for external displays (unmerged upstream PR #157, 5 files, +73/-6). Applies to the #158 head with small offsets; must be re-checked if #158 moves."
+      "note": "drm/apple: sRGB surfaces and an sRGB link colorimetry for external displays (unmerged upstream PR #157, 5 files, +73/-6). Rebased for wip5 (context only; previous sha256 9cd617e413c69006349e8ffa914ee0c16d1d7ba246d5afd9e1031aafbbf09573): the dcp-internal.h hunk now sits above the new dcp-panel-edid.h include and the plane.c hunk moved +194 lines after upstream's plane-layout rewrite. Added and removed lines are unchanged. Must be re-checked if #157 moves."
     },
     {
       "file": "0002-drm-apple-free-dp-tunnel-route-from-silent-dcpext.patch",
@@ -71,7 +72,7 @@
     "tools/asahi/pmp-bootargs-tests.rs",
     "tools/asahi/pmp-power-tests.rs"
   ],
-  "qualification": "Same unmerged #158 source (head bd526b3c) and #157 patch as wip3, plus one local patch for the dcpext1 DPTX stall seen on the first wip3 dock plug (2026-10-22). Build-only candidate: patch application is checked on the exact source files and the pure routing logic was exercised in userspace; kernel build, KUnit, J314S boot, dock and recovery are NOT established. Replaces the wip3 pin in this file; wip3 stays installed and is the running trial kernel. Revision 6 adds upstream PR #186 (three commits, tested head 2a37f6f2) so ports route to a display controller only once their sink asserts HPD; it complements local patch 0002. Build-only; nothing booted.",
+  "qualification": "wip5: merged upstream source (omacom integration/aurora 2f725546, 7.2.11, 388 commits past the wip4 #158 head bd526b3c, which merged on 2026-10-23) with the same five patches: #157 rebased on context only, local 0002 and #186 (0003-0005) unchanged. Each applies in order with git apply and no fuzz. The UDMABUF/DMABUF_HEAPS overlay stays: the build configures the .20 recipe's full config, not upstream's asahi.config fragment, so the fragment's 1b4997bb settings do not reach this build. Build-only candidate: CI native build, KUnit, J314S boot, dock and recovery are NOT established. Replaces the wip4 pin in this file; wip4 (revision 5) stays installed and is the running kernel.",
   "superseded_patches": [
     {
       "file": "0001-stock-bindgen-layout-policy.patch",
@@ -82,5 +83,5 @@
       "note": "Historical local port for wip1; corresponding stock-bindgen default and BINDGEN_LAYOUT_TESTS opt-in are now carried in merged upstream source. Retained for provenance; not applied to wip2."
     }
   ],
-  "review_receipt": "review-wip4-2026-10-27.json"
+  "review_receipt": "review-wip5-2026-10-29.json"
 }

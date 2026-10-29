@@ -224,8 +224,9 @@ class QualificationTests(unittest.TestCase):
         self.assertRegex(data["source"]["sha256"], r"^[a-f0-9]{64}$")
         self.assertTrue(data["kernel_release"]["unified72"].startswith("7.2.11-"))
         lane = candidate.HERE / "unified72"
-        # wip4 carries the reviewed #157 display patch, one local DPTX-stall patch, and the
-        # three commits of upstream PR #186 (route DP-alt ports only once their sink asserts HPD).
+        # wip5 (merged integration/aurora 2f725546) carries the rebased #157 display patch, one local
+        # DPTX-stall patch, and the three commits of upstream PR #186 (route DP-alt ports only
+        # once their sink asserts HPD).
         self.assertEqual([patch["file"] for patch in data["patches"]],
                          ["0001-drm-apple-srgb-external-display-colour.patch",
                           "0002-drm-apple-free-dp-tunnel-route-from-silent-dcpext.patch",
@@ -249,9 +250,13 @@ class QualificationTests(unittest.TestCase):
         self.assertEqual(candidate.sha256(lane / "patches" / retired["file"]),
                          retired["sha256"])
         self.assertEqual(data["kernel_release"]["unified72"],
-                         "7.2.11-elementary-aurora72-wip4")
-        self.assertEqual(data["debian_package"], "linux-image-elementary-aurora72-wip4")
-        # The installed wip3 and wip2 packages must stay distinct from this one.
+                         "7.2.11-elementary-aurora72-wip5")
+        self.assertEqual(data["debian_package"], "linux-image-elementary-aurora72-wip5")
+        self.assertEqual(data["source"]["commit"], "2f725546d6ac6afe0bd5abfa1a844971519f0076")
+        # udmabuf is not in the .20 recipe config this build starts from, so the overlay stays.
+        self.assertEqual(data["config"]["candidate"]["UDMABUF"], "y")
+        # The installed wip4, wip3 and wip2 packages must stay distinct from this one.
+        self.assertNotEqual(data["debian_package"], "linux-image-elementary-aurora72-wip4")
         self.assertNotEqual(data["debian_package"], "linux-image-elementary-aurora72-wip3")
         self.assertNotEqual(data["debian_package"], "linux-image-elementary-aurora72-wip2")
         receipt = json.loads((lane / data["review_receipt"]).read_text())

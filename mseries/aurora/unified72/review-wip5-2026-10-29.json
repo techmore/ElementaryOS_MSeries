@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "reviewed_on": "2026-10-29",
+  "source": "2f725546d6ac6afe0bd5abfa1a844971519f0076",
+  "previous_source": "bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+  "upstream_pr": null,
+  "upstream_status": "Source is omacom/linux-aurora integration/aurora at 2f725546 (7.2.11). #158 (the wip4 source) merged on 2026-10-23 and is an ancestor; 388 commits newer. #157 (head 9d3aeb24) and #186 (head 2a37f6f2) still open, unchanged.",
+  "patches": [
+    {
+      "file": "0001-drm-apple-srgb-external-display-colour.patch",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/157",
+      "head": "9d3aeb24cb864d5f99a7172e9004884bf3c1a9a0",
+      "base_of_pr": "44d5afc79da79bb3b17a3ee7494cb8d07a1f1aaa",
+      "files": [
+        "drivers/gpu/drm/apple/dcp-internal.h",
+        "drivers/gpu/drm/apple/dcp.c",
+        "drivers/gpu/drm/apple/iomfb_template.c",
+        "drivers/gpu/drm/apple/parser.c",
+        "drivers/gpu/drm/apple/plane.c"
+      ],
+      "applicability": "Rebased (context only) on the five files at 2f725546: dcp-internal.h hunk placed above the new dcp-panel-edid.h include, plane.c hunk regenerated at +194 lines (it applied before only with fuzz 2). Added/removed lines are byte-identical to the wip4 file. git apply --check passes with no fuzz.",
+      "previous_sha256": "9cd617e413c69006349e8ffa914ee0c16d1d7ba246d5afd9e1031aafbbf09573"
+    },
+    {
+      "file": "0002-drm-apple-free-dp-tunnel-route-from-silent-dcpext.patch",
+      "upstream": null,
+      "files": [
+        "drivers/gpu/drm/apple/dcp-fabric-core.c",
+        "drivers/gpu/drm/apple/dcp-fabric-core.h",
+        "drivers/gpu/drm/apple/dcp-fabric-test.c",
+        "drivers/gpu/drm/apple/dcp-fabric.c",
+        "drivers/gpu/drm/apple/dcp-internal.h",
+        "drivers/gpu/drm/apple/dcp.c"
+      ],
+      "applicability": "Unchanged file. git apply --check passes in series order after the rebased 0001 at 2f725546, offsets only (git apply does not fuzz).",
+      "evidence": "mseries/aurora/hardware-tests/2026-10-22-j314s-wip3-dcpext1-dptx-wedge.md"
+    },
+    {
+      "file": "0003-drm-apple-dcp-let-a-typec-port-with-hpd-take-over-a-held-pipeline.patch",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/186",
+      "head": "4da4932b130b21d7367d56859f558c4e8a8f101f",
+      "base_of_pr": "42672ed79dead511ecf65e96d988a98a0f94b5bb",
+      "files": [
+        "drivers/gpu/drm/apple/dcp-fabric.c"
+      ],
+      "applicability": "Unchanged file. git apply --check passes in series order after the rebased 0001 at 2f725546, offsets only (git apply does not fuzz)."
+    },
+    {
+      "file": "0004-drm-apple-dcp-route-a-dp-alt-port-only-once-its-sink-asserts-hpd.patch",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/186",
+      "head": "bd1ad7b9b2795b7d3b3c7e616a54b78f9c92c6e0",
+      "base_of_pr": "42672ed79dead511ecf65e96d988a98a0f94b5bb",
+      "files": [
+        "drivers/gpu/drm/apple/dcp-fabric.c"
+      ],
+      "applicability": "Unchanged file. git apply --check passes in series order after the rebased 0001 at 2f725546, offsets only (git apply does not fuzz)."
+    },
+    {
+      "file": "0005-usb-typec-tipd-treat-enospc-as-a-taken-display-on-every-soc.patch",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/186",
+      "head": "2a37f6f206456462970b3bbb3bf9bf8bd8944acd",
+      "base_of_pr": "42672ed79dead511ecf65e96d988a98a0f94b5bb",
+      "files": [
+        "drivers/usb/typec/tipd/cd321x-pm-test.c",
+        "drivers/usb/typec/tipd/cd321x-pm.h"
+      ],
+      "applicability": "Unchanged file. git apply --check passes in series order after the rebased 0001 at 2f725546, offsets only (git apply does not fuzz)."
+    }
+  ],
+  "full_tree_check": {
+    "command": "python3 mseries/aurora/candidate.py prepare --profile unified72 --cache ~/.cache/mseries-upstream/wip5 --output ~/.cache/mseries-upstream/wip5/prepared",
+    "result": "exit 0: git apply --check then git apply for 0001-0005 in order on the full extracted archive; config gate passed",
+    "source_fetch_method": "pinned-archive-sha256",
+    "prepared_config_sha256": "20efc4af999b142e5cac358b9567a00a24bf3b687b30d47cadccc194c888126d",
+    "resolved": {
+      "UDMABUF": "y",
+      "DMABUF_HEAPS": "y",
+      "DMABUF_HEAPS_SYSTEM": "y",
+      "DRM_AMDGPU": "n"
+    },
+    "localversion": "-elementary-aurora72-wip5"
+  },
+  "config_overlay": "Kept. The .20 recipe config used by candidate.py has '# CONFIG_UDMABUF is not set' and '# CONFIG_DMABUF_HEAPS is not set'; upstream enabled them only in the arch/arm64/configs/asahi.config fragment (1b4997bb), which this build does not read. Dropping the overlay would turn udmabuf off.",
+  "not_rerun": [
+    "kernel build (CI aurora-enhancements.yml decides)",
+    "candidate.py check host tests (no local rustc run here)",
+    "KUnit, including fabric_unresponsive_pipeline_test and the cd321x tests",
+    "64-fix semantic parity",
+    "any hardware test"
+  ],
+  "known_interactions": [
+    "0001: upstream rewrote plane layout handling (8c26443, validate the plane layout sent to DCP); the premultiplied-format hunk is unchanged, but the build is the real check.",
+    "0002 and 0003/0004 both edit dcp-fabric.c; unchanged from wip4, offsets only. Their semantic interaction is still unreviewed.",
+    "Upstream thunderbolt DP-pairing deferral (7fcb47d, 3975d42, bc1b422) is new in this source and sits on the dock path that 0002-0004 also touch.",
+    "Config options added upstream after .20 (for example the CIO reset controller built in, 669333d2) take olddefconfig defaults here, because the build uses the .20 recipe config, as for wip4.",
+    "Upstream PR #163 is still not carried: it fixes the same tipd bug as 0005 and conflicts with it."
+  ],
+  "archive_verification": {
+    "sha256": "3f1b9cd779cc4ff94b8ff0575388223e1da0894160763133eb6b836352272bad",
+    "bytes": 271150123,
+    "method": "Entire codeload gzip downloaded to ~/.cache and hashed locally (trust on first use: the pin is this digest); tar root read from the archive listing; Makefile reads VERSION 7, PATCHLEVEL 2, SUBLEVEL 11. git_tree_sha1 1702c514 is from the GitHub commit object, for the Git fallback.",
+    "archive_root": "linux-aurora-2f725546d6ac6afe0bd5abfa1a844971519f0076"
+  }
+}
