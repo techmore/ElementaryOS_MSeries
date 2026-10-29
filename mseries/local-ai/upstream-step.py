@@ -145,7 +145,11 @@ def step(data, name, ref=None):
         kept.append(entry)
     up["patches"] = kept
     up["pin"] = new_pin
-    up.pop("pin_label", None)
+    # A release tag stays the label, so status compares it with the latest release.
+    if re.fullmatch(r"v[0-9][0-9.]*", ref) and up.get("track") != "omarchy-mlx":
+        up["pin_label"] = ref
+    else:
+        up.pop("pin_label", None)
     checkout = up.get("install_checkout")
     if checkout:
         text = INSTALL.read_text()
