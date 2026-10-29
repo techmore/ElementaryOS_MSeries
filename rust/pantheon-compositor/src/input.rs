@@ -279,7 +279,9 @@ impl PantheonCompositor {
                     self.terminal_shift_key = None;
                     self.seat.get_keyboard().unwrap().input::<(), _>(
                         self,
-                        smithay::backend::input::Keycode::new(crate::terminal_keys::KEY_LEFTSHIFT + 8),
+                        smithay::backend::input::Keycode::new(
+                            crate::terminal_keys::KEY_LEFTSHIFT + 8,
+                        ),
                         smithay::backend::input::KeyState::Released,
                         SERIAL_COUNTER.next_serial(),
                         time,
@@ -335,6 +337,9 @@ impl PantheonCompositor {
                     self.request_winit_redraw();
                 }
                 self.snap_assist_hover(new_location);
+                if !pointer.is_grabbed() {
+                    self.update_frame_pointer(new_location);
+                }
                 self.refresh_panel_visibility();
                 pointer.frame(self);
             }
@@ -378,6 +383,9 @@ impl PantheonCompositor {
                     self.request_winit_redraw();
                 }
                 self.snap_assist_hover(pos);
+                if !pointer.is_grabbed() {
+                    self.update_frame_pointer(pos);
+                }
                 self.refresh_panel_visibility();
                 pointer.frame(self);
             }
@@ -433,7 +441,22 @@ impl PantheonCompositor {
                     return;
                 }
 
-                if !self.session_locked
+                // Title bar, buttons and resize band of a server-side frame.
+                let on_frame = !self.session_locked
+                    && ButtonState::Pressed == button_state
+                    && !pointer.is_grabbed()
+                    && self.handle_frame_press(
+                        &pointer,
+                        pointer.current_location(),
+                        button,
+                        serial,
+                    );
+                if ButtonState::Released == button_state {
+                    self.handle_frame_release(pointer.current_location());
+                }
+
+                if !on_frame
+                    && !self.session_locked
                     && ButtonState::Pressed == button_state
                     && !pointer.is_grabbed()
                 {

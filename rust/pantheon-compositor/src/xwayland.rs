@@ -26,8 +26,25 @@ use smithay::{
     },
 };
 
+use smithay::{
+    backend::renderer::{
+        ImportMem,
+        element::{Kind, memory::MemoryRenderBufferRenderElement},
+    },
+    desktop::space::SpaceElement,
+    input::pointer::{CursorIcon, GrabStartData as PointerGrabStartData, PointerHandle},
+    output::Output,
+    utils::Serial,
+};
+
+use crate::decorations::{self, ButtonKind, FrameHit, FrameSpec, PaintKey, TITLE_HEIGHT};
 use crate::grabs::{ResizeSurfaceGrab, resize_grab::ResizeEdge as PantheonResizeEdge};
 use crate::{PantheonCompositor, attention::Reason, tiling::ModeRequest};
+
+/// BTN_LEFT from linux/input-event-codes.h.
+const BTN_LEFT: u32 = 0x110;
+/// Two title-bar clicks closer than this maximize or restore the window.
+const DOUBLE_CLICK: std::time::Duration = std::time::Duration::from_millis(400);
 
 /// Whether the window manager may give this X11 window keyboard focus and
 /// draw it as active. Override-redirect windows (menus, tooltips, the
@@ -154,6 +171,22 @@ impl XwmHandler for PantheonCompositor {
     fn property_notify(&mut self, _xwm: XwmId, surface: X11Surface, property: WmWindowProperty) {
         // Title, class, pid and hints feed the Gala window snapshot.
         self.note_title_changed();
+        match property {
+            // The server-side frame shows the title and follows the hints.
+            WmWindowProperty::Title
+            | WmWindowProperty::NormalHints
+            | WmWindowProperty::WindowType => {
+                self.request_native_redraw();
+                self.request_winit_redraw();
+            }
+            // A window that starts or stops asking for a frame: keep it in the work area.
+            WmWindowProperty::MotifHints => {
+                self.reconfigure_managed_windows();
+                self.request_native_redraw();
+                self.request_winit_redraw();
+            }
+            _ => {}
+        }
         // WM_HINTS urgency is an attention request (see attention.rs).
         if property != WmWindowProperty::Hints {
             return;
@@ -174,11 +207,21 @@ impl XwmHandler for PantheonCompositor {
             return;
         }
         let geometry = surface.last_configure();
+        // A framed window is centred with its title bar in the work area.
+        let framed = decorations::wants_frame(&surface);
         let location = self
             .space
             .outputs()
             .find_map(|output| {
                 let rect = self.space.output_geometry(output)?;
+                if framed {
+                    let area = self.work_area_for_output(rect);
+                    let height = geometry.size.h + TITLE_HEIGHT;
+                    return Some(Point::from((
+                        area.loc.x + (area.size.w - geometry.size.w).max(0) / 2,
+                        area.loc.y + TITLE_HEIGHT + (area.size.h - height).max(0) / 2,
+                    )));
+                }
                 Some(Point::from((
                     rect.loc.x + (rect.size.w - geometry.size.w).max(0) / 2,
                     rect.loc.y + (rect.size.h - geometry.size.h).max(0) / 2,
@@ -231,6 +274,7 @@ impl XwmHandler for PantheonCompositor {
                 .map(|(window, _, _)| window)
         });
         if let Some(window) = window {
+            self.frame_buffers.forget(window.id());
             self.space.unmap_elem(&window);
             if !self
                 .x11_minimized_windows
@@ -535,9 +579,6 @@ impl PantheonCompositor {
         let Some(window) = self.find_x11_window(surface) else {
             return;
         };
-        let Some(location) = self.space.element_location(&window) else {
-            return;
-        };
         let edges = match edge {
             ResizeEdge::Top => PantheonResizeEdge::TOP,
             ResizeEdge::Bottom => PantheonResizeEdge::BOTTOM,
@@ -548,25 +589,38 @@ impl PantheonCompositor {
             ResizeEdge::TopRight => PantheonResizeEdge::TOP_RIGHT,
             ResizeEdge::BottomRight => PantheonResizeEdge::BOTTOM_RIGHT,
         };
-        // The shared edge of a snap group resizes both members.
-        if self.try_start_split_resize(
+        self.start_x11_resize_grab(
             &pointer,
-            start_data.clone(),
-            &window,
+            start_data,
+            window,
             edges,
             smithay::utils::SERIAL_COUNTER.next_serial(),
-        ) {
+        );
+    }
+
+    /// Resize an X11 window from `edges`, for `_NET_WM_MOVERESIZE` and the frame.
+    fn start_x11_resize_grab(
+        &mut self,
+        pointer: &PointerHandle<Self>,
+        start_data: PointerGrabStartData<Self>,
+        window: Window,
+        edges: PantheonResizeEdge,
+        serial: Serial,
+    ) {
+        if self.placement_of(&window).is_fullscreen() {
+            return;
+        }
+        // The shared edge of a snap group resizes both members.
+        if self.try_start_split_resize(pointer, start_data.clone(), &window, edges, serial) {
             return;
         }
         self.float_in_place(&window);
+        let Some(location) = self.space.element_location(&window) else {
+            return;
+        };
         let rect = Rectangle::new(location, window.geometry().size);
         let grab = ResizeSurfaceGrab::start(start_data, window, edges, rect);
-        pointer.set_grab(
-            self,
-            grab,
-            smithay::utils::SERIAL_COUNTER.next_serial(),
-            Focus::Clear,
-        );
+        pointer.set_grab(self, grab, serial, Focus::Clear);
     }
 
     pub(crate) fn set_x11_keyboard_focus(
@@ -636,6 +690,247 @@ impl PantheonCompositor {
             if let Some(keyboard) = self.seat.get_keyboard() {
                 keyboard.set_focus(self, Some(toplevel.wl_surface().clone()), serial);
             }
+        }
+    }
+}
+
+/// Server-side frames for X11 windows (see `decorations.rs`).
+impl PantheonCompositor {
+    pub(crate) fn refresh_frame_style(&mut self) {
+        let style = decorations::FrameStyle::load();
+        if style != self.frame_style {
+            self.frame_style = style;
+            self.frame_buffers.clear();
+            self.request_native_redraw();
+            self.request_winit_redraw();
+        }
+    }
+
+    /// The frame of `window` whose own geometry is `content` (space coordinates).
+    pub(crate) fn frame_spec(
+        &self,
+        window: &Window,
+        content: Rectangle<i32, Logical>,
+    ) -> Option<FrameSpec> {
+        let surface = window.x11_surface()?;
+        if !decorations::wants_frame(surface) || surface.is_fullscreen() {
+            return None;
+        }
+        let placement = self.placement_of(window);
+        if placement.is_fullscreen() {
+            return None;
+        }
+        let functions = surface.motif_hints().functions;
+        let allows = |function| decorations::motif_allows(functions, function);
+        use smithay::xwayland::xwm::MwmFunctionsHint as F;
+        let (min, max) = Self::size_hints(window);
+        let fixed = max.w > 0 && max.h > 0 && min == max;
+        let resizable = !fixed && allows(F::RESIZE);
+        Some(FrameSpec {
+            content,
+            resizable: resizable && !placement.is_maximized(),
+            can_close: allows(F::CLOSE),
+            can_minimize: allows(F::MINIMIZE) && surface.is_transient_for().is_none(),
+            can_maximize: resizable && allows(F::MAXIMIZE),
+            maximized: placement.is_maximized(),
+        })
+    }
+
+    /// The frame of a mapped window, if it has one.
+    pub(crate) fn window_frame(&self, window: &Window) -> Option<FrameSpec> {
+        let location = self.space.element_location(window)?;
+        self.frame_spec(window, Rectangle::new(location, window.geometry().size))
+    }
+
+    /// Height of the window's server-side title bar, 0 without one.
+    pub(crate) fn frame_top(&self, window: &Window) -> i32 {
+        self.window_frame(window).map_or(0, |_| TITLE_HEIGHT)
+    }
+
+    /// The frame part under `pos`, unless a popup or a window above covers it.
+    pub(crate) fn frame_under(&self, pos: Point<f64, Logical>) -> Option<(Window, FrameHit)> {
+        if self.session_locked || self.overview.is_some() || self.gesture_animation.is_some() {
+            return None;
+        }
+        if crate::popup_stack::popup_under(&self.space, pos).is_some() {
+            return None;
+        }
+        for window in self.space.elements().rev() {
+            let Some(location) = self.space.element_location(window) else {
+                continue;
+            };
+            if let Some(spec) = self.window_frame(window)
+                && let Some(hit) = spec.hit(&self.frame_style.layout, pos)
+            {
+                return Some((window.clone(), hit));
+            }
+            let local = pos - (location - window.geometry().loc).to_f64();
+            if window.bbox().to_f64().contains(local) && window.is_in_input_region(&local) {
+                return None;
+            }
+        }
+        None
+    }
+
+    /// The title bar of `window` as a render element for `output`.
+    pub(crate) fn frame_render_elements<R>(
+        &self,
+        renderer: &mut R,
+        window: &Window,
+        content: Rectangle<i32, Logical>,
+        output: &Output,
+    ) -> Option<decorations::FrameElements<R>>
+    where
+        R: ImportMem,
+        R::TextureId: Send + Clone + 'static,
+    {
+        let spec = self.frame_spec(window, content)?;
+        let surface = window.x11_surface()?;
+        let outer = spec.outer();
+        let title = spec.title_bar();
+        let Some(geometry) = self.space.output_geometry(output) else {
+            return Some((outer, Vec::new()));
+        };
+        if !title.overlaps(geometry) {
+            return Some((outer, Vec::new()));
+        }
+        let scale = output.current_scale().fractional_scale();
+        let key = PaintKey {
+            width: content.size.w,
+            scale: scale.ceil().max(1.0) as i32,
+            title: surface.title(),
+            active: surface.is_activated(),
+            hovered: self
+                .frame_hover
+                .filter(|(id, _)| *id == window.id())
+                .map(|(_, kind)| kind),
+            buttons: spec.buttons(&self.frame_style.layout),
+            maximized: spec.maximized,
+            style: self.frame_style.clone(),
+        };
+        let Some(buffer) = self.frame_buffers.get(window.id(), key) else {
+            return Some((outer, Vec::new()));
+        };
+        let location = (title.loc - geometry.loc).to_f64().to_physical(scale);
+        let element = MemoryRenderBufferRenderElement::from_buffer(
+            renderer,
+            location,
+            &buffer,
+            None,
+            None,
+            Some(title.size),
+            Kind::Unspecified,
+        )
+        .ok();
+        Some((outer, element.into_iter().collect()))
+    }
+
+    /// Pointer motion with no grab: frame cursor and title-bar button hover.
+    pub(crate) fn update_frame_pointer(&mut self, pos: Point<f64, Logical>) {
+        let hit = self.frame_under(pos);
+        let cursor = hit.as_ref().map(|(_, hit)| match hit {
+            FrameHit::Edge(edges) => decorations::edge_cursor(*edges),
+            FrameHit::Title | FrameHit::Button(_) => CursorIcon::Default,
+        });
+        let hover = hit.and_then(|(window, hit)| match hit {
+            FrameHit::Button(kind) => Some((window.id(), kind)),
+            _ => None,
+        });
+        if cursor != self.frame_cursor || hover != self.frame_hover {
+            self.frame_cursor = cursor;
+            self.frame_hover = hover;
+            self.request_native_redraw();
+            self.request_winit_redraw();
+        }
+    }
+
+    /// A button press on a window frame: raise and focus, then drag, resize or
+    /// arm a title-bar button. Returns false when `pos` is not on a frame.
+    pub(crate) fn handle_frame_press(
+        &mut self,
+        pointer: &PointerHandle<Self>,
+        pos: Point<f64, Logical>,
+        button: u32,
+        serial: Serial,
+    ) -> bool {
+        let Some((window, hit)) = self.frame_under(pos) else {
+            return false;
+        };
+        self.raise_window(&window, true);
+        self.focus_window_keyboard(&window, serial);
+        if button != BTN_LEFT {
+            return true;
+        }
+        let start_data = PointerGrabStartData {
+            focus: None,
+            button,
+            location: pos,
+        };
+        match hit {
+            FrameHit::Button(kind) => {
+                self.frame_press = Some((window.id(), kind));
+            }
+            FrameHit::Title => {
+                let now = std::time::Instant::now();
+                let double = self
+                    .last_title_click
+                    .is_some_and(|(id, at)| id == window.id() && now - at < DOUBLE_CLICK);
+                if double {
+                    self.last_title_click = None;
+                    self.toggle_frame_maximize(&window);
+                } else {
+                    self.last_title_click = Some((window.id(), now));
+                    self.start_move_grab(pointer, start_data, window, serial);
+                }
+            }
+            FrameHit::Edge(edges) => {
+                self.start_x11_resize_grab(pointer, start_data, window, edges, serial);
+            }
+        }
+        true
+    }
+
+    /// Button release: a title-bar button acts when released over itself.
+    pub(crate) fn handle_frame_release(&mut self, pos: Point<f64, Logical>) {
+        let Some((id, kind)) = self.frame_press.take() else {
+            return;
+        };
+        let Some((window, FrameHit::Button(over))) = self.frame_under(pos) else {
+            return;
+        };
+        if window.id() != id || over != kind {
+            return;
+        }
+        let Some(surface) = window.x11_surface().cloned() else {
+            return;
+        };
+        match kind {
+            ButtonKind::Close => {
+                // WM_DELETE_WINDOW when the client supports it, else XKillClient-like destroy.
+                if let Err(error) = surface.close() {
+                    tracing::warn!(?error, "could not close X11 window");
+                }
+            }
+            ButtonKind::Minimize => {
+                if let Some(xwm) = surface.xwm_id() {
+                    XwmHandler::minimize_request(self, xwm, surface);
+                }
+                self.frame_hover = None;
+            }
+            ButtonKind::Maximize => self.toggle_frame_maximize(&window),
+        }
+        self.request_native_redraw();
+        self.request_winit_redraw();
+    }
+
+    fn toggle_frame_maximize(&mut self, window: &Window) {
+        let Some(spec) = self.window_frame(window) else {
+            return;
+        };
+        if spec.maximized {
+            self.set_window_mode(window, ModeRequest::Unmaximize);
+        } else if spec.can_maximize {
+            self.set_window_mode(window, ModeRequest::Maximize);
         }
     }
 }

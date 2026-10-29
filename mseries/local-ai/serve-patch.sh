@@ -13,22 +13,31 @@
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 prefix=${OMARCHY_MLX_SYSTEM_PREFIX:-$HOME/.local/share/mlx-omarchy}
+key=mlx-lm py=$prefix/venv/bin/python
 # model-worker.py and engine-compare.py read the same folder. Never /tmp: RAM-backed.
 out=${MSERIES_SERVE_PATCH_DIR:-$HOME/.local/share/mseries-ai/serve-patch}
-site=$(ls -d "$prefix"/venv/lib/python3.*/site-packages/mlx_lm | head -n1)
+# build-032 / check-032: the same patches ported to the mlx-lm 0.32 line in the oMLX venv
+# (install-omlx.sh), for engine-compare's lm032-patched-120k arm only; the live server is untouched.
+if [[ ${1:-build} == *-032 ]]; then
+  key=mlx-lm-032 py=${MSERIES_OMLX_HOME:-$HOME/.local/share/omlx-linux}/.venvs/omlx/bin/python
+  out=$HOME/.local/share/mseries-ai/serve-patch-032
+  prefix=
+fi
+site=$("$py" -c 'import mlx_lm, os; print(os.path.dirname(mlx_lm.__file__))')
 # upstreams.json is the one list of what we carry; upstream-step.py moves the pin and the files.
-want=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["upstreams"]["mlx-lm"]["pin"].lstrip("v"))' "$here/upstreams.json")
+want=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["upstreams"][sys.argv[2]]["pin"].lstrip("v"))' "$here/upstreams.json" "$key")
 mapfile -t patches < <(python3 -c 'import json,sys
-for p in json.load(open(sys.argv[1]))["upstreams"]["mlx-lm"]["patches"]: print(sys.argv[2] + "/" + p["file"])' "$here/upstreams.json" "$here")
+for p in json.load(open(sys.argv[1]))["upstreams"][sys.argv[3]]["patches"]: print(sys.argv[2] + "/" + p["file"])' "$here/upstreams.json" "$here" "$key")
 # Modules a patch imports (serve_X.py ships as mlx_lm/_mseries_X.py).
 mapfile -t extras < <(python3 -c 'import json,sys
-for p in json.load(open(sys.argv[1]))["upstreams"]["mlx-lm"]["patches"]:
-    for f in p.get("extra_files", []): print(f)' "$here/upstreams.json")
+for p in json.load(open(sys.argv[1]))["upstreams"][sys.argv[2]]["patches"]:
+    for f in p.get("extra_files", []): print(f)' "$here/upstreams.json" "$key")
 
 case ${1:-build} in
-  build)
-    version=$("$prefix/venv/bin/python" -c 'import mlx_lm; print(mlx_lm.__version__)')
-    [[ $version == "$want" ]] || { echo "installed mlx-lm is $version; these patches are for $want" >&2; exit 2; }
+  build|build-032)
+    version=$("$py" -c 'import mlx_lm; print(mlx_lm.__version__)')
+    # A release pin matches the version; a commit pin matches the dev version's +g<sha> suffix.
+    [[ $version == "$want" || $version == *"g$want"* ]] || { echo "installed mlx-lm is $version; these patches are for $want" >&2; exit 2; }
     mkdir -p "$out"
     rm -rf "$out/mlx_lm.new"
     cp -a "$site" "$out/mlx_lm.new"
@@ -49,12 +58,12 @@ case ${1:-build} in
     sha256sum "$site/server.py" | cut -d' ' -f1 > "$out/source-server-sha256"
     echo "MSERIES_SERVE_PATCH_DIR=$out"
     ;;
-  check)
-    PYTHONPATH="$prefix:$out" "$prefix/venv/bin/python" -c \
+  check|check-032)
+    PYTHONPATH="${prefix:+$prefix:}$out" "$py" -c \
       'import importlib, mlx_lm.server as s; g = importlib.import_module("mlx_lm.generate")
 print(s.__file__); print("skip-logprob-read:", hasattr(s, "_LOGPROB_READ_FORCED"))
 print("singleton cache:", getattr(g, "_rapid_singleton_cache_fastpath", False))
 import mlx.nn as nn; print("small rows:", getattr(nn.QuantizedLinear, "_mseries_small_rows", False))'
     ;;
-  *) echo "usage: $0 build|check" >&2; exit 2 ;;
+  *) echo "usage: $0 build|check|build-032|check-032" >&2; exit 2 ;;
 esac

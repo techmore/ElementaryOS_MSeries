@@ -1,8 +1,11 @@
 diff --git a/tools/hwxv2-to-anec.py b/tools/hwxv2-to-anec.py
-index 36bc130..dad3f32 100644
+index a75c9c1..062e7f7 100644
 --- a/tools/hwxv2-to-anec.py
 +++ b/tools/hwxv2-to-anec.py
-@@ -694,0 +695,25 @@ def convert_hwx(
+@@ -702,6 +702,31 @@ def convert_hwx(
+     return header + b"\0" * (ANEC_HEADER_SIZE - len(header)) + bytes(content)
+ 
+ 
 +def uniform_task_relayout(stream: bytes, bases: tuple[int, ...], stream_size: int, stride: int):
 +    """Normalize linked task slots, refusing ambiguous or truncated streams."""
 +    if stream_size != len(stream) or not bases or bases[0] != 0:
@@ -28,14 +31,30 @@ index 36bc130..dad3f32 100644
 +    return bytes(out), mapping
 +
 +
-@@ -722 +747,3 @@ def convert_hwx_file(
+ def convert_hwx_file(
+     src_path: str,
+     dst_path: str,
+@@ -729,12 +754,15 @@ def convert_hwx_file(
+             # geometry so every field stays consistent
+             bases = find_task_offsets(
+                 data, image.content_offset, image.content_size)
 -            rel_bases = [b - image.content_offset for b in bases]
 +            if len(bases) != image.td_count:
 +                raise ValueError("task count does not match HWX header")
 +            rel_bases = bases  # find_task_offsets already returns content-relative offsets
-@@ -727,0 +755 @@ def convert_hwx_file(
+             stream = bytes(
+                 data[image.content_offset:
+                      image.content_offset + image.task_stream_size])
+             new_stream, _ = uniform_task_relayout(
+                 stream, rel_bases, image.task_stream_size, uniform_stride)
 +            payload = kernel_payload(image, blob)
-@@ -738,2 +766,6 @@ def convert_hwx_file(
+             if payload is None:
+                 part1 = image.kernel_part1 or image.kernel_size
+                 payload = data[
+@@ -745,8 +773,12 @@ def convert_hwx_file(
+                          image.kernel_extra_off + image.kernel_size - part1]
+                     if image.kernel_extra_off else b""
+                 )
 -            kernel_offset = (-len(new_stream)) % 16
 -            content_size = len(new_stream) + kernel_offset + len(payload)
 +            padding = (-len(new_stream)) % 16
@@ -44,11 +63,20 @@ index 36bc130..dad3f32 100644
 +            tail = data[image.content_offset + original_kernel_end + image.kernel_gap:
 +                        image.content_offset + image.content_size + image.kernel_gap]
 +            content_size = kernel_offset + len(payload) + len(tail)
-@@ -753 +785 @@ def convert_hwx_file(
+             uniform_image = dataclasses.replace(
+                 image,
+                 task_stream_size=len(new_stream),
+@@ -760,8 +792,9 @@ def convert_hwx_file(
+                 output.write(header)
+                 output.write(b"\0" * (ANEC_HEADER_SIZE - len(header)))
+                 output.write(new_stream)
 -                output.write(b"\0" * kernel_offset)
 +                output.write(b"\0" * padding)
-@@ -754,0 +787 @@ def convert_hwx_file(
+                 output.write(payload)
 +                output.write(tail)
+             return uniform_image
+         header = _build_header(image, in_shape, out_shape, td_size_override)
+         payload = kernel_payload(image, blob)
 diff --git a/tools/test_uniform_relayout.py b/tools/test_uniform_relayout.py
 new file mode 100644
 index 0000000..e035e09

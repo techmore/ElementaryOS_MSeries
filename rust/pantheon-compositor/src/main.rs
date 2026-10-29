@@ -6,6 +6,7 @@ mod corner_render;
 mod corners;
 mod cursor;
 mod cursor_theme;
+mod decorations;
 mod display_config;
 #[cfg(feature = "native-drm")]
 mod display_trace;

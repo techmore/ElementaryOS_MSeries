@@ -21,6 +21,23 @@ would turn udmabuf off. The enhancements lane (`enh1`, base `.20`) is unchanged 
 **Not done:** native build (CI), KUnit, any boot. Receipt: [review-wip5-2026-10-29.json](review-wip5-2026-10-29.json).
 wip4 revision 5 stays installed and is the running kernel; nothing is staged or armed.
 
+## Upstream resync — October 29, 2026 (read-only)
+
+Receipt: [upstream-resync-2026-10-29.json](upstream-resync-2026-10-29.json); branch snapshot:
+[2026-10-29.json](../branch-audits/2026-10-29.json). Covers omacom/aurora-silicon, both m1n1 trees, Gravity and,
+for the first time, Joshua Warren's `linux-aurora`, `linux-omarchy-m6` and `m1n1` forks (now in
+`local-ai/branch-watch.json`).
+
+- **The laptop runs revision 5, not 6.** The installed wip4 `appledrm.ko` has 0002 but not #186 (0003-0005).
+- **#158 merged on 2026-10-23**, so `bd526b3c` is now an ancestor of `integration/aurora` (head `2f725546`, still
+  7.2.11, 388 commits ahead). #157 and #186 are open with unchanged heads. aurora-silicon's `integration/aurora`
+  moved to Linux 7.3.
+- **Absorbed upstream:** the `UDMABUF`/`DMABUF_HEAPS`/`DMABUF_HEAPS_SYSTEM` overlay below (and enhancements
+  `0001-udmabuf.patch`) are in the shared `asahi.config` since `1b4997bb` (2026-10-20). None of 0001-0005 is absorbed.
+- **At the new head** 0002-0005 apply; 0001 needs a context rebase (one new `#include` in `dcp-internal.h`).
+- `series.json` and `patches/` are unchanged: editing them starts the native kernel build. Apply the above at the
+  next re-pin.
+
 ## wip4 revision 6 — October 27, 2026 (build-only, not booted)
 
 Revision 6 adds the three commits of unmerged upstream [PR #186](https://github.com/omacom/linux-aurora/pull/186)

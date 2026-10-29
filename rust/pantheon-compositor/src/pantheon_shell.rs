@@ -930,9 +930,17 @@ impl PantheonCompositor {
         if work.loc.y + work.size.h >= output_geometry.loc.y + output_geometry.size.h {
             return; // No bottom panel reserves space on this output.
         }
-        let Some((new_y, new_height)) = clear_of_bottom_panel(rect, work) else {
+        // Fit the whole frame (server-side title bar included), then convert back.
+        let top = self.frame_top(window);
+        let outer = Rectangle::new(
+            Point::from((rect.loc.x, rect.loc.y - top)),
+            Size::from((rect.size.w, rect.size.h + top)),
+        );
+        let Some((outer_y, outer_height)) = clear_of_bottom_panel(outer, work) else {
             return;
         };
+        let new_y = outer_y + top;
+        let new_height = outer_height.map(|height| (height - top).max(1));
         if let Some(x11) = window.x11_surface() {
             let target = Rectangle::new(
                 Point::from((rect.loc.x, new_y)),
@@ -995,7 +1003,17 @@ impl PantheonCompositor {
             };
             let current = Rectangle::new(location, window.geometry().size);
             let area = self.work_area_for_output(output_geometry);
-            let target = fit_window_to_work_area(current, area);
+            // A server-side title bar sits above the client and must stay visible too.
+            let top = self.frame_top(&window);
+            let outer = Rectangle::new(
+                Point::from((current.loc.x, current.loc.y - top)),
+                Size::from((current.size.w, current.size.h + top)),
+            );
+            let fitted = fit_window_to_work_area(outer, area);
+            let target = Rectangle::new(
+                Point::from((fitted.loc.x, fitted.loc.y + top)),
+                Size::from((fitted.size.w, (fitted.size.h - top).max(1))),
+            );
             if target == current {
                 continue;
             }

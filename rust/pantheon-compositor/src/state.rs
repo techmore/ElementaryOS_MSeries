@@ -238,6 +238,17 @@ pub struct PantheonCompositor {
     pub(crate) corner_tokens: crate::corners::CornerTokens,
     /// Screen-corner mask bitmaps kept across frames.
     pub(crate) corner_masks: crate::corner_render::MaskBuffers,
+    /// Title-bar theme for framed X11 windows (see `decorations.rs`).
+    pub(crate) frame_style: crate::decorations::FrameStyle,
+    /// Painted title bars, kept across frames.
+    pub(crate) frame_buffers: crate::decorations::FrameBuffers,
+    /// Cursor shown over a frame (resize arrows), overriding the client's.
+    pub(crate) frame_cursor: Option<smithay::input::pointer::CursorIcon>,
+    /// Title-bar button under the pointer, and the one being pressed.
+    pub(crate) frame_hover: Option<(usize, crate::decorations::ButtonKind)>,
+    pub(crate) frame_press: Option<(usize, crate::decorations::ButtonKind)>,
+    /// Last title-bar click, for double-click to maximize.
+    pub(crate) last_title_click: Option<(usize, std::time::Instant)>,
     /// Where wallpaper scaling threads deliver their result.
     pub(crate) wallpaper_scaled_sender: channel::Sender<crate::wallpaper::ScaledWallpaper>,
 
@@ -391,6 +402,14 @@ impl PantheonCompositor {
             |event, _, state| {
                 if matches!(event, channel::Event::Msg(())) {
                     state.refresh_cursor_theme();
+                }
+            },
+        )?;
+        event_loop.handle().insert_source(
+            crate::wakeups::watch_settings(crate::decorations::FrameStyle::SETTINGS_SCHEMAS),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.refresh_frame_style();
                 }
             },
         )?;
@@ -588,6 +607,12 @@ impl PantheonCompositor {
             solid_buffers: Default::default(),
             corner_tokens: crate::corners::CornerTokens::load(),
             corner_masks: Default::default(),
+            frame_style: crate::decorations::FrameStyle::load(),
+            frame_buffers: Default::default(),
+            frame_cursor: None,
+            frame_hover: None,
+            frame_press: None,
+            last_title_click: None,
             wallpaper_scaled_sender,
             idle_monitor,
             idle_notifier_state,
@@ -607,7 +632,13 @@ impl PantheonCompositor {
             .outputs()
             .map(|output| {
                 let area = self.space.output_geometry(output).unwrap_or_default();
-                (output.name(), area.loc.x, area.loc.y, area.size.w, area.size.h)
+                (
+                    output.name(),
+                    area.loc.x,
+                    area.loc.y,
+                    area.size.w,
+                    area.size.h,
+                )
             })
             .collect();
         layout.sort();
@@ -2187,6 +2218,10 @@ impl PantheonCompositor {
         if let Some((_, surface, location)) = crate::popup_stack::popup_under(&self.space, pos) {
             return Some((surface, location.to_f64()));
         }
+        // A server-side frame belongs to the compositor, not the client.
+        if self.frame_under(pos).is_some() {
+            return None;
+        }
         self.space
             .element_under(pos)
             .and_then(|(window, location)| {
@@ -2201,6 +2236,9 @@ impl PantheonCompositor {
     /// `pos`. Pair of `surface_under` for click-to-raise and focus.
     pub fn window_under(&self, pos: Point<f64, Logical>) -> Option<Window> {
         if let Some((window, _, _)) = crate::popup_stack::popup_under(&self.space, pos) {
+            return Some(window);
+        }
+        if let Some((window, _)) = self.frame_under(pos) {
             return Some(window);
         }
         self.space

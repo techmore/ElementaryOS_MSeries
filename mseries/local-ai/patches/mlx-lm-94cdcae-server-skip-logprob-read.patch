@@ -1,0 +1,77 @@
+# mseries port of omarchy-mlx's patches/mlx-lm-0.32/mlx-lm-server-skip-logprob-read.patch to the
+# mlx-lm 0.32-line server (94cdcae) that omarchy-mlx v0.7.33 packages for oMLX: the server.py in that
+# venv does not carry it. Ported 2026-10-28 for the engine-compare lm032-patched arm. MIT; no notice change.
+--- a/mlx_lm/server.py
++++ b/mlx_lm/server.py
+@@ -3,6 +3,7 @@
+ import argparse
+ import gc
+ import json
++import os
+ import logging
+ import pickle
+ import platform
+@@ -48,6 +49,12 @@
+     sharded_load,
+ )
+ 
++# mseries (port of omarchy-mlx's 0.32 mlx-lm-server-skip-logprob-read): the decode
++# loops read the sampled token's logprob off the GPU for every token, a gather plus
++# a blocking read, even when the request asked for no logprobs. Skip it then;
++# generated tokens are unchanged. MLX_OMARCHY_SERVER_LOGPROB_READ=1 restores the read.
++_LOGPROB_READ_FORCED = os.environ.get("MLX_OMARCHY_SERVER_LOGPROB_READ") == "1"
++
+ 
+ def get_system_fingerprint():
+     gpu_arch = mx.device_info()["architecture"]
+@@ -231,7 +238,7 @@
+ class Response:
+     text: str
+     token: int
+-    logprob: float
++    logprob: Optional[float]
+     finish_reason: Optional[str]
+     top_tokens: Tuple[Dict[str, Any]]
+ 
+@@ -755,6 +762,11 @@
+                         "detokenizer": current_tokenizer.detokenizer,
+                         "segment_types": segment_types[::-1],
+                         "top_logprobs": args.top_logprobs,
++                        "need_logprobs": (
++                            _LOGPROB_READ_FORCED
++                            or args.logprobs
++                            or args.top_logprobs > 0
++                        ),
+                     }
+                     # just making sure we don't leave a reference around
+                     del cache
+@@ -864,7 +876,9 @@
+                             Response(
+                                 text,
+                                 r.token,
+-                                r.logprobs[r.token].item(),
++                                r.logprobs[r.token].item()
++                                if result["need_logprobs"]
++                                else None,
+                                 r.finish_reason,
+                                 _format_top_logprobs(
+                                     r.logprobs,
+@@ -940,6 +954,9 @@
+             # Make the sampler and logit processor
+             sampler = _make_sampler(args, tokenizer)
+             logits_processors = _make_logits_processors(args)
++            need_logprobs = (
++                _LOGPROB_READ_FORCED or args.logprobs or args.top_logprobs > 0
++            )
+ 
+             # Load the KV cache
+             self._log_cache_stats()
+@@ -983,7 +1000,7 @@
+                     Response(
+                         gen.text,
+                         gen.token,
+-                        gen.logprobs[gen.token].item(),
++                        gen.logprobs[gen.token].item() if need_logprobs else None,
+                         finish_reason,
+                         _format_top_logprobs(
+                             gen.logprobs, args.top_logprobs, tokenizer

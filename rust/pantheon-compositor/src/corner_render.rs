@@ -20,11 +20,10 @@ use smithay::{
     backend::{
         allocator::Fourcc,
         renderer::{
-            Frame, ImportAll, ImportMem, Renderer, RendererSuper, Texture,
+            Frame, ImportMem, Renderer, RendererSuper, Texture,
             element::{
                 Element, Id, Kind, RenderElement, UnderlyingStorage,
                 memory::{MemoryRenderBuffer, MemoryRenderBufferRenderElement},
-                surface::WaylandSurfaceRenderElement,
             },
             gles::{GlesFrame, GlesRenderer, GlesTexProgram, Uniform, UniformName, UniformType},
             utils::{CommitCounter, DamageSet, OpaqueRegions},
@@ -405,16 +404,15 @@ impl<'a> Clipper<'a> {
 
     /// Wrap the elements of one surface tree whose geometry is `rect` (space coordinates)
     /// with `radii`. Elements clear of every corner box stay plain.
-    pub fn wrap<R, C>(
+    pub fn wrap<E, C>(
         &self,
-        elements: Vec<WaylandSurfaceRenderElement<R>>,
+        elements: Vec<E>,
         rect: Rectangle<i32, Logical>,
         radii: Radii,
     ) -> Vec<C>
     where
-        R: Renderer + ImportAll,
-        R::TextureId: Texture + Clone + 'static,
-        C: From<WaylandSurfaceRenderElement<R>> + From<RoundedClip<WaylandSurfaceRenderElement<R>>>,
+        E: Element,
+        C: From<E> + From<RoundedClip<E>>,
     {
         if radii.is_square() {
             return elements.into_iter().map(C::from).collect();

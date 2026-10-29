@@ -1,0 +1,176 @@
+{
+  "schema": 1,
+  "recorded_on": "2026-10-29",
+  "scope": "Read-only resync of every kernel and boot-loader upstream we pin or track, with Joshua Warren's kernel repositories added. GitHub API comparisons plus a treeless shallow fetch for commit messages; no full clone, no kernel build, no boot. No upstream message, issue, PR or fork was sent.",
+  "running_kernel": {
+    "machine": "M1 Pro 14-inch (J314s, t6000)",
+    "release": "7.2.11-elementary-aurora72-wip4",
+    "package": "linux-image-elementary-aurora72-wip4 7.2.11+elementary.aurora72.wip4-1 (dpkg installed 2026-10-27 11:39 -0400)",
+    "built_from": "unified72 series revision 5: source bd526b3c11ccf8e91d6240261beb3219d8f17f03 plus patches 0001 (#157) and 0002 (local DPTX fallback)",
+    "evidence": "appledrm.ko carries 0002's 'DPTX service not answering' strings; it lacks 0003's 'held without HPD' string, so revision 6 (#186, patches 0003-0005) is not installed. Revision 6 passed CI run 40498010695 only."
+  },
+  "upstreams": [
+    {
+      "repo": "omacom/linux-aurora",
+      "tracked_by": ["unified72/series.json source", "frozen/pins/aurora20.json", "enhancements/series.json", "local-ai/branch-watch.json", "branch-audits/"],
+      "our_pins": {
+        "unified72_wip4_source": "bd526b3c11ccf8e91d6240261beb3219d8f17f03",
+        "aurora20_release_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55"
+      },
+      "last_audit_before_this": "2026-10-27 (review-wip4-2026-10-27.json); last full branch snapshot 2026-10-21 (maintenance/2026-10-21/kernel-upstream-snapshot.json)",
+      "head": {"ref": "integration/aurora", "sha": "2f725546d6ac6afe0bd5abfa1a844971519f0076", "date": "2026-10-29", "kernel": "7.2.11"},
+      "compare_from_wip4_source": {"status": "ahead", "ahead_by": 388, "behind_by": 0, "non_merge_commits": 337},
+      "latest_release": "aurora-2026.10.17.20 (no newer release)",
+      "pr_state": {
+        "158": "MERGED 2026-10-23 at head bd526b3c; our wip4 source is now an ancestor of integration/aurora. The 2026-10-27 receipt called it open; that was stale.",
+        "157": "open, head 9d3aeb24cb864d5f99a7172e9004884bf3c1a9a0 unchanged",
+        "186": "open, head 2a37f6f206456462970b3bbb3bf9bf8bd8944acd unchanged; Joshua Warren posted a lab test 2026-10-24 (T8103 13-inch M1 and T6021 M2 Max PASS, no dock hot-plugged, M1 Max not yet run)",
+        "163": "open, head b8930ad8c5d3; still conflicts with 0005, still not carried"
+      },
+      "relevant_to_our_machines": [
+        "1b4997bbab62 arm64: configs: one shared Asahi configuration for all Macs (2026-10-20): turns on UDMABUF, DMABUF_HEAPS, DMABUF_HEAPS_SYSTEM, which is our unified72 config overlay and enhancements 0001",
+        "7fcb47d/3975d42/bc1b422 thunderbolt: defer DP pairing until DPRX retirement releases paths, keep it across sleep, replay it after runtime PM (dock video, t600x)",
+        "b7c75a932a9c drm/apple: restore panel dimensions after mode probes (#240)",
+        "8c26443 drm/apple: validate the plane layout sent to DCP (rewrites plane.c around 0001's hunk)",
+        "46420c4 ASoC: cs42l84: retain the card-resume unmute (J314s headphone codec)",
+        "4e442ba, 1f45121, ece3dac, 5447fa2 soc: apple: sep: xART list key, first keybag on a fresh install (#212), first-setup window (Touch ID)",
+        "659fced, 5eae607 power: supply: macsmc: serialized charge settings, auto-discharge",
+        "1002719 arm64: dts: apple: constrain T8103 external display DMA windows (#179, M1 T8103)"
+      ],
+      "open_prs_relevant_to_our_machines": [
+        "#180 soc: apple: sep: boot the enclave on every Mac (M1/M2 microphones); Joshua lab test 2026-10-23 PASS on 13-inch M1, 16-inch M1 Max (t600x), M2 Max",
+        "#262 soc: apple: sep: keep Touch ID across a boot policy change",
+        "#170 soc: apple: add gated J314s CPU context-loss diagnostic",
+        "#222 HID: spi-hid-apple: stop status mismatches on boot and suspend (internal keyboard/trackpad)",
+        "#221 pmdomain: apple: finish fpwm power-on after s2idle",
+        "#166 ASoC: tas2764/tas2770 quiet deferred probe (Joshua)",
+        "#188 USB4 eGPU on Apple Silicon (Joshua; PCI apple non-posted BARs, amdgpu)",
+        "#67 config: AMD and Nouveau as modules (Joshua; its udmabuf half is now upstream, see above)"
+      ],
+      "patch_applicability_at_head": {
+        "method": "The eleven files our wip4 patches touch were read at bd526b3c and at 2f725546 (raw.githubusercontent), committed into a scratch tree in ~/.cache/mseries-upstream/applycheck, then git apply --check in series order.",
+        "at_wip4_source": "0001-0005 all apply",
+        "at_integration_head": {
+          "0001-drm-apple-srgb-external-display-colour.patch": "conflicts: dcp-internal.h hunk 1 fails on context only (new #include \"dcp-panel-edid.h\" between dcp-metadata-epoch.h and dcp-180hz.h); plane.c applies with fuzz 2 at +194 after the plane-layout rewrite. Needs a context rebase, no logic change seen.",
+          "0002-drm-apple-free-dp-tunnel-route-from-silent-dcpext.patch": "applies",
+          "0003-drm-apple-dcp-let-a-typec-port-with-hpd-take-over-a-held-pipeline.patch": "applies",
+          "0004-drm-apple-dcp-route-a-dp-alt-port-only-once-its-sink-asserts-hpd.patch": "applies",
+          "0005-usb-typec-tipd-treat-enospc-as-a-taken-display-on-every-soc.patch": "applies"
+        },
+        "limits": "Per-file check only; full-tree apply, build and KUnit are what candidate.py prepare and CI do."
+      }
+    },
+    {
+      "repo": "aurora-silicon/linux",
+      "tracked_by": ["unified72/series.json source.repository", "local-ai/branch-watch.json (base aurora-stable)", "local-ai/people-watch.json"],
+      "heads": {
+        "integration/aurora": {"sha": "af395e100e02e1b04b805e063f2d1910e31a3b19", "date": "2026-10-29", "kernel": "7.3.0"},
+        "aurora-wip": {"sha": "b7edb5b5fbc744ee11374c9003543895cee98c96", "date": "2026-10-28", "kernel": "7.3.0"},
+        "aurora-stable": {"sha": "b04581b4e67ccbe690812c0c1bf0f1812d51d277", "date": "2026-10-15"},
+        "m4/j713-t8132-integ-20261023": {"sha": "325ed68cf0011730852cbb113a06fab86a4a8e31", "date": "2026-10-23", "note": "the base gravity/ overlap was measured against; unchanged"}
+      },
+      "compare_from_wip4_source": {"status": "diverged", "ahead_by": 23561, "behind_by": 2353, "note": "aurora-silicon integration/aurora is now rebased onto Linux 7.3; our 7.2.11 pin is not an ancestor. omacom/linux-aurora stays on 7.2.11."},
+      "relevant_to_our_machines": [
+        "27982e027ab drm/apple: release a CRTC whose Type-C route moved to another pipeline (same area as 0002/#186)",
+        "425e6f5298d drm/apple: default external displays to native resolution at full refresh",
+        "ff7f73dabca/e89d4a291be aurora-sep: keep Touch ID across a boot policy change (source of omacom #262)",
+        "93c3026d2e0/55c73c2c1fc macsmc fans as thermal cooling devices"
+      ],
+      "m4": "Aurora's own T8132 GPU backend (m4/pr2-gpu-dcp, selftests asahi-m4) is a separate implementation from Gravity's asahi_m4; no change here absorbs gravity 0066."
+    },
+    {
+      "repo": "joshuaswarren/linux-aurora",
+      "fork_of": "AsahiLinux/linux",
+      "tracked_by": ["none before this resync; added to local-ai/branch-watch.json"],
+      "pushed_at": "2026-10-28",
+      "default_branch": {"ref": "asahi", "sha": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a", "note": "stale Asahi base from 2026-08-20; work lives on PR branches"},
+      "branch_count": 194,
+      "recent_branches": {
+        "config/udmabuf-zero-copy-host-memory": "a918a87e6f39acbcef976081cf8c62c89c299844 (omacom #67; enhancements 0001/0006 pinned the older heads 6984b8c0/d10d3602)",
+        "egpu-nonposted-bars": "654075e59744da60d1cdf876048dbf38b588ff3d (omacom #188, USB4 eGPU)",
+        "w86/tas27xx-quiet-probe-defer": "a7bf189d2ceb7b69662a2b6180073f6a21068d49 (omacom #166)",
+        "w7C/t6032-dt-27": "omacom #207, M3 Ultra Mac Studio",
+        "m6-base, m6-phy, m6-qspi, m6-audio-l1, m6-usb4, m6-pcie, m6-audio-2, w7Y/m6-all": "omacom #191-#201, M6 T8152 Mac mini",
+        "ane-driver-aurora": "efe6e359d456724cb0a7292d867bac147d9a5cd3 (aurora-silicon #155 merged 2026-10-08; ANE on t8103/t6000/t6020; already in our wip4: ane.ko loaded)"
+      },
+      "relevant_to_our_machines": "#166 (tas2764 log noise on J314s), #188/#67 (eGPU, t600x Thunderbolt). Nothing in it absorbs one of our local patches."
+    },
+    {
+      "repo": "joshuaswarren/linux-omarchy-m6",
+      "tracked_by": ["none before this resync; added to local-ai/branch-watch.json"],
+      "head": {"ref": "m6-bringup", "sha": "c724941bdb5ab77afcb4deeb78340bac4d95fe6c", "date": "2026-10-22", "kernel": "7.2.10"},
+      "content": "Imports omacom integration/aurora, then 7 commits of T8152 (M6 Mac mini J873g) bring-up: pinctrl, SART v4, NVMe ANS, PSD power domains, USB2 PHY, hub autosuspend quirk, device tree.",
+      "relevant_to_our_machines": "none (M6 only)"
+    },
+    {
+      "repo": "omacom/m1n1",
+      "tracked_by": ["frozen/pins/aurora20.json m1n1_source", "local-ai/branch-watch.json (as base_repo of aurora-silicon/m1n1)"],
+      "our_pin": "d05ba17dfb771871d608225be42968bbb1e75a18 (m1n1-aurora 1.6.1.aurora17-5, in the deployed boot.bin)",
+      "head": {"ref": "integration/aurora", "sha": "bc79acc434e612ffcb95bfc7cb2fd7543afac5f2", "date": "2026-10-28"},
+      "compare_from_pin": {"status": "ahead", "ahead_by": 335, "behind_by": 0},
+      "relevant_to_our_machines": [
+        "285ad4f008 kboot: enable T600x Type-C routes with their reserved DCP; 439fe2287e copy the tree only for a T600x controller with Type-C routes",
+        "a1c308a8b4 display: limit M1/M2 Sequoia DCP power-cycle to M1/M2",
+        "7e00d5484e dart: restore protected M1 DCP table mappings with retained ownership",
+        "b357293176/a01fb3bcd3 dcp: keep a DCP's buffers and endpoint interface until its firmware stops",
+        "47a6cc228f smp: retain architectural RVBAR rewrite permission on older CPUs"
+      ]
+    },
+    {
+      "repo": "aurora-silicon/m1n1",
+      "tracked_by": ["local-ai/branch-watch.json"],
+      "head": {"ref": "main", "sha": "cf57aebc36b2c51c546d97f09e9bf390ff3f7be7", "date": "2026-10-25"}
+    },
+    {
+      "repo": "joshuaswarren/m1n1",
+      "fork_of": "aurora-silicon/m1n1",
+      "tracked_by": ["none before this resync; added to local-ai/branch-watch.json"],
+      "heads": {
+        "main": "b846077680fb02a5a896fef330256fbe7653058b (2026-10-20; diverged from omacom integration/aurora: 30 ahead, 232 behind)",
+        "m6-bringup": "072526cfe6b7e7a1001e3f24bb52bc86c65b6bbc (2026-10-22; T8152 SMP through an RVBAR veneer)",
+        "w7C/m1n1-t6032-*": "M3 Ultra Mac Studio probe; omacom/m1n1 #15 merged 2026-10-25"
+      },
+      "relevant_to_our_machines": "none (T8152/T6032 only)"
+    },
+    {
+      "repo": "joshuaswarren/asahi-installer",
+      "fork_of": "AsahiLinux/asahi-installer",
+      "archived": true,
+      "head": {"ref": "main", "sha": "dffbb38ef0c00c0431c609ecd8a00f42deb5b24c", "date": "2026-09-15"},
+      "note": "Archived since 2026-10-02; nothing to track. Installer work continues in omacom/omarchy-mac-installer, already watched."
+    },
+    {
+      "repo": "GravityLinux/linux",
+      "tracked_by": ["ElementaryOS_MSeries-Kernel gravity/series.json"],
+      "our_pin": "gravity-m4 4fc326f6c25ccceb7515e2635c22e01fde5d3bac",
+      "heads": {
+        "gravity-m4": "4fc326f6c25ccceb7515e2635c22e01fde5d3bac (identical to our pin)",
+        "replacement/210-gpu": "3990d074ef4cbfefa85529c86a5491446033fbbf (2026-10-29, Linux 7.3; still has the g16_drm_pump.rs notification-timeout rescue)"
+      },
+      "relevant_to_our_machines": "M4 Mac mini J773g: gravity 0066 remains needed on the running 7.1 Gravity kernel; the equivalent fix exists only in the unreleased replacement/210-gpu."
+    },
+    {
+      "repo": "AsahiLinux/linux",
+      "tracked_by": ["fairydust/PKGBUILD (moving fairydust branch, no sha pin)", "upstreams/omarchy-m.json observed_revision"],
+      "head": {"ref": "fairydust", "sha": "0878e04ab76c178e278375bd4a4100d89508216a", "date": "2026-10-27"},
+      "observed_revision_before": "ce9f2eba72c061a50b2d790450e90af3439d8c24"
+    }
+  ],
+  "local_patches": {
+    "unified72 0001 (#157 sRGB)": "not absorbed; PR open; needs a context rebase at integration head",
+    "unified72 0002 (local DPTX fallback)": "not absorbed; applies at integration head; aurora-silicon 27982e027ab (release a CRTC whose route moved) is adjacent work on 7.3, not a replacement",
+    "unified72 0003-0005 (#186)": "not absorbed; PR open, same head; apply at integration head",
+    "unified72 config overlay UDMABUF/DMABUF_HEAPS/DMABUF_HEAPS_SYSTEM": "ABSORBED upstream by 1b4997bbab62 (2026-10-20), after our source pin; drop the overlay when the source moves past it",
+    "enhancements 0001-udmabuf.patch (#67)": "ABSORBED upstream by 1b4997bbab62 (shared asahi.config); #67 now carries only AMD/Nouveau modules. The enh1 lane is on the .20 base, so the patch stays in that series as history.",
+    "enhancements 0006-egpu-config.patch (#67)": "not absorbed; #67 still open",
+    "enhancements 0002-0004 (M3 thermal/camera)": "not our hardware; #135 open, #134 carried by #199 (merged 2026-10-24), #119 closed",
+    "unified72 superseded 0001-stock-bindgen-layout-policy.patch": "already recorded as absorbed (4c56f9cd)",
+    "gravity 0066 (M4 GPU notification timeout)": "not absorbed in gravity-m4; equivalent in unreleased GravityLinux replacement/210-gpu 3990d074"
+  },
+  "not_changed_and_why": "unified72/series.json, unified72/patches and enhancements/ are not edited: any change there starts the 150-minute native kernel build in aurora-enhancements.yml, and kernel builds are the owner's call. The absorbed overlay and the stale #158 note are recorded here instead; apply them with the next re-pin.",
+  "recommended_next": [
+    "Install wip4 revision 6 (CI run 40498010695 artifact, or rebuild) to get #186; the laptop runs revision 5.",
+    "Re-pin unified72 to omacom integration/aurora 2f725546 as wip5: rebase 0001 on the new include line, keep 0002-0005, drop the UDMABUF overlay; build in CI, then boot.",
+    "Keep gravity 0066 on the M4 until Gravity ships replacement/210-gpu in a packaged kernel."
+  ]
+}
