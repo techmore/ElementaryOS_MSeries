@@ -28,6 +28,10 @@ site=$("$py" -c 'import mlx_lm, os; print(os.path.dirname(mlx_lm.__file__))')
 want=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["upstreams"][sys.argv[2]]["pin"].lstrip("v"))' "$here/upstreams.json" "$key")
 mapfile -t patches < <(python3 -c 'import json,sys
 for p in json.load(open(sys.argv[1]))["upstreams"][sys.argv[3]]["patches"]: print(sys.argv[2] + "/" + p["file"])' "$here/upstreams.json" "$here" "$key")
+# Modules a patch imports (serve_X.py ships as mlx_lm/_mseries_X.py).
+mapfile -t extras < <(python3 -c 'import json,sys
+for p in json.load(open(sys.argv[1]))["upstreams"][sys.argv[2]]["patches"]:
+    for f in p.get("extra_files", []): print(f)' "$here/upstreams.json" "$key")
 
 case ${1:-build} in
   build|build-032)
@@ -38,7 +42,9 @@ case ${1:-build} in
     rm -rf "$out/mlx_lm.new"
     cp -a "$site" "$out/mlx_lm.new"
     find "$out/mlx_lm.new" -name __pycache__ -prune -exec rm -rf {} +
-    cp "$here/serve_singleton_cache.py" "$out/mlx_lm.new/_mseries_singleton_cache.py"
+    for f in "${extras[@]}"; do
+      cp "$here/$f" "$out/mlx_lm.new/_mseries_${f#serve_}"
+    done
     for p in "${patches[@]}"; do
       # The labels say mlx_lm/; -d into the copy and strip that one component.
       patch -s -p2 -d "$out/mlx_lm.new" --dry-run -i "$p" >/dev/null
@@ -56,7 +62,8 @@ case ${1:-build} in
     PYTHONPATH="${prefix:+$prefix:}$out" "$py" -c \
       'import importlib, mlx_lm.server as s; g = importlib.import_module("mlx_lm.generate")
 print(s.__file__); print("skip-logprob-read:", hasattr(s, "_LOGPROB_READ_FORCED"))
-print("singleton cache:", getattr(g, "_rapid_singleton_cache_fastpath", False))'
+print("singleton cache:", getattr(g, "_rapid_singleton_cache_fastpath", False))
+import mlx.nn as nn; print("small rows:", getattr(nn.QuantizedLinear, "_mseries_small_rows", False))'
     ;;
   *) echo "usage: $0 build|check|build-032|check-032" >&2; exit 2 ;;
 esac

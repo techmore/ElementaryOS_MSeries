@@ -15,6 +15,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dictation_status import write_status
 from dictation_resources import load_policy, reasons as resource_reasons
 from dictation_model import LazyModel, ModelHeadroom
+try:
+    from dictation_media import MediaQuiet
+except ImportError:  # an older install without the module: dictation still works
+    MediaQuiet = None
 
 DEFAULT_MODEL = ('nemotron-speech-streaming-en-0.6b-Q8_0.gguf'
                  if os.environ.get('STREAM_ENGINE', 'nemotron') == 'nemotron'
@@ -54,6 +58,7 @@ KEEP = bool(os.environ.get("STREAM_KEEP"))
 DRY = bool(os.environ.get("STREAM_DRY"))  # print instead of typing
 POPUP = os.environ.get("STREAM_POPUP", "1")  # "0": no Listening/finished popups
 QUIET = bool(os.environ.get("STREAM_QUIET"))  # tests: no chimes, no notifications
+MEDIA = os.environ.get("STREAM_MEDIA", "quiet")  # "quiet": pause players and mute other audio while listening; "off": leave it
 KEY = int(os.environ.get("STREAM_KEY", "184"))  # KEY_F14
 THREADS = int(os.environ.get("STREAM_THREADS", "4"))
 CHUNK = 1600  # 100 ms of 16 kHz samples
@@ -354,6 +359,7 @@ class Dictation:
         self.typer = Typer(self.insertion_failed)
         self.mic = MicIndicator()
         self.stop_feedback = True
+        self.media = MediaQuiet() if MediaQuiet and MEDIA == 'quiet' and not QUIET else None
         self.active = False
         self.worker = None
         self.stop_evt = threading.Event()
@@ -467,6 +473,7 @@ class Dictation:
                     chime('start')
                     self.mic.show()
                     self.stop_feedback = False
+                    if self.media: self.media.begin()  # off this thread: the mic is already opening
                     notify('Listening… Press F5 again to finish; Escape cancels.' if TOGGLE else 'Listening… Release F5 to finish; Escape cancels.', persistent=True)
                 self.run(model)
         except ModelHeadroom:
@@ -499,6 +506,7 @@ class Dictation:
             if capture_started and not test:
                 self.stopped_listening()
                 notify('Dictation cancelled' if self.cancelled else ('Dictation stopped to preserve cooling or desktop memory' if self.error == 'ResourceGuard' else ('Dictation finished' if not self.error else 'Dictation could not finish')))
+            if self.media and capture_started: self.media.end()  # no-op when already restored
             self.active = False
             status('cancelled' if self.cancelled else ('waiting' if self.error == 'ResourceGuard' else ('error' if self.error else 'ready')))
 
@@ -508,6 +516,7 @@ class Dictation:
             return
         self.stop_feedback = True
         self.mic.hide()
+        if self.media: self.media.end()
         chime('stop')
 
     def stop(self):
@@ -890,11 +899,13 @@ def main():
         return
     dev = keyboard_device()
     log("ready, keyboard", dev, "model", os.path.basename(MODEL))
+    if d.media: d.media.end()  # a previous run that died mid-dictation left audio paused or muted
     status('ready')
     def terminate(*_):
         d.cancel()
         if d.worker: d.worker.join(5)
         d.models.trim(force=True)
+        if d.media: d.media.end(wait=True)
         status('stopped')
         raise SystemExit(0)
     signal.signal(signal.SIGTERM, terminate)
@@ -903,31 +914,34 @@ def main():
     signal.signal(signal.SIGUSR1, lambda *a: d.stop() if d.active else d.start())
     fmt = "llHHi"
     size = struct.calcsize(fmt)
-    with open(dev, "rb", buffering=0) as f:
-        while True:
-            d.idle_tick()
-            if not select.select([f], [], [], 1)[0]: continue
-            raw = f.read(size)
-            if len(raw) != size: raise SystemExit('Keyboard input device disconnected')
-            _, _, typ, code, val = struct.unpack(fmt, raw)
-            if typ == 1 and code == 1 and val == 1:  # Escape cancels pending IBus insertion
-                d.cancel()
-            elif typ == 1 and val == 1 and code != KEY and code not in MODIFIER_KEYS and d.active:
-                d.interrupt()  # End our append-only session to avoid interleaving typed text.
-            if typ == 1 and code == KEY and TOGGLE:
-                if val == 1:  # key repeat (val 2) and release are ignored
-                    if d.active:
-                        d.stop()
-                    else:
+    try:
+        with open(dev, "rb", buffering=0) as f:
+            while True:
+                d.idle_tick()
+                if not select.select([f], [], [], 1)[0]: continue
+                raw = f.read(size)
+                if len(raw) != size: raise SystemExit('Keyboard input device disconnected')
+                _, _, typ, code, val = struct.unpack(fmt, raw)
+                if typ == 1 and code == 1 and val == 1:  # Escape cancels pending IBus insertion
+                    d.cancel()
+                elif typ == 1 and val == 1 and code != KEY and code not in MODIFIER_KEYS and d.active:
+                    d.interrupt()  # End our append-only session to avoid interleaving typed text.
+                if typ == 1 and code == KEY and TOGGLE:
+                    if val == 1:  # key repeat (val 2) and release are ignored
+                        if d.active:
+                            d.stop()
+                        else:
+                            log('F5 pressed; checking dictation admission and field metadata')
+                            d.start()
+                elif typ == 1 and code == KEY:
+                    if val == 1:
                         log('F5 pressed; checking dictation admission and field metadata')
                         d.start()
-            elif typ == 1 and code == KEY:
-                if val == 1:
-                    log('F5 pressed; checking dictation admission and field metadata')
-                    d.start()
-                elif val == 0:
-                    d.stop()
+                    elif val == 0:
+                        d.stop()
 
+    finally:
+        if d.media: d.media.end(wait=True)  # any exit: never leave music paused or apps muted
 
 if __name__ == "__main__":
     main()

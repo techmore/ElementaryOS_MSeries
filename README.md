@@ -9,6 +9,8 @@ layer, elementary (Pantheon) as the system you use, installed with one command,
 full-disk encryption included. Modelled on [omarchy-mac](https://github.com/omarchy-mac/omarchy-mac),
 whose Asahi boot and encryption tools it reuses.
 
+> **M4 Macs (e.g. Mac mini J773g):** step 1 below does not apply; see [M4-MINI-INSTALL.md](mseries/M4-MINI-INSTALL.md).
+
 > 🚧 **Work in progress.** Not yet run end to end on a freshly wiped Mac. Back up everything first. [Status](#status)
 
 **The whole install, in three commands** (details for each step below):

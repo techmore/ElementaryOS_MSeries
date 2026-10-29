@@ -32,6 +32,15 @@
           ]
         },
         {
+          "file": "patches/mlx-lm-0.31.3-server-small-rows.patch",
+          "kind": "ours",
+          "origin": "routes 2-6 row passes to omarchy QmmVecQ4WordSubgroupBatch4BF16 (MLX_OMARCHY_QMV_BATCH)",
+          "drop_when": "omarchy's quantized matmul for 2-8 rows costs no more than the batched one-row kernel",
+          "extra_files": [
+            "serve_small_rows.py"
+          ]
+        },
+        {
           "file": "patches/mlx-lm-0.31.3-detokenizer-tokenmap-cache.patch",
           "kind": "ours",
           "drop_when": "our mlx-lm pin reaches v0.32.0, where TokenizerWrapper.detokenizer copies one prebuilt detokenizer"

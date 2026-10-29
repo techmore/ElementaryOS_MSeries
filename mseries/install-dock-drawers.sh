@@ -83,6 +83,9 @@ if [[ $mode == --build-only || $mode == --build-running-apps-only ]]; then
   exit 0
 fi
 meson install -C "$build_dir" --no-rebuild >/dev/null
+# The taskbar's Tailscale button uses the official logo, installed per user.
+install -Dm0644 -t "${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor/symbolic/apps" \
+  "$repo"/mseries/tailscale-wingpanel/mseries-tailscale{,-offline}-symbolic.svg
 glib-compile-schemas "$prefix/share/glib-2.0/schemas"
 
 # Per-user wrapper with automatic fallback to the stock dock.
