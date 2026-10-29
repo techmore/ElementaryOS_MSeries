@@ -78,6 +78,16 @@ impl PointerGrab<PantheonCompositor> for MoveSurfaceGrab {
         let new_location = event.location + self.offset;
         data.space
             .map_element(self.window.clone(), new_location.to_i32_round(), true);
+        // X11 clients place their menus and report their position from the
+        // geometry the window manager last configured, so tell them.
+        if let Some(surface) = self.window.x11_surface()
+            && !surface.is_override_redirect()
+        {
+            let rect = Rectangle::new(new_location.to_i32_round(), surface.last_configure().size);
+            if let Err(error) = surface.configure(Some(rect)) {
+                tracing::warn!(?error, "could not move X11 window");
+            }
+        }
         // Hard stop at the top of the taskbar.
         data.keep_clear_of_bottom_panels(&self.window);
         data.update_corner_snap_preview(&self.window, event.location);

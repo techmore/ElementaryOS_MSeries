@@ -1,5 +1,14 @@
 # Mutter-minimal viable Rust for elementaryOS M-series
 
+## October 29 server-side frames for X11 windows
+
+X11 apps that ask the window manager for decorations (WiFiman Desktop, xterm,
+plain GTK 3 windows on X11) now get a title bar drawn by the compositor
+(`src/decorations.rs`): drag to move, resize from the edges within the app's
+size hints, the `button-layout` buttons, double-click to maximize. Header-bar
+(client-decorated) X11 windows and every Wayland window are unchanged.
+[`ssd-probe/run.sh`](ssd-probe/run.sh) checks it on a private nested display.
+
 ## October 20 window recovery and focus audit
 
 The window-snapping update supports XWayland halves/quarters and left/right

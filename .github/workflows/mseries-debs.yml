@@ -219,7 +219,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential dpkg-dev git pkg-config cargo rustc \
             libseat-dev libinput-dev libgbm-dev libdrm-dev libudev-dev libxkbcommon-dev \
-            libwayland-dev libegl-dev libgles-dev libglib2.0-dev
+            libwayland-dev libegl-dev libgles-dev libglib2.0-dev libpango1.0-dev libcairo2-dev
 
       - uses: actions/cache@v6
         with:

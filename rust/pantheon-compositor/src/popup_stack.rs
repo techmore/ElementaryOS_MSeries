@@ -18,9 +18,10 @@
 use crate::corner_render::{Clipper, RoundedClip};
 use smithay::{
     backend::renderer::{
-        ImportAll, Renderer, Texture,
+        ImportAll, ImportMem, Renderer, Texture,
         element::{
             AsRenderElements, Kind,
+            memory::MemoryRenderBufferRenderElement,
             surface::{WaylandSurfaceRenderElement, render_elements_from_surface_tree},
         },
     },
@@ -75,17 +76,25 @@ fn popup_offset(
 ///
 /// With a `clipper` (the built-in output), popups are clipped to the popover corner radius
 /// and toplevels to the radii the corner policy gives their geometry.
+///
+/// `frame` returns a window's server-side frame (see `decorations.rs`): its outer rect in
+/// space coordinates and its title-bar elements, given the window's own geometry rect. A
+/// framed window is rounded as one shape with its frame.
 pub fn stacked_render_elements<R, C>(
     renderer: &mut R,
     space: &Space<Window>,
     output: &Output,
     alpha: f32,
     clipper: Option<&Clipper<'_>>,
+    frame: &mut crate::decorations::FrameSource<'_, R>,
 ) -> Vec<C>
 where
-    R: Renderer + ImportAll,
+    R: Renderer + ImportAll + ImportMem,
     R::TextureId: Texture + Clone + 'static,
-    C: From<WaylandSurfaceRenderElement<R>> + From<RoundedClip<WaylandSurfaceRenderElement<R>>>,
+    C: From<WaylandSurfaceRenderElement<R>>
+        + From<RoundedClip<WaylandSurfaceRenderElement<R>>>
+        + From<MemoryRenderBufferRenderElement<R>>
+        + From<RoundedClip<MemoryRenderBufferRenderElement<R>>>,
 {
     let Some(output_geometry) = space.output_geometry(output) else {
         return Vec::new();
@@ -150,14 +159,22 @@ where
                 .window
                 .render_elements(renderer, location, scale, alpha),
         };
+        let geometry = entry.window.geometry();
+        let content = Rectangle::new(entry.render_location + geometry.loc, geometry.size);
+        let (shape, decoration) = match frame(renderer, entry.window, content) {
+            Some((outer, elements)) => (outer, elements),
+            None => (content, Vec::new()),
+        };
         match clipper {
             Some(clipper) => {
-                let geometry = entry.window.geometry();
-                let rect = Rectangle::new(entry.render_location + geometry.loc, geometry.size);
-                let radii = clipper.toplevel_radii(entry.window, rect);
-                elements.extend(clipper.wrap(tree, rect, radii));
+                let radii = clipper.toplevel_radii(entry.window, shape);
+                elements.extend(clipper.wrap(tree, shape, radii));
+                elements.extend(clipper.wrap(decoration, shape, radii));
             }
-            None => elements.extend(tree.into_iter().map(C::from)),
+            None => {
+                elements.extend(tree.into_iter().map(C::from));
+                elements.extend(decoration.into_iter().map(C::from));
+            }
         }
     }
     elements

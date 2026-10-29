@@ -79,6 +79,7 @@ render_elements! {
     Solid=SolidColorRenderElement,
     WrappedSurface=Wrap<WaylandSurfaceRenderElement<R>>,
     Rounded=RoundedClip<WaylandSurfaceRenderElement<R>>,
+    RoundedMemory=RoundedClip<MemoryRenderBufferRenderElement<R>>,
     Animated=smithay::backend::renderer::element::utils::RelocateRenderElement<smithay::backend::renderer::element::utils::RescaleRenderElement<WaylandSurfaceRenderElement<R>>>,
 }
 
@@ -139,6 +140,8 @@ where
         CursorImageStatus::Named(CursorIcon::Crosshair)
     } else if state.move_grab_active {
         CursorImageStatus::Named(CursorIcon::Grabbing)
+    } else if let Some(icon) = state.frame_cursor {
+        CursorImageStatus::Named(icon)
     } else {
         state.cursor_status.clone()
     };
@@ -800,7 +803,14 @@ where
             R,
             CursorRenderElement<R>,
         >(
-            renderer, &state.space, output, 1.0, clipper.as_ref()
+            renderer,
+            &state.space,
+            output,
+            1.0,
+            clipper.as_ref(),
+            &mut |renderer, window, content| {
+                state.frame_render_elements(renderer, window, content, output)
+            },
         ));
     }
     if let Some(wallpaper) = render_wallpaper_element(renderer, state, output) {
