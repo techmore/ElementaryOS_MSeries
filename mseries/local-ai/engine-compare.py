@@ -46,6 +46,12 @@ MODELS = {
              '2b06cea98d75527c248a0b04383f7cf0a1c72fb4ed7b45096618fc4e59d015ad',
              'LiquidAI/LFM3-1.7B-MLX-8bit@ee7667f3cfccb2a41725f91820531823fcabc6b7', 4.5,
              HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k')),
+    # IBM Granite 4.0 1B, the dense build: all 40 layers attention, no Mamba. The hybrid
+    # granite-4.0-h-1b gets multi-token GPU passes wrong on omarchy-mlx, so it is left out.
+    'granite1b': (HOME / '.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f',
+                  'b7a43ebbc86517b8ecfc4cff265a787ea31620f7eb356984c08abe14646617c7',
+                  'mlx-community/granite-4.0-1b-4bit@29f108a4e2ff99079a173004871604c2f1e12c1f', 3.5,
+                  HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-patched-120k')),
 }
 MODEL, WEIGHTS_SHA, MODEL_ID, ALLOWANCE_GIB, MLX_PY, MODEL_ARMS = MODELS['qwen2b']
 # MSERIES_HK_ICD selects a candidate driver built by honeykrisp-candidate.sh.
@@ -366,7 +372,7 @@ def main():
         DEADLINE_S = 600  # TensorFold's unbatched decode needs ~100 s per 256-token request
     with (MODEL / 'model.safetensors').open('rb') as f:
         if hashlib.file_digest(f, 'sha256').hexdigest() != WEIGHTS_SHA:
-            raise SystemExit('Qwen weights do not match the pinned checkpoint')
+            raise SystemExit('weights do not match the pinned checkpoint')
     if any(x in arms for x in ('serve-nolp-120k', 'serve-patched-120k')) and not (SERVE_PATCH / 'mlx_lm/server.py').exists():
         raise SystemExit('patched server missing: run serve-patch.sh')
     if 'lm032-patched-120k' in arms and not (SERVE_PATCH_032 / 'mlx_lm/server.py').exists():
