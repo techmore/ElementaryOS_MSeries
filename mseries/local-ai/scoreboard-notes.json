@@ -54,6 +54,15 @@
       "status": "reported: M2 Pro 16 GB, macOS; not run here",
       "blocker": "Metal custom kernels and mlx-lm 0.32 (our MLX stack is 0.31.3); single-request gain is only 1.07x",
       "source": "Generated-Computers/Locals README"
+    },
+    {
+      "model": "Granite 4.0 H 1B MLX 4-bit (IBM, Mamba2 hybrid)",
+      "engine": "MLX (omarchy-mlx, in-process)",
+      "settings": "mlx-community/granite-4.0-h-1b-4bit",
+      "decode_tok_s": "",
+      "status": "left out; dense Granite 4.0 1B measured instead",
+      "blocker": "GPU passes over several tokens at once are wrong for this hybrid (CPU reference PPL 1.217, GPU one token at a time 1.217, GPU 4-token passes 5,860); the dense build matches the CPU reference (PPL 1.24176 vs 1.24177, 10 prompts x 512 tokens)",
+      "source": "measured here 2026-10-28 (v0.7.34 model gate for omarchy-mlx PR #296)"
     }
   ]
 }
