@@ -47,6 +47,28 @@
         }
       ]
     },
+    "mlx-lm-032": {
+      "repo": "ml-explore/mlx-lm",
+      "track": null,
+      "pin": "94cdcae",
+      "step_rule": "Test candidate only: the 0.32-line mlx-lm in the oMLX venv (install-omlx.sh). serve-patch.sh build-032 makes the patched copy for engine-compare's lm032-patched-120k arm; not the live server.",
+      "strip": 1,
+      "patches": [
+        {
+          "file": "patches/mlx-lm-94cdcae-server-skip-logprob-read.patch",
+          "kind": "port",
+          "origin": "joshuaswarren/omarchy-mlx patches/mlx-lm-0.32/mlx-lm-server-skip-logprob-read.patch"
+        },
+        {
+          "file": "patches/mlx-lm-94cdcae-server-singleton-cache.patch",
+          "kind": "vendored",
+          "origin": "Rapid-MLX singleton_cache_fastpath.py (Apache-2.0), see serve_singleton_cache.py",
+          "extra_files": [
+            "serve_singleton_cache.py"
+          ]
+        }
+      ]
+    },
     "coreglass": {
       "repo": "joshuaswarren/coreglass",
       "track": "main",

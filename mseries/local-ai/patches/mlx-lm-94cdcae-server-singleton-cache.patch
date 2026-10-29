@@ -1,0 +1,21 @@
+# mseries: install Rapid-MLX's singleton-cache fast path (vendored as serve_singleton_cache.py,
+# copied to mlx_lm/_mseries_singleton_cache.py by serve-patch.sh) into the mlx-lm 94cdcae (0.32 line) server.
+# Applies after mlx-lm-94cdcae-server-skip-logprob-read.patch. MSERIES_SERVE_SINGLETON=0 turns it off.
+--- a/mlx_lm/server.py
++++ b/mlx_lm/server.py
+@@ -55,6 +55,15 @@
+ # generated tokens are unchanged. MLX_OMARCHY_SERVER_LOGPROB_READ=1 restores the read.
+ _LOGPROB_READ_FORCED = os.environ.get("MLX_OMARCHY_SERVER_LOGPROB_READ") == "1"
+ 
++# mseries: keep a lone request's KV cache in its single-sequence form, so attention takes the
++# plain causal fast path instead of the batched mask; promote to batched caches when a second
++# request joins. Rapid-MLX's singleton-cache fast path (Apache-2.0, vendored as
++# _mseries_singleton_cache.py). MSERIES_SERVE_SINGLETON=0 restores stock batched merging.
++if os.environ.get("MSERIES_SERVE_SINGLETON", "1") != "0":
++    from ._mseries_singleton_cache import install_singleton_cache_fastpath
++
++    install_singleton_cache_fastpath()
++
+ 
+ def get_system_fingerprint():
+     gpu_arch = mx.device_info()["architecture"]
