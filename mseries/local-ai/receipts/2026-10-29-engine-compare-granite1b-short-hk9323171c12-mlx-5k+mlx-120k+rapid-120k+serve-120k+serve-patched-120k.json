@@ -1,0 +1,698 @@
+{
+  "status": "complete",
+  "model_key": "granite1b",
+  "model": "mlx-community/granite-4.0-1b-4bit@29f108a4e2ff99079a173004871604c2f1e12c1f",
+  "weights_sha256": "b7a43ebbc86517b8ecfc4cff265a787ea31620f7eb356984c08abe14646617c7",
+  "kernel": "7.2.11-elementary-aurora72-wip4",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "92bb49db5c313c105cbf4b44638d1e1896615174",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 3.5,
+  "arms": [
+    "mlx-5k",
+    "mlx-120k",
+    "rapid-120k",
+    "serve-120k",
+    "serve-patched-120k"
+  ],
+  "concurrency": 1,
+  "runs": [
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 15.405,
+          "max_temp_c": 45.386,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 15.357,
+          "max_temp_c": 45.266,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 14.377,
+          "max_temp_c": 45.186,
+          "max_fan_rpm": 2482.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 14.277,
+          "max_temp_c": 45.726,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 4.03,
+          "available_gib": 14.263,
+          "max_temp_c": 45.846,
+          "max_fan_rpm": 2512.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 3.3498687239916762,
+      "ttft_s": 0.29896200099028647,
+      "total_s": 0.9885269969963701,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 44.95587824142759,
+      "min_available_gib": 14.263,
+      "peak_temp_c": 45.846,
+      "round": 1,
+      "admission_available_gib": 15.404
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 15.328,
+          "max_temp_c": 45.146,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.472,
+          "max_temp_c": 45.106,
+          "max_fan_rpm": 2482.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 13.967,
+          "max_temp_c": 45.186,
+          "max_fan_rpm": 2482.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 14.022,
+          "max_temp_c": 45.033,
+          "max_fan_rpm": 2508.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 2.290231318009319,
+      "ttft_s": 0.2882960599963553,
+      "total_s": 0.9190493839996634,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 49.147580869248685,
+      "min_available_gib": 13.967,
+      "peak_temp_c": 45.186,
+      "round": 1,
+      "admission_available_gib": 15.328
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 15.102,
+          "max_temp_c": 45.066,
+          "max_fan_rpm": 2504.0
+        }
+      ],
+      "log_tail": "/home/sdolbec/.local/share/mlx-omarchy/venv/bin/python: Error while finding module specification for 'rapid_mlx.server' (ModuleNotFoundError: No module named 'rapid_mlx')\n",
+      "error": "RuntimeError: server exited during startup (1)",
+      "min_available_gib": 15.102,
+      "peak_temp_c": 45.066,
+      "round": 1,
+      "admission_available_gib": 15.095
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 15.119,
+          "max_temp_c": 44.831,
+          "max_fan_rpm": 2478.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 14.507,
+          "max_temp_c": 44.864,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 13.886,
+          "max_temp_c": 45.226,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 13.877,
+          "max_temp_c": 45.346,
+          "max_fan_rpm": 2474.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 13.849,
+          "max_temp_c": 45.42,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 13.836,
+          "max_temp_c": 45.68,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 6.09,
+          "available_gib": 13.849,
+          "max_temp_c": 45.533,
+          "max_fan_rpm": 2512.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-29 01:05:41,018 - INFO - Starting httpd at 127.0.0.1 on port 43257...\n127.0.0.1 - - [29/Oct/2026 01:05:41] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Oct/2026 01:05:41] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-29 01:05:41,881 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:05:41,881 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:05:41,881 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:05:41,881 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:05:41] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:05:42,153 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:05:42,239 - INFO - Prompt processing progress: 45/45\n2026-10-29 01:05:44,186 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:05:44,186 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:05:44,186 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:05:44,186 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:05:44] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:05:44,445 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:05:44,531 - INFO - Prompt processing progress: 45/45\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f\nbackend:      mlx-lm\nbind:         127.0.0.1:43257\ncontext:      4096 tokens\nweights:      0.86 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      15.12 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 3.86 GiB\nmem:          headroom:          9.26 GiB\nverdict:      FITS\n",
+      "ready_s": 3.848478503001388,
+      "ttft_s": 0.3906073300022399,
+      "total_s": 2.267946602005395,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 16.512731855293495,
+      "min_available_gib": 13.836,
+      "peak_temp_c": 45.68,
+      "round": 1,
+      "admission_available_gib": 15.119
+    },
+    {
+      "arm": "serve-patched-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 15.109,
+          "max_temp_c": 44.831,
+          "max_fan_rpm": 2491.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.535,
+          "max_temp_c": 44.57,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 13.768,
+          "max_temp_c": 45.42,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 13.706,
+          "max_temp_c": 44.5,
+          "max_fan_rpm": 2499.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mseries-ai/serve-patch/mlx_lm/server.py:1765: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-29 01:05:50,347 - INFO - Starting httpd at 127.0.0.1 on port 44723...\n127.0.0.1 - - [29/Oct/2026 01:05:50] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Oct/2026 01:05:50] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-29 01:05:51,207 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:05:51,207 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:05:51,207 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:05:51,207 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:05:51] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:05:51,434 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:05:51,459 - INFO - Prompt processing progress: 45/45\n2026-10-29 01:05:52,066 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:05:52,066 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:05:52,066 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:05:52,066 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:05:52] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:05:52,252 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:05:52,277 - INFO - Prompt processing progress: 45/45\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f\nbackend:      mlx-lm\nbind:         127.0.0.1:44723\ncontext:      4096 tokens\nweights:      0.86 GiB\nkv cache:     0.00 GiB at 4096 tokens\nmargin:       1.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      15.10 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 1.86 GiB\nmem:          headroom:          11.24 GiB\nverdict:      FITS\n",
+      "ready_s": 2.4300457130011637,
+      "ttft_s": 0.23188251699320972,
+      "total_s": 0.8117326439969474,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 53.46209055810067,
+      "min_available_gib": 13.706,
+      "peak_temp_c": 45.42,
+      "round": 1,
+      "admission_available_gib": 15.109
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 15.194,
+          "max_temp_c": 45.426,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.317,
+          "max_temp_c": 44.864,
+          "max_fan_rpm": 2482.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 13.866,
+          "max_temp_c": 45.453,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 13.811,
+          "max_temp_c": 44.701,
+          "max_fan_rpm": 2513.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 2.291298027994344,
+      "ttft_s": 0.2867747650016099,
+      "total_s": 0.8809681320126401,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 52.17156858539038,
+      "min_available_gib": 13.811,
+      "peak_temp_c": 45.453,
+      "round": 2,
+      "admission_available_gib": 15.194
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 15.035,
+          "max_temp_c": 45.066,
+          "max_fan_rpm": 2500.0
+        }
+      ],
+      "log_tail": "/home/sdolbec/.local/share/mlx-omarchy/venv/bin/python: Error while finding module specification for 'rapid_mlx.server' (ModuleNotFoundError: No module named 'rapid_mlx')\n",
+      "error": "RuntimeError: server exited during startup (1)",
+      "min_available_gib": 15.035,
+      "peak_temp_c": 45.066,
+      "round": 2,
+      "admission_available_gib": 15.035
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 15.048,
+          "max_temp_c": 44.864,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.384,
+          "max_temp_c": 45.38,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 13.749,
+          "max_temp_c": 45.186,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 13.75,
+          "max_temp_c": 45.26,
+          "max_fan_rpm": 2491.0
+        },
+        {
+          "t": 4.08,
+          "available_gib": 13.713,
+          "max_temp_c": 45.5,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 5.09,
+          "available_gib": 13.711,
+          "max_temp_c": 45.146,
+          "max_fan_rpm": 2491.0
+        },
+        {
+          "t": 6.1,
+          "available_gib": 13.721,
+          "max_temp_c": 44.586,
+          "max_fan_rpm": 2495.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-29 01:06:07,414 - INFO - Starting httpd at 127.0.0.1 on port 51273...\n127.0.0.1 - - [29/Oct/2026 01:06:07] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Oct/2026 01:06:07] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-29 01:06:08,228 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:06:08,228 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:06:08,228 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:06:08,228 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:06:08] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:06:08,488 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:06:08,577 - INFO - Prompt processing progress: 45/45\n2026-10-29 01:06:10,523 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:06:10,523 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:06:10,523 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:06:10,523 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:06:10] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:06:10,784 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:06:10,865 - INFO - Prompt processing progress: 45/45\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f\nbackend:      mlx-lm\nbind:         127.0.0.1:51273\ncontext:      4096 tokens\nweights:      0.86 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      15.05 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 3.86 GiB\nmem:          headroom:          9.19 GiB\nverdict:      FITS\n",
+      "ready_s": 3.81596051400993,
+      "ttft_s": 0.3954371319996426,
+      "total_s": 2.284975681002834,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 16.406122021884002,
+      "min_available_gib": 13.711,
+      "peak_temp_c": 45.5,
+      "round": 2,
+      "admission_available_gib": 15.048
+    },
+    {
+      "arm": "serve-patched-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 15.0,
+          "max_temp_c": 45.266,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 14.252,
+          "max_temp_c": 45.726,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 13.584,
+          "max_temp_c": 46.0,
+          "max_fan_rpm": 2495.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 13.608,
+          "max_temp_c": 45.573,
+          "max_fan_rpm": 2500.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mseries-ai/serve-patch/mlx_lm/server.py:1765: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-29 01:06:16,680 - INFO - Starting httpd at 127.0.0.1 on port 40695...\n127.0.0.1 - - [29/Oct/2026 01:06:17] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Oct/2026 01:06:17] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-29 01:06:17,530 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:06:17,530 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:06:17,530 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:06:17,530 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:06:17] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:06:17,762 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:06:17,786 - INFO - Prompt processing progress: 45/45\n2026-10-29 01:06:18,392 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:06:18,392 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:06:18,392 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:06:18,392 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:06:18] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:06:18,579 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:06:18,604 - INFO - Prompt processing progress: 45/45\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f\nbackend:      mlx-lm\nbind:         127.0.0.1:40695\ncontext:      4096 tokens\nweights:      0.86 GiB\nkv cache:     0.00 GiB at 4096 tokens\nmargin:       1.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.99 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 1.86 GiB\nmem:          headroom:          11.13 GiB\nverdict:      FITS\n",
+      "ready_s": 2.3879192029999103,
+      "ttft_s": 0.23576415098796133,
+      "total_s": 0.8122957699961262,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 53.76981760918993,
+      "min_available_gib": 13.584,
+      "peak_temp_c": 46.0,
+      "round": 2,
+      "admission_available_gib": 15.0
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.812,
+          "max_temp_c": 44.701,
+          "max_fan_rpm": 2509.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 13.881,
+          "max_temp_c": 44.608,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 13.695,
+          "max_temp_c": 45.226,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 13.707,
+          "max_temp_c": 45.946,
+          "max_fan_rpm": 2495.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 2.397410474004573,
+      "ttft_s": 0.2972882889880566,
+      "total_s": 0.9810731889883755,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 45.335894372609786,
+      "min_available_gib": 13.695,
+      "peak_temp_c": 45.946,
+      "round": 2,
+      "admission_available_gib": 14.812
+    },
+    {
+      "arm": "rapid-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.883,
+          "max_temp_c": 45.346,
+          "max_fan_rpm": 2504.0
+        }
+      ],
+      "log_tail": "/home/sdolbec/.local/share/mlx-omarchy/venv/bin/python: Error while finding module specification for 'rapid_mlx.server' (ModuleNotFoundError: No module named 'rapid_mlx')\n",
+      "error": "RuntimeError: server exited during startup (1)",
+      "min_available_gib": 14.883,
+      "peak_temp_c": 45.346,
+      "round": 3,
+      "admission_available_gib": 14.883
+    },
+    {
+      "arm": "serve-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 14.935,
+          "max_temp_c": 44.07,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.395,
+          "max_temp_c": 45.033,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 13.841,
+          "max_temp_c": 45.533,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 13.853,
+          "max_temp_c": 45.693,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 13.825,
+          "max_temp_c": 44.864,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 13.839,
+          "max_temp_c": 45.346,
+          "max_fan_rpm": 2504.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mlx-omarchy/venv/lib/python3.14/site-packages/mlx_lm/server.py:1730: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-29 01:06:33,716 - INFO - Starting httpd at 127.0.0.1 on port 59863...\n127.0.0.1 - - [29/Oct/2026 01:06:34] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Oct/2026 01:06:34] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-29 01:06:34,549 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:06:34,549 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:06:34,549 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:06:34,549 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:06:34] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:06:34,828 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:06:34,917 - INFO - Prompt processing progress: 45/45\n2026-10-29 01:06:36,843 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:06:36,843 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:06:36,843 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:06:36,843 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:06:36] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:06:37,107 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:06:37,178 - INFO - Prompt processing progress: 45/45\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f\nbackend:      mlx-lm\nbind:         127.0.0.1:59863\ncontext:      4096 tokens\nweights:      0.86 GiB\nkv cache:     UNKNOWN -> flat 2.00 GiB margin included\nmargin:       3.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      14.93 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 3.86 GiB\nmem:          headroom:          9.07 GiB\nverdict:      FITS\n",
+      "ready_s": 3.81270417298947,
+      "ttft_s": 0.3797701389994472,
+      "total_s": 2.2487856419902528,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 16.586272264940384,
+      "min_available_gib": 13.825,
+      "peak_temp_c": 45.693,
+      "round": 3,
+      "admission_available_gib": 14.935
+    },
+    {
+      "arm": "serve-patched-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 15.144,
+          "max_temp_c": 45.5,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 14.395,
+          "max_temp_c": 46.22,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 13.839,
+          "max_temp_c": 44.201,
+          "max_fan_rpm": 2487.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 13.739,
+          "max_temp_c": 44.771,
+          "max_fan_rpm": 2508.0
+        }
+      ],
+      "log_tail": "shim: PROBE_ENV=None installing=False\nshim: uclamp placement applied (uclamp_min=1024)\n/home/sdolbec/.local/share/mseries-ai/serve-patch/mlx_lm/server.py:1765: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-29 01:06:42,969 - INFO - Starting httpd at 127.0.0.1 on port 53765...\n127.0.0.1 - - [29/Oct/2026 01:06:43] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Oct/2026 01:06:43] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-29 01:06:43,804 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:06:43,804 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:06:43,804 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:06:43,804 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:06:43] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:06:44,034 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:06:44,058 - INFO - Prompt processing progress: 45/45\n2026-10-29 01:06:44,662 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-29 01:06:44,662 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-29 01:06:44,662 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-29 01:06:44,662 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [29/Oct/2026 01:06:44] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-29 01:06:44,848 - INFO - Prompt processing progress: 44/45\n2026-10-29 01:06:44,873 - INFO - Prompt processing progress: 45/45\nmodel:        /home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f\nbackend:      mlx-lm\nbind:         127.0.0.1:53765\ncontext:      4096 tokens\nweights:      0.86 GiB\nkv cache:     0.00 GiB at 4096 tokens\nmargin:       1.00 GiB (workspace margin, unmeasured estimate)\nmem:          MemAvailable:      15.13 GiB\nmem:          safety reserve:    2.00 GiB\nmem:          reservations:      0.00 GiB\nmem:          model requirement: 1.86 GiB\nmem:          headroom:          11.27 GiB\nverdict:      FITS\n",
+      "ready_s": 2.376107634991058,
+      "ttft_s": 0.23426514699531253,
+      "total_s": 0.8051618789904751,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "served_model": "/home/sdolbec/.cache/huggingface/hub/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 54.30053854339225,
+      "min_available_gib": 13.739,
+      "peak_temp_c": 46.22,
+      "round": 3,
+      "admission_available_gib": 15.144
+    },
+    {
+      "arm": "mlx-5k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 15.2,
+          "max_temp_c": 44.5,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 14.385,
+          "max_temp_c": 44.864,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 14.105,
+          "max_temp_c": 45.38,
+          "max_fan_rpm": 2491.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 14.097,
+          "max_temp_c": 45.226,
+          "max_fan_rpm": 2508.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 2.4139561350020813,
+      "ttft_s": 0.29750428900297265,
+      "total_s": 0.9874445360037498,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 44.93142722831341,
+      "min_available_gib": 14.097,
+      "peak_temp_c": 45.38,
+      "round": 3,
+      "admission_available_gib": 15.2
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 15.218,
+          "max_temp_c": 45.726,
+          "max_fan_rpm": 2504.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 14.292,
+          "max_temp_c": 45.306,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 13.887,
+          "max_temp_c": 46.26,
+          "max_fan_rpm": 2513.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 13.82,
+          "max_temp_c": 45.42,
+          "max_fan_rpm": 2500.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 2.3022019700001692,
+      "ttft_s": 0.29046173200185876,
+      "total_s": 0.8834771380061284,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 52.275201767315984,
+      "min_available_gib": 13.82,
+      "peak_temp_c": 46.26,
+      "round": 3,
+      "admission_available_gib": 15.218
+    }
+  ],
+  "summary": {
+    "mlx-5k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.29750428900297265,
+      "median_total_s": 0.9874445360037498,
+      "median_decode_tps": 44.95587824142759,
+      "texts": [
+        "81588d18f384"
+      ]
+    },
+    "mlx-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.2882960599963553,
+      "median_total_s": 0.8834771380061284,
+      "median_decode_tps": 52.17156858539038,
+      "texts": [
+        "81588d18f384"
+      ]
+    },
+    "rapid-120k": {
+      "ok_runs": 0,
+      "median_ttft_s": null,
+      "median_total_s": null,
+      "median_decode_tps": null,
+      "texts": []
+    },
+    "serve-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.3906073300022399,
+      "median_total_s": 2.267946602005395,
+      "median_decode_tps": 16.512731855293495,
+      "texts": [
+        "81588d18f384"
+      ]
+    },
+    "serve-patched-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.23426514699531253,
+      "median_total_s": 0.8117326439969474,
+      "median_decode_tps": 53.76981760918993,
+      "texts": [
+        "81588d18f384"
+      ]
+    }
+  }
+}
