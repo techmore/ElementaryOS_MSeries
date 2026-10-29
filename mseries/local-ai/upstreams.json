@@ -4,8 +4,8 @@
     "omarchy-mlx": {
       "repo": "joshuaswarren/omarchy-mlx",
       "track": "main",
-      "pin": "33630f9c1eeefe5fc985a28bed0585432c2c014e",
-      "pin_label": "v0.7.33",
+      "pin": "5e40ecf953e8b907dcae1ce6caadce6ad62b0e0f",
+      "pin_label": "v0.7.34",
       "step_rule": "Step only when upstream moves its install.sh MLX_LM_VERSION default or cuts a release; never run ahead of it.",
       "install_checkout": "omarchy-mlx",
       "patches": []
@@ -50,7 +50,7 @@
     "coreglass": {
       "repo": "joshuaswarren/coreglass",
       "track": "main",
-      "pin": "25603cbf1f95fd2819b11d914afec58997ef1b8b",
+      "pin": "53dd379e74df875ad7dee8a9ef8ddc4156508604",
       "install_checkout": "coreglass",
       "strip": 1,
       "patches": [
