@@ -1,0 +1,362 @@
+diff --git a/tools/production-anec-probe.py b/tools/production-anec-probe.py
+index 83e3653..5992ac6 100755
+--- a/tools/production-anec-probe.py
++++ b/tools/production-anec-probe.py
+@@ -54,6 +54,8 @@ def parse_int(value):
+ def parse_args():
+     parser = argparse.ArgumentParser()
+     parser.add_argument("anec", type=Path)
++    parser.add_argument("--tile-unit", type=parse_int, choices=(0x200, 0x4000), required=True,
++                        help="ANEC header tile-count unit in bytes: 0x200 for current hwxv2 output or 0x4000 for legacy artifacts")
+     parser.add_argument("--input-value", type=float, default=0.25)
+     parser.add_argument("--timeout", type=float, default=30.0)
+     parser.add_argument("--qid", type=int, choices=range(8))
+@@ -99,7 +101,7 @@ def read_control_stream(path, task_stream_size):
+         raise ValueError("control artifact task stream is truncated")
+     return data
+ 
+-def stage_geometry(header):
++def stage_geometry(header, tile_unit=TILE_SIZE):
+     """Decode the production buffer roles from one ANEC header.
+ 
+     ANEC tile-slot order (hwxv2-to-anec _build_header): slot 0 = command,
+@@ -117,12 +119,14 @@ def stage_geometry(header):
+         src_count,
+         dst_count,
+     ) = header[:7]
++    if tile_unit not in (0x200, 0x4000):
++        raise ValueError("unsupported ANEC header tile unit")
+     tiles = header[7:39]
+     nchw = header[39:]
+     output_surfaces = [
+         {
+             "bdx": bdx,
+-            "bytes": tiles[bdx] * TILE_SIZE,
++            "bytes": tiles[bdx] * tile_unit,
+             "nchw": tuple(nchw[bdx * 6:bdx * 6 + 6]),
+         }
+         for bdx in range(4, 4 + dst_count)
+@@ -130,7 +134,7 @@ def stage_geometry(header):
+     input_surfaces = [
+         {
+             "bdx": bdx,
+-            "bytes": tiles[bdx] * TILE_SIZE,
++            "bytes": tiles[bdx] * tile_unit,
+             "nchw": tuple(nchw[bdx * 6:bdx * 6 + 6]),
+         }
+         for bdx in range(4 + dst_count, 4 + dst_count + src_count)
+@@ -144,7 +148,7 @@ def stage_geometry(header):
+         "src_count": src_count,
+         "dst_count": dst_count,
+         "tiles": tiles,
+-        "workspace_size": tiles[WORKSPACE_BDX] * TILE_SIZE,
++        "workspace_size": tiles[WORKSPACE_BDX] * tile_unit,
+         "input_surfaces": input_surfaces,
+         "output_surfaces": output_surfaces,
+         "input_bytes": sum(s["bytes"] for s in input_surfaces),
+@@ -373,7 +377,7 @@ def main():
+     args = parse_args()
+     if args.timeout <= 0:
+         raise ValueError("timeout must be positive")
+-    stage = stage_geometry(load_anec_header(args.anec))
++    stage = stage_geometry(load_anec_header(args.anec), args.tile_unit)
+     if args.expect_sha256 is not None:
+         validate_expected_hash(args.anec, args.expect_sha256)
+     content_size = stage["content_size"]
+@@ -399,7 +403,7 @@ def main():
+         splice_control = args.task_zero_descriptor
+         min_td = TD_SIZE
+     if splice_control is not None:
+-        control_stage = stage_geometry(load_anec_header(splice_control))
++        control_stage = stage_geometry(load_anec_header(splice_control), args.tile_unit)
+         validate_splice_geometry(
+             stage,
+             args.anec.stat().st_size,
+diff --git a/tools/staged-decode-runtime.py b/tools/staged-decode-runtime.py
+index 07d8e7d..6feae9a 100755
+--- a/tools/staged-decode-runtime.py
++++ b/tools/staged-decode-runtime.py
+@@ -49,7 +49,7 @@ RUNTIME = load_module("ane_runtime", ROOT / "ane-runtime.py")
+ ROW_STRIDE = 64  # staged gate/state rows: values at the row head, 64 B stride
+ 
+ 
+-def decode_channels(path, valid_totals=None):
++def decode_channels(path, valid_totals=None, *, tile_unit):
+     """Return (stage, {channel: (read_total, write_total)}) for one .anec.
+ 
+     Selector words sit at +32 in each task descriptor (shifts 0/6/12/18 are
+@@ -60,7 +60,7 @@ def decode_channels(path, valid_totals=None):
+     total is a known staged window survive; anything else is float payload.
+     """
+     header = PROBE.load_anec_header(path)
+-    stage = PROBE.stage_geometry(header)
++    stage = PROBE.stage_geometry(header, tile_unit)
+     with path.open("rb") as stream, mmap.mmap(
+         stream.fileno(), 0, access=mmap.ACCESS_READ
+     ) as data:
+@@ -183,11 +183,11 @@ def _tile(size):
+ class StagedProgram:
+     """One converted .anec with its own bank buffers and resident states."""
+ 
+-    def __init__(self, anec_path, device, binding, name="", valid_totals=None):
++    def __init__(self, anec_path, device, binding, name="", valid_totals=None, *, tile_unit):
+         self.path = Path(anec_path)
+         self.name = name or self.path.stem
+         self.device = device
+-        self.stage, channels = decode_channels(self.path, valid_totals)
++        self.stage, channels = decode_channels(self.path, valid_totals, tile_unit=tile_unit)
+         self.binding = dict(binding)
+         window_overrides = {
+             int(ch): total
+@@ -391,7 +391,9 @@ class StagedProgram:
+ class StagedDecoder:
+     """The full 38-program decode chain for one device."""
+ 
+-    def __init__(self, manifest_path, anec_dir, bindings_path=None, qid=None):
++    def __init__(self, manifest_path, anec_dir, bindings_path=None, qid=None, *, tile_unit=None):
++        if tile_unit not in (0x200, 0x4000):
++            raise ValueError("explicit ANEC header tile unit required before device open")
+         self.manifest = json.loads(Path(manifest_path).read_text())
+         self.max_len = int(self.manifest["max_len"])
+         self.anec_dir = Path(anec_dir)
+@@ -418,7 +420,7 @@ class StagedDecoder:
+                 }
+                 staged = StagedProgram(
+                     self.anec_dir / f"prog_{index:03d}.anec", self.device,
+-                    binding, name=f"prog_{index:03d}", valid_totals=valid_totals,
++                    binding, name=f"prog_{index:03d}", valid_totals=valid_totals, tile_unit=tile_unit,
+                 )
+                 for state in program.get("states", []):
+                     staged.add_state(state["in_port"], state["out_port"])
+@@ -450,8 +452,10 @@ class StagedDecoder:
+ 
+     def step(self, hidden, rope):
+         """Run one token through all programs; returns the final hidden."""
+-        self.lanes["x"] = np.asarray(hidden, dtype=np.float16).reshape(1, -1)
++        hidden = np.asarray(hidden, dtype=np.float16).reshape(1, -1)
+         for staged, program in zip(self.programs, self.manifest["programs"]):
++            if program.get("group_start"):
++                self.lanes["x"] = hidden
+             context = self.context_arrays(self.position, rope)
+             for source in program["srcs"]:
+                 kind, lane = source["kind"], source["lane"]
+@@ -468,8 +472,10 @@ class StagedDecoder:
+                 self.lanes[dst["lane"]] = staged.read_output(
+                     dst["port"], tuple(dst["shape"])
+                 )
++            if program.get("group_end"):
++                hidden = self.lanes["h"]
+         self.position += 1
+-        return self.lanes["h"].reshape(-1)
++        return hidden.reshape(-1)
+ 
+     def close(self):
+         for staged in self.programs:
+@@ -564,6 +570,8 @@ def main(argv=None):
+     parser.add_argument("-p", "--prompt", required=True)
+     parser.add_argument("--generate", type=int, default=0)
+     parser.add_argument("--qid", type=int, default=None)
++    parser.add_argument("--tile-unit", type=lambda x: int(x, 0), choices=(0x200, 0x4000), required=True,
++                        help="explicit header tile-count unit in bytes")
+     args = parser.parse_args(argv)
+ 
+     weights = load_module("ane_weights", ROOT / "ane-weights.py").GGUFWeights(
+@@ -580,7 +588,7 @@ def main(argv=None):
+     elementwise = token_runtime.harvest_elementwise_descriptors(str(softmax_path))
+ 
+     decoder = StagedDecoder(
+-        args.manifest, args.anec_dir, args.bindings, args.qid
++        args.manifest, args.anec_dir, args.bindings, args.qid, tile_unit=args.tile_unit
+     )
+     try:
+         head, backend = build_tied_head(
+diff --git a/tools/staged-decode-window-td-dump.py b/tools/staged-decode-window-td-dump.py
+index 1bb7fb7..e287f32 100755
+--- a/tools/staged-decode-window-td-dump.py
++++ b/tools/staged-decode-window-td-dump.py
+@@ -10,6 +10,7 @@ from pathlib import Path
+ 
+ parser = argparse.ArgumentParser()
+ parser.add_argument("--workdir", type=Path, default=Path("/var/tmp/qwenchain"))
++parser.add_argument("--tile-unit", type=lambda x: int(x, 0), choices=(0x200, 0x4000), required=True)
+ args = parser.parse_args()
+ TOOLS = args.workdir / "repo" / "tools"
+ spec = importlib.util.spec_from_file_location("sdr", TOOLS / "staged-decode-runtime.py")
+@@ -18,7 +19,7 @@ spec.loader.exec_module(mod)
+ 
+ out = {}
+ for path in sorted((args.workdir / "anec-dir" / "qwen38-anec-linux").glob("prog_*.anec")):
+-    stage, channels = mod.decode_channels(path)
++    stage, channels = mod.decode_channels(path, tile_unit=args.tile_unit)
+     out[path.stem] = {
+         str(ch): {"read": r, "write": w} for ch, (r, w) in sorted(channels.items())
+     }
+diff --git a/tools/test_hwxv2_to_anec.py b/tools/test_hwxv2_to_anec.py
+index b75624d..c2ad33a 100644
+--- a/tools/test_hwxv2_to_anec.py
++++ b/tools/test_hwxv2_to_anec.py
+@@ -277,7 +277,7 @@ class FreshHWXParserTests(unittest.TestCase):
+         result = MODULE.convert_hwx(self.data, 4, 4, contiguous_input_first=True)
+         fields = struct.unpack_from('<QIIQQII', result, 0)
+         # Current ABI (post 10d7c1f9 td clamp + 7e55943c tile units):
+-        # content tiles in 0x4000-B units, td_size clamped to 0x1f8.
++        # header tiles in 512-B units, td_size clamped to 0x1f8.
+         self.assertEqual(fields[:5], (0x4000, 504, 1, 628, 0x80))
+         # Task-0's header word carries the re-encoded tile count; compare
+         # the payload past it.
+@@ -298,9 +298,9 @@ class FreshHWXParserTests(unittest.TestCase):
+             MODULE._build_header(image, (1, 4, 1, 1), (1, 4, 1, 1)),
+         )
+         tiles = header[7:39]
+-        self.assertEqual(tiles[3], 2)
+-        self.assertEqual(tiles[5], 3)
+-        self.assertEqual(tiles[4], 4)
++        self.assertEqual(tiles[3], 33)
++        self.assertEqual(tiles[5], 65)
++        self.assertEqual(tiles[4], 97)
+ 
+     def test_multiport_header_maps_sections_to_distinct_tiles(self):
+         image = replace(
+@@ -313,7 +313,7 @@ class FreshHWXParserTests(unittest.TestCase):
+             MODULE._build_header(image, (1, 4, 1, 1), (1, 4, 1, 1)),
+         )
+         self.assertEqual(header[5:7], (2, 2))
+-        self.assertEqual(header[7 + 4:7 + 8], (1, 2, 1, 3))
++        self.assertEqual(header[7 + 4:7 + 8], (24, 33, 8, 65))
+ 
+     def test_multiport_tiles_cover_nchw_padding(self):
+         image = replace(
+@@ -325,7 +325,7 @@ class FreshHWXParserTests(unittest.TestCase):
+             '<QIIQQII32I192Q',
+             MODULE._build_header(image, (1, 2048, 1, 1), (1, 2048, 1, 1)),
+         )
+-        self.assertEqual(header[7 + 4:7 + 10], (32, 8, 24, 8, 32, 24))
++        self.assertEqual(header[7 + 4:7 + 10], (1024, 256, 768, 256, 1024, 768))
+ 
+     def test_packers_reuse_output_buffers(self):
+         matrix_256 = np.arange(512 * 256, dtype=np.float16).reshape(512, 256)
+@@ -493,12 +493,12 @@ class DerivedGeometryTests(unittest.TestCase):
+         nchw = header[39:]
+         self.assertEqual(tuple(nchw[4 * 6:4 * 6 + 6]), (1, 2048, 1, 1, 2, 2))
+         self.assertEqual(tuple(nchw[5 * 6:5 * 6 + 6]), (1, 2048, 1, 1, 2, 2))
+-        self.assertEqual(header[7 + 4], 1)
+-        self.assertEqual(header[7 + 5], 1)
++        self.assertEqual(header[7 + 4], 8)
++        self.assertEqual(header[7 + 5], 8)
+ 
+     def test_the_qualified_64_element_geometry_is_unchanged(self):
+         # The regression bar: the device-qualified 64-element class must keep
+-        # (1,64,1,1,64,64) and its one-tile surfaces.
++        # (1,64,1,1,64,64) and its 4096-byte surfaces.
+         data = (ROOT / 'tools/fresh-64.hwx.sample').read_bytes()
+         header = struct.unpack_from(
+             '<QIIQQII32I192Q', MODULE.convert_hwx(data, 64, 64, contiguous_input_first=True), 0
+@@ -506,8 +506,8 @@ class DerivedGeometryTests(unittest.TestCase):
+         nchw = header[39:]
+         self.assertEqual(tuple(nchw[4 * 6:4 * 6 + 6]), (1, 64, 1, 1, 64, 64))
+         self.assertEqual(tuple(nchw[5 * 6:5 * 6 + 6]), (1, 64, 1, 1, 64, 64))
+-        self.assertEqual(header[7 + 4], 1)
+-        self.assertEqual(header[7 + 5], 1)
++        self.assertEqual(header[7 + 4], 8)
++        self.assertEqual(header[7 + 5], 8)
+ 
+     def test_a_record_running_past_the_descriptor_is_rejected(self):
+         # This over-run is the -110 defect class: the walk must not decode
+diff --git a/tools/test_production_anec_probe.py b/tools/test_production_anec_probe.py
+index 2f29a41..6fd8bfe 100644
+--- a/tools/test_production_anec_probe.py
++++ b/tools/test_production_anec_probe.py
+@@ -91,6 +91,21 @@ class ProductionProbeTests(unittest.TestCase):
+         self.assertEqual(bootstrap[8:0x80], data[0x608:0x680])
+         self.assertEqual(bootstrap[0x80:], b"\0" * (0x274 - 0x80))
+ 
++    def test_header_tile_units_are_explicit(self):
++        header = [0] * (7 + 32 + 192)
++        header[5] = header[6] = 1
++        header[7 + 3] = 3
++        header[7 + 4] = 5
++        header[7 + 5] = 6
++        a = MODULE.stage_geometry(header, 0x200)
++        b = MODULE.stage_geometry(header, 0x4000)
++        self.assertEqual(a["workspace_size"], 3 * 512)
++        self.assertEqual(a["input_bytes"], 6 * 512)
++        self.assertEqual(a["output_bytes"], 5 * 512)
++        self.assertEqual(b["input_bytes"], a["input_bytes"] * 32)
++        with self.assertRaises(ValueError):
++            MODULE.stage_geometry(header, 1024)
++
+     def test_stage_geometry_decodes_production_buffer_roles(self):
+         tiles = [0] * 32
+         tiles[0] = 1
+@@ -197,7 +212,7 @@ class ProductionProbeTests(unittest.TestCase):
+     def test_parse_args_exposes_task_zero_envelope_option(self):
+         with mock.patch(
+             "sys.argv",
+-            ["probe", "target.anec", "--task-zero-envelope", "control.anec"],
++            ["probe", "target.anec", "--tile-unit", "0x4000", "--task-zero-envelope", "control.anec"],
+         ):
+             args = MODULE.parse_args()
+         self.assertEqual(args.task_zero_envelope, Path("control.anec"))
+@@ -205,7 +220,7 @@ class ProductionProbeTests(unittest.TestCase):
+     def test_parse_args_exposes_task_zero_descriptor_option(self):
+         with mock.patch(
+             "sys.argv",
+-            ["probe", "target.anec", "--task-zero-descriptor", "control.anec"],
++            ["probe", "target.anec", "--tile-unit", "0x4000", "--task-zero-descriptor", "control.anec"],
+         ):
+             args = MODULE.parse_args()
+         self.assertEqual(args.task_zero_descriptor, Path("control.anec"))
+@@ -216,6 +231,7 @@ class ProductionProbeTests(unittest.TestCase):
+             [
+                 "probe",
+                 "target.anec",
++                "--tile-unit", "0x4000",
+                 "--task-zero-envelope",
+                 "control.anec",
+                 "--task-zero-descriptor",
+diff --git a/tools/test_staged_tile_unit_guard.py b/tools/test_staged_tile_unit_guard.py
+new file mode 100644
+index 0000000..6927655
+--- /dev/null
++++ b/tools/test_staged_tile_unit_guard.py
+@@ -0,0 +1,40 @@
++"""Offline test: a staged decoder needs an explicit ANEC header unit."""
++import importlib.util
++from pathlib import Path
++import unittest
++from unittest import mock
++
++spec = importlib.util.spec_from_file_location('staged_decoder', Path(__file__).with_name('staged-decode-runtime.py'))
++module = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(module)
++
++class UnitGuardTests(unittest.TestCase):
++    def test_missing_or_invalid_unit_fails_before_any_device_open(self):
++        with mock.patch.object(module.RUNTIME, 'Device') as device:
++            for unit in (None, 1024):
++                with self.assertRaisesRegex(ValueError, 'explicit ANEC header tile unit'):
++                    module.StagedDecoder('absent-manifest', 'absent-dir', tile_unit=unit)
++            device.assert_not_called()
++
++class GroupFlowTests(unittest.TestCase):
++    def test_output_of_one_group_becomes_input_to_next(self):
++        import numpy as np
++        class Program:
++            def write_bank(self, port, value):
++                self.value = value.copy()
++            def execute(self, outputs):
++                pass
++            def read_output(self, port, shape):
++                return self.value + np.float16(1)
++        d = module.StagedDecoder.__new__(module.StagedDecoder)
++        d.programs = [Program(), Program()]
++        d.manifest = {'programs': [
++            {'group_start': True, 'group_end': True,
++             'srcs': [{'kind': 'lane', 'lane': 'x', 'port': 'in'}],
++             'dsts': [{'lane': 'h', 'port': 'out', 'shape': [1, 1]}]}
++            for _ in range(2)]}
++        d.lanes = {}; d.position = 0
++        d.context_arrays = lambda position, rope: {}
++        output = d.step(np.array([1], dtype=np.float16), {})
++        self.assertEqual(float(output[0]), 3.0)
++        self.assertEqual(float(d.programs[1].value[0, 0]), 2.0)

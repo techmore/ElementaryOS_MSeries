@@ -71,16 +71,16 @@
     "ane-linux-experiments": {
       "repo": "joshuaswarren/ane-linux-experiments",
       "track": "main",
-      "pin": "b1f2cbe338ef33f9befb320b98ef83096b37980b",
+      "pin": "7119220067caaeb2d3a53720593301f5e9b3ad29",
       "step_rule": "Experiments only; not installed.",
       "strip": 1,
       "patches": [
         {
-          "file": "patches/ane-linux-experiments-b1f2cbe-uniform-relayout.patch",
+          "file": "patches/ane-linux-experiments-7119220-uniform-relayout.patch",
           "kind": "ours"
         },
         {
-          "file": "patches/ane-linux-experiments-b1f2cbe-tile-unit-tests.patch",
+          "file": "patches/ane-linux-experiments-7119220-tile-unit-tests.patch",
           "kind": "ours"
         }
       ]
