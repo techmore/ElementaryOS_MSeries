@@ -23,7 +23,8 @@ ARM_SETTINGS = {
 }
 # Receipts record the TensorFold revision they ran; name the PR it came from.
 TF_PRS = {'670902196c47f3e70e3f56ab933805713be31aa8': 'PR 1517', '92bb49db5c313c105cbf4b44638d1e1896615174': 'PR 1544'}
-MODEL_NAMES = {'qwen2b': 'Qwen3.5-2B MLX 4-bit', 'qwen4b': 'Qwen3.5-4B MLX 4-bit', 'lfm3': 'LFM3-1.7B MLX 8-bit'}
+MODEL_NAMES = {'qwen2b': 'Qwen3.5-2B MLX 4-bit', 'qwen4b': 'Qwen3.5-4B MLX 4-bit', 'lfm3': 'LFM3-1.7B MLX 8-bit',
+               'granite1b': 'Granite 4.0 1B MLX 4-bit (IBM, dense)'}
 FIELDS = ['best', 'model', 'engine', 'settings', 'tokens', 'decode_tok_s', 'ttft_s', 'total_s', 'runs',
           'same_output', 'gate', 'kernel', 'driver', 'date', 'status', 'source']
 
@@ -245,6 +246,7 @@ def main():
            'python3 engine-compare.py --model qwen2b            # 32 tokens; add --long for 256',
            'python3 engine-compare.py --model qwen4b --admission-wait-seconds 1800',
            'python3 engine-compare.py --model lfm3',
+           'python3 engine-compare.py --model granite1b',
            'python3 mlx-gate.py reference && python3 mlx-gate.py sweep',
            './tensorfold-vulkan.sh build && ./tensorfold-vulkan.sh gpu',
            'python3 scoreboard.py',

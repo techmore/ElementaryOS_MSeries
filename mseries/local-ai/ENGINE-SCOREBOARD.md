@@ -10,6 +10,10 @@ Each block is one model and load; each panel has its own scale. **First token** 
 
 | ★ | Model | Engine | Settings | Tokens | Decode tok/s | TTFT s | Total s | Runs | Same output as MLX default | Gate | Kernel | Driver | Date | Receipt |
 |---|---|---|---|---:|---:|---:|---:|---:|---|---|---|---|---|---|
+| ★ | Granite 4.0 1B MLX 4-bit (IBM, dense) | **mlx-omarchy-serve + our four server patches + batching of 4 (HTTP server; runs the everyday model)** | `MLX_OMARCHY_BATCH_WORK=120000` | 32 | **53.77** | 0.23 | 0.81 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 9323171c12 | 2026-10-29 | [2026-10-29-engine-compare-granite1b-short-hk9323171c12-mlx-5k+mlx-120k+rapid-120k+serve-120k+serve-patched-120k.json](receipts/2026-10-29-engine-compare-granite1b-short-hk9323171c12-mlx-5k+mlx-120k+rapid-120k+serve-120k+serve-patched-120k.json) |
+|  | Granite 4.0 1B MLX 4-bit (IBM, dense) | MLX (omarchy-mlx, in-process) | `MLX_OMARCHY_BATCH_WORK=120000` | 32 | 52.17 | 0.29 | 0.88 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 9323171c12 | 2026-10-29 | [2026-10-29-engine-compare-granite1b-short-hk9323171c12-mlx-5k+mlx-120k+rapid-120k+serve-120k+serve-patched-120k.json](receipts/2026-10-29-engine-compare-granite1b-short-hk9323171c12-mlx-5k+mlx-120k+rapid-120k+serve-120k+serve-patched-120k.json) |
+|  | Granite 4.0 1B MLX 4-bit (IBM, dense) | MLX (omarchy-mlx, in-process) | `defaults (MLX_OMARCHY_BATCH_WORK fallback 5000)` | 32 | 44.96 | 0.30 | 0.99 | 3 | reference | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 9323171c12 | 2026-10-29 | [2026-10-29-engine-compare-granite1b-short-hk9323171c12-mlx-5k+mlx-120k+rapid-120k+serve-120k+serve-patched-120k.json](receipts/2026-10-29-engine-compare-granite1b-short-hk9323171c12-mlx-5k+mlx-120k+rapid-120k+serve-120k+serve-patched-120k.json) |
+|  | Granite 4.0 1B MLX 4-bit (IBM, dense) | mlx-omarchy-serve, mlx-lm backend, stock (HTTP server) | `MLX_OMARCHY_BATCH_WORK=120000` | 32 | 16.51 | 0.39 | 2.27 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 9323171c12 | 2026-10-29 | [2026-10-29-engine-compare-granite1b-short-hk9323171c12-mlx-5k+mlx-120k+rapid-120k+serve-120k+serve-patched-120k.json](receipts/2026-10-29-engine-compare-granite1b-short-hk9323171c12-mlx-5k+mlx-120k+rapid-120k+serve-120k+serve-patched-120k.json) |
 | ★ | LFM3-1.7B MLX 8-bit | **MLX (omarchy-mlx, in-process)** | `MLX_OMARCHY_BATCH_WORK=120000` | 32 | **27.49** | 0.30 | 1.44 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 9323171c12 | 2026-10-28 | [2026-10-28-engine-compare-lfm3-short-hk9323171c12.json](receipts/2026-10-28-engine-compare-lfm3-short-hk9323171c12.json) |
 |  | LFM3-1.7B MLX 8-bit | MLX (omarchy-mlx, in-process) | `defaults (MLX_OMARCHY_BATCH_WORK fallback 5000)` | 32 | 22.63 | 0.33 | 1.69 | 3 | reference | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 9323171c12 | 2026-10-28 | [2026-10-28-engine-compare-lfm3-short-hk9323171c12.json](receipts/2026-10-28-engine-compare-lfm3-short-hk9323171c12.json) |
 |  | LFM3-1.7B MLX 8-bit | MLX (omarchy-mlx, in-process) | `MLX_OMARCHY_BATCH_WORK=120000` | 32 | 16.90 | 0.39 | 2.23 | 3 | yes | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-lfm3-short.json](receipts/2026-10-28-engine-compare-lfm3-short.json) |
@@ -57,6 +61,7 @@ Each block is one model and load; each panel has its own scale. **First token** 
 | Qwen3.5-2B MLX 4-bit | TensorFold Vulkan + submit batching | unpublished follow-up to PR 1544 (batching build a8b888dd) | ~10.6 (M1 Max), ~6.9 (M1) | reported upstream, code not public | Watched in people-watch/branch-watch; re-run engine-compare when it lands | ashhart/TensorFold issue 1420 |
 | Qwen3.5 0.8B (Mirai format) | uzu (CPU backend) | backend-cpu, stable Rust | 0.36 | measured here 2026-10-27 | No Linux GPU backend; Metal only | UZU-AND-ANE-EVALUATION-2026-10-27.md |
 | LFM3-1.7B | Locals (Generated-Computers) batched server | 8 requests at once | 620 total (2.99x mlx-lm) | reported: M2 Pro 16 GB, macOS; not run here | Metal custom kernels and mlx-lm 0.32 (our MLX stack is 0.31.3); single-request gain is only 1.07x | Generated-Computers/Locals README |
+| Granite 4.0 H 1B MLX 4-bit (IBM, Mamba2 hybrid) | MLX (omarchy-mlx, in-process) | mlx-community/granite-4.0-h-1b-4bit |  | left out; dense Granite 4.0 1B measured instead | GPU passes over several tokens at once are wrong for this hybrid (CPU reference PPL 1.217, GPU one token at a time 1.217, GPU 4-token passes 5,860); the dense build matches the CPU reference (PPL 1.24176 vs 1.24177, 10 prompts x 512 tokens) | measured here 2026-10-28 (v0.7.34 model gate for omarchy-mlx PR #296) |
 
 ## How we track upstream
 
@@ -84,6 +89,7 @@ cd mseries/local-ai
 python3 engine-compare.py --model qwen2b            # 32 tokens; add --long for 256
 python3 engine-compare.py --model qwen4b --admission-wait-seconds 1800
 python3 engine-compare.py --model lfm3
+python3 engine-compare.py --model granite1b
 python3 mlx-gate.py reference && python3 mlx-gate.py sweep
 ./tensorfold-vulkan.sh build && ./tensorfold-vulkan.sh gpu
 python3 scoreboard.py
