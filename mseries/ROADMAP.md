@@ -1,3 +1,28 @@
+## Current WD22TB4 candidate and Pages status — 2026-10-29
+
+Current `dev` is `dc6f7b10d8ca15df429f5373db3b320535ee2ef9`. Pages deployment
+[40874742041](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40874742041)
+succeeded for that SHA; live homepage and build-monitor files byte-match its
+`docs/` sources. This status correction awaits merge and a later successful
+Pages deployment.
+
+The latest kernel proposal is wip5 revision 7, [PR #698](https://github.com/techmore/ElementaryOS_MSeries/pull/698),
+head `4ea1ea28c5118bc558749203192eef08f042b7b2`, with owner-approved re-pin to
+omacom/linux-aurora `integration/aurora` at
+`2f725546d6ac6afe0bd5abfa1a844971519f0076`. Exact-head run
+[40866985442](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40866985442)
+passed the ARM64 candidate and unified72 kernel/modules/DTB build and payload
+inspection jobs. The immutable
+[`wip5 receipt`](https://github.com/techmore/ElementaryOS_MSeries/blob/4ea1ea28c5118bc558749203192eef08f042b7b2/mseries/aurora/unified72/review-wip5-2026-10-29.json)
+records all five patch pins, archive digest and configuration. PR #698 remains
+open, DIRTY against dev and without a recorded review. This establishes source
+and build evidence only: KUnit, independent artifact audit, install/arm, J314S
+boot, recovery, suspend, stability and paired-power gates remain open. No
+hardware acceptance is claimed; .20 remains the persistent boot default. PR
+#533's additional Aurora20 ports remain separate and are not included in #698.
+Next: refresh/review #698 against current dev, run KUnit, audit its artifacts,
+and leave attended hardware boot to the owner.
+
 ## WD22TB4 and wip4 candidate status — 2026-10-28
 
 Current `dev` is `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`. Pages deployment

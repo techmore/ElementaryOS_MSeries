@@ -37,6 +37,38 @@ Audited the linked announcement against the running wip5 host and current dev pi
 ## Rust compositor: frames for X11 windows — 2026-10-29
 
 Owner report: the WiFiman Desktop window (Electron, X11, `_MOTIF_WM_HINTS 0x2, 0x0, 0x1`, min 420x460) could not be moved or resized. The Rust compositor drew no server-side decorations at all, so X11 apps that rely on the window manager's title bar had nothing to grab. New `rust/pantheon-compositor/src/decorations.rs`: X11 windows that ask for a frame (no Motif hints, or hints with a title; normal/dialog/utility types) get a 34 px title bar above the client, an invisible 8 px resize band, and the `org.gnome.desktop.wm.preferences button-layout` buttons (close, minimize, maximize; the owner's `close,minimize,maximize:`), drawn with pango/cairo and rounded with the window corners. Drag moves, edges resize within the size hints, double-click and the maximize button toggle maximize, close sends WM_DELETE_WINDOW. Snapped/maximized framed windows are configured below the title bar; work-area fitting counts the title bar. Fixes on the way: X11 resize ignored WM_NORMAL_HINTS min/max; moving an X11 window (title bar or Super-drag) never told the client its new position. `_NET_WM_MOVERESIZE` was already routed by smithay and is now covered by the probe. Wayland windows, header-bar (CSD) X11 windows and fullscreen windows are unchanged. Verified: `mseries/pantheon-rust-compositor/ssd-probe/run.sh` (nested, 11/11 pass with a window carrying WiFiman's exact hints), 184 unit tests, activation probe 7/7. Not verified: the real WiFiman window on the M1 Pro (needs the owner's install + re-login); the real app was not started nested because its root daemon carries the owner's live VPN. Not done: `_NET_FRAME_EXTENTS`, a window shadow, frames during gesture animations.
+## Current WD22TB4 candidate and Pages status — 2026-10-29
+
+Verified `dev` at `dc6f7b10d8ca15df429f5373db3b320535ee2ef9`. Pages run
+[40874742041](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40874742041)
+succeeded for that exact revision, and the live `index.html`, `build-status.html`
+and `build-status.js` byte-match `docs/` at that source. This status correction
+is prepared on top of that revision and remains unpublished until its PR merges
+and a new Pages deployment succeeds.
+
+The current proposal is wip5 revision 7, [PR #698](https://github.com/techmore/ElementaryOS_MSeries/pull/698),
+head `4ea1ea28c5118bc558749203192eef08f042b7b2`. The PR records owner approval
+for re-pinning unified72 to omacom/linux-aurora `integration/aurora` at
+`2f725546d6ac6afe0bd5abfa1a844971519f0076` (7.2.11), 388 commits newer than
+the prior wip4 source. The distinct `7.2.11-elementary-aurora72-wip5` package
+identity prevents overwriting wip4. The retained five ordered patches apply to
+the full pinned archive without fuzz; the UDMABUF/DMABUF_HEAPS config overlay
+is required by the .20 recipe config. Exact-head CI run
+[40866985442](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40866985442)
+passed both ARM64 candidate and unified72 source preparation, selected kernel
+logic checks, kernel/modules/DTB build, payload-only package build and boundary
+inspection. The exact source and archive provenance is in
+[`review-wip5-2026-10-29.json`](https://github.com/techmore/ElementaryOS_MSeries/blob/4ea1ea28c5118bc558749203192eef08f042b7b2/mseries/aurora/unified72/review-wip5-2026-10-29.json).
+
+PR #698 is still open, merge state DIRTY, and has no recorded review. DCP KUnit,
+independent artifact audit, package installation/arming, attended J314S boot,
+dock recovery, suspend, long-run stability and paired-power qualification are
+not done. No wip5 package is installed or armed and no hardware acceptance is
+claimed; .20 remains the documented persistent boot default. PR #533 remains
+open with its additional Aurora20 ports; those changes are not part of #698.
+Next: update/rebase #698 against current `dev`, complete review and KUnit, audit
+the exact build artifacts, then leave any attended boot to the owner.
+
 ## wip4 revision 6: DP routing candidate — 2026-10-27
 
 Owner report: dock HDMI and Ethernet not working on wip3; HDMI worked after moving the dock to another port. Journals show `apple-dcp 28cc00000` timing out the DPTX validate call (-110 x6, "Type-C DPTX reconnect failed after 5 retries") on every failing boot, each time on the first plug within ~4 s of resuming from s2idle; the same dock then worked on `289c00000`. wip2 used `28cc00000` successfully; wip3 never did. Ethernet (RTL8153, `r8152`) enumerated but had no carrier this boot (it had carrier on the previous wip3 boot with the identical missing-`rtl8153b-2.fw` message), so that looks physical/cable, not kernel. Candidate: wip4 revision 6 = wip3 source + #157 + local 0002 + upstream #186 (0003-0005; #163 excluded as conflicting duplicate). Full-tree `candidate.py prepare`/`check` and 83 aurora tests pass; kernel build, KUnit and boot are NOT done. Nothing installed, staged, armed or rebooted. `thunderbolt_apple.s2idle_teardown/resume_recovery/router_sleep` remain at the default N (upstream did not test them with a real dock).
