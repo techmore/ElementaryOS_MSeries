@@ -713,11 +713,13 @@ class AgendaTest : Object {
         yield expect ("Copy Verse");
 
         // A feast day names itself in the header and shows its reserved verse.
+        // Count from today: the next Psalm heading can be months away, past Christmas.
+        today_button.clicked ();
         var christmas = new GLib.DateTime.local (now.get_year (), 12, 25, 0, 0, 0);
         var start = new GLib.DateTime.local (now.get_year (), now.get_month (), now.get_day_of_month (), 0, 0, 0);
         if (christmas.compare (start) < 0) christmas = christmas.add_years (1);
-        int to_christmas = (int) (christmas.difference (start.add_days (ahead)) / GLib.TimeSpan.DAY);
-        if (christmas.difference (start.add_days (ahead)) % GLib.TimeSpan.DAY > GLib.TimeSpan.HOUR * 12) to_christmas++;
+        // Round to whole days: a span across a DST change is an hour short or long.
+        int to_christmas = (int) ((christmas.difference (start) + GLib.TimeSpan.HOUR * 12) / GLib.TimeSpan.DAY);
         for (int i = 0; i < to_christmas; i++) ((Gtk.Button) named (widget, "verse-next")).clicked ();
         yield expect ("— Luke 2:10-12");
         assert (verse_date () == "Christmas Day · " + christmas.format ("%A, %B %-d"));
