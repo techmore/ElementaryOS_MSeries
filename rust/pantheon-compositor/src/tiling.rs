@@ -233,19 +233,29 @@ fn configure_toplevel(
     toplevel.send_pending_configure()
 }
 
-/// Set an X11 window's EWMH state and geometry for `kind`.
-fn configure_x11(surface: &X11Surface, kind: TargetKind, rect: Rect) -> bool {
+/// Set an X11 window's EWMH state and geometry for `kind`. A window with a
+/// server-side frame is configured below its title bar when snapped or
+/// maximized, so the whole frame fits the zone. Returns the client rect.
+fn configure_x11(surface: &X11Surface, kind: TargetKind, rect: Rect) -> Option<Rect> {
     if let Err(error) = surface
         .set_maximized(kind == TargetKind::Maximized)
         .and_then(|_| surface.set_fullscreen(kind == TargetKind::Fullscreen))
     {
         tracing::warn!(?error, "could not update X11 window state");
     }
+    let rect = match kind {
+        TargetKind::Tiled(_) | TargetKind::Maximized
+            if crate::decorations::wants_frame(surface) =>
+        {
+            crate::decorations::content_rect(rect)
+        }
+        _ => rect,
+    };
     if let Err(error) = surface.configure(Some(rect)) {
         tracing::warn!(?error, "could not configure X11 window placement");
-        return false;
+        return None;
     }
-    true
+    Some(rect)
 }
 
 impl PantheonCompositor {
@@ -514,10 +524,10 @@ impl PantheonCompositor {
             if surface.is_override_redirect() {
                 return;
             }
-            if !configure_x11(surface, target.kind, target.rect) {
+            let Some(rect) = configure_x11(surface, target.kind, target.rect) else {
                 return;
-            }
-            self.place_window(window, target.rect.loc);
+            };
+            self.place_window(window, rect.loc);
         }
         self.request_native_redraw();
     }

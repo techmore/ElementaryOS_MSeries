@@ -17,7 +17,7 @@ use smithay::{
         wayland_server::protocol::wl_surface::WlSurface,
     },
     utils::{Logical, Point, Rectangle, Size},
-    wayland::{compositor, shell::xdg::SurfaceCachedState},
+    wayland::compositor,
 };
 use std::cell::RefCell;
 
@@ -114,16 +114,8 @@ impl PointerGrab<PantheonCompositor> for ResizeSurfaceGrab {
             new_window_height = (self.initial_rect.size.h as f64 + delta.y) as i32;
         }
 
-        let (min_size, max_size) =
-            self.window
-                .toplevel()
-                .map_or((Size::from((1, 1)), Size::from((0, 0))), |toplevel| {
-                    compositor::with_states(toplevel.wl_surface(), |states| {
-                        let mut guard = states.cached_state.get::<SurfaceCachedState>();
-                        let data = guard.current();
-                        (data.min_size, data.max_size)
-                    })
-                });
+        // xdg min/max size, or the X11 window's WM_NORMAL_HINTS.
+        let (min_size, max_size) = PantheonCompositor::size_hints(&self.window);
 
         let min_width = min_size.w.max(1);
         let min_height = min_size.h.max(1);
