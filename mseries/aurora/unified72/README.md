@@ -1,6 +1,6 @@
 # Unified Aurora 7.2.10 build candidate
 
-## wip5 revision 7 — October 29, 2026 (build-only, not booted)
+## wip5 revision 7 — October 29, 2026 (booted on the J314S; install record in [wip5/README.md](wip5/README.md))
 
 The owner chose this re-pin. **Revision 7 pins `7.2.11-elementary-aurora72-wip5`**: merged omacom
 `integration/aurora` at `2f725546` (still 7.2.11). Upstream #158, the wip4 source `bd526b3c`, merged on 2026-10-23
