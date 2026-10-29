@@ -3,6 +3,13 @@
 One page of where each layer stands, with the evidence. Update it when something changes; details live in
 [XART-GUARD.md](XART-GUARD.md) and [UPSTREAM-MAP.md](UPSTREAM-MAP.md).
 
+## Update 2026-10-29: wip5
+
+On `7.2.11-elementary-aurora72-wip5` (guard 1) the enclave matches the enrolled finger (fprintd: `#0: right-index-finger`), but
+the host refuses the kind-4 rewrite after the match, so `fprintd-verify` fails every time. The owner chose to test the guard off
+with a backup first: [../aurora/unified72/wip5/README.md](../aurora/unified72/wip5/README.md) (xART backup + separate
+`elementary-aurora72-wip5-xartguard-off-trial` entry; then check macOS Touch ID). Results go there and here.
+
 ## Machine
 
 MacBook Pro 14" (M1 Pro, 2021), `apple,j314s` / `apple,t6000`, `asahi,os-fw-version` 13.5,
