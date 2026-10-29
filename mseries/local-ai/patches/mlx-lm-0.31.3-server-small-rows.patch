@@ -1,0 +1,21 @@
+# mseries: route 2-6 token prompt passes through omarchy's batched one-row kernel (ours,
+# serve_small_rows.py, copied to mlx_lm/_mseries_small_rows.py by serve-patch.sh). Applies after
+# mlx-lm-0.31.3-server-singleton-cache.patch. MSERIES_SERVE_SMALL_ROWS=0 turns it off.
+--- a/mlx_lm/server.py
++++ b/mlx_lm/server.py
+@@ -61,6 +61,15 @@
+ 
+     install_singleton_cache_fastpath()
+ 
++# mseries: 2-6 token prompt passes (the 4-token reply header the server reads apart, short
++# prompts) take omarchy's batched one-row kernel instead of the matrix kernel, which costs a flat
++# ~140 ms per pass on Qwen 3.5 4B under Honeykrisp. Rows are bit-identical to decode's.
++# _mseries_small_rows.py (ours); MSERIES_SERVE_SMALL_ROWS=0 restores the stock path.
++if os.environ.get("MSERIES_SERVE_SMALL_ROWS", "1") != "0":
++    from ._mseries_small_rows import install_small_rows
++
++    install_small_rows()
++
+ 
+ def get_system_fingerprint():
+     gpu_arch = mx.device_info()["architecture"]

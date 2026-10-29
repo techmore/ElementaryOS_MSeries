@@ -16,6 +16,12 @@ every 500 ms, so it lights for any app holding the mic (F5 dictation included). 
 codec card (`AppleJ314`) is skipped, since its always-running capture is speaker-protection
 sensing. Bluetooth headset mics that only exist inside PipeWire are not covered.
 
+## Tailscale
+
+**2026-10-28:** `TaskbarTailscale.vala` sits after AirDrop in the status area and opens the
+same Tailscale menu as the top panel (devices, Copy IP, Copy ssh command). Its source is
+`../tailscale-wingpanel/TailscalePanel.vala`; see [that README](../tailscale-wingpanel/README.md).
+
 ## Retired: unified native T3 taskbar menu
 
 `TaskbarT3.vala` replaces the separate CodexBar and RepoBar taskbar anchors with

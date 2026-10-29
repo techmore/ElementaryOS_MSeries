@@ -115,14 +115,45 @@ stays flat as the chat grows. `model-worker.py` now defaults to 4 entries at 8k 
 16k (each entry reserves a full context of KV: +0.75 GiB for the everyday 4B); `personal` keeps its
 explicit 1 at 64k. Through the installed worker: turns 2 and 3 reused 257 and 271 tokens.
 
+## Round 4: short prompt passes take the one-row kernel (same day)
+
+The 4B's first token was 0.51 s. Timing a 27-token chat prompt in-process showed why: any pass
+of more than one token costs ~140 ms of fixed overhead on Qwen 3.5 4B (1 token 47 ms; 2, 3, 4, 8,
+16 tokens 183-216 ms; 32 tokens 251 ms), and the server reads every chat prompt in two passes,
+the question and then the 4-token reply header kept apart for the prompt cache. The overhead is
+omarchy's quantized matmul for 2+ rows on Honeykrisp: 96 calls at 9216 x 2560 take 9.6 ms with
+one row and 68-73 ms with 2-32 rows (`MLX_OMARCHY_QMM_VEC_TOKEN_MULTI=1`, omarchy's opt-in for
+this, did not help here).
+
+omarchy's decode-batch kernel (`MLX_OMARCHY_QMV_BATCH`, `[B, 1, K]` with B <= 4) reads each
+weight word once for up to 4 rows. Reshaping a short pass into such blocks: 2 rows 68 -> 20 ms,
+4 rows 69 -> 38 ms, 8 rows 73 -> 69 ms (break-even), and every row is bit-identical to the
+one-row kernel decode uses. `serve_small_rows.py` (ours) routes 1 x T passes with T = 2-6 that
+way, installed by `patches/mlx-lm-0.31.3-server-small-rows.patch`; `MSERIES_SERVE_SMALL_ROWS=0`
+restores the stock path. In-process, the server-shaped 4B request (question, header, first
+token) went 584 -> 466 ms; the header pass 207 -> 105 ms.
+
+`engine-compare.py`, same settings as before, text identical across all three engines:
+
+| | Stock upstream | Patched (4 patches) + batching of 4 | Rapid-MLX |
+| --- | ---: | ---: | ---: |
+| Qwen 2B, 1 request | 33.8 (0.62 s) | **57.2** (0.20 s) | 52.9 (**0.18 s**) |
+| Qwen 4B, 1 request | 21.0 (0.85 s) | **28.0** (0.39 s, was 0.51) | 27.5 (**0.18 s**) |
+
+Receipts: `…-qwen{2b,4b}-short-hk9323171c12-serve-120k+serve-patched-120k+rapid-120k-round4.json`.
+The remaining gap to Rapid is the question pass itself (~240 ms for 23 tokens on the 4B):
+the matrix kernel for 8-32 rows, which only omarchy's backend can speed up.
+
 ## Still open
 
 - **Batching does not add throughput here.** 4 or 8 requests share about the same total
   tok/s as one (56-58 on Qwen 2B), on Rapid too; batching buys fairness and first-token time,
   not more tokens. Worth a look at the batched decode path on Honeykrisp.
-- **First token for one request.** 0.25 s (2B) and 0.51 s (4B) against Rapid's 0.21-0.22 s.
-  The prompt is read in two GPU passes (user part, then a 4-token tail kept for the prompt
-  cache), and each pass with more than one token has ~70 ms fixed cost on this stack.
+- **First token for one request.** 0.20 s (2B) and 0.39 s (4B) against Rapid's 0.18 s after
+  round 4. What is left is omarchy's 8-32 row quantized matmul (flat ~0.7 ms per call on
+  Honeykrisp); a backend kernel, not something the server layer can route around.
+- **Prompt cache.** Resolved in round 3 above: `model-worker.py` now defaults to 4 entries
+  (2 at 16k context), so the question and reply are reused across turns instead of re-read.
 - **Sampling.** Benchmarks are greedy. Assistants use temperature 0.2; Rapid also fuses the
   top-p sampler (`_sampler_fast_path.py`), which these numbers do not cover.
 

@@ -18,8 +18,9 @@ def serve_patch(env, prefix):
 
     Three private patches on upstream's own launcher: skip the per-token logprob read nobody asked
     for, keep a lone request's KV cache unbatched (Rapid-MLX's singleton fast path), and build the
-    detokenizer's vocabulary map once instead of twice per request. Qwen 2B 33 -> 56 tok/s and
-    first token 0.62 -> 0.25 s, identical text. Used only while the installed server.py still matches the
+    detokenizer's vocabulary map once instead of twice per request, and send 2-6 token prompt
+    passes through the batched one-row kernel. Qwen 2B 33 -> 56 tok/s and first token
+    0.62 -> 0.25 s, identical text. Used only while the installed server.py still matches the
     one the copy was built from; MSERIES_SERVE_PATCH=0 turns it off.
     """
     copy = Path.home() / '.local/share/mseries-ai/serve-patch'
@@ -36,7 +37,7 @@ def serve_patch(env, prefix):
         print('SERVE PATCH: skipped, installed mlx-lm changed; rerun serve-patch.sh build', flush=True)
         return
     env['PYTHONPATH'] = str(copy) + (':' + env['PYTHONPATH'] if env.get('PYTHONPATH') else '')
-    print('SERVE PATCH: skip-logprob-read + singleton cache + detokenizer map', flush=True)
+    print('SERVE PATCH: skip-logprob-read + singleton cache + small rows + detokenizer map', flush=True)
 
 
 def main():
