@@ -65,6 +65,14 @@ GRUB_ENTRY=${ELEMENTARY_GRUB_ENTRY:-/etc/grub.d/40_elementary-grow}
 PACMAN_HOOK_DIR=${ELEMENTARY_PACMAN_HOOK_DIR:-/etc/pacman.d/hooks}
 CMDLINE_FILE=${ELEMENTARY_CMDLINE_FILE:-/proc/cmdline}
 
+# Gravity Linux (Fedora, the M4 Mac mini) boots through BLS entries and has no
+# Arch tools: the guided install skips the boot-layout and encryption steps and
+# builds elementary with transform/elementary-grow.sh, which detects it as well.
+is_fedora_host() {
+  [[ ${ELEMENTARY_HOST:-} == fedora ]] && return 0
+  [[ -z ${ELEMENTARY_HOST:-} && -r /etc/os-release ]] && grep -qx 'ID=fedora' /etc/os-release
+}
+
 log() {
   printf '\033[32m==>\033[0m %s\n' "$*"
 }
@@ -490,6 +498,13 @@ require_network() {
 
 install_prerequisites() {
   log "Installing the tools the setup needs"
+  if is_fedora_host; then
+    # No full upgrade: the kernel is Gravity's, and swapping it here would leave the
+    # running modules behind just as on Arch.
+    dnf install -y git curl openssl pciutils btrfs-progs >/dev/null ||
+      fail "could not install the prerequisite packages with dnf"
+    return 0
+  fi
   # A full upgrade, not -Sy: syncing the databases and installing a few packages
   # against them is a partial upgrade, which on an image that is months old can
   # leave git or curl linked against libraries that were not upgraded with them.
@@ -508,6 +523,7 @@ install_prerequisites() {
 # is where the disk passphrase is typed on the first encrypted boot.
 setup_console_font() {
   command -v setfont >/dev/null || return 0
+  is_fedora_host && return 0   # terminus-font is a pacman package; Fedora's console is fine as shipped
 
   if ! pacman -S --noconfirm --needed terminus-font >/dev/null 2>&1; then
     warn "Could not install terminus-font; leaving the console font alone."
@@ -525,6 +541,7 @@ setup_console_font() {
 
 setup_grub_font() {
   local ttf="" out=/boot/grub/fonts/unicode32.pf2 candidate
+  is_fedora_host && return 0   # grub2 with BLS: no grub-mkconfig step to carry a font setting
   command -v grub-mkfont >/dev/null || {
     warn "grub-mkfont is missing; leaving the GRUB font alone"
     return 0
@@ -607,11 +624,15 @@ clone_shallow() {
 }
 
 ensure_source_checkout() {
-  command -v git >/dev/null || pacman -S --noconfirm --needed git
+  command -v git >/dev/null || { if is_fedora_host; then dnf install -y git; else pacman -S --noconfirm --needed git; fi; }
   log "Fetching $repo ($ref)"
   clone_shallow "$SRC" "$(clone_url)" "$ref"
   repo_present || { rm -rf -- "${SRC:?}"; fail "$repo ($ref) does not carry transform/elementary-grow.sh"; }
 
+  if is_fedora_host; then
+    log "Fedora host: the Asahi Alarm boot and encryption tools are not needed"
+    return 0
+  fi
   log "Fetching the Asahi Alarm tools from $TOOLS_REPO ($TOOLS_REF)"
   clone_shallow "$TOOLS_SRC" "https://github.com/$TOOLS_REPO.git" "$TOOLS_REF"
   tools_present "$TOOLS_SRC" || { rm -rf -- "${TOOLS_SRC:?}"; fail "$TOOLS_REPO ($TOOLS_REF) is not usable"; }
@@ -704,6 +725,16 @@ configure_autologin() {
 set_default_boot_entry() {
   local title=elementary-mseries
   (( ! keep_default )) || { log "Leaving the default boot entry alone (--keep-default)"; return 0; }
+  if is_fedora_host; then
+    [[ -f /boot/loader/entries/$title.conf ]] ||
+      { warn "no elementary boot entry found; default boot entry unchanged"; return 0; }
+    if command -v grubby >/dev/null && grubby --set-default="/boot/loader/entries/$title.conf" >/dev/null 2>&1; then
+      log "Default boot entry: $title (Fedora stays in the menu as the rescue system)"
+    else
+      warn "could not set the default boot entry; choose elementary OS in the boot menu"
+    fi
+    return 0
+  fi
   # By id, not title: the title carries the kernel version and changes on every
   # kernel update, which would silently fall back to the Arch entry.
   grep -q -- "--id $title" "$GRUB_CFG" ||
@@ -763,6 +794,22 @@ ensure_unlock_cmdline() {
 # modules for (no Wi-Fi, no display stack). Graft the new modules after every
 # kernel transaction.
 install_kernel_sync_hook() {
+  if is_fedora_host; then
+    # kernel-install(8) plugin: after Fedora installs a kernel, graft its modules into
+    # @elementary and point the elementary boot entry at that kernel. It never fails
+    # the kernel install.
+    install -d /etc/kernel/install.d
+    cat >/etc/kernel/install.d/95-elementary-sync.install <<PLUGIN
+#!/bin/sh
+[ "\$1" = add ] || exit 0
+ELEMENTARY_KVER="\$2" $SRC/transform/elementary-grow.sh --sync-kernel || true
+ELEMENTARY_KVER="\$2" $SRC/transform/elementary-grow.sh --repair-grub || true
+exit 0
+PLUGIN
+    chmod 755 /etc/kernel/install.d/95-elementary-sync.install
+    log "Installed a kernel-install plugin that keeps elementary's kernel modules and boot entry in step with kernel updates"
+    return 0
+  fi
   mkdir -p "$PACMAN_HOOK_DIR"
   cat >"$PACMAN_HOOK_DIR/90-elementary-sync-kernel.hook" <<HOOK
 [Trigger]
@@ -826,7 +873,7 @@ check_model_gate() {
     fail "set ELEMENTARY_ACCEPT_M4=1 to continue on an M4 (experimental; see mseries/M4-MINI-INSTALL.md)"
   fi
   case $(uname -r) in
-    *aurora* | *ARCH*) ;;
+    *aurora* | *ARCH* | *.fc[0-9]*) ;;
     *) warn "The running kernel ($(uname -r)) does not look like linux-aurora; kernel flavour sync may need --repair-grub." ;;
   esac
 }
@@ -911,14 +958,16 @@ step_elementary() {
   unmount_elementary
   trap on_exit EXIT
 
-  if ! root_is_encrypted; then
+  if ! root_is_encrypted && ! is_fedora_host; then
     # Nothing else rebuilds the initramfs on this path.
     install_initramfs_fixes
     mkinitcpio -P || warn "could not rebuild the initramfs; the fixes apply from the next kernel update"
   fi
   install_kernel_sync_hook
   set_default_boot_entry
-  grub-mkconfig -o "$GRUB_CFG" >/dev/null 2>&1 || fail "could not regenerate grub.cfg"
+  if ! is_fedora_host; then
+    grub-mkconfig -o "$GRUB_CFG" >/dev/null 2>&1 || fail "could not regenerate grub.cfg"
+  fi
 
   mkdir -p "$STATE_DIR"
   date -u +%Y-%m-%dT%H:%M:%SZ >"$INSTALLED_MARKER"
@@ -943,7 +992,11 @@ run_named_step() {
 
   case $step in
     boot-layout | encrypt | elementary)
-      [[ -d $TOOLS_SRC/.git ]] || { require_network; install_prerequisites; ensure_source_checkout; }
+      if is_fedora_host; then
+        [[ -d $SRC/.git ]] || { require_network; install_prerequisites; ensure_source_checkout; }
+      else
+        [[ -d $TOOLS_SRC/.git ]] || { require_network; install_prerequisites; ensure_source_checkout; }
+      fi
       run_step "$step"
       ;;
     fonts)
@@ -1043,7 +1096,11 @@ ask_questions() {
   echo "It asks everything now, then runs on its own."
   echo
 
-  if [[ -n $encrypt_flag ]]; then
+  if is_fedora_host; then
+    [[ $encrypt_flag != 1 ]] || fail "disk encryption is not available on the Gravity (Fedora) image yet; use --no-encrypt"
+    want_encrypt=0
+    log "Fedora host: installing without disk encryption (the Gravity image is unencrypted)."
+  elif [[ -n $encrypt_flag ]]; then
     : # already answered on the command line
   elif root_is_encrypted; then
     want_encrypt=1
@@ -1209,7 +1266,11 @@ main() {
       exit 0
     fi
   else
-    [[ -d $TOOLS_SRC/.git && -d $SRC/.git ]] || { require_network; install_prerequisites; ensure_source_checkout; }
+    if is_fedora_host; then
+      [[ -d $SRC/.git ]] || { require_network; install_prerequisites; ensure_source_checkout; }
+    else
+      [[ -d $TOOLS_SRC/.git && -d $SRC/.git ]] || { require_network; install_prerequisites; ensure_source_checkout; }
+    fi
   fi
 
   run_step "$(current_step)"
