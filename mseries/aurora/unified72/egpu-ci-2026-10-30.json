@@ -1,0 +1,25 @@
+{
+  "run": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/41048473839",
+  "run_head": "ad58f2d84af348f5d3b53e690dfcd27c550c4d98",
+  "artifact_id": 12975712845,
+  "archive_sha256": "6df3e978c044d1eab29ad6551364b0f991accfecaab50a781ff17aa0c63cbb35",
+  "sha256sums": "all four entries verified",
+  "profile": "unified72-egpu",
+  "source": "c506e1c3c1d7808eddc251e3029b72e9f17e00df",
+  "kernel_release": "7.2.11-elementary-aurora72-egpu-test",
+  "package": "linux-image-elementary-aurora72-egpu-test_7.2.11+elementary.aurora72.egpu.test-1_arm64.deb",
+  "package_sha256": "e15886c71ec6189eefbf82a9283674ebb17962db62fa68f2421aca0680923763",
+  "image_sha256": "d83db5e28c487058a4338df072fa55d58e43d34c190045d0d0c02aff00ac769a",
+  "j314s_dtb_sha256": "7f515974eb466d075e94d435c58543e3c30b1da3bd02d5f6dcf5d067e5747698",
+  "amdgpu_vermagic": "7.2.11-elementary-aurora72-egpu-test SMP preempt mod_unload aarch64",
+  "configuration": {
+    "ARM64_16K_PAGES": "y",
+    "DRM_AMDGPU": "m",
+    "DRM_AMD_DC": "y",
+    "DRM_AMD_DC_FP": "y",
+    "USB4_APPLE_SOC": "m"
+  },
+  "no_boot_payload": true,
+  "hardware_boot": "not performed",
+  "cache": "~/.cache/mseries-aurora-egpu-20261030/ci-artifact"
+}

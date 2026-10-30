@@ -1,5 +1,7 @@
 ## Warren local AI and eGPU updates — 2026-10-30
 
+Aurora eGPU CI run 41048473839 passed. The downloaded ZIP matched GitHub digest and all payload checksums passed; package `e15886c7...8923763` contains AMDGPU with matching vermagic and expected J314S DTB, no /boot payload. No installation or boot; firmware and shared-DTB fallback compatibility remain open. [Receipt](aurora/unified72/egpu-ci-2026-10-30.json).
+
 Extended TensorFold #1544 `b3ab9ba` CPU-float32 teacher-forced comparison to all six cached 32-step cases. Pooled RMSE ratio to installed MLX 0.967 (1.05 bound); max case ratio 1.049 (1.15 bound); all finite and no argmax flips outside 0.5-margin near ties. The stricter TensorFold probe **failed exact IDs** on `single` row 24 (CPU margin 0.0041) and `code` row 16 (0.10039); other four passed. Each repeat matched its own logits. These are numerical checks, not complete free-running, long-context or FP64 qualification. [Receipt](local-ai/receipts/2026-10-30-tensorfold-b3ab9ba/README.md).
 
 TensorFold #1544 `b3ab9ba` teacher-forced short rainbow case: two runs matched all 32 CPU-reference IDs and repeated logits byte-for-byte; BF16 logits versus the cached float32 CPU rows had RMSE 0.02884 versus installed MLX 0.03183 (ratio 0.906, within 1.15 case bound), with 6,437,111 unequal BF16 elements against rounded CPU logits. One case only, not the FP64 gate or an explanation of long divergence. [Receipt](local-ai/receipts/2026-10-30-tensorfold-b3ab9ba/README.md).
@@ -10,7 +12,7 @@ Tested TensorFold draft #1544 head `b3ab9ba` privately: host tests, all five M1 
 
 The installed system has no `/usr/lib/firmware/amdgpu` and no Ubuntu `linux-firmware` package; identify and verify matching card firmware before any AMD eGPU trial. The local ConnectX module compile required `rustup component add rust-src --toolchain 1.93.1`; this adds build-tool source only and does not alter the running kernel.
 
-Local GCC compilation of ConnectX `mlx5_core` and `mlxfw` completed with `KBUILD_MODPOST_WARN=1` and no kernel `Module.symvers`: unresolved-symbol warnings and missing BTF mean compile-only evidence, not loadable artifacts. The diagnostic build changed the private prepared source tree; prepare a fresh tree for its digest gate. CI kernel builds remain pending.
+Local GCC compilation of ConnectX `mlx5_core` and `mlxfw` completed with `KBUILD_MODPOST_WARN=1` and no kernel `Module.symvers`: unresolved-symbol warnings and missing BTF mean compile-only evidence, not loadable artifacts. The diagnostic build changed the private prepared source tree; prepare a fresh tree for its digest gate. The separate ConnectX CI build remains in progress.
 
 Added an isolated `unified72-connectx` kernel profile on wip5 source with Mellanox support and Ethernet enabled (`MLX5_CORE=m`, `MLX5_CORE_EN=y`, `MLXFW=m`); AMDGPU and RDMA remain off. Source preparation, the 12 PMP tests, GCC olddefconfig and 87 Aurora tests pass. No ConnectX adapter is present, and build/boot/link/throughput are unqualified. [Details](aurora/unified72/README.md#separate-connectx-candidate--october-30-2026).
 
