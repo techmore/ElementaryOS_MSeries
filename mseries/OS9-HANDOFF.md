@@ -1,6 +1,8 @@
 ## Warren local AI and eGPU updates — 2026-10-30
 
-Built MLX #303 merge `42b30a2` in an isolated venv; installed v0.7.34 and candidate both passed the Qwen 2B single-stream gate. Three alternating batch pairs per size produced matching token hashes, median paired reductions 8.7% (batch 2), -3.1% (batch 3) and 8.0% (batch 4). This is a short smoke; the QMV dispatch route, serving fidelity and desktop pacing remain unqualified. No live runtime replaced. [Receipt](local-ai/receipts/2026-10-30-qmv-batch/README.md).
+Follow-up: a real-device QMV toggle probe mapped candidate dispatch ID 547 to the batch route, and the separate candidate batch-4 model trace contains 3,366 such dispatches; the installed baseline probe and batch-4 trace show the same route and dispatch count. Live J314S DTB still has the pre-#188 non-identity PCI windows on tunnels 1–3, and shared `boot.bin` matches the retained fallback hash. The package DTB alone does not alter that boot tree; preserve fallback compatibility before staging a trial.
+
+Built MLX #303 merge `42b30a2` in an isolated venv; installed v0.7.34 and candidate both passed the Qwen 2B single-stream gate. Three alternating batch pairs per size produced matching token hashes, median paired reductions 8.7% (batch 2), -3.1% (batch 3) and 8.0% (batch 4). This is a short smoke; serving fidelity and desktop pacing remain unqualified. No live runtime replaced. [Receipt](local-ai/receipts/2026-10-30-qmv-batch/README.md).
 
 Added a separate `unified72-egpu` build profile at Aurora #188 merge `c506e1c3` with wip5's five display patches and AMDGPU=m. Archive verification, patch preparation, 12 PMP host tests and GCC olddefconfig passed; local LLVM configuration lacked lld. The profile is experimental and unbuilt/unbooted, with no attached eGPU. See [candidate details](aurora/unified72/README.md#separate-egpu-candidate--october-30-2026).
 

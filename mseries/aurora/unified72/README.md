@@ -6,6 +6,8 @@
 
 The pinned archive checksum, all five ordered patch applications and 12 production PMP host tests passed locally. A GCC `olddefconfig` retained `DRM_AMDGPU=m`, `DRM_AMD_DC=y`, `DRM_AMD_DC_FP=y`, and 16K pages; the local LLVM attempt lacked a working lld, so the CI LLVM build is still required. No eGPU is attached here. No build, boot, dock, shared-DTB recovery or hotplug qualification is implied by source preparation. The updated T600x PCI ranges require a matched boot-chain review; do not promote or install this candidate based on these checks.
 
+On 2026-10-30 the live `/proc/device-tree` confirmed the shared boot DTB still has PCI high address `0x8` on tunnels 0–3, with CPU high addresses `0x8`, `0xc`, `0x10`, `0x14` respectively. #188 changes the PCI addresses for tunnels 1–3 to match their CPU addresses. The shared `/boot/m1n1/boot.bin` SHA-256 is `9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f`, matching the documented retained fallback. Therefore the new package's DTBs alone cannot change the currently selected boot tree; updating the shared payload could also change the DTB supplied to older recovery kernels. A per-kernel or fallback-compatible boot path must be designed and verified before an eGPU trial.
+
 ## wip5 revision 7 — October 29, 2026 (booted on the J314S; install record in [wip5/README.md](wip5/README.md))
 
 The owner chose this re-pin. **Revision 7 pins `7.2.11-elementary-aurora72-wip5`**: merged omacom
