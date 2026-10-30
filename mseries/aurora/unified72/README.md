@@ -1,5 +1,9 @@
 # Unified Aurora 7.2.10 build candidate
 
+## Combined eGPU and ConnectX package — October 30, 2026
+
+`unified72-combined` builds one distinct kernel from the #188 merge and the wip5 display patch series, with both `DRM_AMDGPU=m` and ConnectX Ethernet (`MLX5_CORE=m`, `MLX5_CORE_EN=y`, `MLXFW=m`). RDMA and Nouveau are not enabled by this profile. The original individual profiles remain available and do not share its package or kernel identity. Source preparation and the 12 PMP host tests passed, all 88 Aurora unit tests passed, and a local GCC `olddefconfig` retained both driver sets and 16K pages. Native package build and hardware checks are separate. The existing eGPU trial stays staged; only about 45 MiB remains on `/boot`, so adding another boot entry requires a storage plan rather than removing existing recovery files.
+
 ## Separate ConnectX candidate — October 30, 2026
 
 The running wip5 kernel has `NET_VENDOR_MELLANOX` disabled. `connectx-series.json` defines an independent `unified72-connectx` candidate on the same wip5 source and five display patches, with `NET_VENDOR_MELLANOX=y`, `MLX5_CORE=m`, `MLX5_CORE_EN=y` and `MLXFW=m`. AMDGPU remains off; RDMA is not enabled by this profile. It has its own package and kernel identity; it does not replace the wip5 or eGPU profiles. The author reports that a ConnectX-5 Ex enumerated on M2 Max without special PCI or DT changes; that result is not a J314S or network throughput qualification ([setup](https://github.com/joshuaswarren/omarchy-egpu/blob/main/cards/connectx-5/README.md)).

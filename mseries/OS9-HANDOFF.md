@@ -1,5 +1,7 @@
 ## Warren local AI and eGPU updates — 2026-10-30
 
+Added `unified72-combined`, a distinct downstream kernel profile carrying #188 plus both AMDGPU and ConnectX Ethernet modules so one kernel can provide both. Source preparation, 12 PMP host tests, 88 Aurora tests and GCC olddefconfig passed. Native build pending. Existing eGPU trial remains staged; `/boot` has about 45 MiB free, insufficient for another Image plus initramfs without a storage plan. [Details](aurora/unified72/README.md#combined-egpu-and-connectx-package--october-30-2026).
+
 Owner clarified that upstream acceptance is not ours to duplicate; downstream regression testing and packaging are requested. Deployed official MLX v0.7.35 wheel (`39671c8a...19fba82`) to the live venv with the previous venv retained at `~/.local/share/mlx-omarchy/venv.before-v0.7.35-20261030`. Qwen 2B baseline/work120k gate passed; Granite 1B short text matched earlier baseline; reply service restarted and returned `ready`, expected private ICD and server patches checked. Installer/source pins now target `42b30a2d`. [Receipt](local-ai/receipts/2026-10-30-mlx-v0735-deploy/README.md).
 
 Installed the eGPU kernel package and Ubuntu AMD graphics firmware; staged `elementary-aurora72-egpu-test-trial` with 91-module audited wip5-derived initramfs. GRUB syntax passes, one-shot is empty, current wip5 remains running; shared boot.bin remains unchanged and its old PCI ranges still apply to tunnels 1–3. No eGPU is attached. [Deployment details](aurora/unified72/README.md#separate-egpu-candidate--october-30-2026).
