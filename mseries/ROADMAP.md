@@ -5643,3 +5643,5 @@ Keep the unified T3 Wingpanel menu and use the Dock launcher to open the T3 wind
 # 2026-10-30 eGPU candidate
 
 The separate Aurora `unified72-egpu` profile carries upstream #188 with AMDGPU enabled; it requires a native build and J314S dock, recovery, matched-DTB and actual eGPU qualification before adoption. See [candidate status](aurora/unified72/README.md#separate-egpu-candidate--october-30-2026).
+
+The separate `unified72-connectx` profile enables the Mellanox Ethernet module on wip5 source; it requires a native build and real-adapter link and throughput qualification. [Status](aurora/unified72/README.md#separate-connectx-candidate--october-30-2026).

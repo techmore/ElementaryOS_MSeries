@@ -1,5 +1,11 @@
 # Unified Aurora 7.2.10 build candidate
 
+## Separate ConnectX candidate — October 30, 2026
+
+The running wip5 kernel has `NET_VENDOR_MELLANOX` disabled. `connectx-series.json` defines an independent `unified72-connectx` candidate on the same wip5 source and five display patches, with `NET_VENDOR_MELLANOX=y`, `MLX5_CORE=m`, `MLX5_CORE_EN=y` and `MLXFW=m`. AMDGPU remains off; RDMA is not enabled by this profile. It has its own package and kernel identity; it does not replace the wip5 or eGPU profiles. The author reports that a ConnectX-5 Ex enumerated on M2 Max without special PCI or DT changes; that result is not a J314S or network throughput qualification ([setup](https://github.com/joshuaswarren/omarchy-egpu/blob/main/cards/connectx-5/README.md)).
+
+Pinned source verification, patch preparation and 12 PMP host tests passed. A GCC `olddefconfig` retained all four ConnectX settings and 16K pages. The native LLVM kernel and module build, boot, an attached adapter, link stability and throughput remain untested. No ConnectX card appeared in this machine's PCI inventory. Use the Aurora workflow's manual `unified72-connectx` profile to build the candidate; do not promote it from configuration checks alone.
+
 ## Separate eGPU candidate — October 30, 2026
 
 `egpu-series.json` pins Aurora #188 merge `c506e1c3c1d7808eddc251e3029b72e9f17e00df`, whose first parent is the wip5 source, and retains its five local display patches. The `unified72-egpu` profile has a distinct package and modules identity and requests AMDGPU as a module; the existing `unified72` profile remains unchanged. It does not enable Nouveau. Prepare with `python3 mseries/aurora/candidate.py prepare --profile unified72-egpu --cache CACHE --output OUTPUT`, then run `candidate.py check --prepared OUTPUT`. The Aurora workflow offers this profile through manual dispatch.

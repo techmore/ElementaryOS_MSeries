@@ -218,6 +218,17 @@ class QualificationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exactly the observed boot"):
             self.collect_fixture(["PMP started"], "other-boot")
 
+    def test_unified72_connectx_is_separate_and_enables_ethernet(self):
+        normal = candidate.series("unified72")
+        connectx = candidate.series("unified72-connectx")
+        self.assertNotEqual(normal["debian_package"], connectx["debian_package"])
+        self.assertEqual(normal["source"]["commit"], connectx["source"]["commit"])
+        self.assertEqual(candidate.settings(connectx, "unified72-connectx")["MLX5_CORE"], "m")
+        self.assertEqual(candidate.settings(connectx, "unified72-connectx")["MLX5_CORE_EN"], "y")
+        self.assertEqual(candidate.settings(connectx, "unified72-connectx")["MLXFW"], "m")
+        self.assertEqual(candidate.settings(connectx, "unified72-connectx")["DRM_AMDGPU"], "n")
+        self.assertNotIn("MLX5_CORE", candidate.settings(normal, "unified72"))
+
     def test_unified72_egpu_is_separate_and_enables_amd_only_in_its_profile(self):
         normal = candidate.series("unified72")
         egpu = candidate.series("unified72-egpu")
