@@ -5640,3 +5640,6 @@ remains open. The current live site byte-matches `dev` `7053069f` from Pages run
 ## T3 launcher and panel decision (2026-10-27)
 
 Keep the unified T3 Wingpanel menu and use the Dock launcher to open the T3 window. Validate the combined experience on the target desktop before claiming acceptance.
+# 2026-10-30 eGPU candidate
+
+The separate Aurora `unified72-egpu` profile carries upstream #188 with AMDGPU enabled; it requires a native build and J314S dock, recovery, matched-DTB and actual eGPU qualification before adoption. See [candidate status](aurora/unified72/README.md#separate-egpu-candidate--october-30-2026).

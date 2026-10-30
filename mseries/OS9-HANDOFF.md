@@ -1,5 +1,7 @@
 ## Warren local AI and eGPU updates — 2026-10-30
 
+Added a separate `unified72-egpu` build profile at Aurora #188 merge `c506e1c3` with wip5's five display patches and AMDGPU=m. Archive verification, patch preparation, 12 PMP host tests and GCC olddefconfig passed; local LLVM configuration lacked lld. The profile is experimental and unbuilt/unbooted, with no attached eGPU. See [candidate details](aurora/unified72/README.md#separate-egpu-candidate--october-30-2026).
+
 Audited the linked announcement against the running wip5 host and current dev pins. TensorFold's merged Vulkan base is not yet a model engine; MLX #303 needs M1 Pro batch qualification; Aurora #188 merged after our source pin and changes shared PCI/DTB behavior. No external GPU or ConnectX appeared in the PCI inventory. No runtime, kernel or boot changes were made. See [the source and qualification notes](local-ai/WARREN-UPSTREAM-2026-10-30.md).
 
 ## Rust compositor: frames for X11 windows — 2026-10-29

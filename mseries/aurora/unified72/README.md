@@ -1,5 +1,11 @@
 # Unified Aurora 7.2.10 build candidate
 
+## Separate eGPU candidate — October 30, 2026
+
+`egpu-series.json` pins Aurora #188 merge `c506e1c3c1d7808eddc251e3029b72e9f17e00df`, whose first parent is the wip5 source, and retains its five local display patches. The `unified72-egpu` profile has a distinct package and modules identity and requests AMDGPU as a module; the existing `unified72` profile remains unchanged. It does not enable Nouveau. Prepare with `python3 mseries/aurora/candidate.py prepare --profile unified72-egpu --cache CACHE --output OUTPUT`, then run `candidate.py check --prepared OUTPUT`. The Aurora workflow offers this profile through manual dispatch.
+
+The pinned archive checksum, all five ordered patch applications and 12 production PMP host tests passed locally. A GCC `olddefconfig` retained `DRM_AMDGPU=m`, `DRM_AMD_DC=y`, `DRM_AMD_DC_FP=y`, and 16K pages; the local LLVM attempt lacked a working lld, so the CI LLVM build is still required. No eGPU is attached here. No build, boot, dock, shared-DTB recovery or hotplug qualification is implied by source preparation. The updated T600x PCI ranges require a matched boot-chain review; do not promote or install this candidate based on these checks.
+
 ## wip5 revision 7 — October 29, 2026 (booted on the J314S; install record in [wip5/README.md](wip5/README.md))
 
 The owner chose this re-pin. **Revision 7 pins `7.2.11-elementary-aurora72-wip5`**: merged omacom

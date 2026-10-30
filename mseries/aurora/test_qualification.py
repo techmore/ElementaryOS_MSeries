@@ -218,6 +218,19 @@ class QualificationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exactly the observed boot"):
             self.collect_fixture(["PMP started"], "other-boot")
 
+    def test_unified72_egpu_is_separate_and_enables_amd_only_in_its_profile(self):
+        normal = candidate.series("unified72")
+        egpu = candidate.series("unified72-egpu")
+        self.assertNotEqual(normal["debian_package"], egpu["debian_package"])
+        self.assertNotEqual(normal["kernel_release"]["unified72"],
+                            egpu["kernel_release"]["unified72-egpu"])
+        self.assertEqual(candidate.settings(normal, "unified72")["DRM_AMDGPU"], "n")
+        self.assertEqual(candidate.settings(egpu, "unified72-egpu")["DRM_AMDGPU"], "m")
+        self.assertEqual(candidate.settings(egpu, "unified72-egpu")["DRM_NOUVEAU"], "n")
+        self.assertIn(egpu["source"]["commit"], egpu["source"]["url"])
+        self.assertEqual([p["sha256"] for p in normal["patches"]],
+                         [p["sha256"] for p in egpu["patches"]])
+
     def test_unified72_snapshot_has_separate_identity_and_no_moving_branch_url(self):
         data = candidate.series("unified72")
         self.assertIn(data["source"]["commit"], data["source"]["url"])
