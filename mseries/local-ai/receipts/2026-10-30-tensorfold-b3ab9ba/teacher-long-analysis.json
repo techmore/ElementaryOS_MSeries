@@ -1,0 +1,32 @@
+{
+  "reference": "CPU float32, 256 teacher-forced steps on retained MLX-generated sequence",
+  "tensorfold_rmse": 0.02758001445247974,
+  "mlx_rmse": 0.029627193203245927,
+  "ratio": 0.9309020352781209,
+  "finite": true,
+  "tf_vs_cpu_argmax_differences": [
+    167
+  ],
+  "tf_non_tie_flips_margin_0_5": [],
+  "mlx_vs_cpu_argmax_differences": [
+    167
+  ],
+  "row167": {
+    "row": 167,
+    "cpu_top_id": 3605,
+    "cpu_second_id": 1061,
+    "cpu_margin": 0.08872413635253906,
+    "tensorfold_top_id": 1061,
+    "mlx_teacher_top_id": 1061,
+    "mlx_generated_id": 3605,
+    "cpu_logits_on_tf_and_generated": {
+      "tf": 20.0578670501709,
+      "generated": 20.146591186523438
+    },
+    "tensorfold_logits_on_tf_and_generated": {
+      "tf": 20.125,
+      "generated": 20.125
+    }
+  },
+  "scope": "one long prompt; comparison is not an FP64 gate or causation proof"
+}
