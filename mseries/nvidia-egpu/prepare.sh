@@ -10,8 +10,8 @@ git -C "$out" fetch -q --depth 1 https://github.com/NVIDIA/open-gpu-kernel-modul
 git -C "$out" checkout -q --detach FETCH_HEAD
 [[ $(git -C "$out" rev-parse HEAD) == d8257d95ae5fed364163e4df51db66df8b1ee0d2 ]]
 (cd "$here/patches" && sha256sum -c SHA256SUMS)
-for patch in 0001-16k-system-page.patch 0002-arm64-dma-submap.patch; do
+for patch in 0001-16k-system-page.patch 0002-arm64-dma-submap.patch 0003-apple-tunnel-595.patch; do
   git -C "$out" apply --check "$here/patches/$patch"
   git -C "$out" apply "$here/patches/$patch"
 done
-printf '%s\n' 'Prepared NVIDIA open modules 595.112.07 with PRs 1480 and 1481; no build or installation.'
+printf '%s\n' 'Prepared NVIDIA open modules 595.112.07 with PRs 1480, 1481 and rebased 1482; no build or installation.'
