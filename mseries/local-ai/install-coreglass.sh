@@ -4,7 +4,7 @@
 set -euo pipefail
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 read -r pin < <(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["upstreams"]["coreglass"]["pin"])' "$here/upstreams.json")
-src=${MSERIES_AI_SOURCES:-$HOME/.local/share/mseries-ai/sources/v0.7.34}/coreglass
+src=${MSERIES_AI_SOURCES:-$HOME/.local/share/mseries-ai/sources/v0.7.35}/coreglass
 if [[ ! -d $src/.git ]]; then
   git init -q "$src"
   git -C "$src" remote add origin https://github.com/joshuaswarren/coreglass.git

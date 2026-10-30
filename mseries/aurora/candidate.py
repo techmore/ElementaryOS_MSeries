@@ -145,7 +145,10 @@ def tree_digest(root):
 
 
 def manifest(profile):
-    return HERE / "unified72/series.json" if profile == "unified72" else MANIFEST
+    return (HERE / "unified72" / {"unified72": "series.json",
+            "unified72-egpu": "egpu-series.json", "unified72-connectx": "connectx-series.json",
+            "unified72-combined": "combined-series.json"}[profile]
+            if profile in ("unified72", "unified72-egpu", "unified72-connectx", "unified72-combined") else MANIFEST)
 
 
 def series(profile="candidate"):
@@ -163,8 +166,10 @@ def settings(data, profile):
     result = dict(data["config"]["candidate"])
     # Explicitly retain the release's disabled eGPU drivers in the normal candidate.
     result.update(DRM_AMDGPU="n", DRM_NOUVEAU="n")
-    if profile == "egpu":
+    if profile in ("egpu", "unified72-egpu", "unified72-combined"):
         result.update(data["config"]["egpu"])
+    if profile == "unified72-connectx":
+        result.update(data["config"]["connectx"])
     result.update(LOCALVERSION='""', LOCALVERSION_AUTO="n")
     return result
 
@@ -304,7 +309,7 @@ def check(root):
             binary = Path(temporary) / f"production-tests-{index}"
             run("rustc", "--edition=2021", "--test", "-D", "warnings", source / test, "-o", binary, cwd=root)
             run(binary)
-    if receipt["profile"] != "unified72":
+    if receipt["profile"] not in ("unified72", "unified72-egpu", "unified72-connectx", "unified72-combined"):
         run("python3", ENHANCEMENTS / "check-macsmc.py", source)
 
 
@@ -400,7 +405,7 @@ def main():
     prep = commands.add_parser("prepare")
     prep.add_argument("--cache", type=Path, required=True)
     prep.add_argument("--output", type=Path, required=True)
-    prep.add_argument("--profile", choices=("candidate", "egpu", "unified72"), default="candidate")
+    prep.add_argument("--profile", choices=("candidate", "egpu", "unified72", "unified72-egpu", "unified72-connectx", "unified72-combined"), default="candidate")
     prep.add_argument("--offline", action="store_true")
     for command in ("check", "build"):
         sub = commands.add_parser(command)

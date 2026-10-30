@@ -1,6 +1,6 @@
 # Local assistants on the M1 Pro
 
-The October 16 setup uses private Linux MLX v0.7.33, Newelle for desktop and personal assistance, and a separate 16K coding profile for Crush. Qwen3.5 4B is the measured default for the 32 GB M1 Pro; Qwen9 is an optional larger preset. [Measured results, methods and limits](receipts/2026-10-16.md) explain the provisional model choices. [Exact revisions and licenses](receipts/2026-10-16/source-pins.json) accompany the synthetic raw results.
+The installed desktop uses private Linux MLX v0.7.35, Newelle for desktop and personal assistance, and a separate 16K coding profile for Crush. Qwen3.5 4B is the measured default for the 32 GB M1 Pro; Qwen9 is an optional larger preset. [Measured results, methods and limits](receipts/2026-10-16.md) explain the provisional model choices. [Exact revisions and licenses](receipts/2026-10-16/source-pins.json) accompany the synthetic raw results.
 
 ## Install and launch
 

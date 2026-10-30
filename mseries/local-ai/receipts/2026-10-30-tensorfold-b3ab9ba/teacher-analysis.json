@@ -1,0 +1,12 @@
+{
+  "rmse": 0.028839626910811458,
+  "live_mlx_rmse": 0.031829616408239544,
+  "rmse_ratio_to_live": 0.9060626600371443,
+  "per_case_margin": 1.15,
+  "argmax_agree_rows": 32,
+  "rows": 32,
+  "non_tie_flips": [],
+  "finite": true,
+  "reference": "local CPU float32, teacher-forced 32 rainbow rows",
+  "qualification": "single case only, not full-model or upstream FP64 gate"
+}

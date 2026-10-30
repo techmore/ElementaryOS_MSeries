@@ -1,0 +1,5 @@
+MILESTONE engine-ready elapsed_ms=672 capacity=256 model_context=262144 logits_bytes=496640
+MILESTONE run1-done elapsed_ms=12589
+MILESTONE run2-done elapsed_ms=24712
+RESULT qwen35-model elapsed_ms=24815: ids_match_a=true ids_match_b=true repeats(ids=true,logits=true) oracle_logits_mismatches=6437111 expected_hash=3bf415fdbda6bccbc3edac925a1160e8fec1ecc64c0543ed24fd3a01790a8983 got_hash=3bf415fdbda6bccbc3edac925a1160e8fec1ecc64c0543ed24fd3a01790a8983
+RESULT execution_mode=teacher-forced: oracle ids fed as previous tokens; per-step agreement, not a free-running chain proof

@@ -1,0 +1,174 @@
+[rtmod] DISPATCH kernel=102 count=4 gx=1 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=8 alloc=4096
+[rtmod]   bind[1] off=0 range=16 alloc=4096
+[rtmod] DISPATCH kernel=102 count=4 gx=1 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=8 alloc=4096
+[rtmod]   bind[1] off=0 range=16 alloc=4096
+[rtmod] DISPATCH kernel=102 count=4194304 gx=16384 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=16 alloc=4096
+[rtmod]   bind[1] off=0 range=16777216 alloc=16777216
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=1 waits=0 sigs=1 cmds=1
+[rtmod] DISPATCH kernel=102 count=8192 gx=32 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=16 alloc=4096
+[rtmod]   bind[1] off=0 range=32768 alloc=32768
+[rtmod] DISPATCH kernel=14 count=4194304 gx=16384 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[1] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[2] off=0 range=16777216 alloc=16777216
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=2 waits=1 sigs=1 cmds=1
+[rtmod] DISPATCH kernel=14 count=8192 gx=32 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=32768 alloc=32768
+[rtmod]   bind[1] off=0 range=32768 alloc=32768
+[rtmod]   bind[2] off=0 range=32768 alloc=32768
+[rtmod] FEW name=Divide count=4194304
+[rtmod] DISPATCH kernel=469 count=4194304 gx=16384 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[1] off=0 range=4 alloc=4096
+[rtmod]   bind[2] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[3] off=0 range=16777216 alloc=16777216
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=3 waits=1 sigs=1 cmds=1
+[rtmod] FEW name=Subtract count=1
+[rtmod] DISPATCH kernel=469 count=1 gx=1 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=4 alloc=4096
+[rtmod]   bind[1] off=0 range=4 alloc=4096
+[rtmod]   bind[2] off=0 range=4 alloc=4096
+[rtmod]   bind[3] off=0 range=4 alloc=4096
+[rtmod] FEW name=Divide count=8192
+[rtmod] DISPATCH kernel=469 count=8192 gx=32 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=32768 alloc=32768
+[rtmod]   bind[1] off=0 range=4 alloc=4096
+[rtmod]   bind[2] off=0 range=32768 alloc=32768
+[rtmod]   bind[3] off=0 range=32768 alloc=32768
+[rtmod] FEW name=Subtract count=1
+[rtmod] DISPATCH kernel=469 count=1 gx=1 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=4 alloc=4096
+[rtmod]   bind[1] off=0 range=4 alloc=4096
+[rtmod]   bind[2] off=0 range=4 alloc=4096
+[rtmod]   bind[3] off=0 range=4 alloc=4096
+[rtmod] FEW name=Minimum count=4194304
+[rtmod] DISPATCH kernel=0 count=4194304 gx=16384 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[1] off=0 range=4 alloc=4096
+[rtmod]   bind[2] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[3] off=0 range=16777216 alloc=16777216
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=4 waits=1 sigs=1 cmds=1
+[rtmod] FEW name=Minimum count=8192
+[rtmod] DISPATCH kernel=0 count=8192 gx=32 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=32768 alloc=32768
+[rtmod]   bind[1] off=0 range=4 alloc=4096
+[rtmod]   bind[2] off=0 range=32768 alloc=32768
+[rtmod]   bind[3] off=0 range=32768 alloc=32768
+[rtmod] FEW name=Multiply count=4194304
+[rtmod] DISPATCH kernel=469 count=4194304 gx=16384 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=4 alloc=4096
+[rtmod]   bind[1] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[2] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[3] off=0 range=16777216 alloc=16777216
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=5 waits=1 sigs=1 cmds=1
+[rtmod] FEW name=Multiply count=8192
+[rtmod] DISPATCH kernel=469 count=8192 gx=32 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=4 alloc=4096
+[rtmod]   bind[1] off=0 range=32768 alloc=32768
+[rtmod]   bind[2] off=0 range=32768 alloc=32768
+[rtmod]   bind[3] off=0 range=32768 alloc=32768
+[rtmod] FEW name=Add count=4194304
+[rtmod] DISPATCH kernel=469 count=4194304 gx=16384 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[1] off=0 range=4 alloc=4096
+[rtmod]   bind[2] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[3] off=0 range=16777216 alloc=16777216
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=6 waits=1 sigs=1 cmds=1
+[rtmod] FEW name=Add count=8192
+[rtmod] DISPATCH kernel=469 count=8192 gx=32 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=32768 alloc=32768
+[rtmod]   bind[1] off=0 range=4 alloc=4096
+[rtmod]   bind[2] off=0 range=32768 alloc=32768
+[rtmod]   bind[3] off=0 range=32768 alloc=32768
+[rtmod] FEW name=ErfInv count=4194304
+[rtmod] DISPATCH kernel=0 count=4194304 gx=16384 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[1] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[2] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[3] off=0 range=16777216 alloc=16777216
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=7 waits=1 sigs=1 cmds=1
+[rtmod] FEW name=ErfInv count=8192
+[rtmod] DISPATCH kernel=0 count=8192 gx=32 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=32768 alloc=32768
+[rtmod]   bind[1] off=0 range=32768 alloc=32768
+[rtmod]   bind[2] off=0 range=32768 alloc=32768
+[rtmod]   bind[3] off=0 range=32768 alloc=32768
+[rtmod] FEW name=Multiply count=4194304
+[rtmod] DISPATCH kernel=469 count=4194304 gx=16384 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=4 alloc=4096
+[rtmod]   bind[1] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[2] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[3] off=0 range=16777216 alloc=16777216
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=8 waits=1 sigs=1 cmds=1
+[rtmod] FEW name=Multiply count=8192
+[rtmod] DISPATCH kernel=469 count=8192 gx=32 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=4 alloc=4096
+[rtmod]   bind[1] off=0 range=32768 alloc=32768
+[rtmod]   bind[2] off=0 range=32768 alloc=32768
+[rtmod]   bind[3] off=0 range=32768 alloc=32768
+[rtmod] DISPATCH kernel=10 count=4194304 gx=16384 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[1] off=0 range=16777216 alloc=16777216
+[rtmod]   bind[2] off=0 range=8388608 alloc=8388608
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=9 waits=1 sigs=1 cmds=1
+[rtmod] DISPATCH kernel=10 count=8192 gx=32 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=32768 alloc=32768
+[rtmod]   bind[1] off=0 range=32768 alloc=32768
+[rtmod]   bind[2] off=0 range=16384 alloc=16384
+[rtmod] DISPATCH kernel=428 count=65536 gx=256 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=8388608 alloc=8388608
+[rtmod]   bind[1] off=0 range=2097152 alloc=2097152
+[rtmod]   bind[2] off=0 range=131072 alloc=131072
+[rtmod]   bind[3] off=0 range=131072 alloc=131072
+[rtmod] EV-SIGNAL tid=58420 ev=0x26fa93d0 val=1 st=0 host=0
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=10 waits=1 sigs=2 cmds=1
+[rtmod] COMMIT-NOOP
+[rtmod] EV-WAIT tid=58420 ev=0x26fa93d0 val=1 cnt=0 resv=10
+[rtmod] COMMIT-NOOP
+[rtmod] JOIN tid=58420 reason=explicit last=10
+MARK 0
+[rtmod] DISPATCH kernel=410 count=8192 gx=256 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=16384 alloc=16384
+[rtmod]   bind[1] off=0 range=2097152 alloc=2097152
+[rtmod]   bind[2] off=0 range=131072 alloc=131072
+[rtmod]   bind[3] off=0 range=131072 alloc=131072
+[rtmod]   bind[4] off=0 range=16384 alloc=16384
+[rtmod] EV-SIGNAL tid=58420 ev=0x27043780 val=1 st=0 host=0
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=11 waits=0 sigs=2 cmds=1
+[rtmod] COMMIT-NOOP
+[rtmod] EV-WAIT tid=58420 ev=0x27043780 val=1 cnt=0 resv=11
+[rtmod] COMMIT-NOOP
+[rtmod] JOIN tid=58420 reason=explicit last=11
+END 0
+MARK 1
+[rtmod] DISPATCH kernel=547 count=8192 gx=256 gy=1 gz=1
+[rtmod]   bind[0] off=0 range=16384 alloc=16384
+[rtmod]   bind[1] off=0 range=2097152 alloc=2097152
+[rtmod]   bind[2] off=0 range=131072 alloc=131072
+[rtmod]   bind[3] off=0 range=131072 alloc=131072
+[rtmod]   bind[4] off=0 range=16384 alloc=16384
+[rtmod] EV-SIGNAL tid=58420 ev=0x26fa93d0 val=1 st=0 host=0
+[rtmod] SUBMIT-ENTER tid=58420
+[rtmod] SUBMIT tid=58420 cv=12 waits=0 sigs=2 cmds=1
+[rtmod] COMMIT-NOOP
+[rtmod] EV-WAIT tid=58420 ev=0x26fa93d0 val=1 cnt=0 resv=12
+[rtmod] COMMIT-NOOP
+[rtmod] JOIN tid=58420 reason=explicit last=12
+END 1
+[rtmod] COMMIT-NOOP
+[rtmod] JOIN tid=58420 reason=explicit last=0

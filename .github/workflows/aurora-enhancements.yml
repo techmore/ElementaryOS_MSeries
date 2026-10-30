@@ -9,6 +9,9 @@ on:
       - "mseries/aurora/release.json"
       - "mseries/aurora/enhancements/**"
       - "mseries/aurora/unified72/series.json"
+      - "mseries/aurora/unified72/egpu-series.json"
+      - "mseries/aurora/unified72/connectx-series.json"
+      - "mseries/aurora/unified72/combined-series.json"
       - "mseries/aurora/unified72/patches/**"
       - ".github/workflows/aurora-enhancements.yml"
   workflow_dispatch:
@@ -16,7 +19,7 @@ on:
       profile:
         description: Kernel profile (eGPU remains an unqualified experiment)
         type: choice
-        options: [candidate, egpu, unified72]
+        options: [candidate, egpu, unified72, unified72-egpu, unified72-connectx, unified72-combined]
         default: candidate
 
 permissions:

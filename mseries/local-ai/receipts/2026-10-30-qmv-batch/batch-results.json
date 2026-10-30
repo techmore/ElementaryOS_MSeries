@@ -1,0 +1,44 @@
+[
+  {
+    "batch": 2,
+    "runtime": "live",
+    "exit": 0,
+    "stop": [],
+    "output": "PROVENANCE mlx_omarchy 0.32.4.dev202610281952+5e40ecf9 {'libmlx.so': '7ca9b27ebb32c378'} device Device(gpu, 0)\nBGDECODE {\"B\": 2, \"tokens\": 32, \"steps_timed\": 30, \"ms_per_step_reps\": [35.47], \"median_ms_per_step\": 35.47, \"ids_sha\": \"b14f160c590bfe63\", \"row_lengths\": [32, 32]}\n"
+  },
+  {
+    "batch": 2,
+    "runtime": "candidate",
+    "exit": 0,
+    "stop": [],
+    "output": "PROVENANCE mlx_omarchy 0.32.4.dev202610301127+42b30a2 {'libmlx.so': 'b0f0789296453699'} device Device(gpu, 0)\nBGDECODE {\"B\": 2, \"tokens\": 32, \"steps_timed\": 30, \"ms_per_step_reps\": [32.392], \"median_ms_per_step\": 32.392, \"ids_sha\": \"b14f160c590bfe63\", \"row_lengths\": [32, 32]}\n"
+  },
+  {
+    "batch": 3,
+    "runtime": "candidate",
+    "exit": 0,
+    "stop": [],
+    "output": "PROVENANCE mlx_omarchy 0.32.4.dev202610301127+42b30a2 {'libmlx.so': 'b0f0789296453699'} device Device(gpu, 0)\nBGDECODE {\"B\": 3, \"tokens\": 32, \"steps_timed\": 30, \"ms_per_step_reps\": [41.632], \"median_ms_per_step\": 41.632, \"ids_sha\": \"343a8fc27c7a8e69\", \"row_lengths\": [32, 32, 32]}\n"
+  },
+  {
+    "batch": 3,
+    "runtime": "live",
+    "exit": 0,
+    "stop": [],
+    "output": "PROVENANCE mlx_omarchy 0.32.4.dev202610281952+5e40ecf9 {'libmlx.so': '7ca9b27ebb32c378'} device Device(gpu, 0)\nBGDECODE {\"B\": 3, \"tokens\": 32, \"steps_timed\": 30, \"ms_per_step_reps\": [46.063], \"median_ms_per_step\": 46.063, \"ids_sha\": \"343a8fc27c7a8e69\", \"row_lengths\": [32, 32, 32]}\n"
+  },
+  {
+    "batch": 4,
+    "runtime": "live",
+    "exit": 0,
+    "stop": [],
+    "output": "PROVENANCE mlx_omarchy 0.32.4.dev202610281952+5e40ecf9 {'libmlx.so': '7ca9b27ebb32c378'} device Device(gpu, 0)\nBGDECODE {\"B\": 4, \"tokens\": 32, \"steps_timed\": 30, \"ms_per_step_reps\": [51.672], \"median_ms_per_step\": 51.672, \"ids_sha\": \"6f10f649f8f8be05\", \"row_lengths\": [32, 32, 32, 32]}\n"
+  },
+  {
+    "batch": 4,
+    "runtime": "candidate",
+    "exit": 0,
+    "stop": [],
+    "output": "PROVENANCE mlx_omarchy 0.32.4.dev202610301127+42b30a2 {'libmlx.so': 'b0f0789296453699'} device Device(gpu, 0)\nBGDECODE {\"B\": 4, \"tokens\": 32, \"steps_timed\": 30, \"ms_per_step_reps\": [48.072], \"median_ms_per_step\": 48.072, \"ids_sha\": \"6f10f649f8f8be05\", \"row_lengths\": [32, 32, 32, 32]}\n"
+  }
+]

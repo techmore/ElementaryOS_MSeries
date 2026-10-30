@@ -1,0 +1,162 @@
+{
+  "status": "complete",
+  "model_key": "granite1b",
+  "model": "mlx-community/granite-4.0-1b-4bit@29f108a4e2ff99079a173004871604c2f1e12c1f",
+  "weights_sha256": "b7a43ebbc86517b8ecfc4cff265a787ea31620f7eb356984c08abe14646617c7",
+  "kernel": "7.2.11-elementary-aurora72-wip5",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "92bb49db5c313c105cbf4b44638d1e1896615174",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 3.5,
+  "arms": [
+    "mlx-120k"
+  ],
+  "concurrency": 1,
+  "runs": [
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 19.682,
+          "max_temp_c": 42.896,
+          "max_fan_rpm": 2495.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 18.745,
+          "max_temp_c": 42.684,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 18.39,
+          "max_temp_c": 42.586,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 18.227,
+          "max_temp_c": 42.298,
+          "max_fan_rpm": 2512.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 2.41375232900009,
+      "ttft_s": 0.2828933760001746,
+      "total_s": 0.878569059000256,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 52.04174164684807,
+      "min_available_gib": 18.227,
+      "peak_temp_c": 42.896,
+      "round": 1,
+      "admission_available_gib": 19.682
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 19.44,
+          "max_temp_c": 43.195,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 18.567,
+          "max_temp_c": 43.152,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 18.264,
+          "max_temp_c": 43.701,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 18.16,
+          "max_temp_c": 42.635,
+          "max_fan_rpm": 2494.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 2.29382806600006,
+      "ttft_s": 0.30168930099989666,
+      "total_s": 0.8987894849997247,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 51.917585743046644,
+      "min_available_gib": 18.16,
+      "peak_temp_c": 43.701,
+      "round": 2,
+      "admission_available_gib": 19.44
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 19.714,
+          "max_temp_c": 43.902,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 18.763,
+          "max_temp_c": 42.983,
+          "max_fan_rpm": 2495.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 18.207,
+          "max_temp_c": 43.239,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 18.101,
+          "max_temp_c": 43.152,
+          "max_fan_rpm": 2494.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 2.2656063040003573,
+      "ttft_s": 0.29355542300072557,
+      "total_s": 0.8926546490001783,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 51.744349941838045,
+      "min_available_gib": 18.101,
+      "peak_temp_c": 43.902,
+      "round": 3,
+      "admission_available_gib": 19.714
+    }
+  ],
+  "summary": {
+    "mlx-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.29355542300072557,
+      "median_total_s": 0.8926546490001783,
+      "median_decode_tps": 51.917585743046644,
+      "texts": [
+        "81588d18f384"
+      ]
+    }
+  }
+}
