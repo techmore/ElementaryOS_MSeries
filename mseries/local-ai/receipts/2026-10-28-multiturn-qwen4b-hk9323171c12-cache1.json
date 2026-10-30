@@ -1,0 +1,66 @@
+[
+ {
+  "convo": 0,
+  "turn": 1,
+  "prompt": 258,
+  "cached": 0,
+  "ttft": 1.441,
+  "text": "I can't plan it for you, but I can help "
+ },
+ {
+  "convo": 0,
+  "turn": 2,
+  "prompt": 310,
+  "cached": 236,
+  "ttft": 0.72,
+  "text": "*   Check your calendar for existing app"
+ },
+ {
+  "convo": 0,
+  "turn": 3,
+  "prompt": 362,
+  "cached": 236,
+  "ttft": 0.781,
+  "text": "Check your calendar first. It prevents d"
+ },
+ {
+  "convo": 0,
+  "turn": 4,
+  "prompt": 402,
+  "cached": 236,
+  "ttft": 1.016,
+  "text": "Check your calendar first because it pre"
+ },
+ {
+  "convo": 1,
+  "turn": 1,
+  "prompt": 260,
+  "cached": 236,
+  "ttft": 0.518,
+  "text": "To plan a short week of work, I can't in"
+ },
+ {
+  "convo": 1,
+  "turn": 2,
+  "prompt": 343,
+  "cached": 236,
+  "ttft": 0.821,
+  "text": "*   Check your calendar, email, and remi"
+ },
+ {
+  "convo": 1,
+  "turn": 3,
+  "prompt": 405,
+  "cached": 236,
+  "ttft": 1.016,
+  "text": "Check your calendar, email, and reminder"
+ },
+ {
+  "convo": 1,
+  "turn": 4,
+  "prompt": 450,
+  "cached": 236,
+  "ttft": 1.117,
+  "text": "You cannot prioritize or block time effe"
+ }
+]
