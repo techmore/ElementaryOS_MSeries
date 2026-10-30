@@ -229,7 +229,7 @@ class QualificationTests(unittest.TestCase):
         self.assertEqual(config["MLX5_CORE"], "m")
         self.assertEqual(config["MLX5_CORE_EN"], "y")
         self.assertEqual(config["MLXFW"], "m")
-        self.assertEqual(config["DRM_NOUVEAU"], "n")
+        self.assertEqual(config["DRM_NOUVEAU"], "m")
         self.assertEqual([p["sha256"] for p in data["patches"]],
                          [p["sha256"] for p in egpu["patches"]])
 

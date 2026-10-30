@@ -1,0 +1,69 @@
+From dae4d562c718e98b0fcc4ea86bd25e4dbb807b61 Mon Sep 17 00:00:00 2001
+From: Joshua Warren <816217+joshuaswarren@users.noreply.github.com>
+Date: Fri, 23 Oct 2026 15:45:11 -0500
+Subject: [PATCH] mem_mgr: handle 16K system memory page size
+
+On kernels configured with a 16K page size, the default system memory
+page size picked by _memmgrPickDefaultSysmemPageSize is the OS page size
+(16384). The page size switch at the end of memmgrDeterminePageSize only
+knows 4K, 64K, 128K, 2M, 512M and 256G, so a 16K value fell through to
+the default case, made the function return 0, and every RM init path
+that allocates system memory through it (channel, scrubber and ce_utils
+buffers among them) failed with NV_ERR_INVALID_STATE:
+"memmgrDeterminePageSize failed, status 0x40".
+
+Recognise the 16K OS page size: keep returning it so callers size and
+align to the OS page, but report the 4K PTE page size attribute, since
+the GPU walks the allocation with small pages. 4K, 64K-page and larger
+kernels take exactly the same path as before.
+
+Observed on a GeForce RTX 5060 Ti (GB206) in an arm64 kernel with 16K
+pages, 595.112.07 branch with the companion nv-linux submap patch applied:
+
+    NVRM: GPU0 memmgrAllocResources_IMPL: memmgrDeterminePageSize failed, status: 0x40
+    NVRM: GPU0 RmInitNvDevice: *** Cannot load state into the device
+    NVRM: GPU 0001:03:00.0: RmInitAdapter failed! (0x25:0x40:1373)
+
+Tested: the same card on a 16-inch M1 Max MacBook Pro over a USB4 PCIe
+tunnel with this change: nvidia-smi lists the card, a CUDA context and a
+1 GiB allocation succeed, and llama.cpp inference runs on it. A stock
+module without either patch was not run.
+
+Signed-off-by: Joshua Warren <816217+joshuaswarren@users.noreply.github.com>
+---
+ src/nvidia/inc/kernel/gpu/mem_mgr/rm_page_size.h | 1 +
+ src/nvidia/src/kernel/gpu/mem_mgr/mem_mgr.c      | 9 +++++++++
+ 2 files changed, 10 insertions(+)
+
+diff --git a/src/nvidia/inc/kernel/gpu/mem_mgr/rm_page_size.h b/src/nvidia/inc/kernel/gpu/mem_mgr/rm_page_size.h
+index f25795eac9..9639255d8c 100644
+--- a/src/nvidia/inc/kernel/gpu/mem_mgr/rm_page_size.h
++++ b/src/nvidia/inc/kernel/gpu/mem_mgr/rm_page_size.h
+@@ -36,6 +36,7 @@
+ //---------------------------------------------------------------------------
+ #define RM_PAGE_SIZE_INVALID 0
+ #define RM_PAGE_SIZE         4096
++#define RM_PAGE_SIZE_16K     (16 * 1024)
+ #define RM_PAGE_SIZE_64K     (64 * 1024)
+ #define RM_PAGE_SIZE_128K    (128 * 1024)
+ #define RM_PAGE_MASK         0x0FFF
+diff --git a/src/nvidia/src/kernel/gpu/mem_mgr/mem_mgr.c b/src/nvidia/src/kernel/gpu/mem_mgr/mem_mgr.c
+index 73bebf9740..c3ce8384f8 100644
+--- a/src/nvidia/src/kernel/gpu/mem_mgr/mem_mgr.c
++++ b/src/nvidia/src/kernel/gpu/mem_mgr/mem_mgr.c
+@@ -1957,6 +1957,15 @@ memmgrDeterminePageSize_IMPL
+             *pRetAttr = FLD_SET_DRF(OS32, _ATTR, _PAGE_SIZE, _BIG, *pRetAttr);
+             break;
+ 
++        //
++        // On kernels that use a 16K page size, system memory is carved at the
++        // OS page size but is walked with 4K PTEs, so report the small-page
++        // attribute while returning the OS page size for alignment and sizing.
++        //
++        case RM_PAGE_SIZE_16K:
++            *pRetAttr = FLD_SET_DRF(OS32, _ATTR, _PAGE_SIZE, _4KB, *pRetAttr);
++            break;
++
+         case RM_PAGE_SIZE_HUGE:
+             *pRetAttr = FLD_SET_DRF(OS32, _ATTR, _PAGE_SIZE, _HUGE, *pRetAttr);
+             *pRetAttr2 = FLD_SET_DRF(OS32, _ATTR2, _PAGE_SIZE_HUGE, _2MB, *pRetAttr2);

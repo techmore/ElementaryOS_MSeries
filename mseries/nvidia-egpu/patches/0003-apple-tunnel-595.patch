@@ -1,0 +1,82 @@
+From: Joshua Warren <816217+joshuaswarren@users.noreply.github.com>
+Subject: [PATCH] chipset: recognize the Apple Thunderbolt/USB4 tunnel root port
+
+Rebased from NVIDIA/open-gpu-kernel-modules PR #1482 onto 595.112.07.
+Retains 595 reserved chipset value and omits unrelated 615 TB500 context.
+
+diff --git a/src/common/shared/inc/nvdevid.h b/src/common/shared/inc/nvdevid.h
+index f67207d..f2bd1da 100644
+--- a/src/common/shared/inc/nvdevid.h
++++ b/src/common/shared/inc/nvdevid.h
+@@ -664,6 +664,7 @@ enum {
+ ,     CS_AMPERE_AMPEREONE192
+ ,     CS_NVIDIA_T254
+ ,     CS_RESERVED_5
++,     CS_APPLE_PCIE_TUNNEL_ROOT_PORT
+ ,     CS_MAX_PCIE
+ };
+ 
+diff --git a/src/nvidia/arch/nvalloc/common/inc/nvcst.h b/src/nvidia/arch/nvalloc/common/inc/nvcst.h
+index 33d248f..b62b9d6 100644
+--- a/src/nvidia/arch/nvalloc/common/inc/nvcst.h
++++ b/src/nvidia/arch/nvalloc/common/inc/nvcst.h
+@@ -99,6 +99,7 @@ CHIPSET_SETUP_FUNC(PLDA_XpressRichAXI_setupFunc)
+ CHIPSET_SETUP_FUNC(Riscv_generic_setupFunc)
+ CHIPSET_SETUP_FUNC(Intel_A70D_setupFunc)
+ CHIPSET_SETUP_FUNC(AMD_14D8_setupFunc)
++CHIPSET_SETUP_FUNC(Apple_TunnelRootPort_setupFunc)
+ 
+ 
+ // Keep string length <=32 (including termination) to avoid string copy overflow
+@@ -313,6 +314,14 @@ CSINFO chipsetInfo[] =
+     {PCI_VENDOR_ID_AMPERE,      0xE20E, CS_AMPERE_AMPEREONE192, "Ampere AmpereOne-192", Ampere_AmpereOne_setupFunc},
+     {PCI_VENDOR_ID_AMPERE,      0xE20F, CS_AMPERE_AMPEREONE192, "Ampere AmpereOne-192", Ampere_AmpereOne_setupFunc},
+     {PCI_VENDOR_ID_NVIDIA,      0x22D1, CS_NVIDIA_T254,         "T254",                 Nvidia_T194_setupFunc},
++    //
++    // Apple Silicon Thunderbolt/USB4 PCIe tunnel root port. Write-combined CPU
++    // mappings of GPU BAR memory do not work through the tunnel on this host
++    // (observed on a 16-inch M1 Max MacBook Pro); map BAR memory as device
++    // memory instead.
++    //
++    {PCI_VENDOR_ID_APPLE,       0x100F, CS_APPLE_PCIE_TUNNEL_ROOT_PORT,
++     "Apple PCIe tunnel root port",    Apple_TunnelRootPort_setupFunc},
+ 
+ ///////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+@@ -441,6 +450,7 @@ ARMCSALLOWLISTINFO armChipsetAllowListInfo[] =
+     {PCI_VENDOR_ID_AMPERE,      0xE20E, CS_AMPERE_AMPEREONE192},   // Ampere AmpereOne-192
+     {PCI_VENDOR_ID_AMPERE,      0xE20F, CS_AMPERE_AMPEREONE192},   // Ampere AmpereOne-192
+     {PCI_VENDOR_ID_NVIDIA,      0x22D1, CS_NVIDIA_T254},
++    {PCI_VENDOR_ID_APPLE,       0x100F, CS_APPLE_PCIE_TUNNEL_ROOT_PORT}, // Apple PCIe tunnel root port
+ 
+     // last element must have chipset CS_UNKNOWN (zero)
+     {0,                         0,      CS_UNKNOWN}
+diff --git a/src/nvidia/src/kernel/platform/chipset/chipset_info.c b/src/nvidia/src/kernel/platform/chipset/chipset_info.c
+index 14791bb..e1f8390 100644
+--- a/src/nvidia/src/kernel/platform/chipset/chipset_info.c
++++ b/src/nvidia/src/kernel/platform/chipset/chipset_info.c
+@@ -1278,6 +1278,24 @@ Mellanox_BlueField3_setupFunc
+     return NV_OK;
+ }
+ 
++// Apple PCIe tunnel root port Setup Function
++static NV_STATUS
++Apple_TunnelRootPort_setupFunc
++(
++    OBJCL *pCl
++)
++{
++    // Apple Silicon Thunderbolt/USB4 PCIe tunnel root port (PCI vendor 0x106b,
++    // device 0x100f). Write-combined CPU mappings of GPU BAR memory do not
++    // work through the tunnel on this host; map BAR memory as device memory.
++    // Observed on a 16-inch M1 Max MacBook Pro: with the write-combining
++    // default the first adapter initialisation reset the machine, and with
++    // this property forced through the RmForceDisableIomapWC registry key the
++    // adapter initialises and runs CUDA without errors.
++    pCl->setProperty(pCl, PDB_PROP_CL_DISABLE_IOMAP_WC, NV_TRUE);
++    return NV_OK;
++}
++
+ 
+ // Amazon Gravitron2 Setup Function
+ static NV_STATUS
