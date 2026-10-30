@@ -4,7 +4,7 @@
 
 The running wip5 kernel has `NET_VENDOR_MELLANOX` disabled. `connectx-series.json` defines an independent `unified72-connectx` candidate on the same wip5 source and five display patches, with `NET_VENDOR_MELLANOX=y`, `MLX5_CORE=m`, `MLX5_CORE_EN=y` and `MLXFW=m`. AMDGPU remains off; RDMA is not enabled by this profile. It has its own package and kernel identity; it does not replace the wip5 or eGPU profiles. The author reports that a ConnectX-5 Ex enumerated on M2 Max without special PCI or DT changes; that result is not a J314S or network throughput qualification ([setup](https://github.com/joshuaswarren/omarchy-egpu/blob/main/cards/connectx-5/README.md)).
 
-Pinned source verification, patch preparation and 12 PMP host tests passed. A GCC `olddefconfig` retained all four ConnectX settings and 16K pages. The native LLVM kernel and module build, boot, an attached adapter, link stability and throughput remain untested. No ConnectX card appeared in this machine's PCI inventory. Use the Aurora workflow's manual `unified72-connectx` profile to build the candidate; do not promote it from configuration checks alone.
+Pinned source verification, patch preparation and 12 PMP host tests passed. A GCC `olddefconfig` retained all four ConnectX settings and 16K pages. The native LLVM kernel and module build, boot, an attached adapter, link stability and throughput remain untested. No ConnectX card appeared in this machine's PCI inventory. The Aurora workflow's manual `unified72-connectx` profile was submitted as [CI run 41049918349](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/41049918349), queued behind the eGPU build. Do not promote it from configuration checks alone.
 
 ## Separate eGPU candidate — October 30, 2026
 
