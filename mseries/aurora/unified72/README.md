@@ -2,7 +2,7 @@
 
 ## Combined eGPU and ConnectX package — October 30, 2026
 
-`unified72-combined` builds one distinct kernel from the #188 merge and the wip5 display patch series, with both `DRM_AMDGPU=m` and ConnectX Ethernet (`MLX5_CORE=m`, `MLX5_CORE_EN=y`, `MLXFW=m`). RDMA and Nouveau are not enabled by this profile. The original individual profiles remain available and do not share its package or kernel identity. Source preparation and the 12 PMP host tests passed, all 88 Aurora unit tests passed, and a local GCC `olddefconfig` retained both driver sets and 16K pages. Native package build and hardware checks are separate. The existing eGPU trial stays staged; only about 45 MiB remains on `/boot`, so adding another boot entry requires a storage plan rather than removing existing recovery files.
+`unified72-combined` builds one distinct kernel from the #188 merge and the wip5 display patch series, with both `DRM_AMDGPU=m` and ConnectX Ethernet (`MLX5_CORE=m`, `MLX5_CORE_EN=y`, `MLXFW=m`). RDMA and Nouveau are not enabled by this profile. The original individual profiles remain available and do not share its package or kernel identity. Source preparation and the 12 PMP host tests passed, all 88 Aurora unit tests passed, and a local GCC `olddefconfig` retained both driver sets and 16K pages. The native [package build](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/41057113100) was submitted at `f70f5cc8`; hardware checks are separate. The existing eGPU trial stays staged; only about 45 MiB remains on `/boot`, so adding another boot entry requires a storage plan rather than removing existing recovery files.
 
 ## Separate ConnectX candidate — October 30, 2026
 
