@@ -2,7 +2,7 @@
 
 ## Combined eGPU and ConnectX package — October 30, 2026
 
-Revision 2 of `unified72-combined` builds one distinct kernel from the #188 merge and wip5 display patches with AMDGPU, Nouveau and ConnectX Ethernet modules. RDMA is not enabled. A GCC `olddefconfig` retained `DRM_AMDGPU=m`, `DRM_NOUVEAU=m`, `MLX5_CORE=m`, `MLX5_CORE_EN=y`, `MLXFW=m` and 16K pages; all 88 Aurora unit tests pass. Revision 1 CI run 41057113100 was cancelled because it omitted Nouveau; a fresh revision 2 native build is required. The staged eGPU trial and recovery entries remain intact, and about 45 MiB is free on `/boot`. The separately packaged NVIDIA-open/CUDA source kit is documented in [NVIDIA eGPU](../../nvidia-egpu/README.md).
+Revision 2 of `unified72-combined` builds one distinct kernel from the #188 merge and wip5 display patches with AMDGPU, Nouveau and ConnectX Ethernet modules. RDMA is not enabled. A GCC `olddefconfig` retained `DRM_AMDGPU=m`, `DRM_NOUVEAU=m`, `MLX5_CORE=m`, `MLX5_CORE_EN=y`, `MLXFW=m` and 16K pages; all 88 Aurora unit tests pass. Revision 1 CI run 41057113100 was cancelled because it omitted Nouveau; the revision 2 [native build](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/41059424955) is running at `b3a3e9cb`. The staged eGPU trial and recovery entries remain intact, and about 45 MiB is free on `/boot`. The separately packaged NVIDIA-open/CUDA source kit is documented in [NVIDIA eGPU](../../nvidia-egpu/README.md).
 
 ## Separate ConnectX candidate — October 30, 2026
 
