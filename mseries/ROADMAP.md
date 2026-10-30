@@ -1,27 +1,25 @@
-## Current WD22TB4 candidate and Pages status — 2026-10-29
+## WD22TB4, wip5 boot and Pages status — 2026-10-30
 
-Current `dev` is `dc6f7b10d8ca15df429f5373db3b320535ee2ef9`. Pages deployment
-[40874742041](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40874742041)
-succeeded for that SHA; live homepage and build-monitor files byte-match its
-`docs/` sources. This status correction awaits merge and a later successful
-Pages deployment.
+Current `dev` is `17045e80db1f958e69048418ead12f7c0aeaa1b6`. Pages run
+[41058736063](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/41058736063)
+succeeded for that revision; live homepage and build-monitor bytes match source.
+The current `dev` pages still contain the older wip4 status, and this correction
+awaits review, merge and its own successful Pages deployment.
 
-The latest kernel proposal is wip5 revision 7, [PR #698](https://github.com/techmore/ElementaryOS_MSeries/pull/698),
-head `4ea1ea28c5118bc558749203192eef08f042b7b2`, with owner-approved re-pin to
-omacom/linux-aurora `integration/aurora` at
-`2f725546d6ac6afe0bd5abfa1a844971519f0076`. Exact-head run
-[40866985442](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40866985442)
-passed the ARM64 candidate and unified72 kernel/modules/DTB build and payload
-inspection jobs. The immutable
-[`wip5 receipt`](https://github.com/techmore/ElementaryOS_MSeries/blob/4ea1ea28c5118bc558749203192eef08f042b7b2/mseries/aurora/unified72/review-wip5-2026-10-29.json)
-records all five patch pins, archive digest and configuration. PR #698 remains
-open, DIRTY against dev and without a recorded review. This establishes source
-and build evidence only: KUnit, independent artifact audit, install/arm, J314S
-boot, recovery, suspend, stability and paired-power gates remain open. No
-hardware acceptance is claimed; .20 remains the persistent boot default. PR
-#533's additional Aurora20 ports remain separate and are not included in #698.
-Next: refresh/review #698 against current dev, run KUnit, audit its artifacts,
-and leave attended hardware boot to the owner.
+wip5 revision 7, pinned to omacom `integration/aurora` at
+`2f725546d6ac6afe0bd5abfa1a844971519f0076`, merged in PR #698. Its exact-head
+ARM64 build and payload inspection passed in run
+[40866985442](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40866985442).
+The J314S install record reports one boot and working internal panel, external
+DP, GPU, Wi-Fi and SEP; WD22TB4 replug and suspend/resume remain unchecked.
+The October 30 handoff says wip5 remains running, and the install record says
+wip4 remains the GRUB default. Do not transfer wip2 dock picture results to wip5.
+
+The October 21 wip2 trial remains the scoped evidence for WD22TB4 picture on all
+three ports. The October 20–27 wip3 DPTX timeout and alternate-port recovery
+observations do not establish wip5 recovery. No new hardware trial was performed
+for this status update. Next: owner-authorized wip5 WD22TB4 and recovery checks;
+record dock replug, suspend/resume, stability and recovery independently.
 
 ## WD22TB4 and wip4 candidate status — 2026-10-28
 

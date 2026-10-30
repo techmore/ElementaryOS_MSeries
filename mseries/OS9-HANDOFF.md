@@ -37,37 +37,36 @@ Audited the linked announcement against the running wip5 host and current dev pi
 ## Rust compositor: frames for X11 windows — 2026-10-29
 
 Owner report: the WiFiman Desktop window (Electron, X11, `_MOTIF_WM_HINTS 0x2, 0x0, 0x1`, min 420x460) could not be moved or resized. The Rust compositor drew no server-side decorations at all, so X11 apps that rely on the window manager's title bar had nothing to grab. New `rust/pantheon-compositor/src/decorations.rs`: X11 windows that ask for a frame (no Motif hints, or hints with a title; normal/dialog/utility types) get a 34 px title bar above the client, an invisible 8 px resize band, and the `org.gnome.desktop.wm.preferences button-layout` buttons (close, minimize, maximize; the owner's `close,minimize,maximize:`), drawn with pango/cairo and rounded with the window corners. Drag moves, edges resize within the size hints, double-click and the maximize button toggle maximize, close sends WM_DELETE_WINDOW. Snapped/maximized framed windows are configured below the title bar; work-area fitting counts the title bar. Fixes on the way: X11 resize ignored WM_NORMAL_HINTS min/max; moving an X11 window (title bar or Super-drag) never told the client its new position. `_NET_WM_MOVERESIZE` was already routed by smithay and is now covered by the probe. Wayland windows, header-bar (CSD) X11 windows and fullscreen windows are unchanged. Verified: `mseries/pantheon-rust-compositor/ssd-probe/run.sh` (nested, 11/11 pass with a window carrying WiFiman's exact hints), 184 unit tests, activation probe 7/7. Not verified: the real WiFiman window on the M1 Pro (needs the owner's install + re-login); the real app was not started nested because its root daemon carries the owner's live VPN. Not done: `_NET_FRAME_EXTENTS`, a window shadow, frames during gesture animations.
-## Current WD22TB4 candidate and Pages status — 2026-10-29
+## WD22TB4, wip5 boot and Pages status — 2026-10-30
 
-Verified `dev` at `dc6f7b10d8ca15df429f5373db3b320535ee2ef9`. Pages run
-[40874742041](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40874742041)
-succeeded for that exact revision, and the live `index.html`, `build-status.html`
-and `build-status.js` byte-match `docs/` at that source. This status correction
-is prepared on top of that revision and remains unpublished until its PR merges
-and a new Pages deployment succeeds.
+Current `dev` is `17045e80db1f958e69048418ead12f7c0aeaa1b6`. Pages deployment
+[41058736063](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/41058736063)
+succeeded for that exact revision. The live homepage and build monitor each
+byte-match their `dev/docs` source (SHA-256 `62acac58159490406333886dae68f8eb5c4dedd6b1fe909f3b0a30c99e12b9e5`
+and `e06a2f4648cd3225872a91df7d724305ccd266adf00903a97c410edfdec624bb`).
+Those source pages still describe the older wip4 candidate; this correction is
+prepared on the current revision and remains unpublished until merge and a
+successful Pages deployment for the resulting `dev` revision.
 
-The current proposal is wip5 revision 7, [PR #698](https://github.com/techmore/ElementaryOS_MSeries/pull/698),
-head `4ea1ea28c5118bc558749203192eef08f042b7b2`. The PR records owner approval
-for re-pinning unified72 to omacom/linux-aurora `integration/aurora` at
-`2f725546d6ac6afe0bd5abfa1a844971519f0076` (7.2.11), 388 commits newer than
-the prior wip4 source. The distinct `7.2.11-elementary-aurora72-wip5` package
-identity prevents overwriting wip4. The retained five ordered patches apply to
-the full pinned archive without fuzz; the UDMABUF/DMABUF_HEAPS config overlay
-is required by the .20 recipe config. Exact-head CI run
-[40866985442](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40866985442)
-passed both ARM64 candidate and unified72 source preparation, selected kernel
-logic checks, kernel/modules/DTB build, payload-only package build and boundary
-inspection. The exact source and archive provenance is in
-[`review-wip5-2026-10-29.json`](https://github.com/techmore/ElementaryOS_MSeries/blob/4ea1ea28c5118bc558749203192eef08f042b7b2/mseries/aurora/unified72/review-wip5-2026-10-29.json).
+wip5 revision 7 is pinned to omacom/linux-aurora `integration/aurora` at
+`2f725546d6ac6afe0bd5abfa1a844971519f0076`; PR #698 merged on October 29.
+Exact-head CI run [40866985442](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40866985442)
+passed the ARM64 candidate and unified72 kernel/modules/DTB build and payload
+inspection. The immutable [source/build receipt](https://github.com/techmore/ElementaryOS_MSeries/blob/4ea1ea28c5118bc558749203192eef08f042b7b2/mseries/aurora/unified72/review-wip5-2026-10-29.json)
+retains the pin and patch provenance. The [J314S install record](aurora/unified72/wip5/README.md)
+reports a first good wip5 boot on October 29, with the internal panel, external
+DP, GPU, Wi-Fi and SEP working. It does not record WD22TB4 replug or
+suspend/resume qualification. The October 30 handoff records wip5 still running;
+the install record says wip4 remains the GRUB default. This is one boot record,
+not dock acceptance or a repeatability result.
 
-PR #698 is still open, merge state DIRTY, and has no recorded review. DCP KUnit,
-independent artifact audit, package installation/arming, attended J314S boot,
-dock recovery, suspend, long-run stability and paired-power qualification are
-not done. No wip5 package is installed or armed and no hardware acceptance is
-claimed; .20 remains the documented persistent boot default. PR #533 remains
-open with its additional Aurora20 ports; those changes are not part of #698.
-Next: update/rebase #698 against current `dev`, complete review and KUnit, audit
-the exact build artifacts, then leave any attended boot to the owner.
+Reuse the October 21 wip2 scoped result: picture at 1080p/60 on all three
+USB-C ports in one plug cycle per port. Retained October 20–27 wip3 observations
+record early post-resume DPTX timeouts and one alternate-port recovery; they do
+not qualify wip5 recovery. No new dock or hardware trial was performed for this
+status update. Dock replug/recovery, suspend, long-run stability and paired-power
+qualification remain open. Next: perform the owner-authorized wip5 dock and
+recovery checks, then update this page only from their retained receipt.
 
 ## wip4 revision 6: DP routing candidate — 2026-10-27
 
