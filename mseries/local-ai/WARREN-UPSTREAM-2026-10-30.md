@@ -1,5 +1,7 @@
 # Warren upstream updates: M1 Pro applicability — 2026-10-30
 
+**Deployment follow-up:** official MLX v0.7.35 is installed with regression checks and a retained rollback environment; the eGPU kernel payload and AMD firmware are installed and a non-default trial boot entry is staged. The running kernel and shared boot DTB are unchanged. The investigation below records the state at the time of the original audit. See [MLX deployment](receipts/2026-10-30-mlx-v0735-deploy/README.md) and [kernel staging](../aurora/unified72/README.md#separate-egpu-candidate--october-30-2026).
+
 Source: [announcement](https://joshuawarren.com/blog/what-i-open-sourced-today-egpus-connectx-tensorfold/). This is an assessment, not an installation or hardware qualification.
 
 The running host reported `7.2.11-elementary-aurora72-wip5`; `origin/dev` at `2c91b38d` pins its source to `2f725546`. A PCI inventory showed the Thunderbolt dock but no external GPU or ConnectX card. The running config says `CONFIG_DRM_AMDGPU` is unset. There was no `CONFIG_MLX5_CORE` line in `/proc/config.gz`; this alone does not establish whether all prerequisite options are enabled.

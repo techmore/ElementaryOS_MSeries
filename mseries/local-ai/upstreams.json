@@ -4,8 +4,8 @@
     "omarchy-mlx": {
       "repo": "joshuaswarren/omarchy-mlx",
       "track": "main",
-      "pin": "5e40ecf953e8b907dcae1ce6caadce6ad62b0e0f",
-      "pin_label": "v0.7.34",
+      "pin": "42b30a2de2f8b42e673cc50eaca9f7b145f04ac6",
+      "pin_label": "v0.7.35",
       "step_rule": "Step only when upstream moves its install.sh MLX_LM_VERSION default or cuts a release; never run ahead of it.",
       "install_checkout": "omarchy-mlx",
       "patches": []

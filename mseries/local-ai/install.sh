@@ -5,7 +5,7 @@ set -euo pipefail
 grep -aq 'apple,' /proc/device-tree/compatible || { echo 'Requires Apple Silicon' >&2; exit 1; }
 python3 -c 'import sys; assert sys.version_info[:2] == (3,14), "Python 3.14 required"'
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-work=${MSERIES_AI_SOURCES:-$HOME/.local/share/mseries-ai/sources/v0.7.34}
+work=${MSERIES_AI_SOURCES:-$HOME/.local/share/mseries-ai/sources/v0.7.35}
 prefix=$HOME/.local/share/mlx-omarchy
 mkdir -p "$work"
 # The upstream installer clears its venv. Never replace a running worker.
@@ -14,7 +14,7 @@ if pgrep -u "$(id -u)" -f "$prefix/venv/bin/python" >/dev/null; then
 fi
 backup=
 if [[ -e $prefix ]]; then
-  backup=${prefix}.before-v0.7.34-$(date +%s)
+  backup=${prefix}.before-v0.7.35-$(date +%s)
   mv "$prefix" "$backup"
 fi
 installer=
@@ -54,7 +54,7 @@ checkout() {
   }
 }
 checkout coreglass coreglass 53dd379e74df875ad7dee8a9ef8ddc4156508604
-checkout omarchy-mlx omarchy-mlx 5e40ecf953e8b907dcae1ce6caadce6ad62b0e0f
+checkout omarchy-mlx omarchy-mlx 42b30a2de2f8b42e673cc50eaca9f7b145f04ac6
 # 9323171c12 (2026-10-25): identical MLX gate results to 7faf04c065 and faster decode on the
 # M1 Pro (Qwen 2B +36%, Qwen 4B +24%, LFM3 +48% at defaults); see ENGINE-SCOREBOARD.md.
 checkout mesa-mlx-compute mesa-1 9323171c12c5aa6055f1031ea26c16c247191987
@@ -102,7 +102,7 @@ text=text.replace(old,'ROOT="'+str(root)+'"',1)
 Path(sys.argv[2]).write_text(text)
 PY
 export OMARCHY_MLX_SYSTEM_PREFIX=$prefix
-MLX_OMARCHY_VERSION=v0.7.34 bash "$installer"
+MLX_OMARCHY_VERSION=v0.7.35 bash "$installer"
 python3 "$script_dir/configure-prefill.py" "$prefix/mlx_omarchy_serve/__main__.py"
 python3 "$script_dir/configure-serve-concurrency.py" "$prefix/mlx_omarchy_serve/__main__.py"
 # Our two private mlx-lm server patches, in a side copy that model-worker.py puts first on
