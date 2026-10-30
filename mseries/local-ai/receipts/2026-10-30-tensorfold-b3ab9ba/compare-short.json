@@ -1,0 +1,724 @@
+{
+  "status": "complete",
+  "model_key": "qwen2b",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "weights_sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+  "kernel": "7.2.11-elementary-aurora72-wip5",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "b3ab9ba217a80c63fcc48f7643ddfe339a8f4bdc",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "mlx-120k",
+    "tensorfold"
+  ],
+  "concurrency": 1,
+  "runs": [
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 20.045,
+          "max_temp_c": 45.78,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 19.327,
+          "max_temp_c": 45.9,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 18.542,
+          "max_temp_c": 45.266,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 18.546,
+          "max_temp_c": 44.961,
+          "max_fan_rpm": 2527.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 18.323,
+          "max_temp_c": 45.88,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 5.05,
+          "available_gib": 19.027,
+          "max_temp_c": 45.026,
+          "max_fan_rpm": 2510.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 3.7107743550000123,
+      "ttft_s": 0.4291830970000774,
+      "total_s": 0.9963476309999351,
+      "completion_tokens": 32,
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 54.65786053541878,
+      "min_available_gib": 18.323,
+      "peak_temp_c": 45.9,
+      "round": 1,
+      "admission_available_gib": 20.045
+    },
+    {
+      "arm": "tensorfold",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 20.018,
+          "max_temp_c": 45.346,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 18.715,
+          "max_temp_c": 45.306,
+          "max_fan_rpm": 2500.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 18.667,
+          "max_temp_c": 45.386,
+          "max_fan_rpm": 2496.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 18.659,
+          "max_temp_c": 46.5,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 18.663,
+          "max_temp_c": 45.846,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 18.684,
+          "max_temp_c": 45.306,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 6.1,
+          "available_gib": 18.684,
+          "max_temp_c": 45.386,
+          "max_fan_rpm": 2492.0
+        },
+        {
+          "t": 7.12,
+          "available_gib": 18.682,
+          "max_temp_c": 46.533,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 8.13,
+          "available_gib": 18.683,
+          "max_temp_c": 46.033,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 9.15,
+          "available_gib": 18.681,
+          "max_temp_c": 45.146,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 10.17,
+          "available_gib": 18.682,
+          "max_temp_c": 44.864,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 11.2,
+          "available_gib": 18.682,
+          "max_temp_c": 45.066,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 12.21,
+          "available_gib": 18.68,
+          "max_temp_c": 45.913,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 13.23,
+          "available_gib": 18.685,
+          "max_temp_c": 45.033,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 14.24,
+          "available_gib": 18.679,
+          "max_temp_c": 44.369,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 15.26,
+          "available_gib": 18.666,
+          "max_temp_c": 45.813,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 16.27,
+          "available_gib": 18.672,
+          "max_temp_c": 46.84,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 17.29,
+          "available_gib": 18.673,
+          "max_temp_c": 45.693,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 18.3,
+          "available_gib": 18.672,
+          "max_temp_c": 45.146,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 19.31,
+          "available_gib": 18.697,
+          "max_temp_c": 44.5,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 20.33,
+          "available_gib": 18.696,
+          "max_temp_c": 44.369,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 21.35,
+          "available_gib": 18.697,
+          "max_temp_c": 44.668,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 22.37,
+          "available_gib": 18.696,
+          "max_temp_c": 44.896,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 23.38,
+          "available_gib": 18.684,
+          "max_temp_c": 44.896,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 24.4,
+          "available_gib": 18.68,
+          "max_temp_c": 45.106,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 25.43,
+          "available_gib": 18.678,
+          "max_temp_c": 45.186,
+          "max_fan_rpm": 2476.0
+        }
+      ],
+      "log_tail": "[tensorfold] prompt chunks of up to 32 tokens, cut at replies 256+ tokens apart\nwarning: libtfgrammar.so is required for structured output and required tool calls (HTTP 400 when missing); restore the matching release archive's lib/ directory or run zig build grammar -Dxgrammar=DIR; prepare DIR with git clone --branch v0.2.8 --recurse-submodules https://github.com/mlc-ai/xgrammar\n[tensorfold] serving qwen35-2b at http://127.0.0.1:35227/v1 (sampling: greedy; drafts: none; context: 1024; loaded in 0.5s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-fc4120dc2458447e16b1c6c1e3c78e41 prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=1.947 decode=10.983 elapsed=12.929 queued=0.000 tok/s=2.8\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-d140d0c520458a24a6206fbe2b6e99ef prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=1.904 decode=10.732 elapsed=12.636 queued=0.000 tok/s=2.9\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 13.443838389999655,
+      "ttft_s": 1.905656092999834,
+      "total_s": 12.638289590000113,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 2.8883870867913597,
+      "min_available_gib": 18.659,
+      "peak_temp_c": 46.84,
+      "round": 1,
+      "admission_available_gib": 20.015
+    },
+    {
+      "arm": "tensorfold",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 20.003,
+          "max_temp_c": 44.57,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 18.704,
+          "max_temp_c": 45.146,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 2.05,
+          "available_gib": 18.704,
+          "max_temp_c": 45.26,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 3.06,
+          "available_gib": 18.696,
+          "max_temp_c": 45.346,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 18.703,
+          "max_temp_c": 44.733,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 5.09,
+          "available_gib": 18.703,
+          "max_temp_c": 45.5,
+          "max_fan_rpm": 2497.0
+        },
+        {
+          "t": 6.1,
+          "available_gib": 18.71,
+          "max_temp_c": 45.186,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 7.12,
+          "available_gib": 18.712,
+          "max_temp_c": 44.771,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 8.13,
+          "available_gib": 18.715,
+          "max_temp_c": 45.533,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 9.15,
+          "available_gib": 18.718,
+          "max_temp_c": 44.478,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 10.16,
+          "available_gib": 18.719,
+          "max_temp_c": 44.478,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 11.18,
+          "available_gib": 18.725,
+          "max_temp_c": 44.478,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 12.19,
+          "available_gib": 18.725,
+          "max_temp_c": 45.066,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 13.21,
+          "available_gib": 18.715,
+          "max_temp_c": 44.961,
+          "max_fan_rpm": 2519.0
+        },
+        {
+          "t": 14.22,
+          "available_gib": 18.71,
+          "max_temp_c": 44.831,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 15.24,
+          "available_gib": 18.709,
+          "max_temp_c": 44.146,
+          "max_fan_rpm": 2468.0
+        },
+        {
+          "t": 16.26,
+          "available_gib": 18.727,
+          "max_temp_c": 45.26,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 17.28,
+          "available_gib": 18.731,
+          "max_temp_c": 44.701,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 18.3,
+          "available_gib": 18.732,
+          "max_temp_c": 45.106,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 19.31,
+          "available_gib": 18.737,
+          "max_temp_c": 44.896,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 20.33,
+          "available_gib": 18.745,
+          "max_temp_c": 44.222,
+          "max_fan_rpm": 2514.0
+        },
+        {
+          "t": 21.34,
+          "available_gib": 18.748,
+          "max_temp_c": 44.445,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 22.36,
+          "available_gib": 18.75,
+          "max_temp_c": 45.066,
+          "max_fan_rpm": 2505.0
+        },
+        {
+          "t": 23.37,
+          "available_gib": 18.754,
+          "max_temp_c": 45.033,
+          "max_fan_rpm": 2488.0
+        },
+        {
+          "t": 24.39,
+          "available_gib": 18.757,
+          "max_temp_c": 44.57,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 25.4,
+          "available_gib": 18.751,
+          "max_temp_c": 44.864,
+          "max_fan_rpm": 2502.0
+        }
+      ],
+      "log_tail": "[tensorfold] prompt chunks of up to 32 tokens, cut at replies 256+ tokens apart\nwarning: libtfgrammar.so is required for structured output and required tool calls (HTTP 400 when missing); restore the matching release archive's lib/ directory or run zig build grammar -Dxgrammar=DIR; prepare DIR with git clone --branch v0.2.8 --recurse-submodules https://github.com/mlc-ai/xgrammar\n[tensorfold] serving qwen35-2b at http://127.0.0.1:50751/v1 (sampling: greedy; drafts: none; context: 1024; loaded in 0.5s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-3cec2f8ac4436799d0a6aab9d61b5259 prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=1.906 decode=11.174 elapsed=13.081 queued=0.000 tok/s=2.8\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-00fbdfaf0d99fe05c37c3ead826c5eec prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=1.953 decode=10.791 elapsed=12.744 queued=0.000 tok/s=2.9\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 13.598392987000352,
+      "ttft_s": 1.954549820000011,
+      "total_s": 12.745835666999938,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 2.872688244896995,
+      "min_available_gib": 18.696,
+      "peak_temp_c": 45.533,
+      "round": 2,
+      "admission_available_gib": 20.004
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 20.014,
+          "max_temp_c": 44.353,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 18.935,
+          "max_temp_c": 44.478,
+          "max_fan_rpm": 2501.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 18.568,
+          "max_temp_c": 44.407,
+          "max_fan_rpm": 2476.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 18.368,
+          "max_temp_c": 44.222,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 18.319,
+          "max_temp_c": 44.445,
+          "max_fan_rpm": 2489.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 3.552564177000022,
+      "ttft_s": 0.4204296009997961,
+      "total_s": 0.9912184659997365,
+      "completion_tokens": 32,
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 54.3108001940494,
+      "min_available_gib": 18.319,
+      "peak_temp_c": 44.478,
+      "round": 2,
+      "admission_available_gib": 20.015
+    },
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 19.983,
+          "max_temp_c": 44.445,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 18.9,
+          "max_temp_c": 45.146,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 18.54,
+          "max_temp_c": 44.961,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 18.285,
+          "max_temp_c": 44.548,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 18.205,
+          "max_temp_c": 45.926,
+          "max_fan_rpm": 2510.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 3.547021262999806,
+      "ttft_s": 0.42343893199995364,
+      "total_s": 0.9921264240001619,
+      "completion_tokens": 32,
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 54.511485545366355,
+      "min_available_gib": 18.205,
+      "peak_temp_c": 45.926,
+      "round": 3,
+      "admission_available_gib": 19.982
+    },
+    {
+      "arm": "tensorfold",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 19.812,
+          "max_temp_c": 43.586,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 1.05,
+          "available_gib": 18.513,
+          "max_temp_c": 44.407,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 2.06,
+          "available_gib": 18.53,
+          "max_temp_c": 44.548,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 3.08,
+          "available_gib": 18.538,
+          "max_temp_c": 44.353,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 4.09,
+          "available_gib": 18.537,
+          "max_temp_c": 44.608,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 5.11,
+          "available_gib": 18.559,
+          "max_temp_c": 44.994,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 6.12,
+          "available_gib": 18.567,
+          "max_temp_c": 44.994,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 7.14,
+          "available_gib": 18.567,
+          "max_temp_c": 44.608,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 8.16,
+          "available_gib": 18.574,
+          "max_temp_c": 44.869,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 9.18,
+          "available_gib": 18.581,
+          "max_temp_c": 43.63,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 10.19,
+          "available_gib": 18.564,
+          "max_temp_c": 45.066,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 11.2,
+          "available_gib": 18.571,
+          "max_temp_c": 44.054,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 12.22,
+          "available_gib": 18.588,
+          "max_temp_c": 44.516,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 13.24,
+          "available_gib": 18.605,
+          "max_temp_c": 44.385,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 14.25,
+          "available_gib": 18.598,
+          "max_temp_c": 44.608,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 15.27,
+          "available_gib": 18.601,
+          "max_temp_c": 45.146,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 16.3,
+          "available_gib": 18.619,
+          "max_temp_c": 44.57,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 17.31,
+          "available_gib": 18.677,
+          "max_temp_c": 44.054,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 18.33,
+          "available_gib": 18.687,
+          "max_temp_c": 44.804,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 19.35,
+          "available_gib": 18.699,
+          "max_temp_c": 44.711,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 20.36,
+          "available_gib": 18.72,
+          "max_temp_c": 44.673,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 21.38,
+          "available_gib": 18.749,
+          "max_temp_c": 44.26,
+          "max_fan_rpm": 2468.0
+        },
+        {
+          "t": 22.39,
+          "available_gib": 18.763,
+          "max_temp_c": 44.423,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 23.4,
+          "available_gib": 18.783,
+          "max_temp_c": 44.608,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 24.41,
+          "available_gib": 18.8,
+          "max_temp_c": 44.222,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 25.43,
+          "available_gib": 18.815,
+          "max_temp_c": 44.26,
+          "max_fan_rpm": 2510.0
+        }
+      ],
+      "log_tail": "[tensorfold] prompt chunks of up to 32 tokens, cut at replies 256+ tokens apart\nwarning: libtfgrammar.so is required for structured output and required tool calls (HTTP 400 when missing); restore the matching release archive's lib/ directory or run zig build grammar -Dxgrammar=DIR; prepare DIR with git clone --branch v0.2.8 --recurse-submodules https://github.com/mlc-ai/xgrammar\n[tensorfold] serving qwen35-2b at http://127.0.0.1:56219/v1 (sampling: greedy; drafts: none; context: 1024; loaded in 0.6s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-7224eaf83687aeae917bf83c7354df7b prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=1.934 decode=10.627 elapsed=12.561 queued=0.000 tok/s=2.9\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-a9d9d8f7a7acda0c6843f9de8a3bd26c prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=1.912 decode=10.696 elapsed=12.608 queued=0.000 tok/s=2.9\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 13.56921120900006,
+      "ttft_s": 1.9138890049998736,
+      "total_s": 12.610726186000193,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 2.8980528987635785,
+      "min_available_gib": 18.513,
+      "peak_temp_c": 45.146,
+      "round": 3,
+      "admission_available_gib": 19.812
+    }
+  ],
+  "summary": {
+    "mlx-120k": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.42343893199995364,
+      "median_total_s": 0.9921264240001619,
+      "median_decode_tps": 54.511485545366355,
+      "texts": [
+        "ffbf23cb27bb"
+      ]
+    },
+    "tensorfold": {
+      "ok_runs": 3,
+      "median_ttft_s": 1.9138890049998736,
+      "median_total_s": 12.638289590000113,
+      "median_decode_tps": 2.8883870867913597,
+      "texts": [
+        "ffbf23cb27bb"
+      ]
+    }
+  }
+}

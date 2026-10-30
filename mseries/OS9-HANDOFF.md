@@ -1,5 +1,7 @@
 ## Warren local AI and eGPU updates — 2026-10-30
 
+Tested TensorFold draft #1544 head `b3ab9ba` privately: host tests, all five M1 Pro GPU stages and six contract groups pass (pointwise records known fp32 denormal flush). Qwen 2B 32-token, three rotated rounds matched installed MLX's response text; TensorFold loopback median 2.89 decode tokens/s versus MLX in-process 54.51, with different timing boundaries. Long-output fidelity, desktop pacing and submit-batching remain unqualified; no service changed. [Receipt](local-ai/receipts/2026-10-30-tensorfold-b3ab9ba/README.md).
+
 The installed system has no `/usr/lib/firmware/amdgpu` and no Ubuntu `linux-firmware` package; identify and verify matching card firmware before any AMD eGPU trial. The local ConnectX module compile required `rustup component add rust-src --toolchain 1.93.1`; this adds build-tool source only and does not alter the running kernel.
 
 Local GCC compilation of ConnectX `mlx5_core` and `mlxfw` completed with `KBUILD_MODPOST_WARN=1` and no kernel `Module.symvers`: unresolved-symbol warnings and missing BTF mean compile-only evidence, not loadable artifacts. The diagnostic build changed the private prepared source tree; prepare a fresh tree for its digest gate. CI kernel builds remain pending.
