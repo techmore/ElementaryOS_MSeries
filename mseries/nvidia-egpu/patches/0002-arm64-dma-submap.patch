@@ -1,0 +1,53 @@
+From 2046c946ff81ee0b9fc0ce5864329af4f2252c2d Mon Sep 17 00:00:00 2001
+From: Joshua Warren <816217+joshuaswarren@users.noreply.github.com>
+Date: Fri, 23 Oct 2026 10:29:46 -0500
+Subject: [PATCH] nv-linux: keep DMA submaps 2M aligned on every arm64 page
+ size
+
+The IOVA range covered by one DMA submap has to start on a 2M boundary,
+otherwise a 2M system memory allocation gets split across two submaps.
+The rule was only applied when CONFIG_ARM64_4K_PAGES was set. On arm64
+kernels with 16K or 64K pages the generic branch was taken, which rounds
+the submap size down to 4G minus one page and therefore leaves the
+mapped IOVA range unaligned.
+
+Round the page count down to a whole number of 2M blocks on arm64
+kernels with 16K or 64K pages. With 16K pages this makes a submap 4G-2M
+instead of 4G-16K, so submap starts stay 2M aligned. 4K page arm64
+kernels keep the value they have today, and other architectures are
+unchanged.
+
+Tested together with the companion mem_mgr page-size patch: GeForce RTX 5060 Ti
+(GB206) on an arm64 kernel with 16K pages (a 16-inch M1 Max MacBook Pro over a
+USB4 PCIe tunnel), 595.112.07 branch; nvidia-smi lists the card and CUDA
+context creation and a 1 GiB allocation succeed. This change alone has not been
+shown necessary on 16K hardware; its effect is derived from the source and from
+the 64K-page report in issue #1269.
+
+Signed-off-by: Joshua Warren <816217+joshuaswarren@users.noreply.github.com>
+---
+ kernel-open/common/inc/nv-linux.h | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/kernel-open/common/inc/nv-linux.h b/kernel-open/common/inc/nv-linux.h
+index f377db1e9..29edde8f8 100644
+--- a/kernel-open/common/inc/nv-linux.h
++++ b/kernel-open/common/inc/nv-linux.h
+@@ -1102,6 +1102,17 @@ typedef struct nv_dma_map_s {
+ #if defined(CONFIG_ARM64_4K_PAGES)
+ #define NV_DMA_U32_MAX_4K_PAGES           ((NvU32)((NV_U32_MAX >> PAGE_SHIFT) + 1))
+ #define NV_DMA_SUBMAP_MAX_PAGES           ((NvU32)(NV_DMA_U32_MAX_4K_PAGES - 512))
++#elif defined(CONFIG_ARM64)
++/*
++ * The same 2M alignment rule applies to arm64 kernels that use 16K or 64K pages:
++ * the mapped IOVA range must still start on a 2M boundary, otherwise 2M sysmem
++ * allocations get split across submaps. Round the page count down to a whole
++ * number of 2M blocks instead of assuming that a page is 4K.
++ */
++#define NV_DMA_SUBMAP_PAGES_PER_2M        ((NvU32)((2 * 1024 * 1024) >> PAGE_SHIFT))
++#define NV_DMA_SUBMAP_MAX_PAGES           ((NvU32)((NV_U32_MAX >> PAGE_SHIFT) / \
++                                                  NV_DMA_SUBMAP_PAGES_PER_2M * \
++                                                  NV_DMA_SUBMAP_PAGES_PER_2M))
+ #else
+ #define NV_DMA_SUBMAP_MAX_PAGES           ((NvU32)(NV_U32_MAX >> PAGE_SHIFT))
+ #endif

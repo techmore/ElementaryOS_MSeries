@@ -1,0 +1,212 @@
+{
+  "status": "complete",
+  "model_key": "qwen2b",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "weights_sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+  "kernel": "7.2.11-elementary-aurora72-wip5",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "b3ab9ba217a80c63fcc48f7643ddfe339a8f4bdc",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "tensorfold"
+  ],
+  "concurrency": 1,
+  "runs": [
+    {
+      "arm": "tensorfold",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 19.716,
+          "max_temp_c": 40.244,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 1.02,
+          "available_gib": 18.401,
+          "max_temp_c": 39.671,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 2.03,
+          "available_gib": 18.4,
+          "max_temp_c": 40.489,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 3.04,
+          "available_gib": 18.377,
+          "max_temp_c": 40.173,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 4.06,
+          "available_gib": 18.373,
+          "max_temp_c": 39.99,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 18.381,
+          "max_temp_c": 40.815,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 6.09,
+          "available_gib": 18.384,
+          "max_temp_c": 39.454,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 7.11,
+          "available_gib": 18.384,
+          "max_temp_c": 39.563,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 8.12,
+          "available_gib": 18.385,
+          "max_temp_c": 40.048,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 9.14,
+          "available_gib": 18.404,
+          "max_temp_c": 39.459,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 10.17,
+          "available_gib": 18.388,
+          "max_temp_c": 40.423,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 11.19,
+          "available_gib": 18.399,
+          "max_temp_c": 41.0,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 12.21,
+          "available_gib": 18.384,
+          "max_temp_c": 40.358,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 13.23,
+          "available_gib": 18.381,
+          "max_temp_c": 40.929,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 14.25,
+          "available_gib": 18.308,
+          "max_temp_c": 40.304,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 15.26,
+          "available_gib": 18.317,
+          "max_temp_c": 40.119,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 16.3,
+          "available_gib": 18.317,
+          "max_temp_c": 40.913,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 17.3,
+          "available_gib": 18.317,
+          "max_temp_c": 41.0,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 18.32,
+          "available_gib": 18.319,
+          "max_temp_c": 39.99,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 19.34,
+          "available_gib": 18.332,
+          "max_temp_c": 40.929,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 20.35,
+          "available_gib": 18.347,
+          "max_temp_c": 40.489,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 21.36,
+          "available_gib": 18.343,
+          "max_temp_c": 39.936,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 22.37,
+          "available_gib": 18.361,
+          "max_temp_c": 41.108,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 23.38,
+          "available_gib": 18.342,
+          "max_temp_c": 40.913,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 24.39,
+          "available_gib": 18.359,
+          "max_temp_c": 39.828,
+          "max_fan_rpm": 0.0
+        },
+        {
+          "t": 25.41,
+          "available_gib": 18.376,
+          "max_temp_c": 41.195,
+          "max_fan_rpm": 0.0
+        }
+      ],
+      "log_tail": "[tensorfold] prompt chunks of up to 32 tokens, cut at replies 256+ tokens apart\nwarning: libtfgrammar.so is required for structured output and required tool calls (HTTP 400 when missing); restore the matching release archive's lib/ directory or run zig build grammar -Dxgrammar=DIR; prepare DIR with git clone --branch v0.2.8 --recurse-submodules https://github.com/mlc-ai/xgrammar\n[tensorfold] serving qwen35-2b at http://127.0.0.1:53303/v1 (sampling: greedy; drafts: none; context: 1024; loaded in 0.5s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-c924d09bd37ff2f506062a87c485f290 prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=1.953 decode=10.733 elapsed=12.686 queued=0.000 tok/s=2.9\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-9cbbdce6a2aff72b8fb44c63b3aa0e7c prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=1.975 decode=10.661 elapsed=12.636 queued=0.000 tok/s=2.9\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 13.196554299000127,
+      "ttft_s": 1.9769542879994333,
+      "total_s": 12.637987194999369,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "Sunlight travels through the atmosphere and gets refracted (bent) as it enters a raindrop.\nThe light then reflects off the back of the dro",
+      "served_model": "qwen35-2b",
+      "text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+      "decode_tps": 2.907785790591237,
+      "min_available_gib": 18.308,
+      "peak_temp_c": 41.195,
+      "round": 1,
+      "admission_available_gib": 19.716
+    }
+  ],
+  "summary": {
+    "tensorfold": {
+      "ok_runs": 1,
+      "median_ttft_s": 1.9769542879994333,
+      "median_total_s": 12.637987194999369,
+      "median_decode_tps": 2.907785790591237,
+      "texts": [
+        "ffbf23cb27bb"
+      ]
+    }
+  }
+}

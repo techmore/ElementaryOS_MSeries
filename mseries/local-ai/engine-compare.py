@@ -59,8 +59,8 @@ ICD = Path(os.environ.get('MSERIES_HK_ICD') or HOME / '.local/share/mlx-omarchy/
 DRIVER = (ICD.parent / 'mesa-git-sha').read_text().strip() if (ICD.parent / 'mesa-git-sha').exists() else 'unknown'
 RAPID_PATH = f"{HOME}/.cache/mseries-metal2vk/rapid-python:{HOME}/.cache/mseries-metal2vk/rapid-src"
 RAPID_REV = '1d09cdb684bbf58fac130f5804b08ee2e1f56558'
-TF_BIN = HOME / '.cache/mseries-tensorfold/src/zig-out/native/bin/tensorfold-native-vulkan'
-TF_REV = '92bb49db5c313c105cbf4b44638d1e1896615174'  # PR 1544; receipts record the rev they ran
+TF_BIN = Path('/usr/libexec/mseries/tensorfold-native-vulkan')
+TF_REV = 'b3ab9ba217a80c63fcc48f7643ddfe339a8f4bdc'  # PR 1544; receipts record the rev they ran
 PROMPT = 'Explain in plain language how a rainbow forms. Give four distinct sentences.'
 LONG_PROMPT = ('Explain in detail how a rainbow forms, including refraction, reflection, color '
                'and viewing angle. Write at least 350 words.')
@@ -384,7 +384,7 @@ def main():
         print(f'skipping omlx-120k: {OMLX_BIN} missing (omarchy-mlx packaging/omlx-linux/install.sh)', file=sys.stderr)
         arms.remove('omlx-120k')
     if 'tensorfold' in arms and not TF_BIN.exists():
-        raise SystemExit('TensorFold server missing: run tensorfold-vulkan.sh build')
+        raise SystemExit('TensorFold server missing: build and install the mseries-tensorfold-vulkan package')
     out = a.output or Path(__file__).resolve().parent / 'receipts' / (
         f"{time.strftime('%Y-%m-%d')}-engine-compare-{a.model}-{'long' if a.long else 'short'}"
         + ('' if DRIVER == '7faf04c065' else f'-hk{DRIVER}') + (f'-c{CONCURRENCY}' if CONCURRENCY > 1 else '')

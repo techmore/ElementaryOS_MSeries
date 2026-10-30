@@ -2,6 +2,8 @@
 
 The installed desktop uses private Linux MLX v0.7.35, Newelle for desktop and personal assistance, and a separate 16K coding profile for Crush. Qwen3.5 4B is the measured default for the 32 GB M1 Pro; Qwen9 is an optional larger preset. [Measured results, methods and limits](receipts/2026-10-16.md) explain the provisional model choices. [Exact revisions and licenses](receipts/2026-10-16/source-pins.json) accompany the synthetic raw results.
 
+TensorFold Vulkan is available as an opt-in Debian package and launcher (`mseries-tensorfold`); see the [package and regression receipt](receipts/2026-10-30-tensorfold-package/README.md). The existing MLX service remains available.
+
 ## Install and launch
 
 ```sh

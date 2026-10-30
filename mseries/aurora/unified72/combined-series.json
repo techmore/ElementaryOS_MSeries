@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "base_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
-  "revision": 1,
+  "revision": 2,
   "source": {
     "repository": "omacom/linux-aurora",
     "commit": "c506e1c3c1d7808eddc251e3029b72e9f17e00df",
@@ -15,10 +15,10 @@
     "sha256": "13cfc68aa95ffd0ac858e1a57d95691a10499a4800f3a8ae6deefc7394f238e2"
   },
   "kernel_release": {
-    "unified72-combined": "7.2.11-elementary-aurora72-combined-test"
+    "unified72-combined": "7.2.11-elementary-aurora72-combined2-test"
   },
-  "debian_package": "linux-image-elementary-aurora72-combined-test",
-  "debian_version": "7.2.11+elementary.aurora72.combined.test-1",
+  "debian_package": "linux-image-elementary-aurora72-combined2-test",
+  "debian_version": "7.2.11+elementary.aurora72.combined2.test-1",
   "patches": [
     {
       "file": "0001-drm-apple-srgb-external-display-colour.patch",
@@ -72,14 +72,15 @@
       "NET_VENDOR_MELLANOX": "y",
       "MLX5_CORE": "m",
       "MLX5_CORE_EN": "y",
-      "MLXFW": "m"
+      "MLXFW": "m",
+      "DRM_NOUVEAU": "m"
     }
   },
   "host_tests": [
     "tools/asahi/pmp-bootargs-tests.rs",
     "tools/asahi/pmp-power-tests.rs"
   ],
-  "qualification": "Combined downstream candidate: Aurora #188 merge and wip5 display patches, AMDGPU and ConnectX Ethernet modules enabled. Build, boot, shared-DTB fallback, dock and adapter testing remain separate.",
+  "qualification": "Combined downstream candidate: Aurora #188 merge and wip5 display patches, AMDGPU, Nouveau and ConnectX Ethernet modules enabled. Build, boot, shared-DTB fallback, dock and adapter testing remain separate.",
   "superseded_patches": [
     {
       "file": "0001-stock-bindgen-layout-policy.patch",

@@ -117,9 +117,9 @@
     "tensorfold": {
       "repo": "ashhart/TensorFold",
       "track": null,
-      "pin": "92bb49db5c313c105cbf4b44638d1e1896615174",
+      "pin": "b3ab9ba217a80c63fcc48f7643ddfe339a8f4bdc",
       "pin_label": "PR 1544 (stacked on PR 1526; supersedes PR 1517)",
-      "step_rule": "Pin a PR head by hand after reading its new commits; tensorfold-vulkan.sh refuses a moved head. Built and run by the owner (fetched code).",
+      "step_rule": "Pin an exact public source revision; tensorfold-vulkan.sh fetches and verifies that commit.",
       "patches": []
     }
   }

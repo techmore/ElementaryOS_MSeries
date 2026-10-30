@@ -18,8 +18,7 @@ set -euo pipefail
 TF_REPO=https://github.com/ashhart/TensorFold.git
 # PR 1544 contains PR 1526's commits (runtime, Q4 projection, QMM contract), so one tree
 # builds the server, the stage gates and every contract runner.
-TF_REF=pull/1544/head
-TF_REV=92bb49db5c313c105cbf4b44638d1e1896615174
+TF_REV=b3ab9ba217a80c63fcc48f7643ddfe339a8f4bdc
 ZIG_VERSION=0.17.0
 ZIG_URL=https://ziglang.org/download/0.17.0/zig-aarch64-linux-0.17.0.tar.xz
 ZIG_SHA256=9e8d11661d4ae3bd57702a3832781e23ad151dde5798e16a5ccd503f65234ff8
@@ -52,13 +51,13 @@ fetch() {
     fi
     [[ -d $SRC/.git ]] || git init -q "$SRC"
     if [[ $(git -C "$SRC" rev-parse -q --verify HEAD 2>/dev/null) != "$TF_REV" ]]; then
-        git -C "$SRC" fetch -q --depth 1 "$TF_REPO" "$TF_REF"
+        git -C "$SRC" fetch -q --depth 1 "$TF_REPO" "$TF_REV"
         git -C "$SRC" checkout -q --detach FETCH_HEAD
     fi
     local have
     have=$(git -C "$SRC" rev-parse HEAD)
     if [[ $have != "$TF_REV" ]]; then
-        echo "PR head moved: have $have, pinned $TF_REV; review the new commits, then bump TF_REV" >&2
+        echo "unexpected TensorFold checkout: have $have, pinned $TF_REV" >&2
         exit 1
     fi
 }

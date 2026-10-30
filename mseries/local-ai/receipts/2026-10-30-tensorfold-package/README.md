@@ -1,0 +1,7 @@
+# TensorFold Vulkan Debian package — 2026-10-30
+
+Packaged and installed the upstream PR 1544 source revision `b3ab9ba217a80c63fcc48f7643ddfe339a8f4bdc` as `mseries-tensorfold-vulkan` version `0.1+git.b3ab9ba-1`. The .deb SHA-256 is `aff78db1e028d4d80a8f5dbd3abd25469e6d8ae492d9add4113e2602d8fd21f2`; the installed engine SHA-256 `eae8c9f955f39d2be33af57cbfe254225fb2a8a349d577b749743e174e89511b` matches the tested build. The package retains upstream licenses, has no maintainer scripts, and installs `mseries-tensorfold`, which selects the private Honeykrisp ICD for its own process.
+
+The installed engine passed a guarded loopback Qwen3.5-2B 32-token serving smoke and produced the prior expected text hash; [raw result](installed-smoke.json). The underlying revision's five GPU stages, six kernel-contract groups, long generation and teacher-forced comparisons are recorded in [its test receipt](../2026-10-30-tensorfold-b3ab9ba/README.md). It is an opt-in engine; the installed MLX service remains the default. Upstream PR 1544 is open, and the announced TensorFold submit-batching improvement is not included in this revision.
+
+Rebuild with `MSERIES_TENSORFOLD_ROOT=... bash mseries/local-ai/tensorfold-vulkan.sh build`, then `MSERIES_TENSORFOLD_ROOT=... bash mseries/local-ai/package-tensorfold-vulkan.sh OUTPUT.deb`. Install the resulting package with `sudo dpkg -i OUTPUT.deb`. Run `mseries-tensorfold serve MODEL_DIR --backend vulkan --no-update-check` for a compatible Qwen3.5-2B checkpoint; use loopback binding and existing resource policy.
