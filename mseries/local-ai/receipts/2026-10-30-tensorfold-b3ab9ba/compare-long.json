@@ -1,0 +1,1266 @@
+{
+  "status": "complete",
+  "model_key": "qwen2b",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "weights_sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+  "kernel": "7.2.11-elementary-aurora72-wip5",
+  "driver": "Honeykrisp Mesa 9323171c12",
+  "tensorfold_rev": "b3ab9ba217a80c63fcc48f7643ddfe339a8f4bdc",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "2f23962cfdcb7ce0c2b482c4dd71e415f72113b963cfe6594fd5dc1fd4347921",
+  "max_tokens": 256,
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "mlx-120k",
+    "tensorfold"
+  ],
+  "concurrency": 1,
+  "runs": [
+    {
+      "arm": "mlx-120k",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.01,
+          "available_gib": 20.261,
+          "max_temp_c": 43.282,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 1.01,
+          "available_gib": 19.236,
+          "max_temp_c": 42.864,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 2.02,
+          "available_gib": 18.837,
+          "max_temp_c": 43.532,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 3.03,
+          "available_gib": 18.56,
+          "max_temp_c": 42.25,
+          "max_fan_rpm": 2477.0
+        },
+        {
+          "t": 4.04,
+          "available_gib": 18.451,
+          "max_temp_c": 43.326,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 5.06,
+          "available_gib": 18.436,
+          "max_temp_c": 42.603,
+          "max_fan_rpm": 2469.0
+        },
+        {
+          "t": 6.07,
+          "available_gib": 18.456,
+          "max_temp_c": 43.364,
+          "max_fan_rpm": 2525.0
+        },
+        {
+          "t": 7.07,
+          "available_gib": 18.453,
+          "max_temp_c": 42.456,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 8.09,
+          "available_gib": 18.293,
+          "max_temp_c": 42.847,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 9.11,
+          "available_gib": 18.27,
+          "max_temp_c": 43.282,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 10.12,
+          "available_gib": 18.286,
+          "max_temp_c": 42.625,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 11.15,
+          "available_gib": 18.296,
+          "max_temp_c": 43.114,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 12.16,
+          "available_gib": 18.521,
+          "max_temp_c": 43.027,
+          "max_fan_rpm": 2507.0
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 7.631538032000208,
+      "ttft_s": 0.49659852400009186,
+      "total_s": 5.034850170000027,
+      "completion_tokens": 256,
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 56.189039280084835,
+      "min_available_gib": 18.27,
+      "peak_temp_c": 43.532,
+      "round": 1,
+      "admission_available_gib": 20.261
+    },
+    {
+      "arm": "tensorfold",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.02,
+          "available_gib": 20.109,
+          "max_temp_c": 43.065,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 1.03,
+          "available_gib": 18.766,
+          "max_temp_c": 43.326,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 2.04,
+          "available_gib": 18.746,
+          "max_temp_c": 43.913,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 3.05,
+          "available_gib": 18.822,
+          "max_temp_c": 43.701,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 4.07,
+          "available_gib": 18.831,
+          "max_temp_c": 43.532,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 5.08,
+          "available_gib": 18.828,
+          "max_temp_c": 43.619,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 6.09,
+          "available_gib": 18.819,
+          "max_temp_c": 43.668,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 7.1,
+          "available_gib": 18.819,
+          "max_temp_c": 43.864,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 8.12,
+          "available_gib": 18.817,
+          "max_temp_c": 43.711,
+          "max_fan_rpm": 2473.0
+        },
+        {
+          "t": 9.13,
+          "available_gib": 18.821,
+          "max_temp_c": 43.711,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 10.14,
+          "available_gib": 18.814,
+          "max_temp_c": 44.206,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 11.15,
+          "available_gib": 18.817,
+          "max_temp_c": 43.413,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 12.17,
+          "available_gib": 18.823,
+          "max_temp_c": 43.75,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 13.19,
+          "available_gib": 18.83,
+          "max_temp_c": 44.005,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 14.21,
+          "available_gib": 18.833,
+          "max_temp_c": 44.385,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 15.22,
+          "available_gib": 18.837,
+          "max_temp_c": 43.711,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 16.24,
+          "available_gib": 18.838,
+          "max_temp_c": 43.021,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 17.25,
+          "available_gib": 18.855,
+          "max_temp_c": 44.043,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 18.27,
+          "available_gib": 18.865,
+          "max_temp_c": 43.5,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 19.29,
+          "available_gib": 18.875,
+          "max_temp_c": 43.875,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 20.31,
+          "available_gib": 18.899,
+          "max_temp_c": 43.326,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 21.34,
+          "available_gib": 18.894,
+          "max_temp_c": 44.26,
+          "max_fan_rpm": 2493.0
+        },
+        {
+          "t": 22.35,
+          "available_gib": 18.897,
+          "max_temp_c": 44.168,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 23.36,
+          "available_gib": 18.886,
+          "max_temp_c": 43.836,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 24.39,
+          "available_gib": 18.91,
+          "max_temp_c": 43.065,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 25.4,
+          "available_gib": 18.919,
+          "max_temp_c": 43.798,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 26.41,
+          "available_gib": 18.919,
+          "max_temp_c": 43.663,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 27.43,
+          "available_gib": 18.905,
+          "max_temp_c": 43.875,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 28.45,
+          "available_gib": 18.907,
+          "max_temp_c": 44.711,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 29.46,
+          "available_gib": 18.909,
+          "max_temp_c": 43.581,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 30.48,
+          "available_gib": 18.917,
+          "max_temp_c": 44.385,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 31.5,
+          "available_gib": 18.917,
+          "max_temp_c": 44.994,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 32.51,
+          "available_gib": 18.924,
+          "max_temp_c": 43.326,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 33.53,
+          "available_gib": 18.933,
+          "max_temp_c": 44.423,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 34.54,
+          "available_gib": 18.936,
+          "max_temp_c": 44.092,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 35.56,
+          "available_gib": 18.939,
+          "max_temp_c": 43.875,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 36.59,
+          "available_gib": 18.943,
+          "max_temp_c": 44.168,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 37.61,
+          "available_gib": 18.946,
+          "max_temp_c": 44.369,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 38.62,
+          "available_gib": 18.95,
+          "max_temp_c": 43.195,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 39.64,
+          "available_gib": 18.952,
+          "max_temp_c": 44.385,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 40.65,
+          "available_gib": 18.961,
+          "max_temp_c": 43.369,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 41.67,
+          "available_gib": 18.964,
+          "max_temp_c": 43.75,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 42.68,
+          "available_gib": 18.966,
+          "max_temp_c": 43.668,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 43.7,
+          "available_gib": 18.968,
+          "max_temp_c": 44.168,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 44.72,
+          "available_gib": 18.971,
+          "max_temp_c": 43.836,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 45.73,
+          "available_gib": 18.974,
+          "max_temp_c": 44.353,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 46.75,
+          "available_gib": 18.977,
+          "max_temp_c": 43.619,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 47.78,
+          "available_gib": 18.977,
+          "max_temp_c": 44.652,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 48.8,
+          "available_gib": 18.985,
+          "max_temp_c": 43.369,
+          "max_fan_rpm": 2524.0
+        },
+        {
+          "t": 49.8,
+          "available_gib": 18.973,
+          "max_temp_c": 43.581,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 50.82,
+          "available_gib": 18.984,
+          "max_temp_c": 44.005,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 51.83,
+          "available_gib": 18.984,
+          "max_temp_c": 44.005,
+          "max_fan_rpm": 2489.0
+        },
+        {
+          "t": 52.84,
+          "available_gib": 18.985,
+          "max_temp_c": 44.836,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 53.86,
+          "available_gib": 18.989,
+          "max_temp_c": 43.63,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 54.87,
+          "available_gib": 18.991,
+          "max_temp_c": 43.581,
+          "max_fan_rpm": 2510.0
+        },
+        {
+          "t": 55.89,
+          "available_gib": 18.996,
+          "max_temp_c": 43.494,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 56.9,
+          "available_gib": 18.996,
+          "max_temp_c": 43.711,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 57.92,
+          "available_gib": 18.993,
+          "max_temp_c": 44.293,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 58.93,
+          "available_gib": 18.994,
+          "max_temp_c": 44.559,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 59.94,
+          "available_gib": 18.996,
+          "max_temp_c": 43.75,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 60.96,
+          "available_gib": 18.992,
+          "max_temp_c": 43.701,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 61.97,
+          "available_gib": 18.996,
+          "max_temp_c": 44.516,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 62.99,
+          "available_gib": 18.994,
+          "max_temp_c": 43.581,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 64.01,
+          "available_gib": 18.996,
+          "max_temp_c": 43.711,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 65.02,
+          "available_gib": 18.995,
+          "max_temp_c": 43.239,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 66.04,
+          "available_gib": 18.999,
+          "max_temp_c": 43.63,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 67.06,
+          "available_gib": 18.998,
+          "max_temp_c": 44.043,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 68.09,
+          "available_gib": 18.995,
+          "max_temp_c": 43.152,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 69.1,
+          "available_gib": 18.992,
+          "max_temp_c": 43.195,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 70.11,
+          "available_gib": 18.999,
+          "max_temp_c": 43.282,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 71.12,
+          "available_gib": 19.0,
+          "max_temp_c": 44.081,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 72.14,
+          "available_gib": 18.931,
+          "max_temp_c": 43.782,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 73.15,
+          "available_gib": 18.947,
+          "max_temp_c": 43.711,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 74.16,
+          "available_gib": 18.947,
+          "max_temp_c": 43.663,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 75.19,
+          "available_gib": 18.947,
+          "max_temp_c": 43.581,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 76.21,
+          "available_gib": 18.947,
+          "max_temp_c": 43.451,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 77.22,
+          "available_gib": 18.947,
+          "max_temp_c": 44.222,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 78.24,
+          "available_gib": 18.943,
+          "max_temp_c": 44.206,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 79.26,
+          "available_gib": 18.951,
+          "max_temp_c": 43.75,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 80.27,
+          "available_gib": 18.948,
+          "max_temp_c": 44.456,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 81.29,
+          "available_gib": 18.954,
+          "max_temp_c": 43.788,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 82.31,
+          "available_gib": 18.954,
+          "max_temp_c": 43.451,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 83.33,
+          "available_gib": 18.954,
+          "max_temp_c": 43.5,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 84.35,
+          "available_gib": 18.951,
+          "max_temp_c": 43.364,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 85.36,
+          "available_gib": 18.95,
+          "max_temp_c": 43.711,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 86.38,
+          "available_gib": 18.944,
+          "max_temp_c": 44.168,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 87.4,
+          "available_gib": 18.962,
+          "max_temp_c": 42.673,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 88.42,
+          "available_gib": 18.961,
+          "max_temp_c": 43.152,
+          "max_fan_rpm": 2482.0
+        },
+        {
+          "t": 89.44,
+          "available_gib": 18.96,
+          "max_temp_c": 43.239,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 90.46,
+          "available_gib": 18.94,
+          "max_temp_c": 44.206,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 91.48,
+          "available_gib": 18.938,
+          "max_temp_c": 43.413,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 92.5,
+          "available_gib": 18.921,
+          "max_temp_c": 43.494,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 93.51,
+          "available_gib": 18.921,
+          "max_temp_c": 44.315,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 94.52,
+          "available_gib": 18.924,
+          "max_temp_c": 43.581,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 95.53,
+          "available_gib": 18.924,
+          "max_temp_c": 43.152,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 96.55,
+          "available_gib": 18.924,
+          "max_temp_c": 43.239,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 97.56,
+          "available_gib": 18.926,
+          "max_temp_c": 43.282,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 98.58,
+          "available_gib": 18.928,
+          "max_temp_c": 44.152,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 99.6,
+          "available_gib": 18.93,
+          "max_temp_c": 43.326,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 100.61,
+          "available_gib": 18.928,
+          "max_temp_c": 43.239,
+          "max_fan_rpm": 2481.0
+        },
+        {
+          "t": 101.63,
+          "available_gib": 18.93,
+          "max_temp_c": 42.94,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 102.64,
+          "available_gib": 18.931,
+          "max_temp_c": 43.701,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 103.66,
+          "available_gib": 18.933,
+          "max_temp_c": 43.581,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 104.69,
+          "available_gib": 18.935,
+          "max_temp_c": 44.081,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 105.7,
+          "available_gib": 18.94,
+          "max_temp_c": 43.364,
+          "max_fan_rpm": 2495.0
+        },
+        {
+          "t": 106.71,
+          "available_gib": 18.941,
+          "max_temp_c": 43.619,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 107.73,
+          "available_gib": 18.942,
+          "max_temp_c": 43.581,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 108.75,
+          "available_gib": 18.943,
+          "max_temp_c": 43.021,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 109.76,
+          "available_gib": 18.944,
+          "max_temp_c": 43.711,
+          "max_fan_rpm": 2465.0
+        },
+        {
+          "t": 110.78,
+          "available_gib": 18.931,
+          "max_temp_c": 43.282,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 111.8,
+          "available_gib": 18.931,
+          "max_temp_c": 44.043,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 112.81,
+          "available_gib": 18.942,
+          "max_temp_c": 43.826,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 113.82,
+          "available_gib": 18.947,
+          "max_temp_c": 43.701,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 114.84,
+          "available_gib": 18.951,
+          "max_temp_c": 43.282,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 115.86,
+          "available_gib": 18.95,
+          "max_temp_c": 43.663,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 116.87,
+          "available_gib": 18.95,
+          "max_temp_c": 43.239,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 117.89,
+          "available_gib": 18.95,
+          "max_temp_c": 43.619,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 118.9,
+          "available_gib": 18.949,
+          "max_temp_c": 43.195,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 119.91,
+          "available_gib": 18.943,
+          "max_temp_c": 43.532,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 120.93,
+          "available_gib": 18.945,
+          "max_temp_c": 43.614,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 121.95,
+          "available_gib": 18.95,
+          "max_temp_c": 43.668,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 122.96,
+          "available_gib": 18.953,
+          "max_temp_c": 44.206,
+          "max_fan_rpm": 2499.0
+        },
+        {
+          "t": 123.97,
+          "available_gib": 18.953,
+          "max_temp_c": 43.413,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 124.99,
+          "available_gib": 18.949,
+          "max_temp_c": 43.75,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 126.01,
+          "available_gib": 18.948,
+          "max_temp_c": 43.826,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 127.03,
+          "available_gib": 18.952,
+          "max_temp_c": 43.021,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 128.05,
+          "available_gib": 18.946,
+          "max_temp_c": 43.282,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 129.07,
+          "available_gib": 18.944,
+          "max_temp_c": 43.152,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 130.09,
+          "available_gib": 18.935,
+          "max_temp_c": 43.282,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 131.1,
+          "available_gib": 18.935,
+          "max_temp_c": 42.646,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 132.11,
+          "available_gib": 18.935,
+          "max_temp_c": 43.364,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 133.12,
+          "available_gib": 18.935,
+          "max_temp_c": 43.195,
+          "max_fan_rpm": 2464.0
+        },
+        {
+          "t": 134.14,
+          "available_gib": 18.936,
+          "max_temp_c": 43.407,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 135.15,
+          "available_gib": 18.935,
+          "max_temp_c": 43.413,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 136.16,
+          "available_gib": 18.934,
+          "max_temp_c": 42.983,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 137.18,
+          "available_gib": 18.934,
+          "max_temp_c": 43.407,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 138.2,
+          "available_gib": 18.935,
+          "max_temp_c": 43.451,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 139.22,
+          "available_gib": 18.932,
+          "max_temp_c": 43.494,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 140.23,
+          "available_gib": 18.935,
+          "max_temp_c": 42.766,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 141.25,
+          "available_gib": 18.94,
+          "max_temp_c": 42.505,
+          "max_fan_rpm": 2512.0
+        },
+        {
+          "t": 142.26,
+          "available_gib": 18.94,
+          "max_temp_c": 43.576,
+          "max_fan_rpm": 2508.0
+        },
+        {
+          "t": 143.28,
+          "available_gib": 18.938,
+          "max_temp_c": 43.494,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 144.3,
+          "available_gib": 18.942,
+          "max_temp_c": 42.94,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 145.3,
+          "available_gib": 18.942,
+          "max_temp_c": 43.021,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 146.33,
+          "available_gib": 18.954,
+          "max_temp_c": 43.195,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 147.34,
+          "available_gib": 18.948,
+          "max_temp_c": 43.494,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 148.35,
+          "available_gib": 18.954,
+          "max_temp_c": 43.326,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 149.37,
+          "available_gib": 18.953,
+          "max_temp_c": 42.586,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 150.38,
+          "available_gib": 18.94,
+          "max_temp_c": 42.456,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 151.4,
+          "available_gib": 18.941,
+          "max_temp_c": 43.711,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 152.41,
+          "available_gib": 18.962,
+          "max_temp_c": 42.809,
+          "max_fan_rpm": 2495.0
+        },
+        {
+          "t": 153.43,
+          "available_gib": 18.965,
+          "max_temp_c": 43.326,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 154.45,
+          "available_gib": 18.965,
+          "max_temp_c": 44.695,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 155.46,
+          "available_gib": 18.917,
+          "max_temp_c": 43.239,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 156.48,
+          "available_gib": 18.863,
+          "max_temp_c": 42.934,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 157.49,
+          "available_gib": 18.863,
+          "max_temp_c": 43.239,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 158.51,
+          "available_gib": 18.871,
+          "max_temp_c": 43.494,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 159.52,
+          "available_gib": 18.889,
+          "max_temp_c": 42.684,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 160.54,
+          "available_gib": 18.892,
+          "max_temp_c": 42.896,
+          "max_fan_rpm": 2486.0
+        },
+        {
+          "t": 161.55,
+          "available_gib": 18.804,
+          "max_temp_c": 42.94,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 162.59,
+          "available_gib": 18.633,
+          "max_temp_c": 43.114,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 163.61,
+          "available_gib": 18.544,
+          "max_temp_c": 43.739,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 164.63,
+          "available_gib": 18.283,
+          "max_temp_c": 43.364,
+          "max_fan_rpm": 2490.0
+        },
+        {
+          "t": 165.64,
+          "available_gib": 18.272,
+          "max_temp_c": 43.364,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 166.66,
+          "available_gib": 18.272,
+          "max_temp_c": 43.195,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 167.67,
+          "available_gib": 18.269,
+          "max_temp_c": 43.494,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 168.69,
+          "available_gib": 18.295,
+          "max_temp_c": 43.826,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 169.71,
+          "available_gib": 18.299,
+          "max_temp_c": 43.326,
+          "max_fan_rpm": 2503.0
+        },
+        {
+          "t": 170.72,
+          "available_gib": 18.307,
+          "max_temp_c": 42.934,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 171.73,
+          "available_gib": 18.304,
+          "max_temp_c": 43.826,
+          "max_fan_rpm": 2465.0
+        },
+        {
+          "t": 172.77,
+          "available_gib": 18.31,
+          "max_temp_c": 43.581,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 173.8,
+          "available_gib": 18.313,
+          "max_temp_c": 42.934,
+          "max_fan_rpm": 2507.0
+        },
+        {
+          "t": 174.81,
+          "available_gib": 18.426,
+          "max_temp_c": 43.326,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 175.84,
+          "available_gib": 18.393,
+          "max_temp_c": 43.114,
+          "max_fan_rpm": 2485.0
+        },
+        {
+          "t": 176.85,
+          "available_gib": 18.413,
+          "max_temp_c": 43.494,
+          "max_fan_rpm": 2502.0
+        },
+        {
+          "t": 177.86,
+          "available_gib": 18.421,
+          "max_temp_c": 43.657,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 178.88,
+          "available_gib": 18.433,
+          "max_temp_c": 43.701,
+          "max_fan_rpm": 2511.0
+        },
+        {
+          "t": 179.9,
+          "available_gib": 18.18,
+          "max_temp_c": 42.38,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 180.91,
+          "available_gib": 18.199,
+          "max_temp_c": 43.913,
+          "max_fan_rpm": 2516.0
+        },
+        {
+          "t": 181.93,
+          "available_gib": 18.293,
+          "max_temp_c": 43.114,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 182.95,
+          "available_gib": 18.271,
+          "max_temp_c": 43.668,
+          "max_fan_rpm": 2494.0
+        },
+        {
+          "t": 183.96,
+          "available_gib": 18.169,
+          "max_temp_c": 43.065,
+          "max_fan_rpm": 2506.0
+        },
+        {
+          "t": 185.0,
+          "available_gib": 18.182,
+          "max_temp_c": 43.826,
+          "max_fan_rpm": 2515.0
+        },
+        {
+          "t": 186.02,
+          "available_gib": 18.156,
+          "max_temp_c": 43.195,
+          "max_fan_rpm": 2507.0
+        }
+      ],
+      "log_tail": "[tensorfold] prompt chunks of up to 32 tokens, cut at replies 256+ tokens apart\nwarning: libtfgrammar.so is required for structured output and required tool calls (HTTP 400 when missing); restore the matching release archive's lib/ directory or run zig build grammar -Dxgrammar=DIR; prepare DIR with git clone --branch v0.2.8 --recurse-submodules https://github.com/mlc-ai/xgrammar\n[tensorfold] serving qwen35-2b at http://127.0.0.1:49607/v1 (sampling: greedy; drafts: none; context: 1024; loaded in 0.5s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-f5667604561f6a2f5118855098a615f7 prompt=41 cached=0 thinking=False effort=none tokens=256 sha=f87626954a51 finish=length rounds=255 accepted=0/0 ttft=2.889 decode=88.531 elapsed=91.420 queued=0.000 tok/s=2.9\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-43886b32cdfd074c46353c04a941c7fc prompt=41 cached=0 thinking=False effort=none tokens=256 sha=f87626954a51 finish=length rounds=255 accepted=0/0 ttft=2.963 decode=91.510 elapsed=94.473 queued=0.000 tok/s=2.8\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 91.938330168,
+      "ttft_s": 2.9680891790003443,
+      "total_s": 94.47694070000034,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. This phenomenon is called dispersion. Violet light, having the shortest wavelength, bends the most, while red light, with the longest wavelength, bends the least.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is crucial because it sets",
+      "served_model": "qwen35-2b",
+      "text_sha256": "83887b098d88ea16a47c6d0aad022a58cf6a9ee6565c6b33e5633a90ff4a80d5",
+      "decode_tps": 2.7866156744572526,
+      "min_available_gib": 18.156,
+      "peak_temp_c": 44.994,
+      "round": 1,
+      "admission_available_gib": 20.109
+    }
+  ],
+  "summary": {
+    "mlx-120k": {
+      "ok_runs": 1,
+      "median_ttft_s": 0.49659852400009186,
+      "median_total_s": 5.034850170000027,
+      "median_decode_tps": 56.189039280084835,
+      "texts": [
+        "3f3ac70c5d72"
+      ]
+    },
+    "tensorfold": {
+      "ok_runs": 1,
+      "median_ttft_s": 2.9680891790003443,
+      "median_total_s": 94.47694070000034,
+      "median_decode_tps": 2.7866156744572526,
+      "texts": [
+        "83887b098d88"
+      ]
+    }
+  }
+}
