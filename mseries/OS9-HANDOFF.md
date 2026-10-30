@@ -1,5 +1,9 @@
 ## Warren local AI and eGPU updates — 2026-10-30
 
+The installed system has no `/usr/lib/firmware/amdgpu` and no Ubuntu `linux-firmware` package; identify and verify matching card firmware before any AMD eGPU trial. The local ConnectX module compile required `rustup component add rust-src --toolchain 1.93.1`; this adds build-tool source only and does not alter the running kernel.
+
+Local GCC compilation of ConnectX `mlx5_core` and `mlxfw` completed with `KBUILD_MODPOST_WARN=1` and no kernel `Module.symvers`: unresolved-symbol warnings and missing BTF mean compile-only evidence, not loadable artifacts. The diagnostic build changed the private prepared source tree; prepare a fresh tree for its digest gate. CI kernel builds remain pending.
+
 Added an isolated `unified72-connectx` kernel profile on wip5 source with Mellanox support and Ethernet enabled (`MLX5_CORE=m`, `MLX5_CORE_EN=y`, `MLXFW=m`); AMDGPU and RDMA remain off. Source preparation, the 12 PMP tests, GCC olddefconfig and 87 Aurora tests pass. No ConnectX adapter is present, and build/boot/link/throughput are unqualified. [Details](aurora/unified72/README.md#separate-connectx-candidate--october-30-2026).
 
 Compiled the #188 J314S DTB locally and compared its decompiled contents with wip5: only the three expected PCI ranges differ. Added `prepare-egpu-boot-candidate.py` to create an uninstalled image from the existing shared boot payload by changing only those three DTB bytes, checking the exact input hash and preserving all other boot bytes. The private candidate is `fe7ad1e9...8539913`; 86 Aurora tests pass. This does not establish compatibility with fallback kernels or any eGPU boot, and no boot file was changed. [Details](aurora/unified72/README.md#separate-egpu-candidate--october-30-2026).
