@@ -1,8 +1,8 @@
 ## macOS MLX reference and TensorFold comparison — 2026-10-30
 
-The scoreboard now shows separate chip/OS dot plots and includes completed Qwen3.5 2B and dense Granite 1B Mac references. Complete the remaining Liquid and Qwen3.5 4B references and add M4 data only after real runs.
+The scoreboard now shows separate chip/OS dot plots and includes all four completed M1 Pro Mac scoreboard model references. Add M4 data only after real runs and investigate the observed 2B-long and 4B-short cross-platform text differences.
 
-Next: agree on and run a matched macOS reference for the four `engine-compare.py` scoreboard model pins, beginning with Qwen3.5 2B for TensorFold, using the recorded short/long prompts and separate in-process versus server timing boundaries. The exploratory 4B/9B Metal captures are not TensorFold or Linux baselines. See [the scope and receipts](local-ai/receipts/2026-10-30-macos-metal-profile/README.md).
+Next: compare the recorded macOS references for the four `engine-compare.py` model pins with matching Linux in-process receipts, preserving the short/long prompt settings and separate in-process versus server timing boundaries. The exploratory 4B/9B Metal captures are not TensorFold or Linux baselines. See [the scope and receipts](local-ai/receipts/2026-10-30-macos-metal-profile/README.md).
 
 ## WD22TB4 and wip4 candidate status — 2026-10-28
 

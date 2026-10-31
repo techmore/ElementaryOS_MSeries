@@ -1,6 +1,6 @@
 ## macOS MLX profile scope correction — 2026-10-30
 
-The engine scoreboard now displays chip/OS-labelled dot plots and includes matching M1 Pro macOS MLX 2B and dense Granite 1B short/long receipts, including SHA-1/SHA-256, kernel and local run timestamps. The installed TensorFold b3ab9ba short and long receipts are now represented as their own Linux rows; its long divergence is preserved. M4 rows remain absent until measured. Apple/Linux timing boundaries and numerical fidelity remain explicit. [Scoreboard](local-ai/ENGINE-SCOREBOARD.md).
+The engine scoreboard now displays chip/OS-labelled dot plots and includes matching M1 Pro macOS MLX Qwen3.5 2B and 4B, Liquid LFM3 and dense Granite 1B short/long receipts, including SHA-1/SHA-256, kernel and local run timestamps. The installed TensorFold b3ab9ba short and long receipts are now represented as their own Linux rows; its long divergence is preserved. M4 rows remain absent until measured. Short Qwen2B, Liquid and Granite matched available Linux MLX text; long Qwen2B and short Qwen4B differed. Apple/Linux timing boundaries and numerical fidelity remain explicit. [Scoreboard](local-ai/ENGINE-SCOREBOARD.md).
 
 TensorFold batching update: public [PR #1561](https://github.com/ashhart/TensorFold/pull/1561) is closed and unmerged; its exact one-commit diff failed a clean apply check against installed `b3ab9ba` in two files. Earlier "unpublished" wording is historical. No patch was applied or tested; see [source audit](local-ai/receipts/2026-10-30-macos-metal-profile/tensorfold-batching-audit.md).
 

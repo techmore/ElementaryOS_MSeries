@@ -857,5 +857,7 @@
       "median_total_s": 2.815021541999158,
       "median_decode_tps": 101.37933208738893
     }
-  }
+  },
+  "prompt": "Explain in detail how a rainbow forms, including refraction, reflection, color and viewing angle. Write at least 350 words.",
+  "prompt_sha256": "2f23962cfdcb7ce0c2b482c4dd71e415f72113b963cfe6594fd5dc1fd4347921"
 }

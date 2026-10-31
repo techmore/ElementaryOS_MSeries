@@ -41,6 +41,21 @@ class PlatformScoreboardTest(unittest.TestCase):
             self.assertEqual({row['chip'] for row in rows}, {'M1 Pro', 'M4'})
             self.assertTrue(all(row['os'] == 'Aurora Linux' for row in rows))
 
+    def test_text_match_requires_the_same_prompt_and_model(self):
+        mac = {'_model': 'qwen2b', 'tokens': 32, 'model_reference': 'example@abc',
+               'prompt_sha256': 'prompt', 'weights_sha256': 'weights', '_text_hashes': {'same'}}
+        linux = {'_model': 'qwen2b', 'tokens': 32, 'model_reference': 'example@abc',
+                 'prompt_sha256': 'prompt', 'weights_sha256': 'weights', '_text_hashes': {'same'}, '_arm': 'mlx-120k', '_conc': 1}
+        scoreboard.annotate_cross_platform([mac], [linux, {**linux, 'prompt_sha256': 'other'},
+                                                    {**linux, 'model_reference': 'example@other'}])
+        self.assertEqual(mac['same_output'], 'text hash matches 1/1 Linux MLX rows')
+        scoreboard.annotate_cross_platform([mac], [{**linux, '_text_hashes': {'different'}}])
+        self.assertEqual(mac['same_output'], 'text hash matches 0/1 Linux MLX rows')
+        scoreboard.annotate_cross_platform([mac], [{**linux, 'prompt_sha256': 'other'}])
+        self.assertEqual(mac['same_output'], 'no comparable Linux text hash')
+        scoreboard.annotate_cross_platform([mac], [{**linux, 'weights_sha256': 'different weights'}])
+        self.assertEqual(mac['same_output'], 'no comparable Linux text hash')
+
     def test_chart_separates_model_revisions_and_escapes_labels(self):
         row = {'_model': 'qwen2b', '_arm': 'mac-mlx', '_conc': 1, 'model': 'model & test',
                'model_reference': 'example@abcd1234', 'tokens': 32, 'chip': 'M1 Pro', 'os': 'macOS',

@@ -185,5 +185,7 @@
       "median_total_s": 0.45092750000185333,
       "median_decode_tps": 109.17073819252411
     }
-  }
+  },
+  "prompt": "Explain in plain language how a rainbow forms. Give four distinct sentences.",
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926"
 }
