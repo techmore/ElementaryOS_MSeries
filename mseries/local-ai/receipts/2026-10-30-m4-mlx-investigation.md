@@ -3,7 +3,10 @@
 The [preflight](2026-10-30-m4-mlx-preflight.md) returned zero for `1 + 1`
 and the kernel reported unretired GPU work ten seconds later. Its captured
 output has no dispatch trace, so it does not identify which runtime path ran
-or prove why the GPU failed to retire work.
+or prove why the GPU failed to retire work. Git blob comparison confirms the
+reviewed `device.cpp`, `fence.cpp` and `encoder.cpp` are identical between
+wheel source `33630f9c1eeefe5fc985a28bed0585432c2c014e` and the candidate
+branch's base `5dbc64dd`; this does not prove any reviewed path was invoked.
 
 A source review of the Omarchy MLX backend found two independent completion
 hazards. A started GPU event alone does not prove shader completion; candidate
