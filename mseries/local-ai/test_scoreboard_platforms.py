@@ -67,6 +67,38 @@ class PlatformScoreboardTest(unittest.TestCase):
         self.assertIn('differen', output)
         self.assertIn('M4 · macOS', output)
 
+    def test_relative_ratios_require_matching_workload_and_valid_measurements(self):
+        base = {'_model': 'qwen2b', 'model': 'Qwen', 'tokens': 32, 'chip': 'M1 Pro',
+                'model_reference': 'model@rev', 'weights_sha256': 'weights', 'prompt_sha256': 'prompt',
+                '_text_hashes': {'same'}, '_conc': 1, 'runs': 3, 'decode_tok_s': 100,
+                'ttft_s': 1, 'source': 'receipt', 'kernel': 'kernel', 'driver': 'driver',
+                'settings': 'settings', 'os': 'macOS'}
+        linux = {**base, '_arm': 'mlx-120k', 'os': 'Aurora Linux', 'decode_tok_s': 50, 'ttft_s': 3}
+        result = scoreboard.relative_rows([base], [linux])
+        self.assertEqual((result[0]['decode_ratio'], result[0]['ttft_ratio'], result[0]['text']), (2, 3, 'match'))
+        self.assertEqual(scoreboard.relative_rows([base], [{**linux, '_text_hashes': {'other'}}])[0]['text'], 'different')
+        for change in ({'chip': 'M4'}, {'model_reference': 'model@other'}, {'weights_sha256': 'other'},
+                       {'prompt_sha256': 'other'}, {'runs': 2}, {'_arm': 'tensorfold'},
+                       {'decode_tok_s': float('nan')}, {'ttft_s': -1}, {'_conc': 2}):
+            with self.subTest(change=change):
+                self.assertEqual(scoreboard.relative_rows([base], [{**linux, **change}]), [])
+        ET.fromstring(scoreboard.relative_chart(result))
+
+    def test_batch_counters_exclude_stopped_runs_and_preserve_partial_status(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            run = {'exit': 0, 'budget': 5000, 'result': {'tokens': [1, 2], 'generation_tps': 10,
+                   'counter_delta': {'vk_submissions': 100, 'vk_compute_dispatches': 200, 'barriers_emitted': 300}},
+                   'samples': []}
+            receipt = {'status': 'interrupted', 'runs': [run, {**run, 'stopped': True}]}
+            (root / '2026-10-27-batch-work-test.json').write_text(json.dumps(receipt))
+            with patch.object(scoreboard, 'RECEIPTS', root), patch.object(scoreboard, 'HERE', root):
+                rows = scoreboard.batch_counter_rows()
+            self.assertEqual(len(rows), 1)
+            self.assertEqual((rows[0]['status'], rows[0]['runs'], rows[0]['submissions']), ('interrupted', 1, 100))
+            self.assertEqual(rows[0]['ids'], 'only one run')
+            self.assertIsNone(rows[0]['max_temp_c'])
+
     def test_installed_tensorfold_receipt_is_preserved(self):
         rows = scoreboard.measured_rows()
         matches = [r for r in rows if r['_arm'] == 'tensorfold' and 'b3ab9ba' in r['engine']]

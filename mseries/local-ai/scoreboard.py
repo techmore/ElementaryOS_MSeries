@@ -3,10 +3,10 @@
 
 Reads receipts/*engine-compare-*.json (engine-compare.py), receipts/*mlx-gate-sweep*.json
 (mlx-gate.py) and scoreboard-notes.json (rows measured elsewhere or reported by others),
-plus completed macOS scoreboard receipts, then writes CSV, SVG and Markdown next to this script.
+plus completed macOS scoreboard receipts and batch-counter trials, then writes CSV, SVG and Markdown next to this script.
 The newest receipt wins within each model revision, chip, OS, kernel, engine, driver and workload.
 """
-import csv, json, re, statistics
+import csv, json, math, re, statistics
 from html import escape
 from pathlib import Path
 
@@ -244,10 +244,108 @@ def chart(rows):
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{y}" viewBox="0 0 {w} {y}">'
             f'<title>Local AI model timings by chip, operating system and engine</title>{style}{"".join(parts)}</svg>\n')
 
+def relative_rows(mac, linux):
+    """Ratios of median in-process measurements only; no server or unlabelled chip pairing."""
+    out = []
+    for m in mac:
+        if m['runs'] < 3 or m['chip'] in ('Unknown chip', ''):
+            continue
+        for l in linux:
+            if (l['_arm'] not in ('mlx-5k', 'mlx-120k') or l['_conc'] != 1 or l['runs'] < 3
+                    or l['chip'] != m['chip'] or 'Aurora' not in l['os'] or m['_conc'] != 1
+                    or l['_model'] != m['_model'] or l['tokens'] != m['tokens']
+                    or l['model_reference'] != m['model_reference']
+                    or l['weights_sha256'] != m['weights_sha256'] or l['weights_sha256'] == 'unknown weights'
+                    or l['prompt_sha256'] != m['prompt_sha256'] or l['prompt_sha256'] == 'unknown prompt'
+                    or not all(isinstance(v, (int, float)) and math.isfinite(v) and v > 0
+                               for v in (l['decode_tok_s'], m['decode_tok_s'], l['ttft_s'], m['ttft_s']))):
+                continue
+            if len(l['_text_hashes']) == len(m['_text_hashes']) == 1:
+                output = 'match' if l['_text_hashes'] == m['_text_hashes'] else 'different'
+            else:
+                output = 'unknown'
+            out.append({'model': m['model'], 'tokens': m['tokens'], 'chip': m['chip'],
+                        'mac_os': m['os'], 'mac_kernel': m['kernel'], 'mac_settings': m['settings'],
+                        'linux_os': l['os'], 'kernel': l['kernel'], 'driver': l['driver'],
+                        'settings': l['settings'], 'arm': l['_arm'], 'mac_source': m['source'],
+                        'linux_source': l['source'], 'mac_runs': m['runs'], 'linux_runs': l['runs'],
+                        'decode_ratio': m['decode_tok_s'] / l['decode_tok_s'],
+                        'ttft_ratio': l['ttft_s'] / m['ttft_s'], 'text': output})
+    return sorted(out, key=lambda r: (r['model'], r['tokens'], r['chip'], r['kernel'], r['driver'], r['arm']))
+
+
+def relative_chart(rows):
+    """Relative times, with 1× representing the matched macOS result."""
+    width, label_w, panel_w, gap, row_h = 990, 455, 230, 25, 25
+    height = 66 + len(rows) * row_h
+    top_decode = max([1.0] + [r['decode_ratio'] for r in rows]) * 1.1
+    top_ttft = max([1.0] + [r['ttft_ratio'] for r in rows]) * 1.1
+    parts = ['<text x="10" y="18" class="small">Relative time: macOS = 1× · same chip/model/prompt · in-process MLX · ratios of separate run medians</text>',
+             f'<text x="{label_w}" y="45" class="head">Decode time (× Mac) · lower is better</text>',
+             f'<text x="{label_w + panel_w + gap}" y="45" class="head">First token time (× Mac) · lower is better</text>']
+    for i, maximum in enumerate((top_decode, top_ttft)):
+        x0 = label_w + i * (panel_w + gap)
+        ref = x0 + (panel_w - 52) / maximum
+        parts.append(f'<line x1="{ref:.1f}" y1="51" x2="{ref:.1f}" y2="{height - 4}" class="ref"/><text x="{ref + 2:.1f}" y="60" class="small">1×</text>')
+    for i, r in enumerate(rows):
+        y = 80 + i * row_h
+        model = {'Qwen3.5-2B MLX 4-bit': 'Qwen3.5 2B', 'Qwen3.5-4B MLX 4-bit': 'Qwen3.5 4B',
+                 'LFM3-1.7B MLX 8-bit': 'Liquid LFM3 1.7B', 'Granite 4.0 1B MLX 4-bit (IBM, dense)': 'Granite 1B'}.get(r['model'], r['model'])
+        kernel = ('wip' + r['kernel'].split('wip')[-1].split('-')[0]) if 'wip' in r['kernel'] else r['kernel']
+        driver = r['driver'].split()[-1][:7]
+        budget = '120k' if r['arm'] == 'mlx-120k' else '5k'
+        label = f"{r['chip']} · {model} · {r['tokens']} · {kernel}/{driver} · {budget} · text {r['text']}"
+        parts.append(f'<text x="10" y="{y + 4}" class="label">{escape(label)}</text>')
+        for j, (value, maximum) in enumerate(((r['decode_ratio'], top_decode), (r['ttft_ratio'], top_ttft))):
+            x0 = label_w + j * (panel_w + gap); px = x0 + (panel_w - 52) * value / maximum
+            tip = escape(f"{r['model']}; {r['mac_os']}, {r['mac_kernel']}, {r['mac_settings']}; {r['linux_os']}, {r['kernel']}, {r['driver']}, {r['settings']}; text {r['text']}; ratio {value:.2f}×")
+            parts.append(f'<g><title>{tip}</title><circle cx="{px:.1f}" cy="{y}" r="4.5" class="dot"/><text x="{px + 8:.1f}" y="{y + 4}" class="value">{value:.2f}×</text></g>')
+    if not rows:
+        parts.append('<text x="10" y="80" class="label">No matching platform pairs have been measured.</text>')
+        height = 100
+    style = ('<style>svg{background:#fcfcfb}text{font:12px system-ui,sans-serif;fill:#151515}'
+             '.head{font-weight:600;font-size:11px}.small,.value{font-size:11px;fill:#555}.dot{fill:#286db8}'
+             '.ref{stroke:#aaa;stroke-dasharray:3 3}@media (prefers-color-scheme:dark){svg{background:#1a1a19}'
+             'text{fill:#eee}.small,.value{fill:#ccc}.dot{fill:#65aaf5}.ref{stroke:#777}}</style>')
+    return f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}"><title>Relative Aurora and macOS in-process MLX timings</title>{style}{"".join(parts)}</svg>\n'
+
+
+def batch_counter_rows():
+    """Historical guarded Qwen2B paired experiments; counters include prompt and generation."""
+    out = []
+    for f in sorted(RECEIPTS.glob('2026-10-27-batch-work*.json')):
+        r = json.loads(f.read_text())
+        runs = [x for x in r.get('runs', []) if x.get('exit') == 0 and not x.get('stopped')
+                and x.get('result', {}).get('counter_delta') and x.get('result', {}).get('tokens')]
+        if not runs:
+            continue
+        sequences = {tuple(x['result']['tokens']) for x in runs}
+        for budget in sorted({x['budget'] for x in runs}):
+            subset = [x for x in runs if x['budget'] == budget]
+            def counter(name):
+                return med([x['result']['counter_delta'].get(name) for x in subset])
+            samples = [sample for x in subset for sample in x.get('samples', [])]
+            available = [x['available_bytes'] / (1024 ** 3) for x in samples if x.get('available_bytes') is not None]
+            temperatures = [x['max_temp_c'] for x in samples if x.get('max_temp_c') is not None]
+            fans = [x['max_fan_rpm'] for x in samples if x.get('max_fan_rpm') is not None]
+            out.append({'source': str(f.relative_to(HERE)), 'status': r.get('status', 'unknown'),
+                        'budget': budget, 'tokens': len(subset[0]['result']['tokens']), 'runs': len(subset),
+                        'submissions': counter('vk_submissions'), 'dispatches': counter('vk_compute_dispatches'),
+                        'barriers': counter('barriers_emitted'),
+                        'decode': med([x['result'].get('generation_tps') for x in subset]),
+                        'min_available_gib': min(available) if available else None,
+                        'max_temp_c': max(temperatures) if temperatures else None,
+                        'max_fan_rpm': max(fans) if fans else None,
+                        'ids': ('only one run' if len(runs) == 1 else
+                                'identical within receipt' if len(sequences) == 1 else 'differ within receipt')})
+    return out
+
 def main():
     rows = measured_rows()
     mac = mac_rows()
     annotate_cross_platform(mac, rows)
+    relative = relative_rows(mac, rows)
+    counters = batch_counter_rows()
     notes = json.loads((HERE / 'scoreboard-notes.json').read_text())['rows']
     with (HERE / 'engine-scoreboard.csv').open('w', newline='') as fh:
         w = csv.DictWriter(fh, fieldnames=FIELDS + ['blocker'], extrasaction='ignore', lineterminator='\n')
@@ -268,6 +366,29 @@ def main():
           'The plots group the same model revision, weight hash, prompt hash and token limit, but do not establish token or numerical equivalence across systems. '
           'First token and estimated reply time are lower-is-better; decode is higher-is-better. The 200-token value extrapolates from measured decode speed. HTTP and in-process timing boundaries differ. '
           'No dot implies a winner across systems. The Linux-only star and gates below are unchanged.', '',
+          '## Relative in-process performance', '',
+          '![Dot plot of Aurora decode and first-token time relative to macOS](relative-scoreboard.svg)', '',
+          'Ratios are separate-run medians on the same named chip, model revision, weight hash, prompt hash and token limit. The same chip name does not guarantee the same GPU configuration. '
+          '1× means the macOS reference; higher values mean more Aurora time. Decode time uses macOS decode tok/s divided by Aurora decode tok/s; '
+          'first-token time uses Aurora seconds divided by macOS seconds. Only in-process MLX runs with at least three trials appear. '
+          'The runs were not paired across OS boots, and runtimes, load and thermal state differ; these ratios do not identify a cause or prove a regression. '
+          'Text-match flags are limited to these prompts and do not establish numerical fidelity.', '',
+          '| Chip | Model | Token limit | Mac OS / runtime | Aurora OS / kernel / driver | Aurora budget | Decode time vs Mac | First token vs Mac | Text | Runs Mac / Aurora | Receipts |',
+          '|---|---|---:|---|---|---|---:|---:|---|---|---|']
+    for r in relative:
+        md.append(f"| {r['chip']} | {r['model']} | {r['tokens']} | {r['mac_os']} / {r['mac_settings']} | {r['linux_os']} / `{r['kernel']}` / {r['driver']} | {r['settings']} | {r['decode_ratio']:.2f}× | {r['ttft_ratio']:.2f}× | {r['text']} | {r['mac_runs']} / {r['linux_runs']} | [Mac]({r['mac_source']}) · [Aurora]({r['linux_source']}) |")
+    md += ['', '## GPU submission counter evidence', '',
+           'These are separate historical M1 Pro Aurora Qwen3.5 2B work-budget experiments, not counters from the macOS or engine-comparison rows. '
+           'Medians are per measured request, including prompt prefill and generation, not per token. The 80k long experiment was interrupted after two pairs. '
+           'The counters describe activity and do not measure individual kernel time or prove a cause; the experiment also checked GTK callbacks, not display presentation or input latency. '
+           'See the [method and limitations](receipts/2026-10-27-batch-work.md).', '',
+           '| Receipt | Status | Generated tokens | Work budget | Runs | Vulkan submissions | Compute dispatches | Barriers emitted | Decode tok/s | Min free GiB | Max °C | Max fan RPM | Token IDs |',
+           '|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|']
+    for c in counters:
+        md.append(f"| [{Path(c['source']).name}]({c['source']}) | {c['status']} | {c['tokens']} | {c['budget']} | {c['runs']} | {fmt(c['submissions'], 0)} | {fmt(c['dispatches'], 0)} | {fmt(c['barriers'], 0)} | {fmt(c['decode'])} | {fmt(c['min_available_gib'])} | {fmt(c['max_temp_c'])} | {fmt(c['max_fan_rpm'], 0)} | {c['ids']} |")
+    md += ['', 'Apple Metal traces captured shader pipeline names but no shader timing or GPU counter set; '
+           'the available evidence cannot rank individual kernels or attribute the cross-OS gap. '
+           'Fresh paired profiles, matched correctness checks, sustained thermals and desktop responsiveness remain next steps.', '',
           '## Aurora Linux measurements', '',
           '| ★ | Chip | OS | Model | Engine | Settings | Token limit | Decode tok/s | TTFT s | Total s | Runs | Same output as reference in receipt | Gate | Kernel | Driver | Date | Receipt |',
           '|---|---|---|---|---|---|---:|---:|---:|---:|---:|---|---|---|---|---|---|']
@@ -324,6 +445,7 @@ def main():
            'python3 scoreboard.py',
            '```', '']
     (HERE / 'engine-scoreboard.svg').write_text(chart(rows + mac))
+    (HERE / 'relative-scoreboard.svg').write_text(relative_chart(relative))
     (HERE / 'ENGINE-SCOREBOARD.md').write_text('\n'.join(md))
     print(f'{len(rows)} Linux rows, {len(mac)} macOS rows, {len(notes)} noted rows')
 
