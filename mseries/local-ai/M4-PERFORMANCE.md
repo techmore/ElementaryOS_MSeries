@@ -10,7 +10,7 @@ whole system is faster.
 
 | Environment | Kernel or OS | Baseline | Status |
 | --- | --- | --- | --- |
-| Gravity Linux | `7.1.13-509.gravity.fc44.aarch64+16k` | M4 GPU enumerated; no model speed result | First MLX GPU computation timed out and wedged the GPU on October 28. [Receipt](receipts/2026-10-28-m4-mini-first-mlx-attempt.md). |
+| Gravity Linux | `7.1.13-509.gravity.fc44.aarch64+16k` | M4 GPU enumerated; no model speed result | October 28 matrix multiply timed out; October 30 tiny add produced an incorrect result and a GPU timeout. [First receipt](receipts/2026-10-28-m4-mini-first-mlx-attempt.md); [October 30 receipt](receipts/2026-10-30-m4-mlx-preflight.md). |
 | Omarchy WIP | WIP5 J773g forward port | Not measured | Integration and build in progress; not boot-qualified. |
 | macOS | Same Mac mini | Not measured | Matched native runs and their version are needed. |
 
