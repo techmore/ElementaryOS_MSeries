@@ -1,3 +1,7 @@
+## macOS MLX reference and TensorFold comparison — 2026-10-30
+
+Next: agree on and run a matched macOS reference for the four `engine-compare.py` scoreboard model pins, beginning with Qwen3.5 2B for TensorFold, using the recorded short/long prompts and separate in-process versus server timing boundaries. The exploratory 4B/9B Metal captures are not TensorFold or Linux baselines. See [the scope and receipts](local-ai/receipts/2026-10-30-macos-metal-profile/README.md).
+
 ## WD22TB4 and wip4 candidate status — 2026-10-28
 
 Current `dev` is `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`. Pages deployment
