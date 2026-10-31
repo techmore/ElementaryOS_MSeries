@@ -51,6 +51,54 @@ Each block is one model and load; each panel has its own scale. **First token** 
 |  | Qwen3.5-4B MLX 4-bit | MLX (omarchy-mlx, in-process) | `defaults (MLX_OMARCHY_BATCH_WORK fallback 5000)` | 32 | 18.55 | 0.73 | 2.38 | 3 | reference | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 7faf04c065 | 2026-10-28 | [2026-10-28-engine-compare-qwen4b-short.json](receipts/2026-10-28-engine-compare-qwen4b-short.json) |
 |  | Qwen3.5-4B MLX 4-bit | mlx-omarchy-serve, mlx-lm backend, stock (HTTP server) | `MLX_OMARCHY_BATCH_WORK=120000 · 4 requests at once (decode = total tok/s)` | 32 | 12.76 | 6.27 | 10.03 | 3 | yes (engines in this run agree) | not gated | `7.2.11-elementary-aurora72-wip4` | Honeykrisp Mesa 9323171c12 | 2026-10-28 | [2026-10-28-engine-compare-qwen4b-short-hk9323171c12-c4-serve-120k+serve-patched-120k+rapid-120k-round2.json](receipts/2026-10-28-engine-compare-qwen4b-short-hk9323171c12-c4-serve-120k+serve-patched-120k+rapid-120k-round2.json) |
 
+## Mac mini M4 (Mac16,10, 10-core GPU, 16 GB), macOS 27.0 26A5421a, Metal
+
+Measured with the same `engine-compare.py`, models, revisions, prompts, token counts, loads and three rotated rounds, receipts in [`receipts/2026-10-31-m4-mini-macos/`](receipts/2026-10-31-m4-mini-macos/). A separate machine, so never ranked against the M1 Pro table; ★ ranks within this machine only. CSV: [`engine-scoreboard-m4-mini-macos.csv`](engine-scoreboard-m4-mini-macos.csv).
+
+![First token, streaming speed and typical reply time on the Mac mini M4, macOS (Metal)](engine-scoreboard-m4-mini-macos.svg)
+
+| ★ | Model | Engine | Settings | Tokens | Decode tok/s | TTFT s | Total s | Runs | Same output as MLX default | Same output as M1 Pro (Linux) | OS | Date | Receipt |
+|---|---|---|---|---:|---:|---:|---:|---:|---|---|---|---|---|
+| ★ | Granite 4.0 1B MLX 4-bit (IBM, dense) | **MLX on Metal (upstream mlx, in-process)** | `mlx 0.32.3 · mlx-lm 0.31.3` | 32 | **58.59** | 0.22 | 0.76 | 3 | reference | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-granite1b-short-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-granite1b-short-metal.json) |
+|  | Granite 4.0 1B MLX 4-bit (IBM, dense) | mlx_lm.server, stock (HTTP server) | `mlx 0.32.3 · mlx-lm 0.31.3` | 32 | 43.01 | 0.22 | 0.94 | 3 | yes | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-granite1b-short-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-granite1b-short-metal.json) |
+| ★ | LFM3-1.7B MLX 8-bit | **MLX on Metal (upstream mlx, in-process)** | `mlx 0.32.3 · mlx-lm 0.31.3` | 32 | **31.53** | 0.24 | 1.22 | 3 | reference | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-lfm3-short-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-lfm3-short-metal.json) |
+| ★ | Qwen3.5-2B MLX 4-bit | **MLX on Metal (upstream mlx, in-process)** | `mlx 0.32.3 · mlx-lm 0.31.3` | 32 | **47.67** | 0.38 | 1.11 | 3 | reference | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen2b-short-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen2b-short-metal.json) |
+|  | Qwen3.5-2B MLX 4-bit | mlx_lm.server, stock (HTTP server) | `mlx 0.32.3 · mlx-lm 0.31.3` | 32 | 42.36 | 0.42 | 1.17 | 3 | yes | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen2b-short-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen2b-short-metal.json) |
+|  | Qwen3.5-2B MLX 4-bit | TensorFold Metal v1.1.9 release (HTTP server) | `serve --backend mlx --context 1024 --no-thinking --no-drafts` | 32 | 39.71 | 0.07 | 0.85 | 3 | yes | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen2b-short-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen2b-short-metal.json) |
+| ★ | Qwen3.5-2B MLX 4-bit | **mlx_lm.server, stock (HTTP server)** | `mlx 0.32.3 · mlx-lm 0.31.3 · 4 requests at once (decode = total tok/s)` | 32 | **41.63** | 1.86 | 3.07 | 3 | yes (engines in this run agree) | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen2b-short-metal-c4.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen2b-short-metal-c4.json) |
+|  | Qwen3.5-2B MLX 4-bit | TensorFold Metal v1.1.9 release (HTTP server) | `serve --backend mlx --context 1024 --no-thinking --no-drafts · 4 requests at once (decode = total tok/s)` | 32 | 36.84 | 1.82 | 3.47 | 3 | yes (engines in this run agree) | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen2b-short-metal-c4.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen2b-short-metal-c4.json) |
+| ★ | Qwen3.5-2B MLX 4-bit | **TensorFold Metal v1.1.9 release (HTTP server)** | `serve --backend mlx --context 1024 --no-thinking --no-drafts · 8 requests at once (decode = total tok/s)` | 32 | **35.41** | 3.64 | 7.23 | 3 | yes (engines in this run agree) | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen2b-short-metal-c8.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen2b-short-metal-c8.json) |
+| ★ | Qwen3.5-2B MLX 4-bit | **MLX on Metal (upstream mlx, in-process)** | `mlx 0.32.3 · mlx-lm 0.31.3` | 256 | **51.26** | 0.52 | 5.37 | 3 | reference | no: diverges after 1207 of 1301 chars | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen2b-long-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen2b-long-metal.json) |
+|  | Qwen3.5-2B MLX 4-bit | mlx_lm.server, stock (HTTP server) | `mlx 0.32.3 · mlx-lm 0.31.3` | 256 | 40.64 | 0.55 | 6.83 | 3 | yes | no: diverges after 1207 of 1301 chars | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen2b-long-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen2b-long-metal.json) |
+|  | Qwen3.5-2B MLX 4-bit | TensorFold Metal v1.1.9 release (HTTP server) | `serve --backend mlx --context 1024 --no-thinking --no-drafts` | 256 | 36.37 | 0.12 | 7.13 | 3 | no: diverges after 1207 of 1290 chars | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen2b-long-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen2b-long-metal.json) |
+| ★ | Qwen3.5-4B MLX 4-bit | **MLX on Metal (upstream mlx, in-process)** | `mlx 0.32.3 · mlx-lm 0.31.3` | 32 | **28.99** | 0.39 | 1.46 | 3 | reference | no: diverges after 55 of 152 chars | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen4b-short-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen4b-short-metal.json) |
+|  | Qwen3.5-4B MLX 4-bit | mlx_lm.server, stock (HTTP server) | `mlx 0.32.3 · mlx-lm 0.31.3` | 32 | 25.15 | 0.38 | 1.58 | 3 | no: diverges after 55 of 137 chars | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen4b-short-metal.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen4b-short-metal.json) |
+| ★ | Qwen3.5-4B MLX 4-bit | **mlx_lm.server, stock (HTTP server)** | `mlx 0.32.3 · mlx-lm 0.31.3 · 4 requests at once (decode = total tok/s)` | 32 | **29.23** | 2.29 | 4.38 | 3 | yes (engines in this run agree) | yes | macOS 27.0 (26A5421a) | 2026-10-31 | [2026-10-31-engine-compare-qwen4b-short-metal-c4.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen4b-short-metal-c4.json) |
+
+Not in the table: mlx_lm.server, Metal, Qwen3.5-2B MLX 4-bit, 32 tokens, 8 requests at once: all 3 runs failed (`RuntimeError: 2 of 8 concurrent requests failed: {'error': 'URLError: <urlopen error [Errno 54] Connection reset by peer>'}`; [2026-10-31-engine-compare-qwen2b-short-metal-c8.json](receipts/2026-10-31-m4-mini-macos/2026-10-31-engine-compare-qwen2b-short-metal-c8.json)).
+
+### How to run the same on Linux on the M4 mini
+
+Same machine, same work, so the two tables compare row for row:
+
+1. Boot the mini into Linux (Aurora kernel, vulkan-aurora Honeykrisp) and install `omarchy-mlx`, `omarchy-mlx-vulkan-aurora` and `omarchy-mlx-m4-bench` from techmore/omarchy-mlx branch `m4-mini-bench` (its `docs/m4-mini-bench.md`), plus `tensorfold-vulkan` (PR 1544, `b3ab9ba2`) for the TensorFold rows.
+2. Fetch the four checkpoints into the Hugging Face cache at the revisions above (engine-compare refuses other weights) and the pinned `lfm3.py` (mlx-lm PR 2016 head `9027ac5b`).
+3. Run the commands below with `MSERIES_HF_SNAPSHOTS=1 MSERIES_MLX_PY=/usr/lib/omarchy-mlx/venv/bin/python MSERIES_HK_ICD=<vulkan-aurora ICD json> MSERIES_TF_VULKAN_BIN=<tensorfold-vulkan server> MSERIES_LFM3_MODULE=<lfm3.py>` and `--arms mlx-5k,mlx-120k,lm031-120k,tensorfold` (in-process pairs with `mlx-metal`, plain `mlx_lm.server` 0.31.3 with `lm-metal`, TensorFold Vulkan with `tensorfold-metal`). Write receipts to `receipts/<date>-m4-mini-linux/`, add that folder to `MACHINES` in `scoreboard.py` and rerun it.
+4. For the release-gate speed number, run `omarchy-mlx-m4-bench` on Linux (also `--engine tensorfold` and `--model qwen3.5-2b`) and `scripts/m4_mini_bench.py` on macOS with this venv (mlx 0.32.3, mlx-lm 0.31.3, transformers 5.16.1, the pins that bench names), then `m4_mini_bench.py --compare`.
+5. Record the load: this macOS baseline ran beside a busy build VM (see the receipts README). Quote Linux/macOS ratios only from runs with comparable load, or re-run both quiet.
+
+```bash
+cd mseries/local-ai
+# macOS (this table): python 3.14 venv with mlx==0.32.3 mlx-lm==0.31.3 transformers==5.16.1
+HF_HUB_CACHE=... MSERIES_TF_BIN=.../tensorfold-1.1.9-macos-arm64/bin/tensorfold-native \
+  $VENV/bin/python engine-compare.py --model qwen2b --reserve-gib 1   # --long; --concurrency 4 / 8
+# Linux on the same mini
+MSERIES_HF_SNAPSHOTS=1 MSERIES_MLX_PY=/usr/lib/omarchy-mlx/venv/bin/python ... \
+  python3 engine-compare.py --model qwen2b --arms mlx-5k,mlx-120k,lm031-120k,tensorfold
+```
+
+Conditions, versions and the Linux run that pairs with it: [`receipts/2026-10-31-m4-mini-macos/README.md`](receipts/2026-10-31-m4-mini-macos/README.md).
+
 ## Watched or reported elsewhere (not comparable to the table above)
 
 | Model | Engine | Settings | Decode | Status | Blocker | Source |

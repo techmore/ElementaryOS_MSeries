@@ -1,0 +1,457 @@
+{
+  "status": "complete",
+  "model_key": "granite1b",
+  "model": "mlx-community/granite-4.0-1b-4bit@29f108a4e2ff99079a173004871604c2f1e12c1f",
+  "weights_sha256": "b7a43ebbc86517b8ecfc4cff265a787ea31620f7eb356984c08abe14646617c7",
+  "kernel": "macOS 27.0 (26A5421a)",
+  "driver": "Metal",
+  "tensorfold_rev": "v1.1.9 release",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 1.0,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 3.5,
+  "arms": [
+    "mlx-metal",
+    "lm-metal"
+  ],
+  "concurrency": 1,
+  "runs": [
+    {
+      "arm": "mlx-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.38,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "23.15 18.38 15.52"
+        },
+        {
+          "t": 1.7,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "23.15 18.38 15.52"
+        },
+        {
+          "t": 3.26,
+          "available_gib": 6.56,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "23.30 18.49 15.57"
+        },
+        {
+          "t": 4.43,
+          "available_gib": 6.24,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "23.30 18.49 15.57"
+        },
+        {
+          "t": 5.63,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "23.30 18.49 15.57"
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 4.4398056250010995,
+      "ttft_s": 0.22947020799983875,
+      "total_s": 0.7585496660012723,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 58.59233340319179,
+      "min_available_gib": 6.24,
+      "peak_temp_c": 0,
+      "round": 1,
+      "admission_available_gib": 7.2
+    },
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.09,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "22.47 18.40 15.56"
+        },
+        {
+          "t": 1.21,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "22.47 18.40 15.56"
+        },
+        {
+          "t": 2.61,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "22.52 18.47 15.60"
+        },
+        {
+          "t": 3.74,
+          "available_gib": 6.4,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "22.52 18.47 15.60"
+        },
+        {
+          "t": 4.9,
+          "available_gib": 6.4,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "22.52 18.47 15.60"
+        }
+      ],
+      "log_tail": "/private/tmp/claude-501/bench/venv/lib/python3.14/site-packages/mlx_lm/server.py:1723: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-31 11:37:02,263 - INFO - Starting httpd at 127.0.0.1 on port 55164...\n127.0.0.1 - - [31/Oct/2026 11:37:03] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [31/Oct/2026 11:37:03] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-31 11:37:03,188 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-31 11:37:03,188 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-31 11:37:03,188 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:37:03,188 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:37:03] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:37:03,457 - INFO - Prompt processing progress: 44/45\n2026-10-31 11:37:03,568 - INFO - Prompt processing progress: 45/45\n2026-10-31 11:37:04,311 - INFO - Prompt Cache: 1 sequences, 0.01 GB\n2026-10-31 11:37:04,311 - INFO - - assistant: 1 sequences, 0.01 GB\n2026-10-31 11:37:04,311 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:37:04,311 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:37:04] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:37:04,468 - INFO - Prompt processing progress: 1/1\n",
+      "ready_s": 4.169430291998651,
+      "ttft_s": 0.18074983400038036,
+      "total_s": 0.8736849590004567,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "served_model": "/private/tmp/claude-501/bench/hf/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 44.73723279649965,
+      "min_available_gib": 6.4,
+      "peak_temp_c": 0,
+      "round": 1,
+      "admission_available_gib": 7.52
+    },
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.25,
+          "available_gib": 7.84,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.83 18.40 15.59"
+        },
+        {
+          "t": 1.37,
+          "available_gib": 8.16,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.83 18.40 15.59"
+        },
+        {
+          "t": 2.87,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.83 18.40 15.59"
+        },
+        {
+          "t": 4.28,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "22.25 18.54 15.66"
+        },
+        {
+          "t": 5.51,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "22.25 18.54 15.66"
+        }
+      ],
+      "log_tail": "/private/tmp/claude-501/bench/venv/lib/python3.14/site-packages/mlx_lm/server.py:1723: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-31 11:37:10,596 - INFO - Starting httpd at 127.0.0.1 on port 55187...\n127.0.0.1 - - [31/Oct/2026 11:37:11] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [31/Oct/2026 11:37:11] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-31 11:37:11,914 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-31 11:37:11,973 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-31 11:37:11,973 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:37:11,973 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:37:12] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:37:12,490 - INFO - Prompt processing progress: 44/45\n2026-10-31 11:37:12,651 - INFO - Prompt processing progress: 45/45\n2026-10-31 11:37:13,496 - INFO - Prompt Cache: 1 sequences, 0.01 GB\n2026-10-31 11:37:13,497 - INFO - - assistant: 1 sequences, 0.01 GB\n2026-10-31 11:37:13,497 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:37:13,497 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:37:13] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:37:13,697 - INFO - Prompt processing progress: 1/1\n",
+      "ready_s": 5.174501624998811,
+      "ttft_s": 0.23406462499951886,
+      "total_s": 1.0134833749998506,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "served_model": "/private/tmp/claude-501/bench/hf/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 39.773228447463964,
+      "min_available_gib": 5.76,
+      "peak_temp_c": 0,
+      "round": 2,
+      "admission_available_gib": 7.84
+    },
+    {
+      "arm": "mlx-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.11,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.67 18.48 15.65"
+        },
+        {
+          "t": 1.33,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.67 18.48 15.65"
+        },
+        {
+          "t": 2.44,
+          "available_gib": 7.68,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.67 18.48 15.65"
+        },
+        {
+          "t": 3.57,
+          "available_gib": 6.24,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.67 18.48 15.65"
+        },
+        {
+          "t": 4.72,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.85 18.57 15.70"
+        },
+        {
+          "t": 5.77,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.85 18.57 15.70"
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 4.693515417000526,
+      "ttft_s": 0.2248917500000971,
+      "total_s": 0.7808781660005479,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 55.75675791326323,
+      "min_available_gib": 5.92,
+      "peak_temp_c": 0,
+      "round": 2,
+      "admission_available_gib": 7.2
+    },
+    {
+      "arm": "mlx-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.23,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.46 18.54 15.71"
+        },
+        {
+          "t": 1.53,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.46 18.54 15.71"
+        },
+        {
+          "t": 2.65,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.46 18.54 15.71"
+        },
+        {
+          "t": 3.78,
+          "available_gib": 6.24,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.46 18.54 15.71"
+        },
+        {
+          "t": 4.9,
+          "available_gib": 6.08,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.27 18.55 15.73"
+        },
+        {
+          "t": 6.08,
+          "available_gib": 6.24,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.27 18.55 15.73"
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 4.820296166999469,
+      "ttft_s": 0.22424950000095123,
+      "total_s": 0.7486354579996259,
+      "completion_tokens": 32,
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 59.11676223808866,
+      "min_available_gib": 6.08,
+      "peak_temp_c": 0,
+      "round": 3,
+      "admission_available_gib": 7.36
+    },
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.13,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.84 18.51 15.73"
+        },
+        {
+          "t": 1.22,
+          "available_gib": 7.68,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.84 18.51 15.73"
+        },
+        {
+          "t": 2.32,
+          "available_gib": 7.68,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.84 18.51 15.73"
+        },
+        {
+          "t": 3.57,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.84 18.51 15.73"
+        },
+        {
+          "t": 4.87,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.18 18.62 15.78"
+        },
+        {
+          "t": 5.96,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.18 18.62 15.78"
+        }
+      ],
+      "log_tail": "/private/tmp/claude-501/bench/venv/lib/python3.14/site-packages/mlx_lm/server.py:1723: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-31 11:37:40,583 - INFO - Starting httpd at 127.0.0.1 on port 55226...\n127.0.0.1 - - [31/Oct/2026 11:37:40] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [31/Oct/2026 11:37:40] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-31 11:37:41,831 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-31 11:37:41,832 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-31 11:37:41,832 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:37:41,832 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:37:41] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:37:42,190 - INFO - Prompt processing progress: 44/45\n2026-10-31 11:37:42,380 - INFO - Prompt processing progress: 45/45\n2026-10-31 11:37:43,185 - INFO - Prompt Cache: 1 sequences, 0.01 GB\n2026-10-31 11:37:43,185 - INFO - - assistant: 1 sequences, 0.01 GB\n2026-10-31 11:37:43,186 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:37:43,186 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:37:43] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:37:43,375 - INFO - Prompt processing progress: 1/1\n",
+      "ready_s": 5.032218333999481,
+      "ttft_s": 0.21650420799960557,
+      "total_s": 0.9372293750002427,
+      "completion_tokens": 32,
+      "token_count_source": "usage",
+      "text": "A rainbow forms when sunlight enters a water droplet in the air, causing it to refract and reflect inside the droplet. As the light refracts,",
+      "served_model": "/private/tmp/claude-501/bench/hf/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f",
+      "text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+      "decode_tps": 43.01223464834633,
+      "min_available_gib": 5.92,
+      "peak_temp_c": 0,
+      "round": 3,
+      "admission_available_gib": 7.52
+    }
+  ],
+  "runtime": {
+    "mlx": "0.32.3",
+    "mlx_lm": "0.31.3",
+    "transformers": "5.16.1",
+    "python": "3.14.3",
+    "device": {
+      "device_name": "Apple M4",
+      "max_recommended_working_set_size": 12713115648,
+      "memory_size": 17179869184,
+      "architecture": "applegpu_g16g",
+      "max_buffer_length": 9534832640,
+      "resource_limit": 499000
+    }
+  },
+  "tensorfold_sha256": "4b4b5a5ac152eb2dbed7e9d8004805ed9b74f77c64c3de18eb4f35263c7b9eb8",
+  "model_dir": "/private/tmp/claude-501/bench/hf/models--mlx-community--granite-4.0-1b-4bit/snapshots/29f108a4e2ff99079a173004871604c2f1e12c1f",
+  "host_start": {
+    "macos": "27.0",
+    "build": "26A5421a",
+    "hw_model": "Mac16,10",
+    "chip": "Apple M4",
+    "gpu_cores": "10",
+    "memory_gib": 16.0,
+    "power": [
+      "Now drawing from 'AC Power'"
+    ],
+    "low_power_mode": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "uptime": "11:36  up  2:55, 4 users, load averages: 23.15 18.38 15.52",
+    "top_cpu": [
+      "42290  com.apple.Virtua 391.8 10G  ",
+      "0      kernel_task      78.1  34M- ",
+      "4939   Claude Helper (R 77.6  893M+",
+      "433    WindowServer     42.7  593M-",
+      "2441   com.apple.WebKit 38.9  895M+",
+      "2479   com.apple.WebKit 32.3  29M+"
+    ],
+    "memory_free_pct": "44",
+    "swap": "total = 4096.00M  used = 3217.88M  free = 878.12M  (encrypted)",
+    "lima": "NAME      STATUS     SSH                VMTYPE    ARCH       CPUS    MEMORY    DISK     DIR\nkbuild    Running    127.0.0.1:53830    vz        aarch64    8       10GiB     60GiB    ~/.lima/kbuild"
+  },
+  "summary": {
+    "mlx-metal": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.2248917500000971,
+      "median_total_s": 0.7585496660012723,
+      "median_decode_tps": 58.59233340319179,
+      "texts": [
+        "81588d18f384"
+      ]
+    },
+    "lm-metal": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.21650420799960557,
+      "median_total_s": 0.9372293750002427,
+      "median_decode_tps": 43.01223464834633,
+      "texts": [
+        "81588d18f384"
+      ]
+    }
+  },
+  "host_end": {
+    "macos": "27.0",
+    "build": "26A5421a",
+    "hw_model": "Mac16,10",
+    "chip": "Apple M4",
+    "gpu_cores": "10",
+    "memory_gib": 16.0,
+    "power": [
+      "Now drawing from 'AC Power'"
+    ],
+    "low_power_mode": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "uptime": "11:37  up  2:56, 4 users, load averages: 20.84 18.59 15.79",
+    "top_cpu": [
+      "42290  com.apple.Virtua 540.8 10G  ",
+      "0      kernel_task      34.3  34M- ",
+      "433    WindowServer     33.7  599M ",
+      "4939   Claude Helper (R 26.3  911M-",
+      "88722  Python           19.4  120M-",
+      "4916   Claude Helper    18.5  477M+"
+    ],
+    "memory_free_pct": "45",
+    "swap": "total = 4096.00M  used = 2641.88M  free = 1454.12M  (encrypted)",
+    "lima": "NAME      STATUS     SSH                VMTYPE    ARCH       CPUS    MEMORY    DISK     DIR\nkbuild    Running    127.0.0.1:53830    vz        aarch64    8       10GiB     60GiB    ~/.lima/kbuild"
+  }
+}

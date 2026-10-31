@@ -1,0 +1,1199 @@
+{
+  "status": "complete",
+  "model_key": "qwen2b",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "weights_sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+  "kernel": "macOS 27.0 (26A5421a)",
+  "driver": "Metal",
+  "tensorfold_rev": "v1.1.9 release",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "2f23962cfdcb7ce0c2b482c4dd71e415f72113b963cfe6594fd5dc1fd4347921",
+  "max_tokens": 256,
+  "policy": {
+    "reserve_gib": 1.0,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "mlx-metal",
+    "lm-metal",
+    "tensorfold-metal"
+  ],
+  "concurrency": 1,
+  "runs": [
+    {
+      "arm": "mlx-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.28,
+          "available_gib": 9.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.04 17.50 16.23"
+        },
+        {
+          "t": 1.46,
+          "available_gib": 9.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.04 17.50 16.23"
+        },
+        {
+          "t": 2.79,
+          "available_gib": 7.84,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.04 17.50 16.23"
+        },
+        {
+          "t": 4.17,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.11 17.49 16.24"
+        },
+        {
+          "t": 5.61,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.11 17.49 16.24"
+        },
+        {
+          "t": 6.88,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.11 17.49 16.24"
+        },
+        {
+          "t": 8.25,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.34 17.51 16.25"
+        },
+        {
+          "t": 9.51,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.34 17.51 16.25"
+        },
+        {
+          "t": 10.89,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.34 17.51 16.25"
+        },
+        {
+          "t": 12.46,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.34 17.51 16.25"
+        },
+        {
+          "t": 13.74,
+          "available_gib": 8.16,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.16 17.45 16.24"
+        },
+        {
+          "t": 15.38,
+          "available_gib": 8.16,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.16 17.45 16.24"
+        },
+        {
+          "t": 16.77,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.16 17.45 16.24"
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 10.09442295899862,
+      "ttft_s": 0.6294245839999348,
+      "total_s": 6.024209750001319,
+      "completion_tokens": 256,
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a simple straight line; it is bent by the curvature of the droplet. The light ray then",
+      "text_sha256": "93e110ad5d5c0397fa2df84ca65075a8dc1f844f1d579ceb9b2cca1597c71d76",
+      "decode_tps": 47.267869276248874,
+      "min_available_gib": 7.2,
+      "peak_temp_c": 0,
+      "round": 1,
+      "admission_available_gib": 9.44
+    },
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.47,
+          "available_gib": 9.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.38 17.48 16.25"
+        },
+        {
+          "t": 1.8,
+          "available_gib": 9.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.38 17.48 16.25"
+        },
+        {
+          "t": 3.09,
+          "available_gib": 9.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.35 17.45 16.25"
+        },
+        {
+          "t": 4.5,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.35 17.45 16.25"
+        },
+        {
+          "t": 5.83,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.35 17.45 16.25"
+        },
+        {
+          "t": 7.05,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.35 17.45 16.25"
+        },
+        {
+          "t": 8.2,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.89 17.55 16.29"
+        },
+        {
+          "t": 9.69,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.89 17.55 16.29"
+        },
+        {
+          "t": 11.03,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.89 17.55 16.29"
+        },
+        {
+          "t": 12.49,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.13 17.59 16.31"
+        },
+        {
+          "t": 13.75,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.13 17.59 16.31"
+        },
+        {
+          "t": 15.21,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.13 17.59 16.31"
+        },
+        {
+          "t": 16.43,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.13 17.59 16.31"
+        },
+        {
+          "t": 17.73,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.04 17.56 16.31"
+        },
+        {
+          "t": 18.83,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.04 17.56 16.31"
+        },
+        {
+          "t": 20.11,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.04 17.56 16.31"
+        }
+      ],
+      "log_tail": "/private/tmp/claude-501/bench/venv/lib/python3.14/site-packages/mlx_lm/server.py:1723: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-31 11:43:58,588 - INFO - Starting httpd at 127.0.0.1 on port 56102...\n127.0.0.1 - - [31/Oct/2026 11:43:59] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [31/Oct/2026 11:43:59] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-31 11:44:01,729 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-31 11:44:01,730 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-31 11:44:01,730 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:44:01,730 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:44:01] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:44:02,330 - INFO - Prompt processing progress: 37/41\n2026-10-31 11:44:02,363 - INFO - Prompt processing progress: 40/41\n2026-10-31 11:44:02,434 - INFO - Prompt processing progress: 41/41\n2026-10-31 11:44:09,225 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:44:09,227 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:44:09,227 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:44:09,227 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:44:09] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:44:09,782 - INFO - Prompt processing progress: 1/1\n",
+      "ready_s": 13.880224542001088,
+      "ttft_s": 0.5945795839998027,
+      "total_s": 6.933723250000185,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a simple straight line; it is bent by the curvature of the droplet. The light ray then",
+      "served_model": "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-2B-MLX-4bit/snapshots/93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "text_sha256": "93e110ad5d5c0397fa2df84ca65075a8dc1f844f1d579ceb9b2cca1597c71d76",
+      "decode_tps": 40.226253487151155,
+      "min_available_gib": 6.72,
+      "peak_temp_c": 0,
+      "round": 1,
+      "admission_available_gib": 9.12
+    },
+    {
+      "arm": "tensorfold-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.11,
+          "available_gib": 9.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.40 17.42 16.27"
+        },
+        {
+          "t": 1.65,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.40 17.42 16.27"
+        },
+        {
+          "t": 3.21,
+          "available_gib": 4.48,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.53 17.43 16.28"
+        },
+        {
+          "t": 4.44,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.53 17.43 16.28"
+        },
+        {
+          "t": 5.6,
+          "available_gib": 6.08,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.53 17.43 16.28"
+        },
+        {
+          "t": 6.82,
+          "available_gib": 6.08,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.53 17.43 16.28"
+        },
+        {
+          "t": 7.87,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.53 17.43 16.28"
+        },
+        {
+          "t": 9.16,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.32 17.37 16.26"
+        },
+        {
+          "t": 10.9,
+          "available_gib": 5.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.32 17.37 16.26"
+        },
+        {
+          "t": 12.51,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.32 17.37 16.26"
+        },
+        {
+          "t": 13.87,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.30 17.35 16.26"
+        },
+        {
+          "t": 15.01,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.30 17.35 16.26"
+        },
+        {
+          "t": 16.25,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.30 17.35 16.26"
+        },
+        {
+          "t": 17.39,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.30 17.35 16.26"
+        }
+      ],
+      "log_tail": "info: qwen3.5: 2.3 GiB kept wired between requests, inside 70% of 16 GiB of RAM\nwarning: memory pressure: warning: one more stream only when none runs, no new kept prompt states, the prompt cache sheds toward 0 MiB\n[tensorfold] prompt chunks of up to 128 tokens, cut at replies 256+ tokens apart\n[tensorfold] serving 93760be4f1f69842a46bc13dbdc0f19e291392a3 at http://127.0.0.1:56174/v1 (sampling: greedy; drafts: off; context: 1024; loaded in 3.8s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-b5f108dc10811be93e4c2b1b318c37a2 prompt=41 cached=0 thinking=False effort=none tokens=256 sha=371840ba123c finish=length rounds=255 accepted=0/0 ttft=0.102 decode=6.748 elapsed=6.850 queued=0.000 tok/s=37.8\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-b03a388d9386b154bab70f3afb3efd69 prompt=41 cached=0 thinking=False effort=none tokens=256 sha=371840ba123c finish=length rounds=255 accepted=0/0 ttft=0.094 decode=6.726 elapsed=6.820 queued=0.000 tok/s=37.9\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 10.889959250000175,
+      "ttft_s": 0.09530137500041747,
+      "total_s": 6.821432000000641,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "served_model": "93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 37.91184177306868,
+      "min_available_gib": 4.48,
+      "peak_temp_c": 0,
+      "round": 1,
+      "admission_available_gib": 9.44
+    },
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.11,
+          "available_gib": 9.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.43 17.36 16.27"
+        },
+        {
+          "t": 1.16,
+          "available_gib": 9.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.43 17.36 16.27"
+        },
+        {
+          "t": 2.23,
+          "available_gib": 9.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.32 17.32 16.26"
+        },
+        {
+          "t": 3.66,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.32 17.32 16.26"
+        },
+        {
+          "t": 4.8,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.32 17.32 16.26"
+        },
+        {
+          "t": 6.16,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.32 17.32 16.26"
+        },
+        {
+          "t": 7.25,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "15.89 17.21 16.23"
+        },
+        {
+          "t": 8.34,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "15.89 17.21 16.23"
+        },
+        {
+          "t": 9.56,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "15.89 17.21 16.23"
+        },
+        {
+          "t": 10.81,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "15.89 17.21 16.23"
+        },
+        {
+          "t": 12.3,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.30 17.27 16.26"
+        },
+        {
+          "t": 13.54,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.30 17.27 16.26"
+        },
+        {
+          "t": 14.67,
+          "available_gib": 7.84,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.30 17.27 16.26"
+        },
+        {
+          "t": 15.82,
+          "available_gib": 8.32,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.30 17.27 16.26"
+        },
+        {
+          "t": 17.03,
+          "available_gib": 8.48,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.30 17.27 16.26"
+        },
+        {
+          "t": 18.11,
+          "available_gib": 8.32,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.44 17.29 16.27"
+        },
+        {
+          "t": 19.25,
+          "available_gib": 8.48,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.44 17.29 16.27"
+        }
+      ],
+      "log_tail": "/private/tmp/claude-501/bench/venv/lib/python3.14/site-packages/mlx_lm/server.py:1723: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-31 11:44:42,885 - INFO - Starting httpd at 127.0.0.1 on port 56228...\n127.0.0.1 - - [31/Oct/2026 11:44:43] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [31/Oct/2026 11:44:43] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-31 11:44:45,870 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-31 11:44:45,870 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-31 11:44:45,870 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:44:45,870 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:44:45] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:44:46,358 - INFO - Prompt processing progress: 37/41\n2026-10-31 11:44:46,397 - INFO - Prompt processing progress: 40/41\n2026-10-31 11:44:46,514 - INFO - Prompt processing progress: 41/41\n2026-10-31 11:44:52,828 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:44:52,828 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:44:52,828 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:44:52,828 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:44:52] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:44:53,336 - INFO - Prompt processing progress: 1/1\n",
+      "ready_s": 12.430404124999768,
+      "ttft_s": 0.5513630000004923,
+      "total_s": 6.825524292000409,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a simple straight line; it is bent by the curvature of the droplet. The light ray then",
+      "served_model": "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-2B-MLX-4bit/snapshots/93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "text_sha256": "93e110ad5d5c0397fa2df84ca65075a8dc1f844f1d579ceb9b2cca1597c71d76",
+      "decode_tps": 40.642882471820805,
+      "min_available_gib": 7.2,
+      "peak_temp_c": 0,
+      "round": 2,
+      "admission_available_gib": 9.28
+    },
+    {
+      "arm": "tensorfold-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.48,
+          "available_gib": 10.56,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.56 17.30 16.28"
+        },
+        {
+          "t": 1.87,
+          "available_gib": 6.08,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.56 17.30 16.28"
+        },
+        {
+          "t": 3.48,
+          "available_gib": 4.32,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.56 17.30 16.28"
+        },
+        {
+          "t": 4.76,
+          "available_gib": 5.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.60 17.29 16.28"
+        },
+        {
+          "t": 6.34,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.60 17.29 16.28"
+        },
+        {
+          "t": 8.02,
+          "available_gib": 5.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.60 17.29 16.28"
+        },
+        {
+          "t": 10.09,
+          "available_gib": 4.48,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.59 17.49 16.36"
+        },
+        {
+          "t": 11.68,
+          "available_gib": 4.64,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.59 17.49 16.36"
+        },
+        {
+          "t": 13.53,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.59 17.49 16.36"
+        },
+        {
+          "t": 15.53,
+          "available_gib": 4.48,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.54 17.48 16.36"
+        },
+        {
+          "t": 16.75,
+          "available_gib": 4.64,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.54 17.48 16.36"
+        },
+        {
+          "t": 18.71,
+          "available_gib": 4.8,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.54 17.48 16.36"
+        }
+      ],
+      "log_tail": "info: qwen3.5: 2.3 GiB kept wired between requests, inside 70% of 16 GiB of RAM\nwarning: memory pressure: warning: one more stream only when none runs, no new kept prompt states, the prompt cache sheds toward 0 MiB\n[tensorfold] prompt chunks of up to 128 tokens, cut at replies 256+ tokens apart\n[tensorfold] serving 93760be4f1f69842a46bc13dbdc0f19e291392a3 at http://127.0.0.1:56299/v1 (sampling: greedy; drafts: off; context: 1024; loaded in 4.0s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-4b4932f2bb07f48f734ef9a257ac5b92 prompt=41 cached=0 thinking=False effort=none tokens=256 sha=371840ba123c finish=length rounds=255 accepted=0/0 ttft=0.097 decode=7.496 elapsed=7.593 queued=0.000 tok/s=34.0\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-ea7e6b1dd17dbba67aaa660cc37cf00b prompt=41 cached=0 thinking=False effort=none tokens=256 sha=371840ba123c finish=length rounds=255 accepted=0/0 ttft=0.147 decode=7.360 elapsed=7.507 queued=0.001 tok/s=34.6\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 11.856769375001022,
+      "ttft_s": 0.1485493750005844,
+      "total_s": 7.508524124999894,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "served_model": "93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 34.646857993639706,
+      "min_available_gib": 4.32,
+      "peak_temp_c": 0,
+      "round": 2,
+      "admission_available_gib": 10.4
+    },
+    {
+      "arm": "mlx-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.17,
+          "available_gib": 8.64,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.34 17.44 16.35"
+        },
+        {
+          "t": 1.25,
+          "available_gib": 8.8,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.34 17.44 16.35"
+        },
+        {
+          "t": 2.39,
+          "available_gib": 8.8,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.23 17.41 16.35"
+        },
+        {
+          "t": 3.61,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.23 17.41 16.35"
+        },
+        {
+          "t": 4.82,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.23 17.41 16.35"
+        },
+        {
+          "t": 6.01,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.23 17.41 16.35"
+        },
+        {
+          "t": 7.33,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.29 17.42 16.36"
+        },
+        {
+          "t": 8.69,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.29 17.42 16.36"
+        },
+        {
+          "t": 10.02,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.29 17.42 16.36"
+        },
+        {
+          "t": 11.26,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.29 17.42 16.36"
+        },
+        {
+          "t": 12.51,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.79 17.32 16.33"
+        },
+        {
+          "t": 13.7,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.79 17.32 16.33"
+        },
+        {
+          "t": 14.96,
+          "available_gib": 8.0,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.79 17.32 16.33"
+        },
+        {
+          "t": 16.13,
+          "available_gib": 8.32,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.79 17.32 16.33"
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 10.54756124999949,
+      "ttft_s": 0.3743491670011281,
+      "total_s": 5.349249124999915,
+      "completion_tokens": 256,
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a simple straight line; it is bent by the curvature of the droplet. The light ray then",
+      "text_sha256": "93e110ad5d5c0397fa2df84ca65075a8dc1f844f1d579ceb9b2cca1597c71d76",
+      "decode_tps": 51.25731213750413,
+      "min_available_gib": 6.72,
+      "peak_temp_c": 0,
+      "round": 2,
+      "admission_available_gib": 8.64
+    },
+    {
+      "arm": "tensorfold-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.1,
+          "available_gib": 10.24,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.24 17.19 16.29"
+        },
+        {
+          "t": 1.7,
+          "available_gib": 6.24,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.54 17.24 16.31"
+        },
+        {
+          "t": 3.0,
+          "available_gib": 4.32,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.54 17.24 16.31"
+        },
+        {
+          "t": 4.26,
+          "available_gib": 5.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.54 17.24 16.31"
+        },
+        {
+          "t": 5.6,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.54 17.24 16.31"
+        },
+        {
+          "t": 8.59,
+          "available_gib": 4.96,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.14 17.35 16.36"
+        },
+        {
+          "t": 9.82,
+          "available_gib": 5.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.14 17.35 16.36"
+        },
+        {
+          "t": 11.12,
+          "available_gib": 5.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.14 17.35 16.36"
+        },
+        {
+          "t": 12.22,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.73 17.26 16.33"
+        },
+        {
+          "t": 13.62,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.73 17.26 16.33"
+        },
+        {
+          "t": 15.66,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.73 17.26 16.33"
+        },
+        {
+          "t": 17.08,
+          "available_gib": 4.96,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.95 17.51 16.42"
+        }
+      ],
+      "log_tail": "info: qwen3.5: 2.3 GiB kept wired between requests, inside 70% of 16 GiB of RAM\nwarning: memory pressure: warning: one more stream only when none runs, no new kept prompt states, the prompt cache sheds toward 0 MiB\n[tensorfold] prompt chunks of up to 128 tokens, cut at replies 256+ tokens apart\n[tensorfold] serving 93760be4f1f69842a46bc13dbdc0f19e291392a3 at http://127.0.0.1:56364/v1 (sampling: greedy; drafts: off; context: 1024; loaded in 3.5s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-bb7383cdafae37173160ad01564127ff prompt=41 cached=0 thinking=False effort=none tokens=256 sha=371840ba123c finish=length rounds=255 accepted=0/0 ttft=0.089 decode=7.003 elapsed=7.092 queued=0.000 tok/s=36.4\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-5a5e16e2834222adf019ccff1c1b0ef7 prompt=41 cached=0 thinking=False effort=none tokens=256 sha=371840ba123c finish=length rounds=255 accepted=0/0 ttft=0.117 decode=7.012 elapsed=7.129 queued=0.000 tok/s=36.4\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 10.699577833000149,
+      "ttft_s": 0.12207645800117461,
+      "total_s": 7.133113416000924,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a straight line; it curves inward as it travels through the droplet. This curvature is the result",
+      "served_model": "93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "text_sha256": "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990",
+      "decode_tps": 36.371224617356965,
+      "min_available_gib": 4.32,
+      "peak_temp_c": 0,
+      "round": 3,
+      "admission_available_gib": 10.24
+    },
+    {
+      "arm": "mlx-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.24,
+          "available_gib": 8.96,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.80 17.48 16.42"
+        },
+        {
+          "t": 1.35,
+          "available_gib": 9.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.80 17.48 16.42"
+        },
+        {
+          "t": 2.52,
+          "available_gib": 9.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.80 17.48 16.42"
+        },
+        {
+          "t": 3.94,
+          "available_gib": 7.84,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.80 17.48 16.42"
+        },
+        {
+          "t": 5.12,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.13 17.56 16.45"
+        },
+        {
+          "t": 6.29,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.13 17.56 16.45"
+        },
+        {
+          "t": 7.65,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.13 17.56 16.45"
+        },
+        {
+          "t": 8.93,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.13 17.56 16.45"
+        },
+        {
+          "t": 10.18,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.52 17.65 16.49"
+        },
+        {
+          "t": 11.45,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.52 17.65 16.49"
+        },
+        {
+          "t": 12.72,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.52 17.65 16.49"
+        },
+        {
+          "t": 14.02,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.52 17.65 16.49"
+        },
+        {
+          "t": 15.12,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.60 17.89 16.58"
+        },
+        {
+          "t": 16.45,
+          "available_gib": 7.68,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.60 17.89 16.58"
+        }
+      ],
+      "log_tail": "",
+      "ready_s": 11.319369417000416,
+      "ttft_s": 0.5211798750005983,
+      "total_s": 5.368391708001582,
+      "completion_tokens": 256,
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a simple straight line; it is bent by the curvature of the droplet. The light ray then",
+      "text_sha256": "93e110ad5d5c0397fa2df84ca65075a8dc1f844f1d579ceb9b2cca1597c71d76",
+      "decode_tps": 52.607562612365875,
+      "min_available_gib": 6.88,
+      "peak_temp_c": 0,
+      "round": 3,
+      "admission_available_gib": 8.96
+    },
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.11,
+          "available_gib": 9.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.63 17.92 16.60"
+        },
+        {
+          "t": 1.5,
+          "available_gib": 9.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.63 17.92 16.60"
+        },
+        {
+          "t": 2.69,
+          "available_gib": 9.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.63 17.92 16.60"
+        },
+        {
+          "t": 3.95,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.63 17.92 16.60"
+        },
+        {
+          "t": 5.18,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.50 17.92 16.61"
+        },
+        {
+          "t": 6.48,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.50 17.92 16.61"
+        },
+        {
+          "t": 7.81,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.50 17.92 16.61"
+        },
+        {
+          "t": 9.03,
+          "available_gib": 6.56,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.50 17.92 16.61"
+        },
+        {
+          "t": 10.28,
+          "available_gib": 6.56,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.94 18.04 16.66"
+        },
+        {
+          "t": 11.57,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.94 18.04 16.66"
+        },
+        {
+          "t": 12.76,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.94 18.04 16.66"
+        },
+        {
+          "t": 14.16,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.94 18.04 16.66"
+        },
+        {
+          "t": 15.61,
+          "available_gib": 7.68,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.75 18.24 16.74"
+        },
+        {
+          "t": 16.81,
+          "available_gib": 7.84,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.75 18.24 16.74"
+        },
+        {
+          "t": 17.97,
+          "available_gib": 8.0,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.75 18.24 16.74"
+        },
+        {
+          "t": 19.12,
+          "available_gib": 7.84,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.75 18.24 16.74"
+        },
+        {
+          "t": 20.38,
+          "available_gib": 8.0,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.17 18.37 16.79"
+        }
+      ],
+      "log_tail": "/private/tmp/claude-501/bench/venv/lib/python3.14/site-packages/mlx_lm/server.py:1723: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-31 11:46:30,850 - INFO - Starting httpd at 127.0.0.1 on port 56427...\n127.0.0.1 - - [31/Oct/2026 11:46:31] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [31/Oct/2026 11:46:31] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-31 11:46:34,287 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-31 11:46:34,420 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-31 11:46:34,420 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:46:34,420 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:46:34] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:46:35,077 - INFO - Prompt processing progress: 37/41\n2026-10-31 11:46:35,114 - INFO - Prompt processing progress: 40/41\n2026-10-31 11:46:35,191 - INFO - Prompt processing progress: 41/41\n2026-10-31 11:46:42,017 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:46:42,018 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:46:42,018 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:46:42,018 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:46:42] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:46:42,412 - INFO - Prompt processing progress: 1/1\n",
+      "ready_s": 14.103719083001124,
+      "ttft_s": 0.42370525000114867,
+      "total_s": 6.484818832999736,
+      "completion_tokens": 256,
+      "token_count_source": "usage",
+      "text": "A rainbow is a spectacular natural phenomenon that occurs when sunlight interacts with water droplets in the atmosphere, creating a spectrum of colors that we see in the sky. This optical effect is a complex interplay of physics involving refraction, reflection, dispersion, and the viewing angle. To understand how a rainbow forms, one must first consider the properties of light and the behavior of water droplets.\n\nThe process begins with the entry of sunlight into a water droplet. Sunlight is composed of all visible wavelengths of the electromagnetic spectrum, ranging from red to violet. As these rays enter the droplet, they encounter a medium with a higher refractive index than air. Consequently, the light slows down and bends, a process known as refraction. Because different wavelengths of light travel at different speeds, they refract at slightly different angles. Red light, having the longest wavelength, bends the least, while violet light, with the shortest wavelength, bends the most. This separation of colors is called dispersion.\n\nUpon entering the droplet, the light ray undergoes a second refraction as it exits the back of the droplet. However, the path of the light ray is not a simple straight line; it is bent by the curvature of the droplet. The light ray then",
+      "served_model": "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-2B-MLX-4bit/snapshots/93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "text_sha256": "93e110ad5d5c0397fa2df84ca65075a8dc1f844f1d579ceb9b2cca1597c71d76",
+      "decode_tps": 42.07147688426011,
+      "min_available_gib": 6.56,
+      "peak_temp_c": 0,
+      "round": 3,
+      "admission_available_gib": 9.28
+    }
+  ],
+  "runtime": {
+    "mlx": "0.32.3",
+    "mlx_lm": "0.31.3",
+    "transformers": "5.16.1",
+    "python": "3.14.3",
+    "device": {
+      "device_name": "Apple M4",
+      "max_recommended_working_set_size": 12713115648,
+      "memory_size": 17179869184,
+      "architecture": "applegpu_g16g",
+      "max_buffer_length": 9534832640,
+      "resource_limit": 499000
+    }
+  },
+  "tensorfold_sha256": "4b4b5a5ac152eb2dbed7e9d8004805ed9b74f77c64c3de18eb4f35263c7b9eb8",
+  "model_dir": "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-2B-MLX-4bit/snapshots/93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "host_start": {
+    "macos": "27.0",
+    "build": "26A5421a",
+    "hw_model": "Mac16,10",
+    "chip": "Apple M4",
+    "gpu_cores": "10",
+    "memory_gib": 16.0,
+    "power": [
+      "Now drawing from 'AC Power'"
+    ],
+    "low_power_mode": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "uptime": "11:43  up  3:02, 4 users, load averages: 16.04 17.50 16.23",
+    "top_cpu": [
+      "42290  com.apple.Virtua 588.2 10G   ",
+      "0      kernel_task      60.9  36M+  ",
+      "433    WindowServer     33.1  601M  ",
+      "4939   Claude Helper (R 15.8  972M+ ",
+      "4916   Claude Helper    12.9  445M  ",
+      "33508  top              5.7   3840K+"
+    ],
+    "memory_free_pct": "59",
+    "swap": "total = 4096.00M  used = 2802.69M  free = 1293.31M  (encrypted)",
+    "lima": "NAME      STATUS     SSH                VMTYPE    ARCH       CPUS    MEMORY    DISK     DIR\nkbuild    Running    127.0.0.1:53830    vz        aarch64    8       10GiB     60GiB    ~/.lima/kbuild"
+  },
+  "summary": {
+    "mlx-metal": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.5211798750005983,
+      "median_total_s": 5.368391708001582,
+      "median_decode_tps": 51.25731213750413,
+      "texts": [
+        "93e110ad5d5c"
+      ]
+    },
+    "lm-metal": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.5513630000004923,
+      "median_total_s": 6.825524292000409,
+      "median_decode_tps": 40.642882471820805,
+      "texts": [
+        "93e110ad5d5c"
+      ]
+    },
+    "tensorfold-metal": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.12207645800117461,
+      "median_total_s": 7.133113416000924,
+      "median_decode_tps": 36.371224617356965,
+      "texts": [
+        "3f3ac70c5d72"
+      ]
+    }
+  },
+  "host_end": {
+    "macos": "27.0",
+    "build": "26A5421a",
+    "hw_model": "Mac16,10",
+    "chip": "Apple M4",
+    "gpu_cores": "10",
+    "memory_gib": 16.0,
+    "power": [
+      "Now drawing from 'AC Power'"
+    ],
+    "low_power_mode": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "uptime": "11:46  up  3:05, 4 users, load averages: 20.83 18.34 16.79",
+    "top_cpu": [
+      "42290  com.apple.Virtua 578.0 10G  ",
+      "433    WindowServer     29.6  603M+",
+      "0      kernel_task      24.7  34M- ",
+      "42198  limactl          15.2  98M+ ",
+      "4939   Claude Helper (R 15.2  997M-",
+      "4916   Claude Helper    9.7   429M+"
+    ],
+    "memory_free_pct": "63",
+    "swap": "total = 4096.00M  used = 2701.44M  free = 1394.56M  (encrypted)",
+    "lima": "NAME      STATUS     SSH                VMTYPE    ARCH       CPUS    MEMORY    DISK     DIR\nkbuild    Running    127.0.0.1:53830    vz        aarch64    8       10GiB     60GiB    ~/.lima/kbuild"
+  }
+}

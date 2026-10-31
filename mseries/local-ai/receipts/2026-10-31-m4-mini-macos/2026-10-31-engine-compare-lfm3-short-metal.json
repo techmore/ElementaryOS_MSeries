@@ -1,0 +1,310 @@
+{
+  "status": "complete",
+  "model_key": "lfm3",
+  "model": "LiquidAI/LFM3-1.7B-MLX-8bit@ee7667f3cfccb2a41725f91820531823fcabc6b7",
+  "weights_sha256": "2b06cea98d75527c248a0b04383f7cf0a1c72fb4ed7b45096618fc4e59d015ad",
+  "kernel": "macOS 27.0 (26A5421a)",
+  "driver": "Metal",
+  "tensorfold_rev": "v1.1.9 release",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 1.0,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "mlx-metal"
+  ],
+  "concurrency": 1,
+  "runs": [
+    {
+      "arm": "mlx-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.2,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.50 18.76 15.87"
+        },
+        {
+          "t": 1.34,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.78 18.87 15.92"
+        },
+        {
+          "t": 2.8,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.78 18.87 15.92"
+        },
+        {
+          "t": 4.02,
+          "available_gib": 5.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.78 18.87 15.92"
+        },
+        {
+          "t": 5.28,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.95 18.95 15.97"
+        },
+        {
+          "t": 6.5,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.95 18.95 15.97"
+        },
+        {
+          "t": 7.7,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.95 18.95 15.97"
+        }
+      ],
+      "log_tail": "The repository /private/tmp/claude-501/bench/hf/models--LiquidAI--LFM3-1.7B-MLX-8bit/snapshots/ee7667f3cfccb2a41725f91820531823fcabc6b7 contains custom code which must be executed to correctly load the model. You can inspect the repository content at /private/tmp/claude-501/bench/hf/models--LiquidAI--LFM3-1.7B-MLX-8bit/snapshots/ee7667f3cfccb2a41725f91820531823fcabc6b7 .\n You can inspect the repository content at https://hf.co//private/tmp/claude-501/bench/hf/models--LiquidAI--LFM3-1.7B-MLX-8bit/snapshots/ee7667f3cfccb2a41725f91820531823fcabc6b7.\nYou can avoid this prompt in future by passing the argument `trust_remote_code=True`.\n\nDo you wish to run the custom code? [y/N] [transformers] You are using a model of type `lfm3` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.\n",
+      "ready_s": 6.922038165999766,
+      "ttft_s": 0.23748508300013782,
+      "total_s": 1.220571583000492,
+      "completion_tokens": 32,
+      "text": "A rainbow is created when sunlight passes through water droplets in the air and bends (refracts), then reflects off the back of each droplet and bends",
+      "text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+      "decode_tps": 31.533339131387557,
+      "min_available_gib": 5.28,
+      "peak_temp_c": 0,
+      "round": 1,
+      "admission_available_gib": 7.52
+    },
+    {
+      "arm": "mlx-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.18,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.16 18.84 15.94"
+        },
+        {
+          "t": 1.27,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.16 18.84 15.94"
+        },
+        {
+          "t": 2.37,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.16 18.84 15.94"
+        },
+        {
+          "t": 3.79,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.90 18.82 15.96"
+        },
+        {
+          "t": 4.99,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.90 18.82 15.96"
+        },
+        {
+          "t": 6.13,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.90 18.82 15.96"
+        },
+        {
+          "t": 7.33,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.90 18.82 15.96"
+        }
+      ],
+      "log_tail": "The repository /private/tmp/claude-501/bench/hf/models--LiquidAI--LFM3-1.7B-MLX-8bit/snapshots/ee7667f3cfccb2a41725f91820531823fcabc6b7 contains custom code which must be executed to correctly load the model. You can inspect the repository content at /private/tmp/claude-501/bench/hf/models--LiquidAI--LFM3-1.7B-MLX-8bit/snapshots/ee7667f3cfccb2a41725f91820531823fcabc6b7 .\n You can inspect the repository content at https://hf.co//private/tmp/claude-501/bench/hf/models--LiquidAI--LFM3-1.7B-MLX-8bit/snapshots/ee7667f3cfccb2a41725f91820531823fcabc6b7.\nYou can avoid this prompt in future by passing the argument `trust_remote_code=True`.\n\nDo you wish to run the custom code? [y/N] [transformers] You are using a model of type `lfm3` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.\n",
+      "ready_s": 6.672642083000028,
+      "ttft_s": 0.24641354199957277,
+      "total_s": 1.1725572499999544,
+      "completion_tokens": 32,
+      "text": "A rainbow is created when sunlight passes through water droplets in the air and bends (refracts), then reflects off the back of each droplet and bends",
+      "text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+      "decode_tps": 33.47212720035801,
+      "min_available_gib": 5.44,
+      "peak_temp_c": 0,
+      "round": 2,
+      "admission_available_gib": 7.2
+    },
+    {
+      "arm": "mlx-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.15,
+          "available_gib": 8.0,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.75 18.82 15.97"
+        },
+        {
+          "t": 1.27,
+          "available_gib": 8.0,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.75 18.82 15.97"
+        },
+        {
+          "t": 2.39,
+          "available_gib": 8.64,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.37 18.78 15.97"
+        },
+        {
+          "t": 3.73,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.37 18.78 15.97"
+        },
+        {
+          "t": 4.92,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.37 18.78 15.97"
+        },
+        {
+          "t": 6.09,
+          "available_gib": 6.08,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.37 18.78 15.97"
+        },
+        {
+          "t": 7.34,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.86 18.70 15.96"
+        },
+        {
+          "t": 8.46,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "19.86 18.70 15.96"
+        }
+      ],
+      "log_tail": "The repository /private/tmp/claude-501/bench/hf/models--LiquidAI--LFM3-1.7B-MLX-8bit/snapshots/ee7667f3cfccb2a41725f91820531823fcabc6b7 contains custom code which must be executed to correctly load the model. You can inspect the repository content at /private/tmp/claude-501/bench/hf/models--LiquidAI--LFM3-1.7B-MLX-8bit/snapshots/ee7667f3cfccb2a41725f91820531823fcabc6b7 .\n You can inspect the repository content at https://hf.co//private/tmp/claude-501/bench/hf/models--LiquidAI--LFM3-1.7B-MLX-8bit/snapshots/ee7667f3cfccb2a41725f91820531823fcabc6b7.\nYou can avoid this prompt in future by passing the argument `trust_remote_code=True`.\n\nDo you wish to run the custom code? [y/N] [transformers] You are using a model of type `lfm3` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.\n",
+      "ready_s": 6.575893125000221,
+      "ttft_s": 0.23207858300156659,
+      "total_s": 1.3103606670010777,
+      "completion_tokens": 32,
+      "text": "A rainbow is created when sunlight passes through water droplets in the air and bends (refracts), then reflects off the back of each droplet and bends",
+      "text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+      "decode_tps": 28.749434364165932,
+      "min_available_gib": 5.44,
+      "peak_temp_c": 0,
+      "round": 3,
+      "admission_available_gib": 8.0
+    }
+  ],
+  "runtime": {
+    "mlx": "0.32.3",
+    "mlx_lm": "0.31.3",
+    "transformers": "5.16.1",
+    "python": "3.14.3",
+    "device": {
+      "device_name": "Apple M4",
+      "max_recommended_working_set_size": 12713115648,
+      "memory_size": 17179869184,
+      "architecture": "applegpu_g16g",
+      "max_buffer_length": 9534832640,
+      "resource_limit": 499000
+    }
+  },
+  "tensorfold_sha256": "4b4b5a5ac152eb2dbed7e9d8004805ed9b74f77c64c3de18eb4f35263c7b9eb8",
+  "model_dir": "/private/tmp/claude-501/bench/hf/models--LiquidAI--LFM3-1.7B-MLX-8bit/snapshots/ee7667f3cfccb2a41725f91820531823fcabc6b7",
+  "host_start": {
+    "macos": "27.0",
+    "build": "26A5421a",
+    "hw_model": "Mac16,10",
+    "chip": "Apple M4",
+    "gpu_cores": "10",
+    "memory_gib": 16.0,
+    "power": [
+      "Now drawing from 'AC Power'"
+    ],
+    "low_power_mode": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "uptime": "11:37  up  2:56, 4 users, load averages: 21.50 18.76 15.87",
+    "top_cpu": [
+      "42290  com.apple.Virtua 544.4 10G  ",
+      "0      kernel_task      43.5  34M+ ",
+      "433    WindowServer     32.8  599M ",
+      "88301  Python           20.9  27M  ",
+      "88722  Python           14.9  197M-",
+      "4916   Claude Helper    11.9  446M-"
+    ],
+    "memory_free_pct": "46",
+    "swap": "total = 4096.00M  used = 2625.88M  free = 1470.12M  (encrypted)",
+    "lima": "NAME      STATUS     SSH                VMTYPE    ARCH       CPUS    MEMORY    DISK     DIR\nkbuild    Running    127.0.0.1:53830    vz        aarch64    8       10GiB     60GiB    ~/.lima/kbuild"
+  },
+  "summary": {
+    "mlx-metal": {
+      "ok_runs": 3,
+      "median_ttft_s": 0.23748508300013782,
+      "median_total_s": 1.220571583000492,
+      "median_decode_tps": 31.533339131387557,
+      "texts": [
+        "b8cc5b9478a0"
+      ]
+    }
+  },
+  "host_end": {
+    "macos": "27.0",
+    "build": "26A5421a",
+    "hw_model": "Mac16,10",
+    "chip": "Apple M4",
+    "gpu_cores": "10",
+    "memory_gib": 16.0,
+    "power": [
+      "Now drawing from 'AC Power'"
+    ],
+    "low_power_mode": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "uptime": "11:38  up  2:57, 4 users, load averages: 19.31 18.60 15.94",
+    "top_cpu": [
+      "42290  com.apple.Virtua 536.6 10G  ",
+      "433    WindowServer     35.1  599M+",
+      "88301  Python           25.2  27M  ",
+      "1      launchd          21.8  26M+ ",
+      "0      kernel_task      21.3  34M+ ",
+      "4939   Claude Helper (R 20.6  915M+"
+    ],
+    "memory_free_pct": "53",
+    "swap": "total = 4096.00M  used = 2944.25M  free = 1151.75M  (encrypted)",
+    "lima": "NAME      STATUS     SSH                VMTYPE    ARCH       CPUS    MEMORY    DISK     DIR\nkbuild    Running    127.0.0.1:53830    vz        aarch64    8       10GiB     60GiB    ~/.lima/kbuild"
+  }
+}

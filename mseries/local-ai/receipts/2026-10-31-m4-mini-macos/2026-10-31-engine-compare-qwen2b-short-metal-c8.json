@@ -1,0 +1,805 @@
+{
+  "status": "complete",
+  "model_key": "qwen2b",
+  "model": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "weights_sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+  "kernel": "macOS 27.0 (26A5421a)",
+  "driver": "Metal",
+  "tensorfold_rev": "v1.1.9 release",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 1.0,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 4.5,
+  "arms": [
+    "lm-metal",
+    "tensorfold-metal"
+  ],
+  "concurrency": 8,
+  "runs": [
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.15,
+          "available_gib": 9.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.78 17.94 16.20"
+        },
+        {
+          "t": 1.39,
+          "available_gib": 9.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.78 17.94 16.20"
+        },
+        {
+          "t": 2.78,
+          "available_gib": 8.64,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.52 18.09 16.26"
+        },
+        {
+          "t": 4.11,
+          "available_gib": 6.56,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.52 18.09 16.26"
+        },
+        {
+          "t": 5.31,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.52 18.09 16.26"
+        },
+        {
+          "t": 6.56,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.52 18.09 16.26"
+        },
+        {
+          "t": 8.0,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.71 18.14 16.29"
+        },
+        {
+          "t": 9.23,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.71 18.14 16.29"
+        },
+        {
+          "t": 10.67,
+          "available_gib": 6.24,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.71 18.14 16.29"
+        },
+        {
+          "t": 12.06,
+          "available_gib": 6.24,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.90 18.19 16.32"
+        }
+      ],
+      "log_tail": "-31 11:41:58,012 - INFO - Starting httpd at 127.0.0.1 on port 55815...\n127.0.0.1 - - [31/Oct/2026 11:41:58] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [31/Oct/2026 11:41:58] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-31 11:42:01,018 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-31 11:42:01,018 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-31 11:42:01,018 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:42:01,018 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:01] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:01,722 - INFO - Prompt processing progress: 23/27\n2026-10-31 11:42:01,773 - INFO - Prompt processing progress: 26/27\n2026-10-31 11:42:01,820 - INFO - Prompt processing progress: 27/27\n2026-10-31 11:42:02,689 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:02,690 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:02,690 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:02,690 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:03] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:03,073 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:03,073 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:03,073 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:03,073 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:03] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:03,449 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:03,452 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:03,453 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:03,453 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:03] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:03,850 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:03,850 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:03,850 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:03,850 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:04] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:04,218 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:04,219 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:04,219 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:04,219 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:04] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:04,540 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:04,542 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:04,542 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:04,542 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:04] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:05,248 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:05,248 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:05,248 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:05,248 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:05,248 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:05,249 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:05,366 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:05,375 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:05,375 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:05,375 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:05,381 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:05,381 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:06,016 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:06,016 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:06,016 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:06,016 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:06,016 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:06,016 - INFO - Prompt processing progress: 33/33\n",
+      "ready_s": 7.023564417000671,
+      "error": "RuntimeError: 2 of 8 concurrent requests failed: {'error': 'URLError: <urlopen error [Errno 54] Connection reset by peer>'}",
+      "min_available_gib": 6.24,
+      "peak_temp_c": 0,
+      "round": 1,
+      "admission_available_gib": 9.44
+    },
+    {
+      "arm": "tensorfold-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.52,
+          "available_gib": 9.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.90 18.19 16.32"
+        },
+        {
+          "t": 1.96,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.99 18.22 16.34"
+        },
+        {
+          "t": 3.14,
+          "available_gib": 4.32,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.99 18.22 16.34"
+        },
+        {
+          "t": 4.38,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.99 18.22 16.34"
+        },
+        {
+          "t": 5.71,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.99 18.22 16.34"
+        },
+        {
+          "t": 6.97,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.67 18.17 16.33"
+        },
+        {
+          "t": 8.56,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.67 18.17 16.33"
+        },
+        {
+          "t": 9.74,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.67 18.17 16.33"
+        },
+        {
+          "t": 10.91,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.67 18.17 16.33"
+        }
+      ],
+      "log_tail": "info: qwen3.5: 2.3 GiB kept wired between requests, inside 70% of 16 GiB of RAM\nwarning: memory pressure: warning: one more stream only when none runs, no new kept prompt states, the prompt cache sheds toward 0 MiB\n[tensorfold] prompt chunks of up to 128 tokens, cut at replies 256+ tokens apart\n[tensorfold] serving 93760be4f1f69842a46bc13dbdc0f19e291392a3 at http://127.0.0.1:55878/v1 (sampling: greedy; drafts: off; context: 1024; loaded in 3.1s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-6285ad7db93d8dea0133cd7c670115ee prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=0.071 decode=0.798 elapsed=0.868 queued=0.000 tok/s=38.9\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-9c341e538972fc941a05ab64dfda05fd prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=0.086 decode=0.824 elapsed=0.910 queued=0.004 tok/s=37.6\n[tensorfold] done chatcmpl-973e3cef765e5fde86f252e2181f0e3f prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=0.980 decode=0.797 elapsed=1.777 queued=0.909 tok/s=38.9\n[tensorfold] done chatcmpl-73cb4cb489e6e5e4de8a2330eb7f3a5a prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=1.852 decode=0.794 elapsed=2.646 queued=1.762 tok/s=39.0\n[tensorfold] done chatcmpl-ba7a7ad4ea49e873f6faa01a13ec1969 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=2.711 decode=0.797 elapsed=3.508 queued=2.639 tok/s=38.9\n[tensorfold] done chatcmpl-39ab5f14565904b19600042264248a56 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=3.581 decode=0.826 elapsed=4.407 queued=3.501 tok/s=37.5\n[tensorfold] done chatcmpl-18031215aa4ebf2daa84bda27df8d403 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=4.476 decode=0.789 elapsed=5.265 queued=4.399 tok/s=39.3\n[tensorfold] done chatcmpl-d8215bf055d352076105230fa857a171 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=5.337 decode=0.798 elapsed=6.135 queued=5.259 tok/s=38.9\n[tensorfold] done chatcmpl-fb7e4aed7e52ddda0423394c98fba7e8 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=6.214 decode=0.813 elapsed=7.026 queued=6.125 tok/s=38.2\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 3.9982705419988633,
+      "concurrency": 8,
+      "wall_s": 7.05099941699882,
+      "aggregate_tok_s": 36.30690982370887,
+      "per_request_decode_median": 38.86114895805225,
+      "ttft_s": 3.582970707999266,
+      "total_s": 7.05099941699882,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 0.09037741700012702,
+          "total_s": 0.9140904169998976,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.8601234159996238,
+          "total_s": 2.652992124998491,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 0.9810153750004247,
+          "total_s": 1.7794618339994486,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 2.715409209000427,
+          "total_s": 3.5126865000002,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 3.582970707999266,
+          "total_s": 4.410181666999051,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.4780874169991876,
+          "total_s": 5.267083666998587,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.338783166000212,
+          "total_s": 6.136495041000671,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 6.215644792000603,
+          "total_s": 7.028856625000117,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 36.30690982370887,
+      "min_available_gib": 4.32,
+      "peak_temp_c": 0,
+      "round": 1,
+      "admission_available_gib": 9.76
+    },
+    {
+      "arm": "tensorfold-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.13,
+          "available_gib": 9.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.29 18.10 16.32"
+        },
+        {
+          "t": 1.47,
+          "available_gib": 6.08,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.29 18.10 16.32"
+        },
+        {
+          "t": 2.84,
+          "available_gib": 4.48,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.79 17.99 16.29"
+        },
+        {
+          "t": 4.16,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.79 17.99 16.29"
+        },
+        {
+          "t": 5.34,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.79 17.99 16.29"
+        },
+        {
+          "t": 6.53,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.79 17.99 16.29"
+        },
+        {
+          "t": 7.75,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.56 17.94 16.28"
+        },
+        {
+          "t": 8.98,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.56 17.94 16.28"
+        },
+        {
+          "t": 10.27,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.56 17.94 16.28"
+        },
+        {
+          "t": 11.42,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.56 17.94 16.28"
+        }
+      ],
+      "log_tail": "info: qwen3.5: 2.3 GiB kept wired between requests, inside 70% of 16 GiB of RAM\nwarning: memory pressure: warning: one more stream only when none runs, no new kept prompt states, the prompt cache sheds toward 0 MiB\n[tensorfold] prompt chunks of up to 128 tokens, cut at replies 256+ tokens apart\n[tensorfold] serving 93760be4f1f69842a46bc13dbdc0f19e291392a3 at http://127.0.0.1:55914/v1 (sampling: greedy; drafts: off; context: 1024; loaded in 3.1s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-e68eb09d423a9011cc838143d97f7446 prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=0.072 decode=0.850 elapsed=0.922 queued=0.000 tok/s=36.5\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-8698b736b047a7e1b5fe81262f2518c7 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=0.087 decode=0.806 elapsed=0.892 queued=0.000 tok/s=38.5\n[tensorfold] done chatcmpl-c5f0b6a1b18409a5798e2eadc1c4ae30 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=0.965 decode=0.803 elapsed=1.768 queued=0.881 tok/s=38.6\n[tensorfold] done chatcmpl-2403b2e11c8a04bf71fba873e7099fc5 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=1.853 decode=0.813 elapsed=2.666 queued=1.756 tok/s=38.1\n[tensorfold] done chatcmpl-ff43121e4e865a5aca4a2ab9503d3607 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=2.740 decode=0.821 elapsed=3.561 queued=2.658 tok/s=37.8\n[tensorfold] done chatcmpl-e834b16854fac701a43e611fd0d8875c prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=3.634 decode=0.830 elapsed=4.464 queued=3.551 tok/s=37.4\n[tensorfold] done chatcmpl-edbcaeade563af3fb941e6996f4da8f1 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=4.545 decode=0.884 elapsed=5.429 queued=4.454 tok/s=35.1\n[tensorfold] done chatcmpl-8bf5bb23ea80211512e5e6dbe3298dcd prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=5.502 decode=0.853 elapsed=6.355 queued=5.417 tok/s=36.3\n[tensorfold] done chatcmpl-0e7d7c0f40e935f35c7d6ff37bacd0d4 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=6.424 decode=0.780 elapsed=7.203 queued=6.350 tok/s=39.8\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 4.499658458998965,
+      "concurrency": 8,
+      "wall_s": 7.229936832998646,
+      "aggregate_tok_s": 35.408331485217545,
+      "per_request_decode_median": 38.21138469228694,
+      "ttft_s": 3.63799412499975,
+      "total_s": 7.229936832998646,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 0.09214125000107742,
+          "total_s": 0.8992856670010951,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 0.9706634169997415,
+          "total_s": 1.7733162500007893,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.8604420839983504,
+          "total_s": 2.6717186249989027,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 2.744795084001453,
+          "total_s": 3.5658916250013135,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 3.63799412499975,
+          "total_s": 4.472471499999301,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.548832708998816,
+          "total_s": 5.432783874999586,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.510349790998589,
+          "total_s": 6.363711082998634,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 6.429924458001551,
+          "total_s": 7.21046700000079,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 35.408331485217545,
+      "min_available_gib": 4.48,
+      "peak_temp_c": 0,
+      "round": 2,
+      "admission_available_gib": 9.12
+    },
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.09,
+          "available_gib": 9.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.20 17.86 16.27"
+        },
+        {
+          "t": 1.23,
+          "available_gib": 9.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.20 17.86 16.27"
+        },
+        {
+          "t": 2.36,
+          "available_gib": 9.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.58 17.93 16.30"
+        },
+        {
+          "t": 3.5,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.58 17.93 16.30"
+        },
+        {
+          "t": 4.88,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.58 17.93 16.30"
+        },
+        {
+          "t": 6.11,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.58 17.93 16.30"
+        },
+        {
+          "t": 7.36,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.34 18.08 16.36"
+        },
+        {
+          "t": 8.88,
+          "available_gib": 6.56,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.34 18.08 16.36"
+        },
+        {
+          "t": 10.17,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.34 18.08 16.36"
+        },
+        {
+          "t": 11.4,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "18.34 18.08 16.36"
+        }
+      ],
+      "log_tail": "00 -\n2026-10-31 11:42:46,425 - INFO - Prompt processing progress: 23/27\n2026-10-31 11:42:46,463 - INFO - Prompt processing progress: 26/27\n2026-10-31 11:42:46,499 - INFO - Prompt processing progress: 27/27\n2026-10-31 11:42:47,281 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:47,281 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:47,281 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:47,281 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:47] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:47,576 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:47,576 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:47,576 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:47,576 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:47] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:47,947 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:47,948 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:47,948 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:47,948 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:48] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:48,214 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:48,215 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:48,215 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:48,215 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:48] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:48,466 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:48,466 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:48,466 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:48,466 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:48] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:48,788 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:48,789 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:48,789 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:48,789 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:49] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:49,205 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:42:49,206 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:42:49,206 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:42:49,206 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:42:49] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:42:49,961 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:49,962 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:49,962 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:49,962 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:49,962 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:49,962 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:49,962 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:42:50,111 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:50,111 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:50,111 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:50,113 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:50,113 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:50,113 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:50,113 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:42:50,290 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:50,292 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:50,293 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:50,293 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:50,293 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:50,293 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:42:50,294 - INFO - Prompt processing progress: 33/33\n",
+      "ready_s": 6.880575958999543,
+      "error": "RuntimeError: 1 of 8 concurrent requests failed: {'error': 'URLError: <urlopen error [Errno 54] Connection reset by peer>'}",
+      "min_available_gib": 5.76,
+      "peak_temp_c": 0,
+      "round": 2,
+      "admission_available_gib": 9.76
+    },
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.07,
+          "available_gib": 9.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.75 17.96 16.33"
+        },
+        {
+          "t": 1.18,
+          "available_gib": 10.08,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.75 17.96 16.33"
+        },
+        {
+          "t": 2.41,
+          "available_gib": 10.08,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.69 17.95 16.33"
+        },
+        {
+          "t": 3.61,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.69 17.95 16.33"
+        },
+        {
+          "t": 4.78,
+          "available_gib": 7.36,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.69 17.95 16.33"
+        },
+        {
+          "t": 6.05,
+          "available_gib": 7.2,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.69 17.95 16.33"
+        },
+        {
+          "t": 7.23,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.31 17.86 16.31"
+        },
+        {
+          "t": 8.46,
+          "available_gib": 7.04,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.31 17.86 16.31"
+        },
+        {
+          "t": 10.01,
+          "available_gib": 6.56,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.31 17.86 16.31"
+        },
+        {
+          "t": 11.22,
+          "available_gib": 6.08,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.31 17.86 16.31"
+        }
+      ],
+      "log_tail": "00 -\n2026-10-31 11:43:01,269 - INFO - Prompt processing progress: 23/27\n2026-10-31 11:43:01,321 - INFO - Prompt processing progress: 26/27\n2026-10-31 11:43:01,381 - INFO - Prompt processing progress: 27/27\n2026-10-31 11:43:02,199 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:43:02,200 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:43:02,200 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:43:02,200 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:43:02] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:43:02,512 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:43:02,512 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:43:02,513 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:43:02,513 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:43:02] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:43:02,801 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:43:02,801 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:43:02,801 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:43:02,801 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:43:02] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:43:03,177 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:43:03,177 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:43:03,177 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:43:03,177 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:43:03] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:43:03,543 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:43:03,543 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:43:03,543 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:43:03,543 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:43:03] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:43:03,888 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:43:03,888 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:43:03,888 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:43:03,888 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:43:04] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:43:04,202 - INFO - Prompt Cache: 3 sequences, 0.06 GB\n2026-10-31 11:43:04,202 - INFO - - assistant: 2 sequences, 0.04 GB\n2026-10-31 11:43:04,202 - INFO - - user: 1 sequences, 0.02 GB\n2026-10-31 11:43:04,202 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:43:04] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:43:05,294 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:43:05,298 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:43:05,298 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:43:05,298 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:43:05,299 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:43:05,299 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:43:05,300 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:43:05,439 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:43:05,440 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:43:05,440 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:43:05,441 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:43:05,441 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:43:05,442 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:43:05,442 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:43:05,557 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:43:05,558 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:43:05,559 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:43:05,559 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:43:05,559 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:43:05,560 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:43:05,560 - INFO - Prompt processing progress: 33/33\n",
+      "ready_s": 6.766519959001016,
+      "error": "RuntimeError: 1 of 8 concurrent requests failed: {'error': 'URLError: <urlopen error [Errno 54] Connection reset by peer>'}",
+      "min_available_gib": 6.08,
+      "peak_temp_c": 0,
+      "round": 3,
+      "admission_available_gib": 9.76
+    },
+    {
+      "arm": "tensorfold-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.35,
+          "available_gib": 9.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.13 17.82 16.31"
+        },
+        {
+          "t": 1.54,
+          "available_gib": 6.24,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "17.13 17.82 16.31"
+        },
+        {
+          "t": 2.72,
+          "available_gib": 4.8,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.96 17.77 16.30"
+        },
+        {
+          "t": 3.83,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.96 17.77 16.30"
+        },
+        {
+          "t": 4.91,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.96 17.77 16.30"
+        },
+        {
+          "t": 6.11,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.96 17.77 16.30"
+        },
+        {
+          "t": 7.48,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.56 17.67 16.27"
+        },
+        {
+          "t": 8.58,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.56 17.67 16.27"
+        },
+        {
+          "t": 9.99,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.56 17.67 16.27"
+        },
+        {
+          "t": 11.28,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "16.56 17.67 16.27"
+        }
+      ],
+      "log_tail": "info: qwen3.5: 2.3 GiB kept wired between requests, inside 70% of 16 GiB of RAM\nwarning: memory pressure: warning: one more stream only when none runs, no new kept prompt states, the prompt cache sheds toward 0 MiB\n[tensorfold] prompt chunks of up to 128 tokens, cut at replies 256+ tokens apart\n[tensorfold] serving 93760be4f1f69842a46bc13dbdc0f19e291392a3 at http://127.0.0.1:56037/v1 (sampling: greedy; drafts: off; context: 1024; loaded in 3.2s)\n[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"GET /v1/models HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-4bbe47916833b291a15d6be278893cc7 prompt=27 cached=0 thinking=False effort=none tokens=32 sha=778f678f6c4f finish=length rounds=31 accepted=0/0 ttft=0.080 decode=0.780 elapsed=0.860 queued=0.002 tok/s=39.7\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] 127.0.0.1 \"POST /v1/chat/completions HTTP/1.1\" 200 -\n[tensorfold] done chatcmpl-69b60c451435c66ef797722511821b0a prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=0.079 decode=0.789 elapsed=0.868 queued=0.000 tok/s=39.3\n[tensorfold] done chatcmpl-77f925c09224d43018e3298792bc831b prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=0.944 decode=0.800 elapsed=1.744 queued=0.865 tok/s=38.8\n[tensorfold] done chatcmpl-163960cada20f98a3a71aa4e4ac1e852 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=1.825 decode=0.820 elapsed=2.646 queued=1.742 tok/s=37.8\n[tensorfold] done chatcmpl-794061abd06866a6fda7e20e3d32909d prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=2.714 decode=0.915 elapsed=3.629 queued=2.635 tok/s=33.9\n[tensorfold] done chatcmpl-5fb35a29be942eb92eb812cf27e27a6c prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=3.717 decode=0.856 elapsed=4.573 queued=3.620 tok/s=36.2\n[tensorfold] done chatcmpl-56b8b531bcb17e4ca7be78727ffe31ac prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=4.644 decode=0.812 elapsed=5.456 queued=4.563 tok/s=38.2\n[tensorfold] done chatcmpl-b5f93934e082403c12a193f1b044d70f prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=5.531 decode=0.846 elapsed=6.377 queued=5.446 tok/s=36.6\n[tensorfold] done chatcmpl-9083e366eb96954ce2cde2c4a9e300f9 prompt=33 cached=0 thinking=False effort=none tokens=32 sha=fe08a186ad83 finish=length rounds=31 accepted=0/0 ttft=6.450 decode=0.817 elapsed=7.267 queued=6.374 tok/s=37.9\n[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s\n[tensorfold] shutting down: drained\n[tensorfold] shutting down: stopped\n",
+      "ready_s": 4.568960917000368,
+      "concurrency": 8,
+      "wall_s": 7.281992791000448,
+      "aggregate_tok_s": 35.15521195192354,
+      "per_request_decode_median": 37.991123322548475,
+      "ttft_s": 3.722208250001131,
+      "total_s": 7.281992791000448,
+      "completion_tokens": 256,
+      "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,",
+      "requests": [
+        {
+          "ttft_s": 0.07998091700028453,
+          "total_s": 0.869935708000412,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 1.8261953750006796,
+          "total_s": 2.6466377090000606,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 0.9460138329995971,
+          "total_s": 1.7457400000002963,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 2.7215807090015005,
+          "total_s": 3.6365350840005704,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 3.722208250001131,
+          "total_s": 4.579589375000069,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 4.649204792000091,
+          "total_s": 5.461762334000014,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 5.534465791999537,
+          "total_s": 6.380469666999488,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        },
+        {
+          "ttft_s": 6.452803125001083,
+          "total_s": 7.268783209001413,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "1. Sunlight travels through the atmosphere and gets scattered by water droplets in the air.\n2. This scattering separates the light into its different colors,"
+        }
+      ],
+      "served_model": "93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "text_sha256": "97af50af7f7909e68d8670dd08652563bf801d48f9186dcd506215b7d652c5db",
+      "decode_tps": 35.15521195192354,
+      "min_available_gib": 4.8,
+      "peak_temp_c": 0,
+      "round": 3,
+      "admission_available_gib": 9.6
+    }
+  ],
+  "runtime": {
+    "mlx": "0.32.3",
+    "mlx_lm": "0.31.3",
+    "transformers": "5.16.1",
+    "python": "3.14.3",
+    "device": {
+      "device_name": "Apple M4",
+      "max_recommended_working_set_size": 12713115648,
+      "memory_size": 17179869184,
+      "architecture": "applegpu_g16g",
+      "max_buffer_length": 9534832640,
+      "resource_limit": 499000
+    }
+  },
+  "tensorfold_sha256": "4b4b5a5ac152eb2dbed7e9d8004805ed9b74f77c64c3de18eb4f35263c7b9eb8",
+  "model_dir": "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-2B-MLX-4bit/snapshots/93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "host_start": {
+    "macos": "27.0",
+    "build": "26A5421a",
+    "hw_model": "Mac16,10",
+    "chip": "Apple M4",
+    "gpu_cores": "10",
+    "memory_gib": 16.0,
+    "power": [
+      "Now drawing from 'AC Power'"
+    ],
+    "low_power_mode": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "uptime": "11:41  up 3 hrs, 4 users, load averages: 17.78 17.94 16.20",
+    "top_cpu": [
+      "42290  com.apple.Virtua 517.4 10G  ",
+      "0      kernel_task      55.6  35M+ ",
+      "433    WindowServer     47.0  607M ",
+      "4916   Claude Helper    13.7  433M-",
+      "27418  Python           12.8  31M  ",
+      "4939   Claude Helper (R 8.9   959M+"
+    ],
+    "memory_free_pct": "59",
+    "swap": "total = 4096.00M  used = 3330.75M  free = 765.25M  (encrypted)",
+    "lima": "NAME      STATUS     SSH                VMTYPE    ARCH       CPUS    MEMORY    DISK     DIR\nkbuild    Running    127.0.0.1:53830    vz        aarch64    8       10GiB     60GiB    ~/.lima/kbuild"
+  },
+  "summary": {
+    "lm-metal": {
+      "ok_runs": 0,
+      "median_ttft_s": null,
+      "median_total_s": null,
+      "median_decode_tps": null,
+      "texts": []
+    },
+    "tensorfold-metal": {
+      "ok_runs": 3,
+      "median_ttft_s": 3.63799412499975,
+      "median_total_s": 7.229936832998646,
+      "median_decode_tps": 35.408331485217545,
+      "texts": [
+        "97af50af7f79"
+      ]
+    }
+  },
+  "host_end": {
+    "macos": "27.0",
+    "build": "26A5421a",
+    "hw_model": "Mac16,10",
+    "chip": "Apple M4",
+    "gpu_cores": "10",
+    "memory_gib": 16.0,
+    "power": [
+      "Now drawing from 'AC Power'"
+    ],
+    "low_power_mode": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "uptime": "11:43  up  3:02, 4 users, load averages: 15.69 17.45 16.21",
+    "top_cpu": [
+      "42290  com.apple.Virtua 649.8 10G  ",
+      "433    WindowServer     33.0  601M-",
+      "4939   Claude Helper (R 20.0  976M+",
+      "0      kernel_task      13.4  35M+ ",
+      "4916   Claude Helper    12.6  447M-",
+      "4951   claude           7.7   437M+"
+    ],
+    "memory_free_pct": "62",
+    "swap": "total = 4096.00M  used = 2802.69M  free = 1293.31M  (encrypted)",
+    "lima": "NAME      STATUS     SSH                VMTYPE    ARCH       CPUS    MEMORY    DISK     DIR\nkbuild    Running    127.0.0.1:53830    vz        aarch64    8       10GiB     60GiB    ~/.lima/kbuild"
+  }
+}

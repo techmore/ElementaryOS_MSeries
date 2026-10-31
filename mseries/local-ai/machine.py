@@ -1,6 +1,7 @@
 """Read-only machine telemetry and conservative AI admission policy."""
 import json
 from pathlib import Path
+import sys
 import time
 
 GIB = 1024 ** 3
@@ -23,7 +24,47 @@ def number(path):
         return None
 
 
+def sh(*cmd):
+    import subprocess
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=20).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return ''
+
+
+def macos_snapshot():
+    """macOS has no /proc or hwmon. Available memory is the kernel's own free-able share
+    (kern.memorystatus_level, what memory_pressure prints); fans and SMC temperatures need root,
+    so the thermal signal is pmset's warning level instead."""
+    total = int(sh('sysctl', '-n', 'hw.memsize') or 0)
+    level = int(sh('sysctl', '-n', 'kern.memorystatus_level') or 0)
+    swap = sh('sysctl', '-n', 'vm.swapusage')  # total = 3072.00M  used = 2222.50M  free = ...
+    used = swap.split('used = ')[1].split('M')[0] if 'used = ' in swap else '0'
+    therm = sh('pmset', '-g', 'therm')
+    return {'time': time.time(), 'platform': 'darwin', 'available_bytes': total * level // 100,
+            'total_bytes': total, 'swap_used_bytes': int(float(used) * 1024 ** 2),
+            'fans_rpm': {}, 'temperatures_c': {}, 'power_w': None, 'thermal': therm,
+            'load_avg': sh('sysctl', '-n', 'vm.loadavg').strip('{} ')}
+
+
+def host_info():
+    """What a macOS receipt records about the machine and what else was using it."""
+    gpu = sh('system_profiler', 'SPDisplaysDataType')
+    cores = next((l.split(':')[1].strip() for l in gpu.splitlines() if 'Total Number of Cores' in l), '')
+    top = sh('top', '-l', '2', '-s', '1', '-n', '6', '-o', 'cpu', '-stats', 'pid,command,cpu,mem')
+    return {'macos': sh('sw_vers', '-productVersion'), 'build': sh('sw_vers', '-buildVersion'),
+            'hw_model': sh('sysctl', '-n', 'hw.model'), 'chip': sh('sysctl', '-n', 'machdep.cpu.brand_string'),
+            'gpu_cores': cores, 'memory_gib': int(sh('sysctl', '-n', 'hw.memsize') or 0) / GIB,
+            'power': sh('pmset', '-g', 'batt').splitlines()[:1], 'low_power_mode': sh('pmset', '-g').count('lowpowermode 1') > 0,
+            'thermal': sh('pmset', '-g', 'therm'), 'uptime': sh('uptime'),
+            'top_cpu': top.split('PID')[-1].strip().splitlines()[1:] if 'PID' in top else [],
+            'memory_free_pct': sh('sysctl', '-n', 'kern.memorystatus_level'), 'swap': sh('sysctl', '-n', 'vm.swapusage'),
+            'lima': sh('limactl', 'list')}
+
+
 def snapshot(root=Path('/')):
+    if sys.platform == 'darwin' and root == Path('/'):
+        return macos_snapshot()
     mem = {}
     for line in (root / 'proc/meminfo').read_text().splitlines():
         key, value = line.split(':', 1)
@@ -57,7 +98,10 @@ def snapshot(root=Path('/')):
 def violations(sample, policy=None, extra_bytes=0):
     policy = DEFAULT_POLICY if policy is None else policy
     reasons = []
-    if not sample['fans_rpm'] or not sample['temperatures_c']:
+    if sample.get('platform') == 'darwin':
+        if 'warning level' in sample['thermal'] and 'No thermal warning level' not in sample['thermal']:
+            reasons.append('macOS reports a thermal warning level')
+    elif not sample['fans_rpm'] or not sample['temperatures_c']:
         reasons.append('fan or temperature telemetry unavailable; quiet limits cannot be checked')
     if sample['available_bytes'] - extra_bytes < policy['reserve_gib'] * GIB:
         reasons.append('desktop memory reserve would be crossed '
