@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """State migration and bounded dashboard rendering for github-watch.py."""
+import hashlib
 import importlib.util
 from pathlib import Path
 import unittest
@@ -11,6 +12,10 @@ spec.loader.exec_module(watch)
 people_spec = importlib.util.spec_from_file_location('people_watch', HERE / 'people-watch.py')
 people = importlib.util.module_from_spec(people_spec)
 people_spec.loader.exec_module(people)
+
+
+def sha1(text):
+    return hashlib.sha1(text.encode()).hexdigest()
 
 
 class GitHubWatchState(unittest.TestCase):
@@ -136,6 +141,33 @@ class GitHubWatchState(unittest.TestCase):
         self.assertEqual(len(state['snapshots']), 378)
         self.assertEqual(len(state['pending']), 173)
         self.assertLess(len(body.encode()), 65000)
+
+    def test_full_length_digests_shorten_without_reporting_a_change(self):
+        key = 'branch:example/project:main'
+        full, base = 'a1b2c3d4e5f6' + '0' * 28, 'f' * 40
+        previous = {'snapshots': {key: {'sha': full, 'base_sha': base}},
+                    'pending': {'heads:example/project': {'from': {'sha256': 'e' * 64}, 'to': {'sha256': 'd' * 64}}}}
+
+        state = watch.reconcile(previous, {key: {'sha': full, 'base_sha': base}}, [])
+
+        self.assertNotIn(key, state['pending'])
+        self.assertEqual(state['snapshots'][key], {'sha': 'a1b2c3d4e5f6', 'base_sha': 'ffffffffffff'})
+        self.assertEqual(state['pending']['heads:example/project'], {'sha256': 'eeeeeeeeeeee'})
+
+    def test_every_source_pending_fits_with_520_full_length_heads(self):
+        # 2026-10-31: 510 tracked sources with 40-character SHAs overflowed the issue body.
+        observations, snapshots = {}, {}
+        for index in range(520):
+            key = f'branch:example/repository-{index % 24:02d}:feature/long-branch-name-{index:04d}'
+            snapshots[key] = {'branch': key.rsplit(':', 1)[1], 'sha': sha1(f'old-{index}'),
+                              'base_sha': sha1(f'base-{index}'), 'ahead': index, 'behind': index % 9,
+                              'status': 'diverged'}
+            observations[key] = dict(snapshots[key], sha=sha1(f'new-{index}'))
+
+        state = watch.reconcile({'snapshots': snapshots}, observations, [])
+
+        self.assertEqual(len(state['pending']), 520)
+        self.assertLess(len(watch.render(state).encode()), 65000)
 
 
 class PeopleWatchRetry(unittest.TestCase):
