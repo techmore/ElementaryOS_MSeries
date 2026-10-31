@@ -18,7 +18,15 @@ GPU runtime test. The ordinary upstream MLX graph appears to signal each event
 from its producer stream, so it is not established that the second path ran
 in the failed smoke.
 
-Neither change establishes recovery of the observed M4 GPU timeout. Review also
+Candidate `5276a4a7c9632457fd84223f52e70e397589425c` changes a fence wait
+to honor the requested generation instead of the latest one, with a host
+regression and a rebuilt CPU-disabled library. Candidate
+`1f2ba9efb443c8a21e6d5230d2350253b4dc2bb4` repairs the signal-loss test
+hook: it now submits work with signals stripped, rather than dropping the
+entire submission. A host regression verifies all three test-hook branches.
+Neither candidate has been exercised on a GPU or linked to this smoke's cause.
+
+None of these changes establishes recovery of the observed M4 GPU timeout. Review also
 identified unresolved ordering on a single timeline semaphore shared by CPU and
 queued GPU signals, and a retry that can replay a command buffer without proof
 its original submission retired. These need a complete synchronization and
