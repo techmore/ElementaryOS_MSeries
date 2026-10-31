@@ -24,6 +24,16 @@ The fetched `elementary/os` `main` reference on 2026-10-13 was
 `7024fd04646a6a8565bf6805989b59fd72de928c`. This is the comparison point for
 the OS 9 source audit; recheck the upstream branch before the next port.
 
+On 2026-10-31 `dev` merged `elementary/os` `main` up to
+`23d5b98b101e8e1d72cced853f46205c784aefd9` ("Use drivers directories instead
+of manual entries (#935)", 2026-10-25): 13 commits, including kmscon by
+default (#917), the `/var/run` and dpkg-database fixes (#925, #931, #933), the
+virt extension update (#920) and driver-directory initrd modules (#921, #935).
+Upstream deleted `tmpfiles.d/var.conf` so it no longer shadows systemd's file;
+our `/run/speech-dispatcher` entry moved to `tmpfiles.d/mseries-var.conf`. Our
+`sysusers.d/00-session.conf` keeps its M-series form (dbus.conf owns
+messagebus). See `mseries/upstream-audits/daily/2026-10-31.md`.
+
 ## Wingpanel network speed readout
 
 The Apple Silicon image builds `elementary/panel-network` at

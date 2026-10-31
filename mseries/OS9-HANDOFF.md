@@ -1,3 +1,7 @@
+## elementary/os upstream sync and repo housekeeping — 2026-10-31
+
+Merged `elementary/os` `main` into `dev` up to `23d5b98b10` (13 commits since the 2026-10-12 sync): kmscon by default, `/var/run` and dpkg-database fixes, virt extension update, driver-directory initrd modules, release-upgrader removal. Conflicts: kept our `sysusers.d/00-session.conf`; took upstream's deletion of `tmpfiles.d/var.conf` and moved our `/run/speech-dispatcher` line to `tmpfiles.d/mseries-var.conf`. Pins updated in `UPSTREAM-PINS.md`; details in `upstream-audits/daily/2026-10-31.md`. Verified: merge resolves cleanly; checks are the PR CI run (local `validate.sh` needs bash 4+, not on this Mac). Not verified: an image build with the new initrd module lists, kmscon, or any boot on the j314s. Found the upstream watch dashboard failing since 2026-10-28 (issue body over 65,536 characters with 510 sources); fixed separately. Next: CodexBar v0.78.0 -> v0.83.0 port bump; audit the omarchy-mac-pkgs DSP-microphone and initramfs backlight candidates.
+
 ## Warren local AI and eGPU updates — 2026-10-30
 
 Installed `mseries-nvidia-open-source` `595.112.07+apple.1-1` (SHA-256 `a397b68a...b209ab23`) containing the three prepared NVIDIA fixes and license at `/usr/src/mseries-nvidia-open-595.112.07`. This is source only; no NVIDIA module or matching CUDA userspace is installed. The [source package script](nvidia-egpu/package-source.sh) verifies the exact prepared diff before packaging.
