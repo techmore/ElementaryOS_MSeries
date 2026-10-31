@@ -1,0 +1,344 @@
+{
+ "child": {
+  "command": [
+   "/private/tmp/claude-501/bench/tfdl/tensorfold-1.1.9-macos-arm64/bin/tensorfold-native",
+   "serve",
+   "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-2B-MLX-4bit/snapshots/93760be4f1f69842a46bc13dbdc0f19e291392a3",
+   "--backend",
+   "mlx",
+   "--name",
+   "m4-mini-bench",
+   "--host",
+   "127.0.0.1",
+   "--port",
+   "56717",
+   "--context",
+   "2048",
+   "--parallel",
+   "1",
+   "--no-drafts",
+   "--no-thinking",
+   "--no-update-check"
+  ],
+  "engine": "tensorfold-metal",
+  "health": {
+   "backend": "metal",
+   "device": "Apple M4",
+   "live": {
+    "connections": 0,
+    "decode_tokens_per_second": 0.0,
+    "prefill_tokens_per_second": 0.0,
+    "waiting": 0
+   },
+   "max_batch_size": 1,
+   "memory": {
+    "active": 2749926088,
+    "cache": 0,
+    "peak": 2749926088
+   },
+   "model": "m4-mini-bench",
+   "model_ids": [
+    "m4-mini-bench"
+   ],
+   "status": "ok",
+   "version": "1.1.9",
+   "warming": false
+  },
+  "health_end": {
+   "backend": "metal",
+   "device": "Apple M4",
+   "live": {
+    "connections": 0,
+    "decode_tokens_per_second": 39.5,
+    "prefill_tokens_per_second": 0.0,
+    "waiting": 0
+   },
+   "max_batch_size": 1,
+   "memory": {
+    "active": 2759264968,
+    "cache": 0,
+    "peak": 2759264968
+   },
+   "model": "m4-mini-bench",
+   "model_ids": [
+    "m4-mini-bench"
+   ],
+   "status": "ok",
+   "version": "1.1.9",
+   "warming": false
+  },
+  "ignore_eos": true,
+  "load_s": 3.079,
+  "prompt_ids_sha256": "dca79144a40c1439caf032f798f5ed28fd1621944c364012c4f82c659c6f2dfe",
+  "runs": [
+   {
+    "cached_tokens": 0,
+    "decode_s": 2.906999125,
+    "drafts": false,
+    "finish_reason": "length",
+    "generated_ids_count": 128,
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 43.68766364867757,
+    "prefill_s": 0.736039875,
+    "prompt_tokens": 512,
+    "prompt_tps": 695.6144869189322,
+    "prompt_tps_from": "prefill_seconds",
+    "sampling": "greedy",
+    "server_token_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "ttft_s": 0.7405,
+    "wall_s": 3.648
+   },
+   {
+    "cached_tokens": 0,
+    "decode_s": 3.350722417,
+    "drafts": false,
+    "finish_reason": "length",
+    "generated_ids_count": 128,
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 37.90227425454921,
+    "prefill_s": 0.825708333,
+    "prompt_tokens": 512,
+    "prompt_tps": 620.0736743685012,
+    "prompt_tps_from": "prefill_seconds",
+    "sampling": "greedy",
+    "server_token_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "ttft_s": 0.8271,
+    "wall_s": 4.1812
+   },
+   {
+    "cached_tokens": 0,
+    "decode_s": 3.354299334,
+    "drafts": false,
+    "finish_reason": "length",
+    "generated_ids_count": 128,
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 37.8618564874926,
+    "prefill_s": 0.873040875,
+    "prompt_tokens": 512,
+    "prompt_tps": 586.4559319745481,
+    "prompt_tps_from": "prefill_seconds",
+    "sampling": "greedy",
+    "server_token_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "ttft_s": 0.8784,
+    "wall_s": 4.2368
+   },
+   {
+    "cached_tokens": 0,
+    "decode_s": 3.643026333,
+    "drafts": false,
+    "finish_reason": "length",
+    "generated_ids_count": 128,
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 34.86112599559955,
+    "prefill_s": 0.87498125,
+    "prompt_tokens": 512,
+    "prompt_tps": 585.1553961870611,
+    "prompt_tps_from": "prefill_seconds",
+    "sampling": "greedy",
+    "server_token_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "ttft_s": 0.88,
+    "wall_s": 4.5279
+   },
+   {
+    "cached_tokens": 0,
+    "decode_s": 3.266979958,
+    "drafts": false,
+    "finish_reason": "length",
+    "generated_ids_count": 128,
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 38.87382280659831,
+    "prefill_s": 0.874664834,
+    "prompt_tokens": 512,
+    "prompt_tps": 585.3670801631886,
+    "prompt_tps_from": "prefill_seconds",
+    "sampling": "greedy",
+    "server_token_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "ttft_s": 0.882,
+    "wall_s": 4.1544
+   }
+  ],
+  "server_log": "/var/folders/_9/nnc36lvs7vl189v7cl69586c0000gn/T/m4-mini-bench-tf-biwx0xoc/server.log",
+  "server_log_tail": [
+   "info: qwen3.5: 2.3 GiB kept wired between requests, inside 70% of 16 GiB of RAM",
+   "warning: memory pressure: warning: one more stream only when none runs, no new kept prompt states, the prompt cache sheds toward 0 MiB",
+   "[tensorfold] prompt chunks of up to 128 tokens, cut at replies 256+ tokens apart",
+   "[tensorfold] serving m4-mini-bench at http://127.0.0.1:56717/v1 (sampling: greedy; drafts: off; context: 2048; loaded in 2.5s)",
+   "[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -",
+   "[tensorfold] 127.0.0.1 \"POST /v1/tokenize HTTP/1.1\" 200 -",
+   "[tensorfold] done cmpl-96d09d62bd2aa81c13765c911fdf35d1 prompt=512 cached=0 thinking=False effort=none tokens=128 sha=1f20f523be2f finish=length rounds=127 accepted=0/0 ttft=0.869 decode=2.934 elapsed=3.803 queued=0.000 tok/s=43.3",
+   "[tensorfold] 127.0.0.1 \"POST /v1/completions HTTP/1.1\" 200 -",
+   "[tensorfold] done cmpl-de6aadb346a794c0f23098796b7bfe8d prompt=512 cached=0 thinking=False effort=none tokens=128 sha=1f20f523be2f finish=length rounds=127 accepted=0/0 ttft=0.741 decode=2.905 elapsed=3.645 queued=0.000 tok/s=43.7",
+   "[tensorfold] 127.0.0.1 \"POST /v1/completions HTTP/1.1\" 200 -",
+   "[tensorfold] done cmpl-6d26da7e142613801f2d78a77d54eeb7 prompt=512 cached=0 thinking=False effort=none tokens=128 sha=1f20f523be2f finish=length rounds=127 accepted=0/0 ttft=0.827 decode=3.350 elapsed=4.178 queued=0.000 tok/s=37.9",
+   "[tensorfold] 127.0.0.1 \"POST /v1/completions HTTP/1.1\" 200 -",
+   "[tensorfold] done cmpl-9b6077a6d7aec84c732896c8bd37a3b6 prompt=512 cached=0 thinking=False effort=none tokens=128 sha=1f20f523be2f finish=length rounds=127 accepted=0/0 ttft=0.878 decode=3.352 elapsed=4.231 queued=0.002 tok/s=37.9",
+   "[tensorfold] 127.0.0.1 \"POST /v1/completions HTTP/1.1\" 200 -",
+   "[tensorfold] done cmpl-0dfb71d7e3f31a7869d3345f724af9d8 prompt=512 cached=0 thinking=False effort=none tokens=128 sha=1f20f523be2f finish=length rounds=127 accepted=0/0 ttft=0.880 decode=3.642 elapsed=4.522 queued=0.000 tok/s=34.9",
+   "[tensorfold] 127.0.0.1 \"POST /v1/completions HTTP/1.1\" 200 -",
+   "[tensorfold] done cmpl-345ab3ed3252d04e26679671e7cd2bb7 prompt=512 cached=0 thinking=False effort=none tokens=128 sha=1f20f523be2f finish=length rounds=127 accepted=0/0 ttft=0.882 decode=3.266 elapsed=4.148 queued=0.001 tok/s=38.9",
+   "[tensorfold] 127.0.0.1 \"POST /v1/completions HTTP/1.1\" 200 -",
+   "[tensorfold] 127.0.0.1 \"GET /health HTTP/1.1\" 200 -",
+   "[tensorfold] shutting down (SIGTERM): draining: new requests get 503; 0 request(s) in progress may finish within 20.0 s",
+   "[tensorfold] shutting down: drained",
+   "[tensorfold] shutting down: stopped"
+  ],
+  "server_returncode": 0,
+  "warmup": [
+   {
+    "cached_tokens": 0,
+    "decode_s": 2.932855042,
+    "drafts": false,
+    "finish_reason": "length",
+    "generated_ids_count": 128,
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 43.3025151878611,
+    "prefill_s": 0.868073875,
+    "prompt_tokens": 512,
+    "prompt_tps": 589.8115526169936,
+    "prompt_tps_from": "prefill_seconds",
+    "sampling": "greedy",
+    "server_token_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "ttft_s": 0.8694,
+    "wall_s": 3.8101
+   }
+  ]
+ },
+ "command": [
+  "/private/tmp/claude-501/bench/venv/bin/python",
+  "scripts/m4_mini_bench.py",
+  "--engine",
+  "tensorfold",
+  "--model-dir",
+  "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-2B-MLX-4bit/snapshots/93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "--tensorfold-bin",
+  "/private/tmp/claude-501/bench/tfdl/tensorfold-1.1.9-macos-arm64/bin/tensorfold-native",
+  "--out",
+  "/private/tmp/claude-501/bench/os/mseries/local-ai/receipts/2026-10-31-m4-mini-macos/m4-mini-bench-macos-tensorfold-qwen3.5-2b.json"
+ ],
+ "engine_identity": {
+  "binary": "/private/tmp/claude-501/bench/tfdl/tensorfold-1.1.9-macos-arm64/bin/tensorfold-native",
+  "binary_sha256": "4b4b5a5ac152eb2dbed7e9d8004805ed9b74f77c64c3de18eb4f35263c7b9eb8",
+  "engine": "tensorfold-metal",
+  "pinned": true,
+  "release": "1.1.9",
+  "release_url": "https://github.com/ashhart/TensorFold/releases/download/v1.1.9/tensorfold-1.1.9-macos-arm64.tar.gz"
+ },
+ "exit_code": 0,
+ "fixed": {
+  "engine": "tensorfold-metal",
+  "generation_tokens": 128,
+  "model": "qwen3.5-2b",
+  "model_file_sha256": {
+   "chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+   "config.json": "beb7fc5a6e0405fe332821cf1a8ef7b69bb390a8c8933171647de5579debf949",
+   "model.safetensors": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+   "tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4",
+   "tokenizer_config.json": "e98f1901ac6f0adff67b1d540bfa0c36ac1a0cf59eb72ed78146ef89aafa1182"
+  },
+  "model_repo": "mlx-community/Qwen3.5-2B-MLX-4bit",
+  "model_revision": "93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "prompt_tokens": 512,
+  "runs": 5,
+  "sampler": "greedy (temperature 0), ignore_eos",
+  "warmup": 1
+ },
+ "host": {
+  "env": {},
+  "load_avg_end": [
+   18.27099609375,
+   19.4140625,
+   17.8037109375
+  ],
+  "load_avg_start": [
+   19.751953125,
+   19.76123046875,
+   17.86474609375
+  ],
+  "machine": "arm64",
+  "macos": {
+   "gpu": [
+    {
+     "spdisplays_mtlgpufamilysupport": "spdisplays_metal4",
+     "sppci_cores": "10",
+     "sppci_model": "Apple M4"
+    }
+   ],
+   "hw.memsize": "17179869184",
+   "hw.model": "Mac16,10",
+   "kern.osversion": "26A5421a",
+   "machdep.cpu.brand_string": "Apple M4",
+   "pmset": [
+    "lowpowermode         0"
+   ],
+   "sw_vers": {
+    "BuildVersion": "26A5421a",
+    "ProductName": "macOS",
+    "ProductVersion": "27.0"
+   }
+  },
+  "python": "3.14.3",
+  "quiet": false,
+  "system": "Darwin",
+  "utc_end": "2026-10-31T15:51:41Z",
+  "utc_start": "2026-10-31T15:51:11Z"
+ },
+ "schema": "m4-mini-bench/2",
+ "script": {
+  "git_commit": "1690652a0de099ef1fc6120c54c7f92ff39a84c0",
+  "git_dirty": false,
+  "path": "/private/tmp/claude-501/bench/omarchy-mlx/scripts/m4_mini_bench.py",
+  "sha256": "8258e71cee62b80fe516670a8b14cc770badbc35af77923d34386d2ea7a03e61"
+ },
+ "summary": {
+  "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+  "generation_tps": {
+   "max": 43.688,
+   "median": 37.902,
+   "min": 34.861,
+   "n": 5,
+   "spread": 0.2329,
+   "values": [
+    43.688,
+    37.902,
+    37.862,
+    34.861,
+    38.874
+   ]
+  },
+  "peak_memory_gb": 2.759,
+  "prompt_tps": {
+   "max": 695.614,
+   "median": 586.456,
+   "min": 585.155,
+   "n": 5,
+   "spread": 0.1884,
+   "values": [
+    695.614,
+    620.074,
+    586.456,
+    585.155,
+    585.367
+   ]
+  },
+  "ttft_s": {
+   "max": 0.882,
+   "median": 0.878,
+   "min": 0.741,
+   "n": 5,
+   "spread": 0.1611,
+   "values": [
+    0.741,
+    0.827,
+    0.878,
+    0.88,
+    0.882
+   ]
+  }
+ }
+}

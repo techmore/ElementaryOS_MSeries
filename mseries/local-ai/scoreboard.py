@@ -5,6 +5,8 @@ Reads receipts/*engine-compare-*.json (engine-compare.py), receipts/*mlx-gate-sw
 (mlx-gate.py) and scoreboard-notes.json (rows measured elsewhere or reported by others),
 then writes engine-scoreboard.csv and ENGINE-SCOREBOARD.md next to this script.
 The newest receipt wins for each (model, engine, length). Run it after every new receipt.
+Other machines (MACHINES) keep their receipts in their own folder and get their own CSV, chart and
+section; they are never ranked against the M1 Pro table.
 """
 import csv, json, statistics
 from pathlib import Path
@@ -20,7 +22,14 @@ ARM_SETTINGS = {
     'serve-single-120k': ('experiment: serve-nolp-120k + Rapid-MLX singleton module loaded from its checkout', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'serve-patched-120k': ('mlx-omarchy-serve + our four server patches + batching of 4 (HTTP server; runs the everyday model)', 'MLX_OMARCHY_BATCH_WORK=120000', None),
     'tensorfold': ('TensorFold Vulkan (HTTP server)', 'serve --backend vulkan --context 1024 --no-thinking', None),
+    'mlx-metal': ('MLX on Metal (upstream mlx, in-process)', 'mlx {mlx} · mlx-lm {mlx_lm}', None),
+    'lm-metal': ('mlx_lm.server, stock (HTTP server)', 'mlx {mlx} · mlx-lm {mlx_lm}', None),
+    'tensorfold-metal': ('TensorFold Metal v1.1.9 release (HTTP server)', 'serve --backend mlx --context 1024 --no-thinking --no-drafts', None),
 }
+REFERENCE_ARMS = ('mlx-5k', 'mlx-metal')  # "same output" is checked against the in-process MLX default
+# (key, short name, title, receipts folder): machines measured apart from the M1 Pro, each with its own CSV and chart.
+MACHINES = [('m4-mini-macos', 'Mac mini M4, macOS (Metal)',
+             'Mac mini M4 (Mac16,10, 10-core GPU, 16 GB), macOS 27.0 26A5421a, Metal', RECEIPTS / '2026-10-31-m4-mini-macos')]
 # Receipts record the TensorFold revision they ran; name the PR it came from.
 TF_PRS = {'670902196c47f3e70e3f56ab933805713be31aa8': 'PR 1517', '92bb49db5c313c105cbf4b44638d1e1896615174': 'PR 1544'}
 MODEL_NAMES = {'qwen2b': 'Qwen3.5-2B MLX 4-bit', 'qwen4b': 'Qwen3.5-4B MLX 4-bit', 'lfm3': 'LFM3-1.7B MLX 8-bit',
@@ -53,7 +62,8 @@ def gate_results():
 SHORT = {'mlx-5k': 'MLX in-process, default', 'mlx-120k': 'MLX in-process, tuned',
          'rapid-120k': 'Rapid-MLX server', 'serve-120k': 'Upstream server, stock',
          'serve-nolp-120k': 'Upstream server + logprob patch', 'serve-single-120k': 'Upstream + singleton (trial)',
-         'serve-patched-120k': 'Upstream server, patched (ships)', 'tensorfold': 'TensorFold Vulkan'}
+         'serve-patched-120k': 'Upstream server, patched (ships)', 'tensorfold': 'TensorFold Vulkan',
+         'mlx-metal': 'MLX in-process, Metal', 'lm-metal': 'mlx_lm.server, Metal', 'tensorfold-metal': 'TensorFold Metal'}
 REPLY_TOKENS = 200
 
 
@@ -65,10 +75,33 @@ def reply_s(x):
     return x['ttft_s'] + REPLY_TOKENS / per
 
 
-def measured_rows():
+def m1_reference_texts():
+    """(model, tokens, load) -> (text, receipt) of the M1 Pro's newest reference output, so another machine's
+    rows can say whether they produce the same greedy text as the M1 Pro under Linux."""
+    out = {}
+    for f in sorted(RECEIPTS.glob('*engine-compare-*.json'), key=lambda f: f.stem):
+        r = json.loads(f.read_text())
+        if r.get('status') != 'complete':
+            continue
+        texts = [x['text'] for x in r['runs'] if x['arm'] == 'mlx-5k' and 'text' in x]
+        every = {x['text'] for x in r['runs'] if 'text' in x}
+        if texts or len(every) == 1:
+            out[(r.get('model_key', 'qwen2b'), r['max_tokens'], r.get('concurrency', 1))] = ((texts or list(every))[0], f.name)
+    return out
+
+
+def diverges(ref, text):
+    if ref == text:
+        return 'yes'
+    i = next((i for i, (u, v) in enumerate(zip(ref, text)) if u != v), min(len(ref), len(text)))
+    return f'no: diverges after {i} of {len(ref)} chars'
+
+
+def measured_rows(receipts=RECEIPTS):
     gates = gate_results()
+    m1 = m1_reference_texts() if receipts != RECEIPTS else {}
     latest = {}
-    for f in sorted(RECEIPTS.glob('*engine-compare-*.json'), key=lambda f: f.stem):  # stem: '-round2' sorts after its base
+    for f in sorted(receipts.glob('*engine-compare-*.json'), key=lambda f: f.stem):  # stem: '-round2' sorts after its base
         r = json.loads(f.read_text())
         if r.get('status') != 'complete':
             continue
@@ -83,8 +116,9 @@ def measured_rows():
         if not ok:
             continue
         texts = {x['text_sha256'] for x in ok}
-        base = {x['text_sha256'] for x in r['runs'] if x['arm'] == 'mlx-5k' and 'text_sha256' in x}
-        if arm == 'mlx-5k':
+        ref = next((a for a in REFERENCE_ARMS if a in r['arms']), 'mlx-5k')
+        base = {x['text_sha256'] for x in r['runs'] if x['arm'] == ref and 'text_sha256' in x}
+        if arm == ref:
             same = 'reference'
         elif not base:
             every = {x['text_sha256'] for x in r['runs'] if 'text_sha256' in x}
@@ -92,11 +126,9 @@ def measured_rows():
         elif texts == base:
             same = 'yes'
         else:
-            mt = next(x['text'] for x in r['runs'] if x['arm'] == 'mlx-5k' and 'text' in x)
-            at = ok[0]['text']
-            i = next((i for i, (u, v) in enumerate(zip(mt, at)) if u != v), min(len(mt), len(at)))
-            same = f'no: diverges after {i} of {len(mt)} chars'
+            same = diverges(next(x['text'] for x in r['runs'] if x['arm'] == ref and 'text' in x), ok[0]['text'])
         engine, settings, gate_key = ARM_SETTINGS[arm]
+        settings = settings.format(**r.get('runtime', {}))
         if arm == 'tensorfold':
             rev = r.get('tensorfold_rev', '')
             engine = engine.replace('Vulkan', 'Vulkan ' + TF_PRS.get(rev, rev[:10] or 'unknown rev'))
@@ -110,7 +142,10 @@ def measured_rows():
             'same_output': same if len(texts) == 1 else f'{same}; {len(texts)} variants across its own runs',
             'gate': gate or 'not gated', 'kernel': r.get('kernel', ''),
             'driver': drv, 'date': f.name[:10],
-            'status': 'measured here', 'source': f'receipts/{f.name}', '_model': model, '_conc': conc, '_arm': arm})
+            'status': 'measured here', 'source': str(f.relative_to(HERE)), '_model': model, '_conc': conc, '_arm': arm})
+        if m1:
+            m1ref = m1.get((model, tokens, conc))
+            rows[-1]['same_as_m1'] = diverges(m1ref[0], ok[0]['text']) if m1ref else 'n/a (not run on the M1 Pro)'
     # Most functional per model, length and load: the shortest typical reply (first token plus
     # REPLY_TOKENS at its streaming speed) among rows whose output matched and whose gate did not fail.
     for key in {(x['_model'], x['tokens'], x['_conc']) for x in rows}:
@@ -121,7 +156,7 @@ def measured_rows():
     return rows
 
 
-def chart(rows):
+def chart(rows, machine='Apple M1 Pro'):
     """Small multiples, no plotting deps: per (model, length, load) block, one row per engine and three
     panels on their own scales - first token (lower is better), streaming speed (higher is better) and the
     wait for a typical reply. Two measures never share an axis. Blue is the best value in its panel;
@@ -178,8 +213,76 @@ def chart(rows):
              '@media (prefers-color-scheme:dark){svg{background:#1a1a19}text{fill:#f0efec}.a,.v{fill:#c3c2b7}'
              '.bar{fill:#6b6a64}.best{fill:#3987e5}.axis{stroke:#52514e}}</style>')
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{y}" viewBox="0 0 {w} {y}">'
-            f'<title>First token, streaming speed and reply time by engine on Apple M1 Pro</title>'
+            f'<title>First token, streaming speed and reply time by engine on {machine}</title>'
             f'<rect width="100%" height="100%" class="bg" fill="none"/>{style}{"".join(parts)}</svg>\n')
+
+
+M4_LINUX_NOTE = [
+    '', '### How to run the same on Linux on the M4 mini', '',
+    'Same machine, same work, so the two tables compare row for row:', '',
+    '1. Boot the mini into Linux (Aurora kernel, vulkan-aurora Honeykrisp) and install `omarchy-mlx`, '
+    '`omarchy-mlx-vulkan-aurora` and `omarchy-mlx-m4-bench` from techmore/omarchy-mlx branch `m4-mini-bench` '
+    '(its `docs/m4-mini-bench.md`), plus `tensorfold-vulkan` (PR 1544, `b3ab9ba2`) for the TensorFold rows.',
+    '2. Fetch the four checkpoints into the Hugging Face cache at the revisions above (engine-compare refuses other '
+    'weights) and the pinned `lfm3.py` (mlx-lm PR 2016 head `9027ac5b`).',
+    '3. Run the commands below with `MSERIES_HF_SNAPSHOTS=1 MSERIES_MLX_PY=/usr/lib/omarchy-mlx/venv/bin/python '
+    'MSERIES_HK_ICD=<vulkan-aurora ICD json> MSERIES_TF_VULKAN_BIN=<tensorfold-vulkan server> MSERIES_LFM3_MODULE=<lfm3.py>` '
+    'and `--arms mlx-5k,mlx-120k,lm031-120k,tensorfold` (in-process pairs with `mlx-metal`, plain `mlx_lm.server` 0.31.3 '
+    'with `lm-metal`, TensorFold Vulkan with `tensorfold-metal`). Write receipts to `receipts/<date>-m4-mini-linux/`, '
+    'add that folder to `MACHINES` in `scoreboard.py` and rerun it.',
+    '4. For the release-gate speed number, run `omarchy-mlx-m4-bench` on Linux (also `--engine tensorfold` and '
+    '`--model qwen3.5-2b`) and `scripts/m4_mini_bench.py` on macOS with this venv (mlx 0.32.3, mlx-lm 0.31.3, '
+    'transformers 5.16.1, the pins that bench names), then `m4_mini_bench.py --compare`.',
+    '5. Record the load: this macOS baseline ran beside a busy build VM (see the receipts README). Quote Linux/macOS '
+    'ratios only from runs with comparable load, or re-run both quiet.', '',
+    '```bash',
+    'cd mseries/local-ai',
+    '# macOS (this table): python 3.14 venv with mlx==0.32.3 mlx-lm==0.31.3 transformers==5.16.1',
+    'HF_HUB_CACHE=... MSERIES_TF_BIN=.../tensorfold-1.1.9-macos-arm64/bin/tensorfold-native \\',
+    '  $VENV/bin/python engine-compare.py --model qwen2b --reserve-gib 1   # --long; --concurrency 4 / 8',
+    '# Linux on the same mini',
+    'MSERIES_HF_SNAPSHOTS=1 MSERIES_MLX_PY=/usr/lib/omarchy-mlx/venv/bin/python ... \\',
+    '  python3 engine-compare.py --model qwen2b --arms mlx-5k,mlx-120k,lm031-120k,tensorfold',
+    '```']
+
+
+def machine_section(key, short, title, folder):
+    """Another machine's own CSV, chart and table; ★ ranks only within that machine."""
+    rows = measured_rows(folder)
+    with (HERE / f'engine-scoreboard-{key}.csv').open('w', newline='') as fh:
+        w = csv.DictWriter(fh, fieldnames=['machine'] + FIELDS + ['same_as_m1'], extrasaction='ignore')
+        w.writeheader()
+        for x in rows:
+            w.writerow({'machine': title, **{k: (fmt(v) if isinstance(v, float) else v) for k, v in x.items()}})
+    (HERE / f'engine-scoreboard-{key}.svg').write_text(chart(rows, short))
+    md = ['', f'## {title}', '',
+          f'Measured with the same `engine-compare.py`, models, revisions, prompts, token counts, loads and three rotated '
+          f'rounds, receipts in [`{folder.relative_to(HERE)}/`]({folder.relative_to(HERE)}/). A separate machine, so '
+          f'never ranked against the M1 Pro table; ★ ranks within this machine only. CSV: '
+          f'[`engine-scoreboard-{key}.csv`](engine-scoreboard-{key}.csv).', '',
+          f'![First token, streaming speed and typical reply time on the {short}](engine-scoreboard-{key}.svg)', '',
+          '| ★ | Model | Engine | Settings | Tokens | Decode tok/s | TTFT s | Total s | Runs | Same output as MLX default | '
+          'Same output as M1 Pro (Linux) | OS | Date | Receipt |',
+          '|---|---|---|---|---:|---:|---:|---:|---:|---|---|---|---|---|']
+    for x in sorted(rows, key=lambda x: (x['_model'], x['tokens'], x['_conc'], -(x['decode_tok_s'] or 0))):
+        b = '**' if x.get('best') else ''
+        md.append(f"| {x.get('best', '')} | {x['model']} | {b}{x['engine']}{b} | `{x['settings']}` | {x['tokens']} | "
+                  f"{b}{fmt(x['decode_tok_s'])}{b} | {fmt(x['ttft_s'])} | {fmt(x['total_s'])} | {x['runs']} | {x['same_output']} | "
+                  f"{x['same_as_m1']} | {x['kernel']} | {x['date']} | [{Path(x['source']).name}]({x['source']}) |")
+    for f in sorted(folder.glob('*engine-compare-*.json')):  # arms that never finished get no row; say so
+        r = json.loads(f.read_text())
+        for arm in r['arms']:
+            runs = [x for x in r['runs'] if x['arm'] == arm]
+            if runs and all(x.get('error') or x.get('stopped') for x in runs):
+                md.append(f"\nNot in the table: {SHORT.get(arm, arm)}, {MODEL_NAMES.get(r['model_key'], r['model_key'])}, "
+                          f"{r['max_tokens']} tokens, {r.get('concurrency', 1)} requests at once: all {len(runs)} runs failed "
+                          f"(`{runs[0].get('error') or runs[0].get('stopped')}`; [{f.name}]({f.relative_to(HERE)})).")
+    if key.startswith('m4-mini'):
+        md += M4_LINUX_NOTE
+    notes = folder / 'README.md'
+    if notes.exists():
+        md += ['', f'Conditions, versions and the Linux run that pairs with it: [`{notes.relative_to(HERE)}`]({notes.relative_to(HERE)}).']
+    return md
 
 
 def main():
@@ -210,6 +313,8 @@ def main():
         md.append(f"| {x.get('best', '')} | {x['model']} | {b}{x['engine']}{b} | `{x['settings']}` | {x['tokens']} | "
                   f"{b}{fmt(x['decode_tok_s'])}{b} | {fmt(x['ttft_s'])} | {fmt(x['total_s'])} | {x['runs']} | {x['same_output']} | "
                   f"{x['gate']} | `{x['kernel']}` | {x['driver']} | {x['date']} | [{Path(x['source']).name}]({x['source'].replace('receipts/', 'receipts/')}) |")
+    for machine in MACHINES:
+        md += machine_section(*machine)
     md += ['', '## Watched or reported elsewhere (not comparable to the table above)', '',
            '| Model | Engine | Settings | Decode | Status | Blocker | Source |', '|---|---|---|---|---|---|---|']
     for n in notes:

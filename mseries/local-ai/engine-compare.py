@@ -20,12 +20,18 @@ Arms (each a fresh process: load, one warmup on the same prompt, one measured re
   omlx-120k   oMLX (jundot/omlx) as omarchy-mlx packages it for Linux (packaging/omlx-linux), its own
               venv on the mlx-lm 0.32 line, at the 120,000 budget; skipped when not installed
 
+On macOS (Apple-native baseline; run with the venv's python, see ENGINE-SCOREBOARD.md):
+  mlx-metal   upstream MLX on Metal, in-process, same worker as the mlx-* arms (no submit budget)
+  lm-metal    plain `python -m mlx_lm.server` from that venv, none of our patches
+  tensorfold-metal  TensorFold's v1.1.9 macOS release, `--backend mlx` (Metal), --no-drafts
+Models come from the Hugging Face cache ($HF_HUB_CACHE) at the same pinned revisions.
+
 All four use the same weights, chat prompt, greedy decoding and token limit,
 the shared worker lock, the 6 GiB desktop reserve and the 80 C limit. MLX arms
 time in-process; server arms time a streamed loopback HTTP request. Those
 boundaries differ, so compare servers with servers and MLX with MLX first.
 """
-import argparse, fcntl, hashlib, json, os, signal, socket, subprocess, sys, tempfile, threading, time
+import argparse, fcntl, hashlib, json, os, platform, signal, socket, subprocess, sys, tempfile, threading, time
 import urllib.request, urllib.error
 from pathlib import Path
 
@@ -53,19 +59,34 @@ MODELS = {
                   'mlx-community/granite-4.0-1b-4bit@29f108a4e2ff99079a173004871604c2f1e12c1f', 3.5,
                   HOME / '.local/share/mlx-omarchy/venv/bin/python', ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-patched-120k')),
 }
+MACOS = sys.platform == 'darwin'
+MAC_ARMS = {'qwen2b': ('mlx-metal', 'lm-metal', 'tensorfold-metal'), 'qwen4b': ('mlx-metal', 'lm-metal'),
+            'lfm3': ('mlx-metal',), 'granite1b': ('mlx-metal', 'lm-metal')}
+# Another machine (the M4 mini, either OS) reads every model from the Hugging Face cache at the pinned
+# revision instead of this M1 Pro's folders; MSERIES_MLX_PY names the venv (macOS: the one running this).
+if MACOS or os.environ.get('MSERIES_HF_SNAPSHOTS'):
+    HF_HUB = Path(os.environ.get('HF_HUB_CACHE') or HOME / '.cache/huggingface/hub')
+    for _k, (_d, _sha, _id, _gib, _py, _arms) in list(MODELS.items()):
+        _repo, _rev = _id.split('@')
+        MODELS[_k] = (HF_HUB / f"models--{_repo.replace('/', '--')}" / 'snapshots' / _rev, _sha, _id, _gib,
+                      Path(os.environ.get('MSERIES_MLX_PY') or (sys.executable if MACOS else _py)),
+                      MAC_ARMS[_k] if MACOS else _arms)
 MODEL, WEIGHTS_SHA, MODEL_ID, ALLOWANCE_GIB, MLX_PY, MODEL_ARMS = MODELS['qwen2b']
 # MSERIES_HK_ICD selects a candidate driver built by honeykrisp-candidate.sh.
 ICD = Path(os.environ.get('MSERIES_HK_ICD') or HOME / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json')
 DRIVER = (ICD.parent / 'mesa-git-sha').read_text().strip() if (ICD.parent / 'mesa-git-sha').exists() else 'unknown'
 RAPID_PATH = f"{HOME}/.cache/mseries-metal2vk/rapid-python:{HOME}/.cache/mseries-metal2vk/rapid-src"
 RAPID_REV = '1d09cdb684bbf58fac130f5804b08ee2e1f56558'
-TF_BIN = Path('/usr/libexec/mseries/tensorfold-native-vulkan')
+TF_BIN = Path(os.environ.get('MSERIES_TF_VULKAN_BIN') or '/usr/libexec/mseries/tensorfold-native-vulkan')
 TF_REV = 'b3ab9ba217a80c63fcc48f7643ddfe339a8f4bdc'  # PR 1544; receipts record the rev they ran
+# macOS: the release omarchy-mlx's m4-mini-bench pins (tensorfold-1.1.9-macos-arm64.tar.gz, sha256 f8330102...a9d7).
+TF_METAL_BIN = Path(os.environ.get('MSERIES_TF_BIN') or HOME / '.cache/m4-mini-bench/tensorfold-1.1.9-macos-arm64/bin/tensorfold-native')
+TF_METAL_SHA = '4b4b5a5ac152eb2dbed7e9d8004805ed9b74f77c64c3de18eb4f35263c7b9eb8'
 PROMPT = 'Explain in plain language how a rainbow forms. Give four distinct sentences.'
 LONG_PROMPT = ('Explain in detail how a rainbow forms, including refraction, reflection, color '
                'and viewing angle. Write at least 350 words.')
 ARMS = ('mlx-5k', 'mlx-120k', 'rapid-120k', 'serve-120k', 'serve-nolp-120k', 'serve-patched-120k', 'tensorfold', 'omlx-120k',
-        'lm031-120k', 'lm032-120k', 'lm031-patched-120k', 'lm032-patched-120k')
+        'lm031-120k', 'lm032-120k', 'lm031-patched-120k', 'lm032-patched-120k', 'mlx-metal', 'lm-metal', 'tensorfold-metal')
 # omarchy-mlx's packaging/omlx-linux/install.sh --home target; its venv holds the omlx command.
 OMLX_HOME = Path(os.environ.get('MSERIES_OMLX_HOME') or HOME / '.local/share/omlx-linux')
 OMLX_BIN = OMLX_HOME / '.venvs/omlx/bin/omlx'
@@ -92,7 +113,7 @@ def mlx_worker(prompt_text, max_tokens, output):
         # mlx-lm 0.31.3 has no LFM3; load the pinned model file from mlx-lm PR 2016
         # (head 9027ac5b), as the 2026-10-27 LFM3 smoke test did.
         import hashlib as _h, importlib.util as _u
-        f = HOME / '.local/share/mseries-ai/runtime/lfm3.py'
+        f = Path(os.environ.get('MSERIES_LFM3_MODULE') or HOME / '.local/share/mseries-ai/runtime/lfm3.py')
         if _h.sha256(f.read_bytes()).hexdigest() != LFM3_MODULE_SHA:
             raise SystemExit('unexpected lfm3.py')
         spec = _u.spec_from_file_location('mlx_lm.models.lfm3', f)
@@ -181,8 +202,8 @@ def concurrent_chat(port, prompt_text, max_tokens, model):
 
 
 def server_command(arm, port, tmp):
-    if arm.startswith(('lm031-', 'lm032-')):
-        py = MLX_PY if arm.startswith('lm031-') else OMLX_PY
+    if arm.startswith(('lm031-', 'lm032-')) or arm == 'lm-metal':
+        py = OMLX_PY if arm.startswith('lm032-') else MLX_PY
         return [str(py), '-m', 'mlx_lm.server', '--model', str(MODEL), '--host', '127.0.0.1', '--port', str(port)]
     if arm == 'omlx-120k':
         # oMLX serves every model folder under --model-dir; give it just this one, and keep its
@@ -200,6 +221,9 @@ def server_command(arm, port, tmp):
     if arm == 'tensorfold':
         return [str(TF_BIN), 'serve', str(MODEL), '--backend', 'vulkan', '--host', '127.0.0.1',
                 '--port', str(port), '--context', '1024', '--no-thinking', '--no-update-check']
+    if arm == 'tensorfold-metal':  # the Vulkan build has no drafter; switch the release's off to match
+        return [str(TF_METAL_BIN), 'serve', str(MODEL), '--backend', 'mlx', '--host', '127.0.0.1',
+                '--port', str(port), '--context', '1024', '--no-thinking', '--no-drafts', '--no-update-check']
     return [str(MLX_PY), '-m', 'rapid_mlx.server', '--model', str(MODEL), '--no-mllm',
             '--host', '127.0.0.1', '--port', str(port)]
 
@@ -219,7 +243,10 @@ SERVE_CONCURRENCY = os.environ.get('MSERIES_SERVE_CONCURRENCY', '4')  # what mod
 
 def env_for(arm, tmp):
     env = {k: v for k, v in os.environ.items() if not k.startswith('MLX_OMARCHY_')}
-    env.update(VK_DRIVER_FILES=str(ICD), HF_HUB_OFFLINE='1', OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2')
+    env.update(HF_HUB_OFFLINE='1', OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2')
+    if MACOS:
+        return env
+    env['VK_DRIVER_FILES'] = str(ICD)
     if arm != 'tensorfold':
         env['MLX_OMARCHY_BATCH_WORK'] = '5000' if arm == 'mlx-5k' else '120000'
     if arm in ('serve-nolp-120k', 'serve-patched-120k'):
@@ -292,7 +319,8 @@ def run_arm(arm, prompt_text, max_tokens, tmp):
             s = snapshot()
             samples.append({'t': round(time.monotonic() - started, 2), 'available_gib': round(s['available_bytes'] / GIB, 3),
                             'max_temp_c': max(s['temperatures_c'].values(), default=0),
-                            'max_fan_rpm': max(s['fans_rpm'].values(), default=0)})
+                            'max_fan_rpm': max(s['fans_rpm'].values(), default=0)}
+                           | ({'load_avg': s['load_avg']} if MACOS else {}))
             reasons = violations(s, POLICY); bad = bad + 1 if reasons else 0
             if bad >= 3 or time.monotonic() - started > DEADLINE_S:
                 stopped = reasons or ['deadline']; break
@@ -355,6 +383,8 @@ def main():
     p.add_argument('--concurrency', type=int, default=1, help='server arms only: requests at once')
     p.add_argument('--arms', default=','.join(ARMS))
     p.add_argument('--admission-wait-seconds', type=int, default=0)
+    p.add_argument('--reserve-gib', type=float, default=POLICY['reserve_gib'],
+                   help='memory kept free for the desktop (and, on the M4 mini, its build VM); recorded')
     p.add_argument('--output', type=Path)
     a = p.parse_args()
     global MODEL_NAME, CONCURRENCY
@@ -368,6 +398,7 @@ def main():
         p.error(f'no runnable arms for {a.model}; it supports {",".join(MODEL_ARMS)}')
     prompt_text, max_tokens = (LONG_PROMPT, 256) if a.long else (PROMPT, a.max_tokens)
     global DEADLINE_S
+    POLICY['reserve_gib'] = a.reserve_gib
     if a.long:
         DEADLINE_S = 600  # TensorFold's unbatched decode needs ~100 s per 256-token request
     with (MODEL / 'model.safetensors').open('rb') as f:
@@ -385,16 +416,28 @@ def main():
         arms.remove('omlx-120k')
     if 'tensorfold' in arms and not TF_BIN.exists():
         raise SystemExit('TensorFold server missing: build and install the mseries-tensorfold-vulkan package')
+    if 'tensorfold-metal' in arms and (not TF_METAL_BIN.exists() or hashlib.sha256(TF_METAL_BIN.read_bytes()).hexdigest() != TF_METAL_SHA):
+        raise SystemExit(f'{TF_METAL_BIN} is not the pinned TensorFold 1.1.9 macOS binary (set MSERIES_TF_BIN)')
     out = a.output or Path(__file__).resolve().parent / 'receipts' / (
         f"{time.strftime('%Y-%m-%d')}-engine-compare-{a.model}-{'long' if a.long else 'short'}"
-        + ('' if DRIVER == '7faf04c065' else f'-hk{DRIVER}') + (f'-c{CONCURRENCY}' if CONCURRENCY > 1 else '')
+        + ('-metal' if MACOS else '' if DRIVER == '7faf04c065' else f'-hk{DRIVER}') + (f'-c{CONCURRENCY}' if CONCURRENCY > 1 else '')
         + ('' if tuple(arms) == tuple(x for x in MODEL_ARMS if not x.startswith('serve-')) else '-' + '+'.join(arms)) + '.json')
+    (HOME / '.local/state/mseries-ai').mkdir(parents=True, exist_ok=True)
     lock = (HOME / '.local/state/mseries-ai/worker.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     report = {'status': 'running', 'model_key': a.model, 'model': MODEL_ID, 'weights_sha256': WEIGHTS_SHA, 'kernel': os.uname().release, 'driver': 'Honeykrisp Mesa ' + DRIVER,
               'tensorfold_rev': TF_REV, 'rapid_rev': RAPID_REV, 'serve_concurrency': int(SERVE_CONCURRENCY), 'prompt_sha256': hashlib.sha256(prompt_text.encode()).hexdigest(),
               'max_tokens': max_tokens, 'policy': {**POLICY, 'max_fan_rpm': None}, 'allowance_gib': ALLOWANCE_GIB,
               'arms': arms, 'concurrency': CONCURRENCY, 'runs': []}
+    if MACOS:
+        from machine import host_info
+        versions = subprocess.run([str(MLX_PY), '-c', 'import json, platform, mlx.core as mx, mlx_lm, transformers; print(json.dumps('
+                                   '{"mlx": mx.__version__, "mlx_lm": mlx_lm.__version__, "transformers": transformers.__version__, '
+                                   '"python": platform.python_version(), "device": mx.device_info()}))'],
+                                  capture_output=True, text=True, check=True).stdout
+        report.update(kernel=f"macOS {platform.mac_ver()[0]} ({subprocess.run(['sw_vers', '-buildVersion'], capture_output=True, text=True).stdout.strip()})",
+                      driver='Metal', runtime=json.loads(versions), tensorfold_rev='v1.1.9 release', tensorfold_sha256=TF_METAL_SHA,
+                      model_dir=str(MODEL), host_start=host_info())
     try:
         with tempfile.TemporaryDirectory(prefix='engine-compare-', dir=HOME / '.cache') as tmp:
             for r in range(a.rounds):
@@ -425,6 +468,9 @@ def main():
                             'median_decode_tps': median([x['decode_tps'] for x in ok]),
                             'texts': sorted({x['text_sha256'][:12] for x in ok})}
         report['summary'] = summary
+        if MACOS:
+            from machine import host_info
+            report['host_end'] = host_info()
         out.write_text(json.dumps(report, indent=2) + '\n'); lock.close()
         print(json.dumps(summary, indent=2))
 

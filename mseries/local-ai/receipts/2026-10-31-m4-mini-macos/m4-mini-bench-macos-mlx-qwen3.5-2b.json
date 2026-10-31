@@ -1,0 +1,220 @@
+{
+ "child": {
+  "default_device": "Device(gpu, 0)",
+  "device_info": {
+   "architecture": "applegpu_g16g",
+   "device_name": "Apple M4",
+   "max_buffer_length": 9534832640,
+   "max_recommended_working_set_size": 12713115648,
+   "memory_size": 17179869184,
+   "resource_limit": 499000
+  },
+  "load_s": 2.361,
+  "masked_eos_ids": [
+   248046
+  ],
+  "mx_version": "0.32.3",
+  "prompt_ids_sha256": "dca79144a40c1439caf032f798f5ed28fd1621944c364012c4f82c659c6f2dfe",
+  "runs": [
+   {
+    "finish_reason": "length",
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 55.006332793157235,
+    "peak_memory_gb": 1.806,
+    "prompt_tokens": 512,
+    "prompt_tps": 885.4645668183422,
+    "ttft_s": 0.8751,
+    "wall_s": 3.2397
+   },
+   {
+    "finish_reason": "length",
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 53.53328201532624,
+    "peak_memory_gb": 1.806,
+    "prompt_tokens": 512,
+    "prompt_tps": 835.4310321251695,
+    "ttft_s": 0.8988,
+    "wall_s": 3.3271
+   },
+   {
+    "finish_reason": "length",
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 53.6449508850278,
+    "peak_memory_gb": 1.806,
+    "prompt_tokens": 512,
+    "prompt_tps": 852.9000714685798,
+    "ttft_s": 0.8883,
+    "wall_s": 3.3014
+   },
+   {
+    "finish_reason": "length",
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 55.35627656386269,
+    "peak_memory_gb": 1.806,
+    "prompt_tokens": 512,
+    "prompt_tps": 860.0937894978317,
+    "ttft_s": 0.8621,
+    "wall_s": 3.2129
+   },
+   {
+    "finish_reason": "length",
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 54.35586049336136,
+    "peak_memory_gb": 1.788,
+    "prompt_tokens": 512,
+    "prompt_tps": 765.8293993939131,
+    "ttft_s": 0.9988,
+    "wall_s": 3.3794
+   }
+  ],
+  "versions": {
+   "huggingface-hub": "1.33.0",
+   "mlx": "0.32.3",
+   "mlx-lm": "0.31.3",
+   "mlx-metal": "0.32.3",
+   "transformers": "5.16.1"
+  },
+  "warmup": [
+   {
+    "finish_reason": "length",
+    "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+    "generation_tokens": 128,
+    "generation_tps": 55.14529573739597,
+    "peak_memory_gb": 1.805,
+    "prompt_tokens": 512,
+    "prompt_tps": 652.5951192469374,
+    "ttft_s": 1.1287,
+    "wall_s": 3.478
+   }
+  ]
+ },
+ "child_returncode": 0,
+ "child_stderr_tail": [],
+ "command": [
+  "/private/tmp/claude-501/bench/venv/bin/python",
+  "scripts/m4_mini_bench.py",
+  "--model",
+  "qwen3.5-2b",
+  "--model-dir",
+  "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-2B-MLX-4bit/snapshots/93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "--out",
+  "/private/tmp/claude-501/bench/os/mseries/local-ai/receipts/2026-10-31-m4-mini-macos/m4-mini-bench-macos-mlx-qwen3.5-2b.json"
+ ],
+ "exit_code": 0,
+ "fixed": {
+  "engine": "mlx",
+  "generation_tokens": 128,
+  "model": "qwen3.5-2b",
+  "model_file_sha256": {
+   "chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+   "config.json": "beb7fc5a6e0405fe332821cf1a8ef7b69bb390a8c8933171647de5579debf949",
+   "model.safetensors": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+   "tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4",
+   "tokenizer_config.json": "e98f1901ac6f0adff67b1d540bfa0c36ac1a0cf59eb72ed78146ef89aafa1182"
+  },
+  "model_repo": "mlx-community/Qwen3.5-2B-MLX-4bit",
+  "model_revision": "93760be4f1f69842a46bc13dbdc0f19e291392a3",
+  "prompt_tokens": 512,
+  "runs": 5,
+  "sampler": "greedy, EOS masked",
+  "warmup": 1
+ },
+ "host": {
+  "env": {},
+  "load_avg_end": [
+   19.751953125,
+   19.76123046875,
+   17.86474609375
+  ],
+  "load_avg_start": [
+   21.470703125,
+   20.0693359375,
+   17.9150390625
+  ],
+  "machine": "arm64",
+  "macos": {
+   "gpu": [
+    {
+     "spdisplays_mtlgpufamilysupport": "spdisplays_metal4",
+     "sppci_cores": "10",
+     "sppci_model": "Apple M4"
+    }
+   ],
+   "hw.memsize": "17179869184",
+   "hw.model": "Mac16,10",
+   "kern.osversion": "26A5421a",
+   "machdep.cpu.brand_string": "Apple M4",
+   "pmset": [
+    "lowpowermode         0"
+   ],
+   "sw_vers": {
+    "BuildVersion": "26A5421a",
+    "ProductName": "macOS",
+    "ProductVersion": "27.0"
+   }
+  },
+  "python": "3.14.3",
+  "quiet": false,
+  "system": "Darwin",
+  "utc_end": "2026-10-31T15:51:11Z",
+  "utc_start": "2026-10-31T15:50:44Z"
+ },
+ "schema": "m4-mini-bench/2",
+ "script": {
+  "git_commit": "1690652a0de099ef1fc6120c54c7f92ff39a84c0",
+  "git_dirty": false,
+  "path": "/private/tmp/claude-501/bench/omarchy-mlx/scripts/m4_mini_bench.py",
+  "sha256": "8258e71cee62b80fe516670a8b14cc770badbc35af77923d34386d2ea7a03e61"
+ },
+ "summary": {
+  "generated_ids_sha256": "1f20f523be2f3cfd775543af315eae2db831fb77e93252c064f635aa7695d244",
+  "generation_tps": {
+   "max": 55.356,
+   "median": 54.356,
+   "min": 53.533,
+   "n": 5,
+   "spread": 0.0335,
+   "values": [
+    55.006,
+    53.533,
+    53.645,
+    55.356,
+    54.356
+   ]
+  },
+  "peak_memory_gb": 1.806,
+  "prompt_tps": {
+   "max": 885.465,
+   "median": 852.9,
+   "min": 765.829,
+   "n": 5,
+   "spread": 0.1403,
+   "values": [
+    885.465,
+    835.431,
+    852.9,
+    860.094,
+    765.829
+   ]
+  },
+  "ttft_s": {
+   "max": 0.999,
+   "median": 0.888,
+   "min": 0.862,
+   "n": 5,
+   "spread": 0.1539,
+   "values": [
+    0.875,
+    0.899,
+    0.888,
+    0.862,
+    0.999
+   ]
+  }
+ }
+}

@@ -1,0 +1,492 @@
+{
+  "status": "complete",
+  "model_key": "qwen4b",
+  "model": "mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3",
+  "weights_sha256": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db",
+  "kernel": "macOS 27.0 (26A5421a)",
+  "driver": "Metal",
+  "tensorfold_rev": "v1.1.9 release",
+  "rapid_rev": "1d09cdb684bbf58fac130f5804b08ee2e1f56558",
+  "serve_concurrency": 4,
+  "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+  "max_tokens": 32,
+  "policy": {
+    "reserve_gib": 1.0,
+    "max_fan_rpm": null,
+    "max_temp_c": 80
+  },
+  "allowance_gib": 6.5,
+  "arms": [
+    "lm-metal"
+  ],
+  "concurrency": 4,
+  "runs": [
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.13,
+          "available_gib": 9.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.81 19.31 17.32"
+        },
+        {
+          "t": 1.31,
+          "available_gib": 9.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.81 19.31 17.32"
+        },
+        {
+          "t": 2.86,
+          "available_gib": 7.52,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.27 19.24 17.31"
+        },
+        {
+          "t": 4.21,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.27 19.24 17.31"
+        },
+        {
+          "t": 5.8,
+          "available_gib": 6.72,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.27 19.24 17.31"
+        },
+        {
+          "t": 7.29,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.27 19.24 17.31"
+        },
+        {
+          "t": 8.48,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.56 19.33 17.36"
+        },
+        {
+          "t": 9.7,
+          "available_gib": 5.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.56 19.33 17.36"
+        },
+        {
+          "t": 10.96,
+          "available_gib": 4.64,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.56 19.33 17.36"
+        },
+        {
+          "t": 12.27,
+          "available_gib": 4.16,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.56 19.33 17.36"
+        },
+        {
+          "t": 13.4,
+          "available_gib": 4.48,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.20 19.29 17.35"
+        }
+      ],
+      "log_tail": "/private/tmp/claude-501/bench/venv/lib/python3.14/site-packages/mlx_lm/server.py:1723: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-31 11:48:32,119 - INFO - Starting httpd at 127.0.0.1 on port 56559...\n127.0.0.1 - - [31/Oct/2026 11:48:32] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [31/Oct/2026 11:48:32] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-31 11:48:36,229 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-31 11:48:36,231 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-31 11:48:36,231 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:48:36,231 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:48:36] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:48:37,308 - INFO - Prompt processing progress: 23/27\n2026-10-31 11:48:37,368 - INFO - Prompt processing progress: 26/27\n2026-10-31 11:48:37,438 - INFO - Prompt processing progress: 27/27\n2026-10-31 11:48:38,949 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:48:38,950 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:48:38,950 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:48:38,950 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:48:39] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:48:39,335 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:48:39,335 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:48:39,335 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:48:39,335 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:48:39] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:48:39,719 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:48:39,719 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:48:39,719 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:48:39,719 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:48:39] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:48:40,119 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:48:40,119 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:48:40,119 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:48:40,119 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:48:40] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:48:40,916 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:48:40,917 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:48:40,917 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:48:40,917 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:48:41,056 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:48:41,057 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:48:41,059 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:48:41,060 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:48:41,221 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:48:41,223 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:48:41,222 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:48:41,222 - INFO - Prompt processing progress: 33/33\n",
+      "ready_s": 8.91568183399977,
+      "concurrency": 4,
+      "wall_s": 4.454901332999725,
+      "aggregate_tok_s": 28.732398415165505,
+      "per_request_decode_median": 14.827650089328234,
+      "ttft_s": 2.338562875000207,
+      "total_s": 4.454901332999725,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 2.334610416999567,
+          "total_s": 4.404055624998364,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.336000833000071,
+          "total_s": 4.426689500000066,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.352317499999117,
+          "total_s": 4.451542834000065,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.338562875000207,
+          "total_s": 4.449884292000206,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 28.732398415165505,
+      "min_available_gib": 4.16,
+      "peak_temp_c": 0,
+      "round": 1,
+      "admission_available_gib": 9.28
+    },
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.23,
+          "available_gib": 8.96,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.20 19.29 17.35"
+        },
+        {
+          "t": 1.47,
+          "available_gib": 9.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.26 19.34 17.38"
+        },
+        {
+          "t": 2.57,
+          "available_gib": 9.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.26 19.34 17.38"
+        },
+        {
+          "t": 4.11,
+          "available_gib": 6.88,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.26 19.34 17.38"
+        },
+        {
+          "t": 5.29,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.26 19.34 17.38"
+        },
+        {
+          "t": 6.55,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.84 19.28 17.37"
+        },
+        {
+          "t": 8.09,
+          "available_gib": 5.28,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.84 19.28 17.37"
+        },
+        {
+          "t": 9.63,
+          "available_gib": 5.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.84 19.28 17.37"
+        },
+        {
+          "t": 10.78,
+          "available_gib": 5.12,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "20.84 19.28 17.37"
+        },
+        {
+          "t": 11.92,
+          "available_gib": 4.32,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.25 19.40 17.42"
+        },
+        {
+          "t": 13.59,
+          "available_gib": 4.16,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.25 19.40 17.42"
+        }
+      ],
+      "log_tail": "/private/tmp/claude-501/bench/venv/lib/python3.14/site-packages/mlx_lm/server.py:1723: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-31 11:48:49,627 - INFO - Starting httpd at 127.0.0.1 on port 56586...\n127.0.0.1 - - [31/Oct/2026 11:48:49] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [31/Oct/2026 11:48:49] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-31 11:48:53,506 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-31 11:48:53,507 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-31 11:48:53,507 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:48:53,507 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:48:53] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:48:54,530 - INFO - Prompt processing progress: 23/27\n2026-10-31 11:48:54,601 - INFO - Prompt processing progress: 26/27\n2026-10-31 11:48:54,700 - INFO - Prompt processing progress: 27/27\n2026-10-31 11:48:56,465 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:48:56,466 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:48:56,466 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:48:56,466 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:48:56] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:48:56,862 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:48:56,862 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:48:56,863 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:48:56,863 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:48:57] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:48:57,208 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:48:57,208 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:48:57,208 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:48:57,208 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:48:57] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:48:57,545 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:48:57,545 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:48:57,545 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:48:57,546 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:48:57] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:48:58,380 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:48:58,381 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:48:58,382 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:48:58,382 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:48:58,539 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:48:58,539 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:48:58,539 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:48:58,539 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:48:58,684 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:48:58,689 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:48:58,689 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:48:58,690 - INFO - Prompt processing progress: 33/33\n",
+      "ready_s": 9.777324124999723,
+      "concurrency": 4,
+      "wall_s": 4.379749916999572,
+      "aggregate_tok_s": 29.22541296323347,
+      "per_request_decode_median": 15.077156436141971,
+      "ttft_s": 2.2939162500006205,
+      "total_s": 4.379749916999572,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 2.2939162500006205,
+          "total_s": 4.350006874999963,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.293037542000093,
+          "total_s": 4.318919667000955,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.29091999999946,
+          "total_s": 4.3700114999992365,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.3000021249990823,
+          "total_s": 4.37303754200002,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 29.22541296323347,
+      "min_available_gib": 4.16,
+      "peak_temp_c": 0,
+      "round": 2,
+      "admission_available_gib": 8.96
+    },
+    {
+      "arm": "lm-metal",
+      "stopped": null,
+      "samples": [
+        {
+          "t": 0.22,
+          "available_gib": 8.48,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.23 19.42 17.44"
+        },
+        {
+          "t": 1.37,
+          "available_gib": 8.48,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.23 19.42 17.44"
+        },
+        {
+          "t": 2.78,
+          "available_gib": 8.64,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.23 19.42 17.44"
+        },
+        {
+          "t": 4.11,
+          "available_gib": 5.44,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.93 19.60 17.52"
+        },
+        {
+          "t": 5.81,
+          "available_gib": 5.92,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.93 19.60 17.52"
+        },
+        {
+          "t": 7.12,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.93 19.60 17.52"
+        },
+        {
+          "t": 8.33,
+          "available_gib": 5.76,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.93 19.60 17.52"
+        },
+        {
+          "t": 9.61,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.46 19.54 17.51"
+        },
+        {
+          "t": 10.85,
+          "available_gib": 5.6,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.46 19.54 17.51"
+        },
+        {
+          "t": 12.11,
+          "available_gib": 4.32,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.46 19.54 17.51"
+        },
+        {
+          "t": 13.33,
+          "available_gib": 4.16,
+          "max_temp_c": 0,
+          "max_fan_rpm": 0,
+          "load_avg": "21.46 19.54 17.51"
+        }
+      ],
+      "log_tail": "/private/tmp/claude-501/bench/venv/lib/python3.14/site-packages/mlx_lm/server.py:1723: UserWarning: mlx_lm.server is not recommended for production as it only implements basic security checks.\n  warnings.warn(\n2026-10-31 11:49:06,950 - INFO - Starting httpd at 127.0.0.1 on port 56613...\n127.0.0.1 - - [31/Oct/2026 11:49:07] \"GET /health HTTP/1.1\" 200 -\n127.0.0.1 - - [31/Oct/2026 11:49:07] \"GET /v1/models HTTP/1.1\" 200 -\n2026-10-31 11:49:11,039 - INFO - Prompt Cache: 0 sequences, 0.00 GB\n2026-10-31 11:49:11,039 - INFO - - assistant: 0 sequences, 0.00 GB\n2026-10-31 11:49:11,039 - INFO - - user: 0 sequences, 0.00 GB\n2026-10-31 11:49:11,040 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:49:11] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:49:12,059 - INFO - Prompt processing progress: 23/27\n2026-10-31 11:49:12,140 - INFO - Prompt processing progress: 26/27\n2026-10-31 11:49:12,203 - INFO - Prompt processing progress: 27/27\n2026-10-31 11:49:13,792 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:49:13,792 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:49:13,792 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:49:13,792 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:49:13] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:49:14,149 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:49:14,149 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:49:14,149 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:49:14,149 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:49:14] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:49:14,445 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:49:14,445 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:49:14,445 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:49:14,445 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:49:14] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:49:14,762 - INFO - Prompt Cache: 3 sequences, 0.16 GB\n2026-10-31 11:49:14,763 - INFO - - assistant: 2 sequences, 0.11 GB\n2026-10-31 11:49:14,763 - INFO - - user: 1 sequences, 0.05 GB\n2026-10-31 11:49:14,763 - INFO - - system: 0 sequences, 0.00 GB\n127.0.0.1 - - [31/Oct/2026 11:49:14] \"POST /v1/chat/completions HTTP/1.1\" 200 -\n2026-10-31 11:49:15,496 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:49:15,498 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:49:15,499 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:49:15,499 - INFO - Prompt processing progress: 29/33\n2026-10-31 11:49:15,644 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:49:15,644 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:49:15,645 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:49:15,646 - INFO - Prompt processing progress: 32/33\n2026-10-31 11:49:15,769 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:49:15,770 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:49:15,771 - INFO - Prompt processing progress: 33/33\n2026-10-31 11:49:15,773 - INFO - Prompt processing progress: 33/33\n",
+      "ready_s": 9.677016290999745,
+      "concurrency": 4,
+      "wall_s": 4.0450695420004195,
+      "aggregate_tok_s": 31.643460927176,
+      "per_request_decode_median": 15.663040179893985,
+      "ttft_s": 2.0373866249992716,
+      "total_s": 4.0450695420004195,
+      "completion_tokens": 128,
+      "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro",
+      "requests": [
+        {
+          "ttft_s": 2.0373866249992716,
+          "total_s": 3.990782124999896,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.035592042000644,
+          "total_s": 4.014773583001443,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.035128125000483,
+          "total_s": 4.035999875000925,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        },
+        {
+          "ttft_s": 2.0382880409997597,
+          "total_s": 4.037934790998406,
+          "completion_tokens": 32,
+          "token_count_source": "usage",
+          "text": "A rainbow forms when sunlight hits raindrops in the air and gets split into its seven colors, a process called refraction. As the light enters each water dro"
+        }
+      ],
+      "served_model": "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "text_sha256": "9095cd4ace32bd52edcf7f4b54be83cc498d29c92c3cb20973dfb5364f46626d",
+      "decode_tps": 31.643460927176,
+      "min_available_gib": 4.16,
+      "peak_temp_c": 0,
+      "round": 3,
+      "admission_available_gib": 8.32
+    }
+  ],
+  "runtime": {
+    "mlx": "0.32.3",
+    "mlx_lm": "0.31.3",
+    "transformers": "5.16.1",
+    "python": "3.14.3",
+    "device": {
+      "device_name": "Apple M4",
+      "max_recommended_working_set_size": 12713115648,
+      "memory_size": 17179869184,
+      "architecture": "applegpu_g16g",
+      "max_buffer_length": 9534832640,
+      "resource_limit": 499000
+    }
+  },
+  "tensorfold_sha256": "4b4b5a5ac152eb2dbed7e9d8004805ed9b74f77c64c3de18eb4f35263c7b9eb8",
+  "model_dir": "/private/tmp/claude-501/bench/hf/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+  "host_start": {
+    "macos": "27.0",
+    "build": "26A5421a",
+    "hw_model": "Mac16,10",
+    "chip": "Apple M4",
+    "gpu_cores": "10",
+    "memory_gib": 16.0,
+    "power": [
+      "Now drawing from 'AC Power'"
+    ],
+    "low_power_mode": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "uptime": "11:48  up  3:07, 4 users, load averages: 21.81 19.31 17.32",
+    "top_cpu": [
+      "42290  com.apple.Virtua 543.2 10G  ",
+      "4939   Claude Helper (R 57.0  995M-",
+      "433    WindowServer     31.2  584M-",
+      "0      kernel_task      25.3  35M- ",
+      "4916   Claude Helper    12.1  474M-",
+      "42198  limactl          8.6   81M-"
+    ],
+    "memory_free_pct": "58",
+    "swap": "total = 5120.00M  used = 3710.12M  free = 1409.88M  (encrypted)",
+    "lima": "NAME      STATUS     SSH                VMTYPE    ARCH       CPUS    MEMORY    DISK     DIR\nkbuild    Running    127.0.0.1:53830    vz        aarch64    8       10GiB     60GiB    ~/.lima/kbuild"
+  },
+  "summary": {
+    "lm-metal": {
+      "ok_runs": 3,
+      "median_ttft_s": 2.2939162500006205,
+      "median_total_s": 4.379749916999572,
+      "median_decode_tps": 29.22541296323347,
+      "texts": [
+        "9095cd4ace32"
+      ]
+    }
+  },
+  "host_end": {
+    "macos": "27.0",
+    "build": "26A5421a",
+    "hw_model": "Mac16,10",
+    "chip": "Apple M4",
+    "gpu_cores": "10",
+    "memory_gib": 16.0,
+    "power": [
+      "Now drawing from 'AC Power'"
+    ],
+    "low_power_mode": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "uptime": "11:49  up  3:08, 4 users, load averages: 21.83 19.68 17.58",
+    "top_cpu": [
+      "42290  com.apple.Virtua 581.9 10G  ",
+      "433    WindowServer     32.0  592M ",
+      "0      kernel_task      21.9  34M+ ",
+      "42198  limactl          15.3  81M  ",
+      "4916   Claude Helper    12.1  456M+",
+      "4939   Claude Helper (R 4.8   997M-"
+    ],
+    "memory_free_pct": "56",
+    "swap": "total = 5120.00M  used = 3686.94M  free = 1433.06M  (encrypted)",
+    "lima": "NAME      STATUS     SSH                VMTYPE    ARCH       CPUS    MEMORY    DISK     DIR\nkbuild    Running    127.0.0.1:53830    vz        aarch64    8       10GiB     60GiB    ~/.lima/kbuild"
+  }
+}
