@@ -61,6 +61,17 @@ eq "base udev asahi autodetect modconf block encrypt filesystems fsck" \
   "$(bash -c 'source "$1"; echo "${HOOKS[*]}"' _ "$mk")" "hooks after remove"
 unlink "$mk"
 
+# initramfs-hardware: each driver is early-loaded only where modinfo names it, so a
+# kernel lacking one (or the PMP and keyboard-PWM drivers) never fails mkinitcpio.
+hw=$(dirname -- "${BASH_SOURCE[0]}")/boot/initramfs-hardware.snippet
+eq "mux_apple_display_crossbar hid_apple hid_magicmouse apple_pmp pwm_apple" \
+  "$(bash -c 'modinfo() { return 0; }; MODULES=(); source "$1"; echo "${MODULES[*]}"' _ "$hw")" "hardware modules"
+eq "hid_apple apple_pmp" \
+  "$(bash -c 'modinfo() { [[ $3 == hid_apple || $3 == apple_pmp ]]; }; MODULES=(); source "$1"; echo "${MODULES[*]}"' _ "$hw")" \
+  "hardware modules the kernel lacks are skipped"
+ok grep -q 'KERNEL=="kbd_backlight", DRIVERS=="leds_pwm", ATTR{brightness}=="0", ATTR{brightness}="128"' \
+  "$(dirname -- "${BASH_SOURCE[0]}")/boot/90-elementary-mac-kbd-backlight.rules"
+
 # enhance.sh writes the whole enhancement layer into a root without needing a session.
 here=$(dirname -- "${BASH_SOURCE[0]}")
 root=$(mktemp -d)
