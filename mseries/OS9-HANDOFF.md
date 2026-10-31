@@ -1,3 +1,11 @@
+## M4 performance tracker — 2026-10-30
+
+Added [M4-PERFORMANCE.md](local-ai/M4-PERFORMANCE.md), linked from the project
+README and generated engine scoreboard. It tracks matched Gravity, Omarchy
+and macOS workloads, including the existing multi-model AI suite, with SHA-1
+and SHA-256 provenance. The first M4 MLX attempt is retained as a failure
+receipt; no M4 model speed or native comparison is claimed yet.
+
 ## Warren local AI and eGPU updates — 2026-10-30
 
 Installed `mseries-nvidia-open-source` `595.112.07+apple.1-1` (SHA-256 `a397b68a...b209ab23`) containing the three prepared NVIDIA fixes and license at `/usr/src/mseries-nvidia-open-595.112.07`. This is source only; no NVIDIA module or matching CUDA userspace is installed. The [source package script](nvidia-egpu/package-source.sh) verifies the exact prepared diff before packaging.

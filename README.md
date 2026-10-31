@@ -11,6 +11,10 @@ whose Asahi boot and encryption tools it reuses.
 
 > **M4 Macs (e.g. Mac mini J773g):** step 1 below does not apply; see [M4-MINI-INSTALL.md](mseries/M4-MINI-INSTALL.md); the commands in order are in [INSTALL-COMMANDS.md](mseries/gravity/INSTALL-COMMANDS.md).
 
+**M4 performance tracker:** Follow Gravity, Omarchy and native macOS baselines,
+model benchmarks and progress toward outperforming native on matched workloads in
+[M4-PERFORMANCE.md](mseries/local-ai/M4-PERFORMANCE.md).
+
 > 🚧 **Work in progress.** Not yet run end to end on a freshly wiped Mac. Back up everything first. [Status](#status)
 
 **The whole install, in three commands** (details for each step below):
