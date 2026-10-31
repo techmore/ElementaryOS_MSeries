@@ -153,9 +153,9 @@ def mac_rows():
         model = r['model_key']
         chip = chip_name(r)
         os_name = r.get('os', 'macOS')
-        latest[(model, r['max_tokens'], chip, os_name, r.get('model', 'unknown revision'), r.get('prompt_sha256', 'unknown prompt'), r.get('weights_sha256') or 'unknown weights')] = (f, r, runs, chip, os_name)
+        latest[(model, r['max_tokens'], chip, os_name, r.get('hardware', ''), r.get('kernel', ''), r.get('mlx_version', ''), r.get('mlx_lm_version', ''), r.get('model', 'unknown revision'), r.get('prompt_sha256', 'unknown prompt'), r.get('weights_sha256') or 'unknown weights')] = (f, r, runs, chip, os_name)
     rows = []
-    for (model, tokens, _, _, model_ref, prompt_hash, weights_hash), (f, r, runs, chip, os_name) in sorted(latest.items()):
+    for (model, tokens, _, _, _hardware, _kernel, _mlx, _mlx_lm, model_ref, prompt_hash, weights_hash), (f, r, runs, chip, os_name) in sorted(latest.items()):
         rows.append({'model': MODEL_NAMES.get(model, model), 'engine': 'Apple MLX (in-process)',
                      'settings': f"MLX {r.get('mlx_version', '?')}; mlx-lm {r.get('mlx_lm_version', '?')}",
                      'tokens': tokens, 'decode_tok_s': med([x['decode_tps'] for x in runs]),
@@ -214,7 +214,7 @@ def chart(rows):
         base_y = y
         for x in xs:
             is_mac = x['_arm'] == 'mac-mlx'
-            os_short = 'macOS' if is_mac else ('Aurora' if 'Aurora' in x['os'] else x['os'])
+            os_short = x['os'].split(' build')[0] if is_mac else ('Aurora' if 'Aurora' in x['os'] else x['os'])
             if not is_mac and 'wip' in x['kernel']:
                 os_short += ' wip' + x['kernel'].split('wip')[-1].split('-')[0]
             engine = 'Apple MLX in-process' if is_mac else SHORT.get(x['_arm'], x['_arm'])
@@ -228,7 +228,7 @@ def chart(rows):
                     parts.append(f'<text x="{x0}" y="{y + 14}" class="v">n/a</text>'); continue
                 dx = (panel_w - 52) * max(0, v) / tops[i]
                 cls = 'mac' if is_mac else 'linux'
-                tip = escape(f"{label}; {x['driver']}; {title}: {fmt_.format(v)}; {x['runs']} runs")
+                tip = escape(f"{label}; {x['kernel']}; {x['driver']}; {x['settings']}; {title}: {fmt_.format(v)}; {x['runs']} runs")
                 parts.append(f'<g><title>{tip}</title><circle cx="{x0 + dx:.1f}" cy="{y + 10}" r="4.5" class="{cls}"/>'
                              f'<text x="{x0 + dx + 8:.1f}" y="{y + 14}" class="v">{fmt_.format(v)}</text></g>')
             y += row_h

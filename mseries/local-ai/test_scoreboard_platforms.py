@@ -17,11 +17,11 @@ class PlatformScoreboardTest(unittest.TestCase):
                     'model': 'example/model@revision1', 'max_tokens': 32,
                     'hardware': 'Apple M1 Pro', 'os': 'macOS 27.2', 'kernel': 'Darwin',
                     'runs': [{'arm': 'mac-mlx', 'decode_tps': n, 'ttft_s': 0.2, 'total_s': 0.6} for n in (10, 20, 30)]}
-            for index, overrides in enumerate([{}, {'hardware': 'Apple M4'}, {'model': 'example/model@revision2'}, {'status': 'partial'}]):
+            for index, overrides in enumerate([{}, {'hardware': 'Apple M4'}, {'model': 'example/model@revision2'}, {'mlx_version': 'new'}, {'status': 'partial'}]):
                 (root / f'2026-10-30-macos-scoreboard-{index}.json').write_text(json.dumps({**base, **overrides}))
             with patch.object(scoreboard, 'RECEIPTS', root):
                 rows = scoreboard.mac_rows()
-            self.assertEqual(len(rows), 3)
+            self.assertEqual(len(rows), 4)
             self.assertEqual({x['model_reference'] for x in rows}, {'example/model@revision1', 'example/model@revision2'})
             self.assertIn('M4', {x['chip'] for x in rows})
             self.assertTrue(all(x['decode_tok_s'] == 20 for x in rows))
@@ -59,7 +59,7 @@ class PlatformScoreboardTest(unittest.TestCase):
     def test_chart_separates_model_revisions_and_escapes_labels(self):
         row = {'_model': 'qwen2b', '_arm': 'mac-mlx', '_conc': 1, 'model': 'model & test',
                'model_reference': 'example@abcd1234', 'tokens': 32, 'chip': 'M1 Pro', 'os': 'macOS',
-               'ttft_s': 0.2, 'decode_tok_s': 25, 'driver': 'Apple Metal', 'runs': 3, 'kernel': 'Darwin'}
+               'ttft_s': 0.2, 'decode_tok_s': 25, 'driver': 'Apple Metal', 'settings': 'test', 'runs': 3, 'kernel': 'Darwin'}
         output = scoreboard.chart([row, {**row, 'chip': 'M4', 'model_reference': 'example@different'}])
         ET.fromstring(output)
         self.assertIn('model &amp; test', output)
