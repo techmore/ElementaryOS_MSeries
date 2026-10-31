@@ -31,11 +31,11 @@
     {
       "model": "Qwen3.5-2B MLX 4-bit",
       "engine": "TensorFold Vulkan + submit batching",
-      "settings": "unpublished follow-up to PR 1544 (batching build a8b888dd)",
+      "settings": "Public PR 1561, closed and unmerged (earlier batching build a8b888dd)",
       "decode_tok_s": "~10.6 (M1 Max), ~6.9 (M1)",
-      "status": "reported upstream, code not public",
-      "blocker": "Watched in people-watch/branch-watch; re-run engine-compare when it lands",
-      "source": "ashhart/TensorFold issue 1420"
+      "status": "reported upstream; not tested here",
+      "blocker": "Patch needs adaptation to installed b3ab9ba and M1 Pro fidelity/performance gates",
+      "source": "[TensorFold PR 1561](https://github.com/ashhart/TensorFold/pull/1561)"
     },
     {
       "model": "Qwen3.5 0.8B (Mirai format)",
