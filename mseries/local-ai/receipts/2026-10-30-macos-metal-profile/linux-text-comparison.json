@@ -1,0 +1,138 @@
+{
+  "method": "Compare synthetic macOS text hashes to existing Linux mlx-5k completed receipts with same model selector, exact prompt SHA-256 and max_tokens. Different platform and runtime revisions; evidence is text only, not a numerical/fidelity gate.",
+  "rows": [
+    {
+      "model": "qwen2b",
+      "max_tokens": 32,
+      "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+      "linux_baselines": [
+        {
+          "receipt": "2026-10-28-engine-compare-qwen2b-short-hk9323171c12.json",
+          "linux_runs": 3,
+          "linux_text_sha256s": [
+            "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e"
+          ],
+          "mac_text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+          "same_text_for_all": true,
+          "common_prefix_chars": 138
+        },
+        {
+          "receipt": "2026-10-28-engine-compare-short.json",
+          "linux_runs": 3,
+          "linux_text_sha256s": [
+            "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e"
+          ],
+          "mac_text_sha256": "ffbf23cb27bb50106bf151750276ab30f61683b0bec1ceb077bab1d61844393e",
+          "same_text_for_all": true,
+          "common_prefix_chars": 138
+        }
+      ]
+    },
+    {
+      "model": "qwen2b",
+      "max_tokens": 256,
+      "prompt_sha256": "2f23962cfdcb7ce0c2b482c4dd71e415f72113b963cfe6594fd5dc1fd4347921",
+      "linux_baselines": [
+        {
+          "receipt": "2026-10-28-engine-compare-long.json",
+          "linux_runs": 3,
+          "linux_text_sha256s": [
+            "3f3ac70c5d72eda0b31229d8da4d90ca6fce34ca69e6ebc24a3d6502fc816990"
+          ],
+          "mac_text_sha256": "e0c3922c7d3fd430bdec1f3c211d48da56a805e582f2d885b639ffc20878086e",
+          "same_text_for_all": false,
+          "common_prefix_chars": 633
+        }
+      ]
+    },
+    {
+      "model": "qwen4b",
+      "max_tokens": 32,
+      "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+      "linux_baselines": [
+        {
+          "receipt": "2026-10-28-engine-compare-qwen4b-short-hk9323171c12.json",
+          "linux_runs": 3,
+          "linux_text_sha256s": [
+            "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84"
+          ],
+          "mac_text_sha256": "e74285cad2b17b0b4991f3aa68d669d7ae2442c37bf93e366dc901ec1bb2f476",
+          "same_text_for_all": false,
+          "common_prefix_chars": 94
+        },
+        {
+          "receipt": "2026-10-28-engine-compare-qwen4b-short.json",
+          "linux_runs": 3,
+          "linux_text_sha256s": [
+            "bdb76d67e763d4e8ae7176616718338bafdab9ecab8cea1f66e0a73e706abe84"
+          ],
+          "mac_text_sha256": "e74285cad2b17b0b4991f3aa68d669d7ae2442c37bf93e366dc901ec1bb2f476",
+          "same_text_for_all": false,
+          "common_prefix_chars": 94
+        }
+      ]
+    },
+    {
+      "model": "qwen4b",
+      "max_tokens": 256,
+      "prompt_sha256": "2f23962cfdcb7ce0c2b482c4dd71e415f72113b963cfe6594fd5dc1fd4347921",
+      "linux_baselines": []
+    },
+    {
+      "model": "lfm3",
+      "max_tokens": 32,
+      "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+      "linux_baselines": [
+        {
+          "receipt": "2026-10-28-engine-compare-lfm3-short-hk9323171c12.json",
+          "linux_runs": 3,
+          "linux_text_sha256s": [
+            "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b"
+          ],
+          "mac_text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+          "same_text_for_all": true,
+          "common_prefix_chars": 150
+        },
+        {
+          "receipt": "2026-10-28-engine-compare-lfm3-short.json",
+          "linux_runs": 3,
+          "linux_text_sha256s": [
+            "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b"
+          ],
+          "mac_text_sha256": "b8cc5b9478a05082c75e5ec40e9d3a528f77c91c5ac0d639b827ff94b25a609b",
+          "same_text_for_all": true,
+          "common_prefix_chars": 150
+        }
+      ]
+    },
+    {
+      "model": "lfm3",
+      "max_tokens": 256,
+      "prompt_sha256": "2f23962cfdcb7ce0c2b482c4dd71e415f72113b963cfe6594fd5dc1fd4347921",
+      "linux_baselines": []
+    },
+    {
+      "model": "granite1b",
+      "max_tokens": 32,
+      "prompt_sha256": "af125b15dfba55caedb541e89e59fe1252c0f13553e5ce6bc181e237fada9926",
+      "linux_baselines": [
+        {
+          "receipt": "2026-10-29-engine-compare-granite1b-short-hk9323171c12-mlx-5k+mlx-120k+rapid-120k+serve-120k+serve-patched-120k.json",
+          "linux_runs": 3,
+          "linux_text_sha256s": [
+            "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741"
+          ],
+          "mac_text_sha256": "81588d18f3846cfeedeae583a5c7771c04a5568c3bec5aece292542a8adc7741",
+          "same_text_for_all": true,
+          "common_prefix_chars": 141
+        }
+      ]
+    },
+    {
+      "model": "granite1b",
+      "max_tokens": 256,
+      "prompt_sha256": "2f23962cfdcb7ce0c2b482c4dd71e415f72113b963cfe6594fd5dc1fd4347921",
+      "linux_baselines": []
+    }
+  ]
+}

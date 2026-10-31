@@ -1,0 +1,11 @@
+import json,hashlib,glob,os,sys,statistics
+name=sys.argv[1]; label=sys.argv[2]; modelids={'qwen2b':'mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3','qwen4b':'mlx-community/Qwen3.5-4B-MLX-4bit@32f3e8ecf65426fc3306969496342d504bfa13f3','lfm3':'LiquidAI/LFM3-1.7B-MLX-8bit@ee7667f3cfccb2a41725f91820531823fcabc6b7','granite1b':'mlx-community/granite-4.0-1b-4bit@29f108a4e2ff99079a173004871604c2f1e12c1f'}
+root='outputs/mac-scoreboard'; paths=sorted(glob.glob(f'{root}/{name}-{label}-[123].json')); runs=[]
+for i,path in enumerate(paths,1):
+ x=json.load(open(path));x['arm']='mac-mlx';x['round']=i;x['decode_tps']=x['decode_estimate_tps'];x['text_sha256']=hashlib.sha256(x['text'].encode()).hexdigest();x['token_ids_sha256']=hashlib.sha256(json.dumps(x['token_ids']).encode()).hexdigest();runs.append(x)
+def hashfile(alg):
+ p=f'{root}/{name}-{alg}.txt';return open(p).read().split()[0] if os.path.exists(p) else None
+prompt=('Explain in plain language how a rainbow forms. Give four distinct sentences.' if label=='short' else 'Explain in detail how a rainbow forms, including refraction, reflection, color and viewing angle. Write at least 350 words.')
+out={'prompt':prompt,'prompt_sha256':hashlib.sha256(prompt.encode()).hexdigest(),'schema':'mac-scoreboard-v1','status':'complete' if len(runs)==3 else 'incomplete','model_key':name,'model':modelids[name],'weights_sha1':hashfile('sha1'),'weights_sha256':hashfile('sha256'),'os':'macOS 27.2 build 26B123','kernel':'Darwin 27.2.0 RELEASE_ARM64_T6000','hardware':'MacBookPro18,3 Apple M1 Pro 32 GB','driver':'Apple Metal','mlx_version':'0.31.2','mlx_lm_version':'0.31.3','max_tokens':32 if label=='short' else 256,'arms':['mac-mlx'],'concurrency':1,'method':'Fresh process per run, same prompt warmup, greedy, in-process, 15-second delay; decode=(completion_tokens-1)/(total_s-ttft_s). CPU thread env set to 2, nice 10. No fan/temperature telemetry.','runs':runs}
+if runs:out['summary']={'mac-mlx':{'ok_runs':len(runs),'median_ttft_s':statistics.median(x['ttft_s'] for x in runs),'median_total_s':statistics.median(x['total_s'] for x in runs),'median_decode_tps':statistics.median(x['decode_tps'] for x in runs)}}
+path=f'{root}/{name}-{label}-receipt.json';open(path,'w').write(json.dumps(out,indent=2)+'\n');print(path)
