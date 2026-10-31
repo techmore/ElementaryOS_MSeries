@@ -13,6 +13,8 @@ from urllib.parse import quote
 HERE = Path(__file__).resolve().parent
 MARKER = '<!-- mseries-upstream-dashboard -->'
 TITLE = 'Upstream watch: changes awaiting review'
+DIGEST_FIELDS = ('sha', 'base_sha', 'sha256')
+DIGEST_CHARS = 12
 
 
 def api(path, method='GET', data=None):
@@ -35,8 +37,8 @@ def reconcile(previous, observations, errors, acknowledged=False):
     if not acknowledged:
         for key, change in previous.get('pending', {}).items():
             # Migrate legacy {from, to} entries without losing the first value.
-            pending[key] = (change['from'] if isinstance(change, dict)
-                            and 'from' in change and 'to' in change else change)
+            pending[key] = change_marker(change['from'] if isinstance(change, dict)
+                                         and 'from' in change and 'to' in change else change)
     for key, current in observations.items():
         current = change_marker(current)
         old = snapshots.get(key)
@@ -51,7 +53,14 @@ def change_marker(value):
     if not isinstance(value, dict):
         return value
     fields = ('sha', 'base_sha', 'branch', 'release', 'sha256', 'count', 'latest', 'pushed', 'ahead', 'behind', 'status')
-    return {k: value[k] for k in fields if k in value}
+    marker = {k: value[k] for k in fields if k in value}
+    # Hex digests barely compress, and 500+ tracked branch heads at 40 characters overflowed the
+    # 65,536-character issue body. Twelve characters still detect any move of the same ref, and
+    # stored full-length values shorten to the same prefix, so migration reports no false changes.
+    for k in DIGEST_FIELDS:
+        if isinstance(marker.get(k), str):
+            marker[k] = marker[k][:DIGEST_CHARS]
+    return marker
 
 
 def encode_state(state):
