@@ -34,3 +34,13 @@ identified unresolved ordering on a single timeline semaphore shared by CPU and
 queued GPU signals, and a retry that can replay a command buffer without proof
 its original submission retired. These need a complete synchronization and
 lifetime design. No new GPU workload was run for this investigation.
+
+Candidate `7f657e94` removes the unsafe replay path: absence of a start signal
+does not prove the original one-time submission was discarded. The watchdog
+now reports the stall instead of attempting recovery by resubmission, trading
+automatic recovery for avoiding possible concurrent execution. The pinned
+CPU-disabled MLX static library rebuilt successfully with the change. Host
+test `881295a1` compiles and exercises the actual callback for several target
+values and rounds; it and the three earlier host regressions passed. This
+does not demonstrate GPU recovery, identify the smoke failure, or establish
+safe teardown of a hung driver.
