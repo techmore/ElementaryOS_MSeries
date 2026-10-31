@@ -265,6 +265,7 @@ check codexbar 'test-codexbar-claude.py' 'python3 mseries/test-codexbar-claude.p
 check codexbar 'test-codexbar-claude-history.py' 'python3 mseries/test-codexbar-claude-history.py'
 check codexbar 'test-codexbar-claude-handoff.py' 'python3 mseries/test-codexbar-claude-handoff.py'
 check codexbar 'test-codexbar-wrapper.py' 'python3 mseries/test-codexbar-wrapper.py'
+check codexbar 'test-codexbar-cli-compat.py' 'python3 mseries/test-codexbar-cli-compat.py'
 check codexbar 'test-codexbar-opencode-local.py' 'python3 mseries/test-codexbar-opencode-local.py'
 check codexbar 'test-codexbar-opencode-login.py' 'python3 mseries/test-codexbar-opencode-login.py'
 
