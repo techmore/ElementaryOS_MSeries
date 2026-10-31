@@ -683,6 +683,8 @@ step_boot_layout() {
 #    correctly later; without the font the prompt is a millimetre tall.
 #  - the display crossbar and the Apple HID drivers: late display bring-up and
 #    a trackpad that is sometimes dead for a whole session.
+#  - the PMP and keyboard-PWM drivers, where they are modules: a 20 s PMP wait and
+#    an unlit keyboard at the passphrase prompt.
 # The blocks go into /etc/mkinitcpio.conf itself because mkinitcpio ignores the
 # drop-in directory for presets that set ALL_config (the fairydust ones).
 install_initramfs_fixes() {
@@ -692,9 +694,13 @@ install_initramfs_fixes() {
   [[ -f /etc/mkinitcpio.conf.pre-elementary-mac ]] || cp -a /etc/mkinitcpio.conf /etc/mkinitcpio.conf.pre-elementary-mac
   # An earlier version of this setup used a drop-in; the block replaces it.
   [[ -f /etc/mkinitcpio.conf.d/zz_elementary_console.conf ]] && unlink /etc/mkinitcpio.conf.d/zz_elementary_console.conf
+  # The hardware block bundles this rule, which lights the keyboard at the passphrase prompt.
+  install -D -m 0644 "$SRC/mseries/boot/90-elementary-mac-kbd-backlight.rules" \
+    /etc/udev/rules.d/90-elementary-mac-kbd-backlight.rules
   bash "$tool" add initramfs-console
   bash "$tool" add initramfs-hardware
-  log "The initramfs will load the keymap, console font, display crossbar and Apple HID drivers"
+  log "The initramfs will load the keymap, console font, display crossbar, Apple HID and PMP drivers,"
+  log "and turn the keyboard backlight on at the passphrase prompt"
 }
 
 step_encrypt() {

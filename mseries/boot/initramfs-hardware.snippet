@@ -8,11 +8,21 @@
 # reshuffles input minors while logind and the compositor start, and on unlucky
 # boots the trackpad is dead for the whole session. Loading the drivers from the
 # initramfs removes the churn (ported from omarchy-mac fix-asahi-hid-race.sh).
+# apple_pmp: with the power management coprocessor's driver left on the encrypted
+# root, boot waits out "PMP driver did not bind within 20000 ms" before the
+# passphrase prompt (omarchy-mac-pkgs 7ae91471, MIT).
+# pwm_apple: leds_pwm drives the keyboard backlight through it; left on the root,
+# the passphrase is typed in the dark (omarchy-mac-pkgs a0fa1a8b, MIT). The udev
+# rule below then turns the backlight on as it appears.
+# linux-aurora 7.2.11 builds both as modules; kernels with them built in skip them.
 # mkinitcpio fails the whole image over a MODULES entry it cannot find, so each
 # is named only on kernels that build it as a module.
-for _elementary_mod in mux_apple_display_crossbar hid_apple hid_magicmouse; do
+for _elementary_mod in mux_apple_display_crossbar hid_apple hid_magicmouse apple_pmp pwm_apple; do
   if modinfo -k "${KERNELVERSION:-$(uname -r)}" "$_elementary_mod" >/dev/null 2>&1; then
     MODULES+=("$_elementary_mod")
   fi
 done
 unset _elementary_mod
+if [[ -f /etc/udev/rules.d/90-elementary-mac-kbd-backlight.rules ]]; then
+  FILES+=(/etc/udev/rules.d/90-elementary-mac-kbd-backlight.rules)
+fi

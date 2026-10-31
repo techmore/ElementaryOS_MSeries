@@ -1,3 +1,7 @@
+## Initramfs: PMP driver and keyboard backlight at the passphrase prompt — 2026-10-31
+
+Ported two omarchy-mac-pkgs boot fixes (7ae91471, a0fa1a8b; MIT) into the transform's mkinitcpio block. `mseries/boot/initramfs-hardware.snippet` now also early-loads `apple_pmp` and `pwm_apple` when the kernel builds them as modules (linux-aurora 7.2.11 does; our fairydust config has both `=y`), avoiding a 20 s "PMP driver did not bind" wait before the passphrase prompt and an unlit keyboard there. New `mseries/boot/90-elementary-mac-kbd-backlight.rules` turns `kbd_backlight` on at 128 if leds_pwm registers it at 0 (systemd-backlight restores the saved level after unlock); `elementary-mac-setup` installs it to `/etc/udev/rules.d/`, and the block bundles it with `FILES`. Test: `test-elementary-mac-setup.sh` checks the module list with and without each driver. Not verified: an initramfs rebuild or a boot on the j314s; whether the owner's current Aurora kernel builds these as modules. Existing hosts get it when `elementary-mac-setup` re-applies the initramfs block. Factory image (initramfs-tools) not covered.
+
 ## Warren local AI and eGPU updates — 2026-10-30
 
 Installed `mseries-nvidia-open-source` `595.112.07+apple.1-1` (SHA-256 `a397b68a...b209ab23`) containing the three prepared NVIDIA fixes and license at `/usr/src/mseries-nvidia-open-595.112.07`. This is source only; no NVIDIA module or matching CUDA userspace is installed. The [source package script](nvidia-egpu/package-source.sh) verifies the exact prepared diff before packaging.
