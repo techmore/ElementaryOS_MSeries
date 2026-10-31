@@ -37,6 +37,11 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 7. If upstream starts reporting a provider we draw ourselves (a `claude` entry), our card steps aside; check for double cards.
 8. Record the pin, what was re-verified and what was not in `OS9-HANDOFF.md`; push; run `deploy-codexbar.sh`.
 
+`codexbar --version` reads the `VERSION` file the tarball installs beside the binary, so it can name the new
+release while an old binary still runs. Confirm what `~/.local/lib/codexbar-cli/codexbar-upstream` resolves to.
+v0.78.0 linked `libxml2.so.2` and ran through a compat wrapper on this base (`codexbar_install_cli_compat`);
+v0.79.0+ does not, and the next install or deploy replaces the wrapper with a symlink to `CodexBarCLI`.
+
 ## Do not lose
 
 - Our helpers are installed from this repo by the installers and the deploy script; the installer does not delete user config.
@@ -459,7 +464,7 @@ This handles Pro-to-Max upgrades whose issued token still says Pro.
 ## Unified T3 presentation — 2026-10-26
 
 `mseries/t3-wingpanel` embeds this maintained native view and RepoBar's view in
-one T3 menu, shared with the dock. The backend pin remains v0.78.0 and the
+one T3 menu, shared with the dock. The backend pin is v0.83.0 (bumped 2026-10-31) and the
 `codexbar-linux --snapshot` schema is unchanged. Supported standalone deployments
 retain a rollback module outside Wingpanel discovery when `libmseries-t3.so`
 is installed; helpers/settings/provider assets remain maintained. Native module

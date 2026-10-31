@@ -34,16 +34,43 @@ codexbar_install_helpers() {
   codexbar_install_cli_compat
 }
 
+# codexbar_cli_needs_libxml2 BINARY: true when the CLI binary links libxml2.so.2.
+codexbar_cli_needs_libxml2() {
+  LC_ALL=C ldd "$1" 2>/dev/null | grep -q 'libxml2\.so\.2'
+}
+
 # codexbar_install_cli_compat: upstream v0.78.0's CLI links libxml2.so.2, but
 # libxml2 >= 2.14 renamed the soname (libxml2.so.16 on this base), so the CLI
 # cannot load. Resolve the old soname from a compat directory and route
 # codexbar-upstream through a wrapper that points the loader there. The wrapper
-# is a no-op when the system provides libxml2.so.2 (an older base, or an upstream
-# rebuild); delete this shim when that day comes. Idempotent: the real binary's
-# name is remembered in codexbar-upstream.real.
+# is a no-op when the system provides libxml2.so.2 (an older base). Upstream
+# v0.79.0 and later no longer link libxml2; for them the shim removes itself.
+# Idempotent: the real binary's name is remembered in codexbar-upstream.real.
 codexbar_install_cli_compat() {
-  local lib="$HOME/.local/lib/codexbar-cli" soname real base
+  local lib="$HOME/.local/lib/codexbar-cli" soname real base current
   [[ -e $lib/codexbar-upstream || -L $lib/codexbar-upstream ]] || return 0
+  if [[ -f $lib/codexbar-upstream && ! -L $lib/codexbar-upstream \
+        && $(head -c 2 "$lib/codexbar-upstream") == '#!' ]]; then
+    # Our wrapper: the binary it runs is the current CLI.
+    current=$lib/$(cat "$lib/codexbar-upstream.real" 2>/dev/null)
+  else
+    # An install moved upstream's codexbar (a symlink to CodexBarCLI, or a plain binary)
+    # over the wrapper. It is current; a remembered name may point at the previous version.
+    current=$(readlink -f "$lib/codexbar-upstream")
+    [[ $current == "$lib/codexbar-upstream.bin" ]] || rm -f "$lib/codexbar-upstream.bin"
+    rm -f "$lib/codexbar-upstream.real"
+  fi
+  if [[ -f $current ]] && ! codexbar_cli_needs_libxml2 "$current"; then
+    # Upstream v0.79.0+ does not link libxml2: point codexbar-upstream straight at the
+    # binary (rename, so callers never find it missing) and drop the shim.
+    if [[ $current != "$(readlink -f "$lib/codexbar-upstream")" ]]; then
+      ln -sfn "$(basename "$current")" "$lib/codexbar-upstream.new"
+      mv -f "$lib/codexbar-upstream.new" "$lib/codexbar-upstream"
+    fi
+    rm -f "$lib/codexbar-upstream.real"
+    rm -rf "$lib/compat"
+    return 0
+  fi
   if ldconfig -p | awk '{print $1}' | grep -qx libxml2.so.2; then
     return 0
   fi

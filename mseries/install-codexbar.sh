@@ -4,7 +4,7 @@ set -euo pipefail
 [[ $(uname -m) == aarch64 ]] || { echo 'This installer requires ARM64' >&2; exit 1; }
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source "$repo/mseries/lib-apt.sh"
-version=v0.78.0
+version=v0.83.0
 if [[ ${1:-} != --skip-system-deps ]]; then
   mseries_apt_refresh
   sudo apt-get install -y \
@@ -27,7 +27,7 @@ source "$repo/mseries/lib-codexbar.sh"
 codexbar_install_helpers "$repo"
 tar -xzf "CodexBarCLI-${version}-linux-aarch64.tar.gz" -C "$HOME/.local/lib/codexbar-cli"
 mv -f "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/lib/codexbar-cli/codexbar-upstream"
-# v0.78.0's CLI links libxml2.so.2; wrap it when this base only ships the newer soname.
+# v0.78.0's CLI linked libxml2.so.2 and needed a wrapper on this base; v0.79.0+ does not, and the shim removes itself.
 codexbar_install_cli_compat
 codexbar_install_wrapper "$repo"
 tar -xzf "CodexBarDesktop-${version}-linux-aarch64.tar.gz"

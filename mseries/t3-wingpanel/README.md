@@ -14,7 +14,7 @@ requires a recent, connected, non-stale feed and live application bus owner;
 a one-shot expiry clears an idle badge without polling collectors. One normal
 RepoBar object retains the existing background notification/settings behavior;
 the visible embedded GitHub view never duplicates notifications. CodexBar's
-v0.78.0 custom collectors, accounts, sessions, wrappers and daemon stay in use.
+custom collectors, accounts, sessions, wrappers and daemon stay in use.
 
 ## Build and stage
 
