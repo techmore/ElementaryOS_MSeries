@@ -32,6 +32,17 @@ the target set, not a claim that a run completed.
 | Language and code | Qwen3.5 2B, MLX 4-bit | Pending | Pending | Pending |
 | Larger language model | Qwen3.5 4B, MLX 4-bit | Pending | Pending | Pending |
 | Native Vulkan engine comparison | TensorFold, Qwen3.5 2B | Pending | Pending | Pending |
+| Speech-to-text | Parakeet TDT 0.6B v3, fixed audio; CPU, GPU and ANE where supported | Pending | Pending | Pending |
+
+## Speech and Neural Engine
+
+The requested [speech-encoding article](https://joshuawarren.com/blog/speech-encoding-31-percent-faster-m1-max-neural-engine/) is a lead for optimizing the encoder. Its text was inaccessible during this review, so its title's percentage and exact method are unverified here and are not M4 measurements. The author's [omarchy-mlx](https://github.com/joshuaswarren/omarchy-mlx) supplies a Parakeet path, while [omarchy-ane](https://github.com/joshuaswarren/omarchy-ane) describes an experimental, manually opted-in M4 H16 bring-up module: its README reports no packaged M4 driver or real inference. Do not treat the M1 Max result as M4 support.
+
+On this M4 mini, the running Gravity system has no `/dev/accel` node; the unbooted Aurora candidate enables the ANE driver as a module but its current match tables have no T8132 entry. Neither observation proves ANE inference works. Separately, our M1 Pro ran a 20-call bit-exact ANE smoke and a Parakeet fixture after a private Mesa correction; those are M1 results, not M4 performance. See [M1 speech research](../dictation/STT-RESEARCH.md).
+
+For an M4 comparison, use a pinned Parakeet model and public fixed WAV clips with known reference transcripts. Record both SHA-1 and SHA-256 for every model file, clip, transcript and result, plus model revision, preprocessing and exact commands. Compare the same clips and model across Gravity and Omarchy CPU, GPU and ANE when each backend is qualified, and macOS on the same mini; document model conversion, precision and runtime differences. Record word-error rate, encoder-only time and end-to-end transcription latency separately, cold-start and individual warm runs, audio duration and real-time factor, peak memory, CPU load, power and thermals when available. Measure at least 10 warm runs after an explicitly recorded warmup, keep failures, and separate standalone runs from GPU/ANE contention. Do not claim a speedup where correctness or workload equivalence has not been established.
+
+ANE work is a later qualification track: first establish a safe M4 device/firmware and recovery path and driver binding, then follow the backend's read-only checks and qualified smoke/fixture instructions before running speech inference. Do not load experimental modules, reboot, or run a hardware workload as part of merely adding this plan.
 
 Track CPU, GPU, memory bandwidth, storage, graphics responsiveness, sustained
 power and thermals alongside AI. Add other workloads when a reproducible
