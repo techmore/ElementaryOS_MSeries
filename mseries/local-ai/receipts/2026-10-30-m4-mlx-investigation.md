@@ -1,0 +1,46 @@
+# M4 MLX preflight investigation, 2026-10-30
+
+The [preflight](2026-10-30-m4-mlx-preflight.md) returned zero for `1 + 1`
+and the kernel reported unretired GPU work ten seconds later. Its captured
+output has no dispatch trace, so it does not identify which runtime path ran
+or prove why the GPU failed to retire work. Git blob comparison confirms the
+reviewed `device.cpp`, `fence.cpp` and `encoder.cpp` are identical between
+wheel source `33630f9c1eeefe5fc985a28bed0585432c2c014e` and the candidate
+branch's base `5dbc64dd`; this does not prove any reviewed path was invoked.
+
+A source review of the Omarchy MLX backend found two independent completion
+hazards. A started GPU event alone does not prove shader completion; candidate
+commit `a94172f32385041223df71006bfe9a15b0e15f80` stops the recovery branch
+from publishing a completion on that basis. Candidate commit
+`6a107cfbf632c5d612cc31fb94d096a59c5129bf` stops a CPU event from advancing
+the separate shared GPU completion timeline beyond unfinished work. A host
+regression against the actual function fails before and passes after the latter
+change. The candidate CPU-disabled MLX static library compiled and linked from
+pinned MLX source `9c3d35571ac450a8ecf5c17b4d0e3fac52c08bc8`; this is not a
+GPU runtime test. The ordinary upstream MLX graph appears to signal each event
+from its producer stream, so it is not established that the second path ran
+in the failed smoke.
+
+Candidate `5276a4a7c9632457fd84223f52e70e397589425c` changes a fence wait
+to honor the requested generation instead of the latest one, with a host
+regression and a rebuilt CPU-disabled library. Candidate
+`1f2ba9efb443c8a21e6d5230d2350253b4dc2bb4` repairs the signal-loss test
+hook: it now submits work with signals stripped, rather than dropping the
+entire submission. A host regression verifies all three test-hook branches.
+Neither candidate has been exercised on a GPU or linked to this smoke's cause.
+
+None of these changes establishes recovery of the observed M4 GPU timeout. Review also
+identified unresolved ordering on a single timeline semaphore shared by CPU and
+queued GPU signals, and a retry that can replay a command buffer without proof
+its original submission retired. These need a complete synchronization and
+lifetime design. No new GPU workload was run for this investigation.
+
+Candidate `7f657e94` removes the unsafe replay path: absence of a start signal
+does not prove the original one-time submission was discarded. The watchdog
+now reports the stall instead of attempting recovery by resubmission, trading
+automatic recovery for avoiding possible concurrent execution. The pinned
+CPU-disabled MLX static library rebuilt successfully with the change. Host
+test `881295a1` compiles and exercises the actual callback for several target
+values and rounds; it and the three earlier host regressions passed. This
+does not demonstrate GPU recovery, identify the smoke failure, or establish
+safe teardown of a hung driver.

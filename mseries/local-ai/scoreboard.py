@@ -193,6 +193,9 @@ def main():
         for n in notes:
             w.writerow({**n, 'best': ''})
     md = ['# Local AI engine scoreboard', '',
+          'For the Mac mini M4 and comparisons with native macOS, see the',
+          '[M4 performance tracker](M4-PERFORMANCE.md). The measurements below are M1 Pro',
+          'results and are not M4 baselines.', '',
           'One table for every engine we run or watch on the M1 Pro. ★ marks the most functional setup per model, length and load: the shortest typical reply '
           '(first token plus 200 tokens) whose output matched every other engine and whose correctness gate did not fail. '
           'Regenerate with `python3 mseries/local-ai/scoreboard.py` after adding a receipt. Tracked in the '

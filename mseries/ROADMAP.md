@@ -1,3 +1,13 @@
+## M4 performance — 2026-10-30
+
+Track Gravity, Omarchy and native macOS on matched workloads in the
+[M4 performance tracker](local-ai/M4-PERFORMANCE.md). Record exact model and
+artifact hashes, correctness and per-run metrics; exceeding native is a goal,
+not a measured result. No M4 model-speed baseline has been established yet.
+The tracker now includes matched Parakeet speech CPU/GPU/ANE and macOS
+comparisons. M4 ANE remains unqualified; existing M1 results are not M4
+baselines, and speech accuracy, latency and energy need their own receipts.
+
 ## WD22TB4 and wip4 candidate status — 2026-10-28
 
 Current `dev` is `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`. Pages deployment
