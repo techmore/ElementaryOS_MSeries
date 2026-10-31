@@ -1,3 +1,26 @@
+## WD22TB4, wip5 boot and Pages status — 2026-10-30
+
+Current `dev` is `17045e80db1f958e69048418ead12f7c0aeaa1b6`. Pages run
+[41058736063](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/41058736063)
+succeeded for that revision; live homepage and build-monitor bytes match source.
+The current `dev` pages still contain the older wip4 status, and this correction
+awaits review, merge and its own successful Pages deployment.
+
+wip5 revision 7, pinned to omacom `integration/aurora` at
+`2f725546d6ac6afe0bd5abfa1a844971519f0076`, merged in PR #698. Its exact-head
+ARM64 build and payload inspection passed in run
+[40866985442](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/40866985442).
+The J314S install record reports one boot and working internal panel, external
+DP, GPU, Wi-Fi and SEP; WD22TB4 replug and suspend/resume remain unchecked.
+The October 30 handoff says wip5 remains running, and the install record says
+wip4 remains the GRUB default. Do not transfer wip2 dock picture results to wip5.
+
+The October 21 wip2 trial remains the scoped evidence for WD22TB4 picture on all
+three ports. The October 20–27 wip3 DPTX timeout and alternate-port recovery
+observations do not establish wip5 recovery. No new hardware trial was performed
+for this status update. Next: owner-authorized wip5 WD22TB4 and recovery checks;
+record dock replug, suspend/resume, stability and recovery independently.
+
 ## WD22TB4 and wip4 candidate status — 2026-10-28
 
 Current `dev` is `57b143c4afd78b0a4a0f9905e48e39632d1ecc3c`. Pages deployment
